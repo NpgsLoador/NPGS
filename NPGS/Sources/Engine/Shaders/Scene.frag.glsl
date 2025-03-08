@@ -33,8 +33,9 @@ layout(set = 0, binding = 1) uniform LightMaterial
 
 layout(set = 1, binding = 0) uniform sampler   iSampler;
 layout(set = 1, binding = 1) uniform texture2D iDiffuseTex;
-layout(set = 1, binding = 2) uniform texture2D iSpecularTex;
-layout(set = 1, binding = 3) uniform sampler2D iShadowMap;
+layout(set = 1, binding = 2) uniform texture2D iNormalTex;
+layout(set = 1, binding = 3) uniform texture2D iSpecularTex;
+layout(set = 1, binding = 4) uniform sampler2D iShadowMap;
 
 float CalcShadow(vec4 FragPosLightSpace, float Bias)
 {
@@ -71,19 +72,33 @@ void main()
 #else
     vec3 AmbientColor = iLight.Ambient * texture(sampler2D(iDiffuseTex, iSampler), InputData.TexCoord).rgb;
 
-    vec3  Normal       = normalize(InputData.Normal);
+    vec3 FragPosDx  = dFdx(InputData.FragPos);
+    vec3 FragPosDy  = dFdy(InputData.FragPos);
+    vec2 TexCoordDx = dFdx(InputData.TexCoord);
+    vec2 TexCoordDy = dFdy(InputData.TexCoord);
+
+    vec3 Tangent   = normalize(FragPosDx * TexCoordDy.y - FragPosDy * TexCoordDx.y);
+    vec3 Bitangent = normalize(FragPosDy * TexCoordDx.x - FragPosDx * TexCoordDy.x);
+    vec3 Normal    = normalize(InputData.Normal);
+
+    Tangent   = normalize(Tangent - Normal * dot(Normal, Tangent));
+    Bitangent = cross(Normal, Tangent);
+
+    mat3x3 TbnMatrix = mat3x3(Tangent, Bitangent, Normal);
+
+    vec3  NormalRgb    = normalize(TbnMatrix * texture(sampler2D(iNormalTex, iSampler), InputData.TexCoord).rgb * 2.0 - 1.0);
     vec3  LightDir     = normalize(iLight.Position - InputData.FragPos);
-    float DiffuseCoef  = max(dot(Normal, LightDir), 0.0);
+    float DiffuseCoef  = max(dot(NormalRgb, LightDir), 0.0);
     vec3  DiffuseColor = iLight.Diffuse * DiffuseCoef * texture(sampler2D(iDiffuseTex, iSampler), InputData.TexCoord).rgb;
 
     vec3  ViewDir       = normalize(iViewPos - InputData.FragPos);
-    vec3  ReflectDir    = reflect(-LightDir, Normal);
-    float SpecularCoef  = pow(max(dot(ViewDir, ReflectDir), 0.0), iMaterial.Shininess);
+    vec3  HalfWayDir    = normalize(LightDir + ViewDir);
+    float SpecularCoef  = pow(max(dot(NormalRgb, HalfWayDir), 0.0), iMaterial.Shininess);
     vec3  SpecularColor = iLight.Specular * SpecularCoef * texture(sampler2D(iSpecularTex, iSampler), InputData.TexCoord).rgb;
 
-    float Bias   = max(0.05 * (1.0 - dot(Normal, LightDir)), 0.005);
+    float Bias   = max(0.05 * (1.0 - dot(NormalRgb, LightDir)), 0.005);
     float Shadow = CalcShadow(InputData.FragPosLightSpace, Bias);
-    vec3  Result = (AmbientColor + (1.0 - Shadow) * (DiffuseColor + SpecularColor));
+    vec3  Result = AmbientColor + (1.0 - Shadow) * (DiffuseColor + SpecularColor);
     FragColor    = vec4(Result, 1.0);
 #endif
 }
