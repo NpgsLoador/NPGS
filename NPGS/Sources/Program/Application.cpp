@@ -504,8 +504,11 @@ void FApplication::ExecuteMainRender()
             glfwWaitEvents();
         }
 
-        vk::Viewport Viewport(0.0f, static_cast<float>(_WindowSize.height), static_cast<float>(_WindowSize.width),
-                              -static_cast<float>(_WindowSize.height), 0.0f, 1.0f);
+        //vk::Viewport Viewport(0.0f, static_cast<float>(_WindowSize.height), static_cast<float>(_WindowSize.width),
+        //                      -static_cast<float>(_WindowSize.height), 0.0f, 1.0f);
+
+        vk::Viewport Viewport(0.0f, 0.0f, static_cast<float>(_WindowSize.width),
+                              static_cast<float>(_WindowSize.height), 0.0f, 1.0f);
 
         vk::Viewport ShadowMapViewport(0.0f, 0.0f, static_cast<float>(ShadowMapExtent.width),
                                        static_cast<float>(ShadowMapExtent.height), 0.0f, 1.0f);
