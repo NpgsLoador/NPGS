@@ -1,17 +1,19 @@
 #version 450
 #pragma shader_stage(vertex)
 
-layout(location = 0) in vec3   Position;
-layout(location = 1) in vec3   Normal;
-layout(location = 2) in vec2   TexCoord;
-layout(location = 3) in mat4x4 Model;
+layout(location = 0) in vec3 Position;
+layout(location = 1) in vec3 Normal;
+layout(location = 2) in vec2 TexCoord;
+layout(location = 3) in vec3 Tangent;
+layout(location = 4) in vec3 Bitangent;
+layout(location = 5) in mat4x4 Model;
 
 layout(location = 0) out _VertOutput
 {
-	vec3 Normal;
+	mat3x3 TbnMatrix;
 	vec2 TexCoord;
 	vec3 FragPos;
-	vec4 FragPosLightSpace;
+	vec4 LightSpaceFragPos;
 } VertOutput;
 
 layout(std140, set = 0, binding = 0) uniform Matrices
@@ -28,10 +30,13 @@ out gl_PerVertex
 
 void main()
 {
-	VertOutput.TexCoord = TexCoord;
-	VertOutput.Normal   = vec3(transpose(inverse(Model)) * vec4(Normal, 1.0));
-	VertOutput.FragPos  = vec3(Model * vec4(Position, 1.0));
-	VertOutput.FragPosLightSpace = iMatrices.LightSpaceMatrix * vec4(VertOutput.FragPos, 1.0);
+	mat3x3 TbnMatrix = mat3x3(normalize(vec3(Model * vec4(Tangent,   0.0))),
+						      normalize(vec3(Model * vec4(Bitangent, 0.0))),
+						      normalize(vec3(Model * vec4(Normal,    0.0))));
+	VertOutput.TbnMatrix = TbnMatrix;
+	VertOutput.TexCoord  = TexCoord;
+	VertOutput.FragPos   = vec3(Model * vec4(Position, 1.0));
+	VertOutput.LightSpaceFragPos = iMatrices.LightSpaceMatrix * vec4(VertOutput.FragPos, 1.0);
 
 	gl_Position = iMatrices.Projection * iMatrices.View * Model * vec4(Position, 1.0);
 }

@@ -69,13 +69,13 @@ private:
     glm::vec3 _Right;
     glm::vec3 _WorldUp;
     glm::vec3 _OrbitTarget;
-    float     _OrbitRadius;
     float     _Sensitivity;
     float     _Speed;
     float     _Zoom;
-    float     _PrevOffsetX;
-    float     _PrevOffsetY;
-    bool      _bIsOrbiting;
+    float     _OrbitRadius{};
+    float     _PrevOffsetX{};
+    float     _PrevOffsetY{};
+    bool      _bIsOrbiting{ false };
 };
 
 _SPATIAL_END

@@ -46,17 +46,17 @@ private:
 private:
     Runtime::Graphics::FVulkanContext*        _VulkanContext;
 
+    GLFWwindow*                               _Window{ nullptr };
     std::string                               _WindowTitle;
     vk::Extent2D                              _WindowSize;
-    GLFWwindow*                               _Window;
     bool                                      _bEnableVSync;
     bool                                      _bEnableFullscreen;
 
     std::unique_ptr<System::Spatial::FCamera> _FreeCamera;
-    double                                    _DeltaTime   = 0.0;
-    double                                    _LastX       = 0.0;
-    double                                    _LastY       = 0.0;
-    bool                                      _bFirstMouse = true;
+    double                                    _DeltaTime{};
+    double                                    _LastX{};
+    double                                    _LastY{};
+    bool                                      _bFirstMouse{ true };
 };
 
 _NPGS_END

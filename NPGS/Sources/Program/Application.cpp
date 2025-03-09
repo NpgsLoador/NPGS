@@ -22,6 +22,48 @@
 
 _NPGS_BEGIN
 
+namespace
+{
+    void CalculateTangentBitangent(std::vector<FVertex>& Vertices, std::size_t Index)
+    {
+        const auto& Vertex0 = Vertices[Index + 0];
+        const auto& Vertex1 = Vertices[Index + 1];
+        const auto& Vertex2 = Vertices[Index + 2];
+
+        const glm::vec3 Edge1 = Vertex1.Position - Vertex0.Position;
+        const glm::vec3 Edge2 = Vertex2.Position - Vertex0.Position;
+
+        const glm::vec2 DeltaUv1 = Vertex1.TexCoord - Vertex0.TexCoord;
+        const glm::vec2 DeltaUv2 = Vertex2.TexCoord - Vertex0.TexCoord;
+
+        const float Factor = 1.0f / (DeltaUv1.x * DeltaUv2.y - DeltaUv2.x * DeltaUv1.y);
+        const glm::vec3 Tangent   = glm::normalize(Factor * ( DeltaUv2.y * Edge1 - DeltaUv1.y * Edge2));
+        const glm::vec3 Bitangent = glm::normalize(Factor * (-DeltaUv2.x * Edge1 + DeltaUv1.x * Edge2));
+
+        Vertices[Index + 0].Tangent += Tangent;
+        Vertices[Index + 1].Tangent += Tangent;
+        Vertices[Index + 2].Tangent += Tangent;
+
+        Vertices[Index + 0].Bitangent += Bitangent;
+        Vertices[Index + 1].Bitangent += Bitangent;
+        Vertices[Index + 2].Bitangent += Bitangent;
+    }
+
+    void CalculateAllTangents(std::vector<FVertex>& Vertices)
+    {
+        for (std::size_t i = 0; i < Vertices.size(); i += 3)
+        {
+            CalculateTangentBitangent(Vertices, i);
+        }
+
+        for (auto& Vertex : Vertices)
+        {
+            Vertex.Tangent   = glm::normalize(Vertex.Tangent);
+            Vertex.Bitangent = glm::normalize(Vertex.Bitangent);
+        }
+    }
+}
+
 namespace Art    = Runtime::Asset;
 namespace Grt    = Runtime::Graphics;
 namespace SysSpa = System::Spatial;
@@ -32,7 +74,6 @@ FApplication::FApplication(const vk::Extent2D& WindowSize, const std::string& Wi
     _VulkanContext(Grt::FVulkanContext::GetClassInstance()),
     _WindowTitle(WindowTitle),
     _WindowSize(WindowSize),
-    _Window(nullptr),
     _bEnableVSync(bEnableVSync),
     _bEnableFullscreen(bEnableFullscreen)
 {
@@ -138,7 +179,9 @@ void FApplication::ExecuteMainRender()
             { 0, 0, offsetof(FVertex, Position) },
             { 0, 1, offsetof(FVertex, Normal) },
             { 0, 2, offsetof(FVertex, TexCoord) },
-            { 1, 3, offsetof(FInstanceData, Model) }
+            { 0, 3, offsetof(FVertex, Tangent) },
+            { 0, 4, offsetof(FVertex, Bitangent) },
+            { 1, 5, offsetof(FInstanceData, Model) }
         },
         {
             { 0, 0, false },
@@ -199,7 +242,7 @@ void FApplication::ExecuteMainRender()
 
     AssetManager->AddAsset<Art::FTexture2D>(
         "ContainerNormal", TextureAllocationCreateInfo, "BrickwallNormal.jpg",
-        vk::Format::eR8G8B8A8Srgb, vk::Format::eR8G8B8A8Srgb, vk::ImageCreateFlagBits::eMutableFormat, true, false);
+        vk::Format::eR8G8B8A8Unorm, vk::Format::eR8G8B8A8Unorm, vk::ImageCreateFlagBits::eMutableFormat, true, false);
 
     AssetManager->AddAsset<Art::FTexture2D>(
         "ContainerSpecular", TextureAllocationCreateInfo, "BrickwallDiffuse.jpg",
@@ -359,6 +402,9 @@ void FApplication::ExecuteMainRender()
         .requiredFlags = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT
     };
 
+    CalculateAllTangents(CubeVertices);
+    CalculateAllTangents(PlaneVertices);
+
     vk::BufferCreateInfo VertexBufferCreateInfo = vk::BufferCreateInfo()
         .setSize(CubeVertices.size() * sizeof(FVertex))
         .setUsage(vk::BufferUsageFlagBits::eVertexBuffer | vk::BufferUsageFlagBits::eTransferDst);
@@ -508,6 +554,9 @@ void FApplication::ExecuteMainRender()
         vk::Viewport CommonViewport(0.0f, 0.0f, static_cast<float>(_WindowSize.width),
                                     static_cast<float>(_WindowSize.height), 0.0f, 1.0f);
 
+        vk::Viewport FlippedViewport(0.0f, static_cast<float>(_WindowSize.height), static_cast<float>(_WindowSize.width),
+                                     -static_cast<float>(_WindowSize.height), 0.0f, 1.0f);
+
         vk::Viewport ShadowMapViewport(0.0f, 0.0f, static_cast<float>(ShadowMapExtent.width),
                                        static_cast<float>(ShadowMapExtent.height), 0.0f, 1.0f);
 
@@ -630,7 +679,7 @@ void FApplication::ExecuteMainRender()
         CurrentBuffer->pipelineBarrier2(DepthRenderEndDependencyInfo);
 
         // Set scene viewport
-        CurrentBuffer->setViewport(0, CommonViewport);
+        CurrentBuffer->setViewport(0, FlippedViewport);
         CurrentBuffer->setScissor(0, CommonScissor);
 
         vk::RenderingInfo SceneRenderingInfo = vk::RenderingInfo()
@@ -693,6 +742,8 @@ void FApplication::ExecuteMainRender()
             .setImageMemoryBarriers(ColorRenderEndBarrier);
 
         CurrentBuffer->pipelineBarrier2(ColorRenderEndDependencyInfo);
+
+        CurrentBuffer->setViewport(0, CommonViewport);
 
         vk::RenderingInfo PostRenderingInfo = vk::RenderingInfo()
             .setRenderArea(CommonScissor)

@@ -10,13 +10,9 @@ FCamera::FCamera(const glm::vec3& Position, float Sensitivity, float Speed, floa
     :
     _Orientation(glm::quat(1.0f, 0.0f, 0.0f, 0.0f)),
     _Position(Position),
-    _OrbitRadius(0.0f),
     _Sensitivity(Sensitivity),
     _Speed(Speed),
-    _Zoom(Zoom),
-    _PrevOffsetX(0.0f),
-    _PrevOffsetY(0.0f),
-    _bIsOrbiting(false)
+    _Zoom(Zoom)
 {
     UpdateVectors();
 }

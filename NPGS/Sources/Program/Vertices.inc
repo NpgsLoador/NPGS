@@ -1,5 +1,6 @@
 std::vector<FVertex> CubeVertices
 {
+    // positions               // normals             // texcoords
     { { -0.5f, -0.5f, -0.5f }, { 0.0f, 0.0f, -1.0f }, { 0.0f, 0.0f } },
     { {  0.5f, -0.5f, -0.5f }, { 0.0f, 0.0f, -1.0f }, { 1.0f, 0.0f } },
     { {  0.5f,  0.5f, -0.5f }, { 0.0f, 0.0f, -1.0f }, { 1.0f, 1.0f } },
@@ -91,13 +92,13 @@ std::vector<FSkyboxVertex> SkyboxVertices
 std::vector<FQuadVertex> QuadVertices
 {
     // positions        // texCoords
-    { { -1.0f,  1.0f }, { 0.0f, 0.0f } },
-    { { -1.0f, -1.0f }, { 0.0f, 1.0f } },
-    { {  1.0f, -1.0f }, { 1.0f, 1.0f } },
+    { { -1.0f,  1.0f }, { 0.0f, 1.0f } },
+    { { -1.0f, -1.0f }, { 0.0f, 0.0f } },
+    { {  1.0f, -1.0f }, { 1.0f, 0.0f } },
 
-    { { -1.0f,  1.0f }, { 0.0f, 0.0f } },
-    { {  1.0f, -1.0f }, { 1.0f, 1.0f } },
-    { {  1.0f,  1.0f }, { 1.0f, 0.0f } }
+    { { -1.0f,  1.0f }, { 0.0f, 1.0f } },
+    { {  1.0f, -1.0f }, { 1.0f, 0.0f } },
+    { {  1.0f,  1.0f }, { 1.0f, 1.0f } }
 };
 
 std::vector<FQuadOnlyVertex> QuadOnlyVertices
@@ -128,7 +129,7 @@ std::vector<glm::vec3> CubePositions
 
 std::vector<FVertex> PlaneVertices
 {
-     // positions                 // normals          // texcoords
+    // positions                 // normals            // texcoords
     { {  25.0f, -0.5f,  25.0f }, { 0.0f, 1.0f, 0.0f }, { 25.0f,  0.0f } },
     { { -25.0f, -0.5f,  25.0f }, { 0.0f, 1.0f, 0.0f }, {  0.0f,  0.0f } },
     { { -25.0f, -0.5f, -25.0f }, { 0.0f, 1.0f, 0.0f }, {  0.0f, 25.0f } },
