@@ -434,7 +434,7 @@ vk::Result FVulkanCore::SetSurfaceFormat(const vk::SurfaceFormatKHR& SurfaceForm
     return vk::Result::eSuccess;
 }
 
-vk::Result FVulkanCore::CreateSwapchain(vk::Extent2D Extent, bool bLimitFps, vk::SwapchainCreateFlagsKHR Flags)
+vk::Result FVulkanCore::CreateSwapchain(vk::Extent2D Extent, bool bLimitFps, bool bEnableHdr, vk::SwapchainCreateFlagsKHR Flags)
 {
     // Swapchain 需要的信息：
     // 1.基本 Surface 能力（Swapchain 中图像的最小/最大数量、宽度和高度）
@@ -526,14 +526,39 @@ vk::Result FVulkanCore::CreateSwapchain(vk::Extent2D Extent, bool bLimitFps, vk:
         }
     }
 
+    std::vector<vk::SurfaceFormatKHR> SurfaceFormats;
+    if (bEnableHdr)
+    {
+        SurfaceFormats.emplace_back(vk::Format::eR16G16B16A16Sfloat, vk::ColorSpaceKHR::eExtendedSrgbLinearEXT);
+        SurfaceFormats.emplace_back(vk::Format::eA2R10G10B10UnormPack32, vk::ColorSpaceKHR::eHdr10St2084EXT);
+        SurfaceFormats.emplace_back(vk::Format::eA2B10G10R10UnormPack32, vk::ColorSpaceKHR::eHdr10St2084EXT);
+        
+        kVkSetHdrMetadataExt = reinterpret_cast<PFN_vkSetHdrMetadataEXT>(_Instance.getProcAddr("vkSetHdrMetadataEXT"));
+        if (kVkSetHdrMetadataExt == nullptr)
+        {
+            NpgsCoreWarn("Failed to get vkSetHdrMetadataEXT function pointer.");
+            SurfaceFormats.clear();
+            _HdrMetadata = vk::HdrMetadataEXT();
+        }
+    }
+
+    SurfaceFormats.emplace_back(vk::Format::eR8G8B8A8Srgb, vk::ColorSpaceKHR::eSrgbNonlinear);
+    SurfaceFormats.emplace_back(vk::Format::eB8G8R8A8Srgb, vk::ColorSpaceKHR::eSrgbNonlinear);
+
     if (_SwapchainCreateInfo.imageFormat == vk::Format::eUndefined)
     {
-        if (SetSurfaceFormat({ vk::Format::eR8G8B8A8Unorm, vk::ColorSpaceKHR::eSrgbNonlinear }) != vk::Result::eSuccess &&
-            SetSurfaceFormat({ vk::Format::eB8G8R8A8Unorm, vk::ColorSpaceKHR::eSrgbNonlinear }) != vk::Result::eSuccess)
+        for (const auto& SurfaceFormat : SurfaceFormats)
         {
-            _SwapchainCreateInfo.setImageFormat(_AvailableSurfaceFormats[0].format)
-                                .setImageColorSpace(_AvailableSurfaceFormats[0].colorSpace);
-            NpgsCoreWarn("Failed to select a four-component unsigned normalized surface format.");
+            if (SetSurfaceFormat(SurfaceFormat) != vk::Result::eSuccess)
+            {
+                _SwapchainCreateInfo.setImageFormat(_AvailableSurfaceFormats[0].format)
+                                    .setImageColorSpace(_AvailableSurfaceFormats[0].colorSpace);
+                NpgsCoreWarn("Failed to select a four-component unsigned normalized surface format.");
+            }
+            else
+            {
+                break;
+            }
         }
     }
 
@@ -1035,6 +1060,12 @@ vk::Result FVulkanCore::CreateSwapchainInternal()
     {
         NpgsCoreError("Failed to create swapchain: {}", e.what());
         return static_cast<vk::Result>(e.code().value());
+    }
+
+    if (_HdrMetadata.maxLuminance != 0.0f)
+    {
+        vkSetHdrMetadataEXT(_Device, 1, reinterpret_cast<const VkSwapchainKHR*>(&_Swapchain),
+                            reinterpret_cast<const VkHdrMetadataEXT*>(&_HdrMetadata));
     }
 
     try

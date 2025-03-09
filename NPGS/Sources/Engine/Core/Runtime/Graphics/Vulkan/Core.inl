@@ -84,6 +84,11 @@ NPGS_INLINE void FVulkanCore::SetSurface(vk::SurfaceKHR Surface)
     _Surface = Surface;
 }
 
+NPGS_INLINE void FVulkanCore::SetHdrMetadata(const vk::HdrMetadataEXT& HdrMetadata)
+{
+    _HdrMetadata = HdrMetadata;
+}
+
 NPGS_INLINE const std::vector<const char*>& FVulkanCore::GetInstanceLayers() const
 {
     return _InstanceLayers;

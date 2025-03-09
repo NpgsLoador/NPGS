@@ -68,7 +68,7 @@ float CalcShadow(vec4 FragPosLightSpace, float Bias)
 void main()
 {
 #if defined(LAMP_BOX)
-    FragColor = vec4(1.0, 1.0, 1.0, 1.0);
+    FragColor = vec4(max(max(iLightMaterial.Light.Ambient, iLightMaterial.Light.Diffuse), iLightMaterial.Light.Specular), 1.0);
 #else
     vec3 AmbientColor = iLightMaterial.Light.Ambient * texture(sampler2D(iDiffuseTex, iSampler), FragInput.TexCoord).rgb;
 

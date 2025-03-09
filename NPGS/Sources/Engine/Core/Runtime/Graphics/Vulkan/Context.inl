@@ -114,9 +114,14 @@ NPGS_INLINE vk::Result FVulkanContext::SetSurfaceFormat(const vk::SurfaceFormatK
     return _VulkanCore->SetSurfaceFormat(SurfaceFormat);
 }
 
-NPGS_INLINE vk::Result FVulkanContext::CreateSwapchain(vk::Extent2D Extent, bool bLimitFps, vk::SwapchainCreateFlagsKHR Flags)
+NPGS_INLINE void FVulkanContext::SetHdrMetadata(const vk::HdrMetadataEXT& HdrMetadata)
 {
-    return _VulkanCore->CreateSwapchain(Extent, bLimitFps, Flags);
+    _VulkanCore->SetHdrMetadata(HdrMetadata);
+}
+
+NPGS_INLINE vk::Result FVulkanContext::CreateSwapchain(vk::Extent2D Extent, bool bLimitFps, bool bEnableHdr, vk::SwapchainCreateFlagsKHR Flags)
+{
+    return _VulkanCore->CreateSwapchain(Extent, bLimitFps, bEnableHdr, Flags);
 }
 
 NPGS_INLINE vk::Result FVulkanContext::RecreateSwapchain()

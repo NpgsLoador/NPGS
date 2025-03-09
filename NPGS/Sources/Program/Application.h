@@ -27,7 +27,9 @@ private:
     };
 
 public:
-    FApplication(const vk::Extent2D& WindowSize, const std::string& WindowTitle, bool bEnableVSync, bool bEnableFullscreen);
+    FApplication(const vk::Extent2D& WindowSize, const std::string& WindowTitle,
+                 bool bEnableVSync, bool bEnableFullscreen, bool bEnableHdr);
+
     ~FApplication();
 
     void ExecuteMainRender();
@@ -38,6 +40,8 @@ private:
     void InitializeInputCallbacks();
     void ShowTitleFps();
     void ProcessInput();
+
+    vk::HdrMetadataEXT GetHdrMetadata();
 
     static void FramebufferSizeCallback(GLFWwindow* Window, int Width, int Height);
     static void CursorPosCallback(GLFWwindow* Window, double PosX, double PosY);
@@ -51,6 +55,7 @@ private:
     vk::Extent2D                              _WindowSize;
     bool                                      _bEnableVSync;
     bool                                      _bEnableFullscreen;
+    bool                                      _bEnableHdr;
 
     std::unique_ptr<System::Spatial::FCamera> _FreeCamera;
     double                                    _DeltaTime{};

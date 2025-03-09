@@ -4,10 +4,16 @@
 #include <cstddef>
 #include <cstdint>
 
+#include <dxgi1_6.h>
+
+#define GLFW_EXPOSE_NATIVE_WIN32
+#include <GLFW/glfw3native.h>
+
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_aligned.hpp>
 #include <glm/gtc/type_ptr.hpp>
+#include <Windows.h>
 
 #include "Engine/Core/Base/Config/EngineConfig.h"
 #include "Engine/Core/Math/NumericConstants.h"
@@ -69,13 +75,14 @@ namespace Grt    = Runtime::Graphics;
 namespace SysSpa = System::Spatial;
 
 FApplication::FApplication(const vk::Extent2D& WindowSize, const std::string& WindowTitle,
-                           bool bEnableVSync, bool bEnableFullscreen)
+                           bool bEnableVSync, bool bEnableFullscreen, bool bEnableHdr)
     :
     _VulkanContext(Grt::FVulkanContext::GetClassInstance()),
     _WindowTitle(WindowTitle),
     _WindowSize(WindowSize),
     _bEnableVSync(bEnableVSync),
-    _bEnableFullscreen(bEnableFullscreen)
+    _bEnableFullscreen(bEnableFullscreen),
+    _bEnableHdr(bEnableHdr)
 {
     if (!InitializeWindow())
     {
@@ -349,7 +356,6 @@ void FApplication::ExecuteMainRender()
 
         ImageInfos.clear();
         ImageInfos.push_back(ColorImageInfo);
-        ImageInfos.push_back(ShadowMapImageInfo);
         PostShader->WriteSharedDescriptors(0, 0, vk::DescriptorType::eCombinedImageSampler, ImageInfos);
 
         ImageInfos.clear();
@@ -363,7 +369,7 @@ void FApplication::ExecuteMainRender()
         Grt::FVulkanContext::ECallbackType::kCreateSwapchain, "CreatePostDescriptor", CreatePostDescriptors);
 
     ShaderBufferManager->BindShadersToBuffers("Matrices", "SceneShader", "LampShader", "ShadowMapShader", "SkyboxShader");
-    ShaderBufferManager->BindShaderToBuffers("LightMaterial", "SceneShader");
+    ShaderBufferManager->BindShadersToBuffers("LightMaterial", "SceneShader", "LampShader");
 
     // Init instance data
     // ------------------
@@ -841,8 +847,10 @@ bool FApplication::InitializeWindow()
         _VulkanContext->AddInstanceExtension(Extensions[i]);
     }
 
+    _VulkanContext->AddInstanceExtension(VK_EXT_SWAPCHAIN_COLOR_SPACE_EXTENSION_NAME);
     _VulkanContext->AddDeviceExtension(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
     _VulkanContext->AddDeviceExtension(VK_EXT_CUSTOM_BORDER_COLOR_EXTENSION_NAME);
+    _VulkanContext->AddDeviceExtension(VK_EXT_HDR_METADATA_EXTENSION_NAME);
 
     vk::Result Result;
     if ((Result = _VulkanContext->CreateInstance()) != vk::Result::eSuccess)
@@ -862,8 +870,13 @@ bool FApplication::InitializeWindow()
     }
     _VulkanContext->SetSurface(Surface);
 
+    if (_bEnableHdr)
+    {
+        _VulkanContext->SetHdrMetadata(GetHdrMetadata());
+    }
+
     if (_VulkanContext->CreateDevice(0) != vk::Result::eSuccess ||
-        _VulkanContext->CreateSwapchain(_WindowSize, _bEnableVSync) != vk::Result::eSuccess)
+        _VulkanContext->CreateSwapchain(_WindowSize, _bEnableVSync, _bEnableHdr) != vk::Result::eSuccess)
     {
         return false;
     }
@@ -936,6 +949,85 @@ void FApplication::ProcessInput()
         _FreeCamera->ProcessKeyboard(SysSpa::FCamera::EMovement::kRollLeft, _DeltaTime);
     if (glfwGetKey(_Window, GLFW_KEY_E) == GLFW_PRESS)
         _FreeCamera->ProcessKeyboard(SysSpa::FCamera::EMovement::kRollRight, _DeltaTime);
+}
+
+vk::HdrMetadataEXT FApplication::GetHdrMetadata()
+{
+    IDXGIFactory6* Factory6 = nullptr;
+    if (FAILED(CreateDXGIFactory2(0, IID_PPV_ARGS(&Factory6))))
+    {
+        NpgsCoreError("Failed to create DXGI factory.");
+        return {};
+    }
+
+    HMONITOR       Monitor      = MonitorFromWindow(glfwGetWin32Window(_Window), MONITOR_DEFAULTTOPRIMARY);
+    IDXGIAdapter1* Adapter1     = nullptr;
+    IDXGIOutput*   Output       = nullptr;
+    IDXGIOutput6*  Output6      = nullptr;
+    UINT           AdapterIndex = 0;
+    bool           bFound       = false;
+
+    while (Factory6->EnumAdapters1(AdapterIndex++, &Adapter1) != DXGI_ERROR_NOT_FOUND)
+    {
+        UINT OutputIndex = 0;
+        while (Adapter1->EnumOutputs(OutputIndex++, &Output) != DXGI_ERROR_NOT_FOUND)
+        {
+            DXGI_OUTPUT_DESC Desc;
+            Output->GetDesc(&Desc);
+            if (Desc.Monitor == Monitor)
+            {
+                bFound = true;
+                break;
+            }
+            Output->Release();
+            Output = nullptr;
+        }
+
+        if (bFound)
+        {
+            break;
+        }
+
+        Adapter1->Release();
+        Adapter1 = nullptr;
+    }
+
+    vk::HdrMetadataEXT HdrMetadata;
+    if (bFound && Output != nullptr)
+    {
+        if (SUCCEEDED(Output->QueryInterface(IID_PPV_ARGS(&Output6))))
+        {
+            DXGI_OUTPUT_DESC1 Desc1;
+            if (SUCCEEDED(Output6->GetDesc1(&Desc1)))
+            {
+                HdrMetadata
+                    .setDisplayPrimaryRed({ Desc1.RedPrimary[0], Desc1.RedPrimary[1] })
+                    .setDisplayPrimaryGreen({ Desc1.GreenPrimary[0], Desc1.GreenPrimary[1] })
+                    .setDisplayPrimaryBlue({ Desc1.BluePrimary[0], Desc1.BluePrimary[1] })
+                    .setWhitePoint({ Desc1.WhitePoint[0], Desc1.WhitePoint[1] })
+                    .setMaxLuminance(Desc1.MaxLuminance)
+                    .setMinLuminance(Desc1.MinLuminance)
+                    .setMaxContentLightLevel(Desc1.MaxLuminance)
+                    .setMaxFrameAverageLightLevel(Desc1.MaxFullFrameLuminance);
+            }
+
+            Output6->Release();
+            Output6 = nullptr;
+        }
+
+        Output->Release();
+        Output = nullptr;
+    }
+
+    if (Adapter1 != nullptr)
+    {
+        Adapter1->Release();
+        Adapter1 = nullptr;
+    }
+
+    Factory6->Release();
+    Factory6 = nullptr;
+    return HdrMetadata;
 }
 
 void FApplication::FramebufferSizeCallback(GLFWwindow* Window, int Width, int Height)

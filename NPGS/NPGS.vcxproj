@@ -176,7 +176,7 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>vulkan-1.lib;spirv-cross-cored.lib;
+      <AdditionalDependencies>dxgi.lib;vulkan-1.lib;spirv-cross-cored.lib;
 spirv-cross-cppd.lib;spirv-cross-glsld.lib;
 spirv-cross-reflectd.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
@@ -210,7 +210,7 @@ spirv-cross-reflectd.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <Profile>true</Profile>
-      <AdditionalDependencies>vulkan-1.lib;spirv-cross-core.lib;
+      <AdditionalDependencies>dxgi.lib;vulkan-1.lib;spirv-cross-core.lib;
 spirv-cross-cpp.lib
 ;spirv-cross-glsl.lib;spirv-cross-reflect.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
@@ -244,7 +244,7 @@ spirv-cross-cpp.lib
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <Profile>true</Profile>
-      <AdditionalDependencies>vulkan-1.lib;spirv-cross-core.lib;
+      <AdditionalDependencies>dxgi.lib;vulkan-1.lib;spirv-cross-core.lib;
 spirv-cross-cpp.lib
 ;spirv-cross-glsl.lib;spirv-cross-reflect.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <EntryPointSymbol>mainCRTStartup</EntryPointSymbol>

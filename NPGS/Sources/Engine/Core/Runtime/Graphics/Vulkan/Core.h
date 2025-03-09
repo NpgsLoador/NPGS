@@ -48,9 +48,10 @@ public:
     vk::Result CreateInstance(vk::InstanceCreateFlags Flags);
     vk::Result CreateDevice(std::uint32_t PhysicalDeviceIndex, vk::DeviceCreateFlags Flags);
     vk::Result RecreateDevice(std::uint32_t PhysicalDeviceIndex, vk::DeviceCreateFlags Flags);
-    void SetSurface(vk::SurfaceKHR Surface);
+    void       SetSurface(vk::SurfaceKHR Surface);
     vk::Result SetSurfaceFormat(const vk::SurfaceFormatKHR& SurfaceFormat);
-    vk::Result CreateSwapchain(vk::Extent2D Extent, bool bLimitFps, vk::SwapchainCreateFlagsKHR Flags);
+    void       SetHdrMetadata(const vk::HdrMetadataEXT& HdrMetadata);
+    vk::Result CreateSwapchain(vk::Extent2D Extent, bool bLimitFps, bool bEnableHdr, vk::SwapchainCreateFlagsKHR Flags);
     vk::Result RecreateSwapchain();
 
     vk::Result SwapImage(vk::Semaphore Semaphore);
@@ -145,6 +146,7 @@ private:
 
     vk::PhysicalDeviceProperties       _PhysicalDeviceProperties;
     vk::PhysicalDeviceMemoryProperties _PhysicalDeviceMemoryProperties;
+    vk::HdrMetadataEXT                 _HdrMetadata;
     vk::SwapchainCreateInfoKHR		   _SwapchainCreateInfo;
     vk::Extent2D                       _SwapchainExtent;
 

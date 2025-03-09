@@ -56,7 +56,8 @@ public:
     vk::Result RecreateDevice(std::uint32_t PhysicalDeviceIndex = 0, vk::DeviceCreateFlags Flags = {});
     void       SetSurface(vk::SurfaceKHR Surface);
     vk::Result SetSurfaceFormat(const vk::SurfaceFormatKHR& SurfaceFormat);
-    vk::Result CreateSwapchain(vk::Extent2D Extent, bool bLimitFps = true, vk::SwapchainCreateFlagsKHR Flags = {});
+    void       SetHdrMetadata(const vk::HdrMetadataEXT& HdrMetadata);
+    vk::Result CreateSwapchain(vk::Extent2D Extent, bool bLimitFps, bool bEnableHdr, vk::SwapchainCreateFlagsKHR Flags = {});
     vk::Result RecreateSwapchain();
 
     vk::Result ExecuteGraphicsCommands(vk::CommandBuffer CommandBuffer) const;
