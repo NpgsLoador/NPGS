@@ -4,10 +4,10 @@
 layout(location = 0) in vec3   Position;
 layout(location = 1) in mat4x4 Model;
 
-layout(set = 0, binding = 0) uniform UniformBuffer
+layout(std140, set = 0, binding = 0) uniform Matrices
 {
-	layout(offset = 128) mat4x4 iLightSpaceMatrix;
-};
+	layout(offset = 128) mat4x4 LightSpaceMatrix;
+} iMatrices;
 
 out gl_PerVertex
 {
@@ -16,5 +16,5 @@ out gl_PerVertex
 
 void main()
 {
-	gl_Position = iLightSpaceMatrix * Model * vec4(Position, 1.0);
+	gl_Position = iMatrices.LightSpaceMatrix * Model * vec4(Position, 1.0);
 }

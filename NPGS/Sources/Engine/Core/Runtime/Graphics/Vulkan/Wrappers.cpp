@@ -439,9 +439,8 @@ FVulkanDeviceMemory::FVulkanDeviceMemory(vk::Device Device, const vk::PhysicalDe
     _AllocationInfo{},
     _PhysicalDeviceProperties(&PhysicalDeviceProperties),
     _PhysicalDeviceMemoryProperties(&PhysicalDeviceMemoryProperties),
-    _MappedDataMemory(nullptr),
-    _MappedTargetMemory(nullptr),
-    _bPersistentlyMapped(false)
+    _AllocationSize{},
+    _bHostingVma(false)
 {
     _ReleaseInfo = "Device memory freed successfully.";
     _Status      = AllocateDeviceMemory(AllocateInfo);
@@ -462,9 +461,8 @@ FVulkanDeviceMemory::FVulkanDeviceMemory(VmaAllocator Allocator, const VmaAlloca
     _AllocationInfo{},
     _PhysicalDeviceProperties(&FVulkanCore::GetClassInstance()->GetPhysicalDeviceProperties()),
     _PhysicalDeviceMemoryProperties(&FVulkanCore::GetClassInstance()->GetPhysicalDeviceMemoryProperties()),
-    _MappedDataMemory(nullptr),
-    _MappedTargetMemory(nullptr),
-    _bPersistentlyMapped(false)
+    _AllocationSize{},
+    _bHostingVma(false)
 {
     _ReleaseInfo = "Device memory freed successfully.";
     _Status      = AllocateDeviceMemory(AllocationCreateInfo, MemoryRequirements);
@@ -479,10 +477,7 @@ FVulkanDeviceMemory::FVulkanDeviceMemory(VmaAllocator Allocator, VmaAllocation A
     _AllocationInfo(AllocationInfo),
     _PhysicalDeviceProperties(&FVulkanCore::GetClassInstance()->GetPhysicalDeviceProperties()),
     _PhysicalDeviceMemoryProperties(&FVulkanCore::GetClassInstance()->GetPhysicalDeviceMemoryProperties()),
-    _MappedDataMemory(nullptr),
-    _MappedTargetMemory(nullptr),
     _AllocationSize(AllocationInfo.size),
-    _bPersistentlyMapped(false),
     _bHostingVma(true)
 {
     _ReleaseInfo = "Device memory freed successfully.";
@@ -930,7 +925,10 @@ FVulkanBuffer::FVulkanBuffer(const vk::BufferCreateInfo& CreateInfo)
 
 FVulkanBuffer::FVulkanBuffer(vk::Device Device, const vk::PhysicalDeviceMemoryProperties& PhysicalDeviceMemoryProperties,
                              const vk::BufferCreateInfo& CreateInfo)
-    : Base(Device), _PhysicalDeviceMemoryProperties(&PhysicalDeviceMemoryProperties)
+    :
+    Base(Device),
+    _PhysicalDeviceMemoryProperties(&PhysicalDeviceMemoryProperties),
+    _Allocator(nullptr)
 {
     _ReleaseInfo = "Buffer destroyed successfully.";
     _Status      = CreateBuffer(CreateInfo);
@@ -945,9 +943,7 @@ FVulkanBuffer::FVulkanBuffer(VmaAllocator Allocator, const VmaAllocationCreateIn
     :
     Base(FVulkanCore::GetClassInstance()->GetDevice()),
     _PhysicalDeviceMemoryProperties(&FVulkanCore::GetClassInstance()->GetPhysicalDeviceMemoryProperties()),
-    _Allocator(Allocator),
-    _Allocation(nullptr),
-    _AllocationInfo{}
+    _Allocator(Allocator)
 {
     _ReleaseInfo = "Buffer destroyed successfully.";
     _Status      = CreateBuffer(AllocationCreateInfo, CreateInfo);
@@ -1414,7 +1410,10 @@ FVulkanImage::FVulkanImage(vk::ImageCreateInfo& CreateInfo)
 
 FVulkanImage::FVulkanImage(vk::Device Device, const vk::PhysicalDeviceMemoryProperties& PhysicalDeviceMemoryProperties,
                            const vk::ImageCreateInfo& CreateInfo)
-    : Base(Device), _PhysicalDeviceMemoryProperties(&PhysicalDeviceMemoryProperties)
+    :
+    Base(Device),
+    _PhysicalDeviceMemoryProperties(&PhysicalDeviceMemoryProperties),
+    _Allocator(nullptr)
 {
     _ReleaseInfo = "Image destroyed successfully.";
     _Status      = CreateImage(CreateInfo);
@@ -1429,9 +1428,7 @@ FVulkanImage::FVulkanImage(VmaAllocator Allocator, const VmaAllocationCreateInfo
     :
     Base(FVulkanCore::GetClassInstance()->GetDevice()),
     _PhysicalDeviceMemoryProperties(&FVulkanCore::GetClassInstance()->GetPhysicalDeviceMemoryProperties()),
-    _Allocator(Allocator),
-    _Allocation(nullptr),
-    _AllocationInfo{}
+    _Allocator(Allocator)
 {
     _ReleaseInfo = "Image destroyed successfully.";
     _Status      = CreateImage(AllocationCreateInfo, CreateInfo);

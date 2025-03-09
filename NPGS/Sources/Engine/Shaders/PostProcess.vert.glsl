@@ -3,7 +3,7 @@
 
 layout(location = 0) in  vec2 Position;
 layout(location = 1) in  vec2 TexCoord;
-layout(location = 0) out vec2 TexCoordFromVert;
+layout(location = 0) out vec2 TexCoordToFrag;
 
 out gl_PerVertex
 {
@@ -12,6 +12,6 @@ out gl_PerVertex
 
 void main()
 {
-	TexCoordFromVert = TexCoord;
-	gl_Position      = vec4(Position, 0.0, 1.0);
+	TexCoordToFrag = TexCoord;
+	gl_Position    = vec4(Position, 0.0, 1.0);
 }

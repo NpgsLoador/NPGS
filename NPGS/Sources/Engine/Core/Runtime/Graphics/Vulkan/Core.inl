@@ -139,11 +139,6 @@ NPGS_INLINE vk::SwapchainKHR FVulkanCore::GetSwapchain() const
     return _Swapchain;
 }
 
-NPGS_INLINE VmaAllocator FVulkanCore::GetVmaAllocator() const
-{
-    return _VmaAllocator;
-}
-
 NPGS_INLINE const vk::PhysicalDeviceProperties& FVulkanCore::GetPhysicalDeviceProperties() const
 {
     return _PhysicalDeviceProperties;
@@ -202,6 +197,11 @@ NPGS_INLINE vk::Image FVulkanCore::GetSwapchainImage(std::uint32_t Index) const
 NPGS_INLINE vk::ImageView FVulkanCore::GetSwapchainImageView(std::uint32_t Index) const
 {
     return _SwapchainImageViews[Index];
+}
+
+NPGS_INLINE VmaAllocator FVulkanCore::GetVmaAllocator() const
+{
+    return _VmaAllocator;
 }
 
 NPGS_INLINE std::uint32_t FVulkanCore::GetGraphicsQueueFamilyIndex() const

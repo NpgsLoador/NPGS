@@ -122,39 +122,42 @@ void FPipelineManager::RegisterCallback(const std::string& Name, EPipelineType T
 
     if (Type == EPipelineType::kGraphics)
     {
-        CreatePipeline = [this, Name, VulkanContext]() -> void
-        {
-            VulkanContext->WaitIdle();
+        // CreatePipeline = [this, Name, VulkanContext]() -> void
+        // {
+        //     VulkanContext->WaitIdle();
+        // 
+        //     auto& SwapchainExtent = VulkanContext->GetSwapchainCreateInfo().imageExtent;
+        //     auto& PipelineCreateInfoPack = _GraphicsPipelineCreateInfoPacks.at(Name);
+        // 
+        //     if (PipelineCreateInfoPack.DynamicStates.empty())
+        //     {
+        //         vk::Viewport Viewport(0.0f, static_cast<float>(SwapchainExtent.height),
+        //                               static_cast<float>(SwapchainExtent.width), -static_cast<float>(SwapchainExtent.height),
+        //                               0.0f, 1.0f);
+        // 
+        //         PipelineCreateInfoPack.Viewports.clear();
+        //         PipelineCreateInfoPack.Viewports.push_back(Viewport);
+        // 
+        //         vk::Rect2D Scissor(vk::Offset2D(), SwapchainExtent);
+        // 
+        //         PipelineCreateInfoPack.Scissors.clear();
+        //         PipelineCreateInfoPack.Scissors.push_back(Scissor);
+        //     }
+        // 
+        //     PipelineCreateInfoPack.Update();
+        // 
+        //     auto it = _Pipelines.find(Name);
+        //     _Pipelines.erase(it);
+        //     _Pipelines.emplace(Name, std::move(FVulkanPipeline(PipelineCreateInfoPack)));
+        // };
 
-            auto& SwapchainExtent = VulkanContext->GetSwapchainCreateInfo().imageExtent;
-            auto& PipelineCreateInfoPack = _GraphicsPipelineCreateInfoPacks.at(Name);
+        // DestroyPipeline = [this, Name]() -> void
+        // {
+        //     FVulkanPipeline Pipeline = std::move(_Pipelines.at(Name));
+        // };
 
-            if (PipelineCreateInfoPack.DynamicStates.empty())
-            {
-                vk::Viewport Viewport(0.0f, static_cast<float>(SwapchainExtent.height),
-                                      static_cast<float>(SwapchainExtent.width), -static_cast<float>(SwapchainExtent.height),
-                                      0.0f, 1.0f);
-
-                PipelineCreateInfoPack.Viewports.clear();
-                PipelineCreateInfoPack.Viewports.push_back(Viewport);
-
-                vk::Rect2D Scissor(vk::Offset2D(), SwapchainExtent);
-
-                PipelineCreateInfoPack.Scissors.clear();
-                PipelineCreateInfoPack.Scissors.push_back(Scissor);
-            }
-
-            PipelineCreateInfoPack.Update();
-
-            auto it = _Pipelines.find(Name);
-            _Pipelines.erase(it);
-            _Pipelines.emplace(Name, std::move(FVulkanPipeline(PipelineCreateInfoPack)));
-        };
-
-        DestroyPipeline = [this, Name]() -> void
-        {
-            FVulkanPipeline Pipeline = std::move(_Pipelines.at(Name));
-        };
+        CreatePipeline  = []() -> void {};
+        DestroyPipeline = []() -> void {};
     }
     else
     {

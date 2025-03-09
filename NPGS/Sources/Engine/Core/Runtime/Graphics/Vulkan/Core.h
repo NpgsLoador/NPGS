@@ -2,6 +2,7 @@
 
 #include <cstdint>
 #include <functional>
+#include <limits>
 #include <string>
 #include <utility>
 #include <vector>
@@ -69,7 +70,6 @@ public:
     vk::Queue GetPresentQueue() const;
     vk::Queue GetComputeQueue() const;
     vk::SwapchainKHR GetSwapchain() const;
-    VmaAllocator GetVmaAllocator() const;
 
     const vk::PhysicalDeviceProperties& GetPhysicalDeviceProperties() const;
     const vk::PhysicalDeviceMemoryProperties& GetPhysicalDeviceMemoryProperties() const;
@@ -86,11 +86,11 @@ public:
     vk::Image GetSwapchainImage(std::uint32_t Index) const;
     vk::ImageView GetSwapchainImageView(std::uint32_t Index) const;
 
+    VmaAllocator  GetVmaAllocator() const;
     std::uint32_t GetGraphicsQueueFamilyIndex() const;
     std::uint32_t GetPresentQueueFamilyIndex() const;
     std::uint32_t GetComputeQueueFamilyIndex() const;
     std::uint32_t GetCurrentImageIndex() const;
-
     std::uint32_t GetApiVersion() const;
 
     static FVulkanCore* GetClassInstance();
@@ -143,19 +143,17 @@ private:
     vk::Queue                          _ComputeQueue;
     vk::SwapchainKHR                   _Swapchain;
 
-    VmaAllocator                       _VmaAllocator;
-
     vk::PhysicalDeviceProperties       _PhysicalDeviceProperties;
     vk::PhysicalDeviceMemoryProperties _PhysicalDeviceMemoryProperties;
     vk::SwapchainCreateInfoKHR		   _SwapchainCreateInfo;
     vk::Extent2D                       _SwapchainExtent;
 
-    std::uint32_t                      _GraphicsQueueFamilyIndex;
-    std::uint32_t                      _PresentQueueFamilyIndex;
-    std::uint32_t                      _ComputeQueueFamilyIndex;
-    std::uint32_t                      _CurrentImageIndex;
-
-    std::uint32_t                      _ApiVersion;
+    VmaAllocator                       _VmaAllocator{ nullptr };
+    std::uint32_t                      _GraphicsQueueFamilyIndex{ vk::QueueFamilyIgnored };
+    std::uint32_t                      _PresentQueueFamilyIndex{ vk::QueueFamilyIgnored };
+    std::uint32_t                      _ComputeQueueFamilyIndex{ vk::QueueFamilyIgnored };
+    std::uint32_t                      _CurrentImageIndex{ std::numeric_limits<std::uint32_t>::max() };
+    std::uint32_t                      _ApiVersion{ VK_API_VERSION_1_4 };
 };
 
 _GRAPHICS_END

@@ -775,7 +775,7 @@ void FTextureBase::BlitGenerateTexture(vk::Image SrcImage, vk::Extent3D Extent, 
 
 FTexture2D::FTexture2D(const std::string& Filename, vk::Format InitialFormat, vk::Format FinalFormat,
                        vk::ImageCreateFlags Flags, bool bGenerateMipmaps, bool bFlipVertically)
-    : Base(nullptr, nullptr), _StagingBufferPool(Graphics::FStagingBufferPool::GetInstance())
+    : Base(nullptr, nullptr)
 {
     CreateTexture(GetAssetFullPath(EAssetType::kTexture, Filename),
                   InitialFormat, FinalFormat, Flags, bGenerateMipmaps, bFlipVertically);
@@ -783,7 +783,7 @@ FTexture2D::FTexture2D(const std::string& Filename, vk::Format InitialFormat, vk
 
 FTexture2D::FTexture2D(const std::byte* Source, vk::Extent2D Extent, vk::Format InitialFormat,
                        vk::Format FinalFormat, vk::ImageCreateFlags Flags, bool bGenerateMipmaps)
-    : Base(nullptr, nullptr), _StagingBufferPool(Graphics::FStagingBufferPool::GetInstance())
+    : Base(nullptr, nullptr)
 {
     CreateTexture(Source, Extent, InitialFormat, FinalFormat, Flags, bGenerateMipmaps);
 }
@@ -797,7 +797,7 @@ FTexture2D::FTexture2D(const VmaAllocationCreateInfo& AllocationCreateInfo, cons
 
 FTexture2D::FTexture2D(VmaAllocator Allocator, const VmaAllocationCreateInfo& AllocationCreateInfo, const std::string& Filename,
                        vk::Format InitialFormat, vk::Format FinalFormat, vk::ImageCreateFlags Flags, bool bGenerateMipmaps, bool bFlipVertically)
-    : Base(Allocator, &AllocationCreateInfo), _StagingBufferPool(Graphics::FStagingBufferPool::GetInstance())
+    : Base(Allocator, &AllocationCreateInfo)
 {
     CreateTexture(GetAssetFullPath(EAssetType::kTexture, Filename),
                   InitialFormat, FinalFormat, Flags, bGenerateMipmaps, bFlipVertically);
@@ -812,7 +812,7 @@ FTexture2D::FTexture2D(const VmaAllocationCreateInfo& AllocationCreateInfo, cons
 
 FTexture2D::FTexture2D(VmaAllocator Allocator, const VmaAllocationCreateInfo& AllocationCreateInfo, const std::byte* Source,
                        vk::Extent2D Extent, vk::Format InitialFormat, vk::Format FinalFormat, vk::ImageCreateFlags Flags, bool bGenerateMipmaps)
-    : Base(Allocator, &AllocationCreateInfo), _StagingBufferPool(Graphics::FStagingBufferPool::GetInstance())
+    : Base(Allocator, &AllocationCreateInfo)
 {
     CreateTexture(Source, Extent, InitialFormat, FinalFormat, Flags, bGenerateMipmaps);
 }
@@ -820,7 +820,6 @@ FTexture2D::FTexture2D(VmaAllocator Allocator, const VmaAllocationCreateInfo& Al
 FTexture2D::FTexture2D(FTexture2D&& Other) noexcept
     :
     Base(std::move(Other)),
-    _StagingBufferPool(std::exchange(Other._StagingBufferPool, nullptr)),
     _ImageExtent(std::exchange(Other._ImageExtent, {}))
 {
 }
@@ -830,8 +829,7 @@ FTexture2D& FTexture2D::operator=(FTexture2D&& Other) noexcept
     if (this != &Other)
     {
         Base::operator=(std::move(Other));
-        _StagingBufferPool = std::exchange(Other._StagingBufferPool, nullptr);
-        _ImageExtent       = std::exchange(Other._ImageExtent, {});
+        _ImageExtent = std::exchange(Other._ImageExtent, {});
     }
 
     return *this;
@@ -854,13 +852,14 @@ void FTexture2D::CreateTexture(const std::byte* Source, vk::Extent2D Extent, vk:
     VmaAllocationCreateInfo StagingCreateInfo{ .usage = VMA_MEMORY_USAGE_CPU_TO_GPU };
     VmaAllocationCreateInfo* AllocationCreateInfo = _Allocator ? &StagingCreateInfo : nullptr;
 
-    auto* StagingBuffer = _StagingBufferPool->AcquireBuffer(ImageSize, AllocationCreateInfo);
+    auto* StagingBufferPool = Graphics::FStagingBufferPool::GetInstance();
+    auto* StagingBuffer     = StagingBufferPool->AcquireBuffer(ImageSize, AllocationCreateInfo);
     StagingBuffer->SubmitBufferData(0, 0, ImageSize, Source);
 
     CreateTextureInternal(StagingBuffer, InitialFormat, FinalFormat, vk::ImageType::e2D, vk::ImageViewType::e2D,
                           vk::Extent3D(_ImageExtent.width, _ImageExtent.height, 1), Flags, 1, bGenerateMipmaps);
 
-    _StagingBufferPool->ReleaseBuffer(StagingBuffer);
+    StagingBufferPool->ReleaseBuffer(StagingBuffer);
 }
 
 FTextureCube::FTextureCube(const std::string& Filename, vk::Format InitialFormat, vk::Format FinalFormat,
@@ -871,13 +870,13 @@ FTextureCube::FTextureCube(const std::string& Filename, vk::Format InitialFormat
 
 FTextureCube::FTextureCube(const std::byte* Sources, vk::Extent2D Extent, vk::Format InitialFormat,
                            vk::Format FinalFormat, vk::ImageCreateFlags Flags, bool bGenerateMipmaps)           
-    : Base(nullptr, nullptr), _StagingBufferPool(Graphics::FStagingBufferPool::GetInstance())
+    : Base(nullptr, nullptr)
 {
     CreateCubemap(Sources, Extent, InitialFormat, FinalFormat, Flags, bGenerateMipmaps);
 }
 
 FTextureCube::FTextureCube(vk::Extent2D Extent, vk::Format Format, vk::ImageCreateFlags Flags, vk::ImageUsageFlags Usage)
-    : Base(nullptr, nullptr), _StagingBufferPool(Graphics::FStagingBufferPool::GetInstance())
+    : Base(nullptr, nullptr)
 {
 }
 
@@ -892,7 +891,7 @@ FTextureCube::FTextureCube(const VmaAllocationCreateInfo& AllocationCreateInfo, 
 FTextureCube::FTextureCube(VmaAllocator Allocator, const VmaAllocationCreateInfo& AllocationCreateInfo,
                            const std::string& Filename, vk::Format InitialFormat, vk::Format FinalFormat,
                            vk::ImageCreateFlags Flags, bool bGenerateMipmaps, bool bFlipVertically)
-    : Base(Allocator, &AllocationCreateInfo), _StagingBufferPool(Graphics::FStagingBufferPool::GetInstance())
+    : Base(Allocator, &AllocationCreateInfo)
 {
     std::string FullPath = GetAssetFullPath(EAssetType::kTexture, Filename);
     if (std::filesystem::is_directory(FullPath))
@@ -921,7 +920,6 @@ FTextureCube::FTextureCube(VmaAllocator Allocator, const VmaAllocationCreateInfo
 FTextureCube::FTextureCube(FTextureCube&& Other) noexcept
     :
     Base(std::move(Other)),
-    _StagingBufferPool(std::exchange(Other._StagingBufferPool, nullptr)),
     _ImageExtent(std::exchange(Other._ImageExtent, {}))
 {
 }
@@ -931,8 +929,7 @@ FTextureCube& FTextureCube::operator=(FTextureCube&& Other) noexcept
     if (this != &Other)
     {
         Base::operator=(std::move(Other));
-        _StagingBufferPool = std::exchange(Other._StagingBufferPool, nullptr);
-        _ImageExtent       = std::exchange(Other._ImageExtent, {});
+        _ImageExtent = std::exchange(Other._ImageExtent, {});
     }
 
     return *this;
@@ -964,7 +961,8 @@ void FTextureCube::CreateCubemap(const std::string& Filename, vk::Format Initial
     VmaAllocationCreateInfo StagingCreateInfo{ .usage = VMA_MEMORY_USAGE_CPU_TO_GPU };
     VmaAllocationCreateInfo* AllocationCreateInfo = _Allocator ? &StagingCreateInfo : nullptr;
 
-    auto* StagingBuffer = _StagingBufferPool->AcquireBuffer(Size, AllocationCreateInfo);
+    auto* StagingBufferPool = Graphics::FStagingBufferPool::GetInstance();
+    auto* StagingBuffer     = StagingBufferPool->AcquireBuffer(Size, AllocationCreateInfo);
     StagingBuffer->SubmitBufferData(0, 0, Size, static_cast<const std::byte*>(TextureCube.data()));
 
     vk::ImageCreateFlags CubeFlags = Flags | vk::ImageCreateFlagBits::eCubeCompatible;
@@ -972,7 +970,7 @@ void FTextureCube::CreateCubemap(const std::string& Filename, vk::Format Initial
     CreateTextureInternal(StagingBuffer, InitialFormat, FinalFormat, vk::ImageType::e2D, vk::ImageViewType::eCube,
                           vk::Extent3D(_ImageExtent.width, _ImageExtent.height, 1), CubeFlags, 6, bGenerateMipmaps);
 
-    _StagingBufferPool->ReleaseBuffer(StagingBuffer);
+    StagingBufferPool->ReleaseBuffer(StagingBuffer);
 }
 
 void FTextureCube::CreateCubemap(const std::array<std::string, 6>& Filenames, vk::Format InitialFormat,
@@ -1008,7 +1006,8 @@ void FTextureCube::CreateCubemap(const std::array<std::string, 6>& Filenames, vk
     VmaAllocationCreateInfo StagingCreateInfo{ .usage = VMA_MEMORY_USAGE_CPU_TO_GPU };
     VmaAllocationCreateInfo* AllocationCreateInfo = _Allocator ? &StagingCreateInfo : nullptr;
 
-    auto* StagingBuffer = _StagingBufferPool->AcquireBuffer(TotalSize, AllocationCreateInfo);
+    auto* StagingBufferPool = Graphics::FStagingBufferPool::GetInstance();
+    auto* StagingBuffer     = StagingBufferPool->AcquireBuffer(TotalSize, AllocationCreateInfo);
     StagingBuffer->SubmitBufferData(0, 0, TotalSize, CubemapData.data());
 
     vk::ImageCreateFlags CubeFlags = Flags | vk::ImageCreateFlagBits::eCubeCompatible;
@@ -1016,7 +1015,7 @@ void FTextureCube::CreateCubemap(const std::array<std::string, 6>& Filenames, vk
     CreateTextureInternal(StagingBuffer, InitialFormat, FinalFormat, vk::ImageType::e2D, vk::ImageViewType::eCube,
                           vk::Extent3D(_ImageExtent.width, _ImageExtent.height, 1), CubeFlags, 6, bGenerateMipmaps);
 
-    _StagingBufferPool->ReleaseBuffer(StagingBuffer);
+    StagingBufferPool->ReleaseBuffer(StagingBuffer);
 }
 
 void FTextureCube::CreateCubemap(const std::byte* Sources, vk::Extent2D Extent, vk::Format InitialFormat,
@@ -1029,7 +1028,8 @@ void FTextureCube::CreateCubemap(const std::byte* Sources, vk::Extent2D Extent, 
     VmaAllocationCreateInfo StagingCreateInfo{ .usage = VMA_MEMORY_USAGE_CPU_TO_GPU };
     VmaAllocationCreateInfo* AllocationCreateInfo = _Allocator ? &StagingCreateInfo : nullptr;
 
-    auto* StagingBuffer = _StagingBufferPool->AcquireBuffer(TotalSize, AllocationCreateInfo);
+    auto* StagingBufferPool = Graphics::FStagingBufferPool::GetInstance();
+    auto* StagingBuffer     = StagingBufferPool->AcquireBuffer(TotalSize, AllocationCreateInfo);
     StagingBuffer->SubmitBufferData(0, 0, TotalSize, Sources);
 
     vk::ImageCreateFlags CubeFlags = Flags | vk::ImageCreateFlagBits::eCubeCompatible;
@@ -1037,7 +1037,7 @@ void FTextureCube::CreateCubemap(const std::byte* Sources, vk::Extent2D Extent, 
     CreateTextureInternal(StagingBuffer, InitialFormat, FinalFormat, vk::ImageType::e2D, vk::ImageViewType::eCube,
                           vk::Extent3D(_ImageExtent.width, _ImageExtent.height, 1), CubeFlags, 6, bGenerateMipmaps);
 
-    _StagingBufferPool->ReleaseBuffer(StagingBuffer);
+    StagingBufferPool->ReleaseBuffer(StagingBuffer);
 }
 
 _ASSET_END

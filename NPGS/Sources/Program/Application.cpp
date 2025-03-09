@@ -15,7 +15,7 @@
 #include "Engine/Core/Runtime/AssetLoaders/Shader.h"
 #include "Engine/Core/Runtime/AssetLoaders/Texture.h"
 #include "Engine/Core/Runtime/Graphics/Renderers/PipelineManager.h"
-#include "Engine/Core/Runtime/Graphics/Vulkan/ShaderResourceManager.h"
+#include "Engine/Core/Runtime/Graphics/Vulkan/ShaderBufferManager.h"
 #include "Engine/Utils/Logger.h"
 #include "DataStructures.h"
 #include "Vertices.inc"
@@ -32,6 +32,7 @@ FApplication::FApplication(const vk::Extent2D& WindowSize, const std::string& Wi
     _VulkanContext(Grt::FVulkanContext::GetClassInstance()),
     _WindowTitle(WindowTitle),
     _WindowSize(WindowSize),
+    _Window(nullptr),
     _bEnableVSync(bEnableVSync),
     _bEnableFullscreen(bEnableFullscreen)
 {
@@ -219,7 +220,7 @@ void FApplication::ExecuteMainRender()
     auto* ContainerSpecular = AssetManager->GetAsset<Art::FTexture2D>("ContainerSpecular");
     auto* Skybox            = AssetManager->GetAsset<Art::FTextureCube>("Skybox");
 
-    Grt::FShaderResourceManager::FUniformBufferCreateInfo MatricesCreateInfo
+    Grt::FShaderBufferManager::FUniformBufferCreateInfo MatricesCreateInfo
     {
         .Name    = "Matrices",
         .Fields  = { "View", "Projection", "LightSpaceMatrix" },
@@ -228,7 +229,7 @@ void FApplication::ExecuteMainRender()
         .Usage   = vk::DescriptorType::eUniformBuffer
     };
 
-    Grt::FShaderResourceManager::FUniformBufferCreateInfo LightMaterialCreateInfo
+    Grt::FShaderBufferManager::FUniformBufferCreateInfo LightMaterialCreateInfo
     {
         .Name    = "LightMaterial",
         .Fields  = { "Material", "Light", "ViewPos" },
@@ -244,9 +245,9 @@ void FApplication::ExecuteMainRender()
         .requiredFlags = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT | VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT
     };
 
-    auto ShaderResourceManager = Grt::FShaderResourceManager::GetInstance();
-    ShaderResourceManager->CreateBuffers<FMatrices>(MatricesCreateInfo, &UniformBufferAllocationCreateInfo);
-    ShaderResourceManager->CreateBuffers<FLightMaterial>(LightMaterialCreateInfo, &UniformBufferAllocationCreateInfo);
+    auto ShaderBufferManager = Grt::FShaderBufferManager::GetInstance();
+    ShaderBufferManager->CreateBuffers<FMatrices>(MatricesCreateInfo, &UniformBufferAllocationCreateInfo);
+    ShaderBufferManager->CreateBuffers<FLightMaterial>(LightMaterialCreateInfo, &UniformBufferAllocationCreateInfo);
 
     // Bind descriptor sets
     // --------------------
@@ -318,8 +319,8 @@ void FApplication::ExecuteMainRender()
     _VulkanContext->RegisterAutoRemovedCallbacks(
         Grt::FVulkanContext::ECallbackType::kCreateSwapchain, "CreatePostDescriptor", CreatePostDescriptors);
 
-    ShaderResourceManager->BindShadersToBuffers("Matrices", "SceneShader", "LampShader", "ShadowMapShader", "SkyboxShader");
-    ShaderResourceManager->BindShaderToBuffers("LightMaterial", "SceneShader");
+    ShaderBufferManager->BindShadersToBuffers("Matrices", "SceneShader", "LampShader", "ShadowMapShader", "SkyboxShader");
+    ShaderBufferManager->BindShaderToBuffers("LightMaterial", "SceneShader");
 
     // Init instance data
     // ------------------
@@ -504,16 +505,13 @@ void FApplication::ExecuteMainRender()
             glfwWaitEvents();
         }
 
-        //vk::Viewport Viewport(0.0f, static_cast<float>(_WindowSize.height), static_cast<float>(_WindowSize.width),
-        //                      -static_cast<float>(_WindowSize.height), 0.0f, 1.0f);
-
-        vk::Viewport Viewport(0.0f, 0.0f, static_cast<float>(_WindowSize.width),
-                              static_cast<float>(_WindowSize.height), 0.0f, 1.0f);
+        vk::Viewport CommonViewport(0.0f, 0.0f, static_cast<float>(_WindowSize.width),
+                                    static_cast<float>(_WindowSize.height), 0.0f, 1.0f);
 
         vk::Viewport ShadowMapViewport(0.0f, 0.0f, static_cast<float>(ShadowMapExtent.width),
                                        static_cast<float>(ShadowMapExtent.height), 0.0f, 1.0f);
 
-        vk::Rect2D Scissor(vk::Offset2D(), _WindowSize);
+        vk::Rect2D CommonScissor(vk::Offset2D(), _WindowSize);
         vk::Rect2D ShadowMapScissor(vk::Offset2D(), ShadowMapExtent);
 
         InFlightFences[CurrentFrame].WaitAndReset();
@@ -526,7 +524,7 @@ void FApplication::ExecuteMainRender()
         Matrices.Projection       = _FreeCamera->GetProjectionMatrix(WindowAspect, 0.1f);
         Matrices.LightSpaceMatrix = LightSpaceMatrix;
 
-        ShaderResourceManager->UpdateEntrieBuffer(CurrentFrame, "Matrices", Matrices);
+        ShaderBufferManager->UpdateEntrieBuffer(CurrentFrame, "Matrices", Matrices);
 
         LightMaterial.Material.Shininess = 64.0f;
         LightMaterial.Light.Position     = LightPos;
@@ -535,7 +533,7 @@ void FApplication::ExecuteMainRender()
         LightMaterial.Light.Specular     = glm::vec3(1.0f);
         LightMaterial.ViewPos            = _FreeCamera->GetCameraVector(SysSpa::FCamera::EVectorType::kPosition);
 
-        ShaderResourceManager->UpdateEntrieBuffer(CurrentFrame, "LightMaterial", LightMaterial);
+        ShaderBufferManager->UpdateEntrieBuffer(CurrentFrame, "LightMaterial", LightMaterial);
 
         _VulkanContext->SwapImage(*Semaphores_ImageAvailable[CurrentFrame]);
         std::uint32_t ImageIndex = _VulkanContext->GetCurrentImageIndex();
@@ -592,6 +590,7 @@ void FApplication::ExecuteMainRender()
 
         CurrentBuffer->pipelineBarrier2(InitialDependencyInfo);
 
+        // Set shadow map viewport
         CurrentBuffer->setViewport(0, ShadowMapViewport);
         CurrentBuffer->setScissor(0, ShadowMapScissor);
 
@@ -630,11 +629,12 @@ void FApplication::ExecuteMainRender()
 
         CurrentBuffer->pipelineBarrier2(DepthRenderEndDependencyInfo);
 
-        CurrentBuffer->setViewport(0, Viewport);
-        CurrentBuffer->setScissor(0, Scissor);
+        // Set scene viewport
+        CurrentBuffer->setViewport(0, CommonViewport);
+        CurrentBuffer->setScissor(0, CommonScissor);
 
         vk::RenderingInfo SceneRenderingInfo = vk::RenderingInfo()
-            .setRenderArea(Scissor)
+            .setRenderArea(CommonScissor)
             .setLayerCount(1)
             .setColorAttachments(ColorAttachmentInfo)
             .setPDepthAttachment(&DepthStencilAttachmentInfo);
@@ -695,7 +695,7 @@ void FApplication::ExecuteMainRender()
         CurrentBuffer->pipelineBarrier2(ColorRenderEndDependencyInfo);
 
         vk::RenderingInfo PostRenderingInfo = vk::RenderingInfo()
-            .setRenderArea(Scissor)
+            .setRenderArea(CommonScissor)
             .setLayerCount(1)
             .setColorAttachments(PostProcessAttachmentInfo);
 

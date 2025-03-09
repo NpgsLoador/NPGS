@@ -23,7 +23,7 @@ public:
     {
         std::uint32_t Binding{};
         std::uint32_t Stride{};
-        bool          bIsPerInstance{ false };
+        bool bIsPerInstance{ false };
     };
 
     struct FVertexAttributeInfo
@@ -37,7 +37,7 @@ public:
     {
         std::uint32_t Set{};
         std::uint32_t Binding{};
-        bool          bIsDynamic{ false };
+        bool bIsDynamic{ false };
     };
 
     struct FDynamicResourceInfo
@@ -48,9 +48,9 @@ public:
 
     struct FResourceInfo
     {
-        std::vector<FVertexBufferInfo>                                        VertexBufferInfos;
-        std::vector<FVertexAttributeInfo>                                     VertexAttributeInfos;
-        std::vector<FUniformBufferInfo>                                       UniformBufferInfos;
+        std::vector<FVertexBufferInfo>    VertexBufferInfos;
+        std::vector<FVertexAttributeInfo> VertexAttributeInfos;
+        std::vector<FUniformBufferInfo>   UniformBufferInfos;
         std::unordered_map<vk::ShaderStageFlagBits, std::vector<std::string>> PushConstantInfos;
     };
 
@@ -64,9 +64,9 @@ private:
     struct FShaderReflectionInfo
     {
         std::unordered_map<std::uint32_t, std::vector<vk::DescriptorSetLayoutBinding>> DescriptorSetBindings;
-        std::vector<vk::VertexInputBindingDescription>                                 VertexInputBindings;
-        std::vector<vk::VertexInputAttributeDescription>                               VertexInputAttributes;
-        std::vector<vk::PushConstantRange>                                             PushConstants;
+        std::vector<vk::VertexInputBindingDescription>   VertexInputBindings;
+        std::vector<vk::VertexInputAttributeDescription> VertexInputAttributes;
+        std::vector<vk::PushConstantRange>               PushConstants;
     };
 
 public:
@@ -113,7 +113,7 @@ private:
     std::unordered_map<std::uint32_t, std::vector<Graphics::FVulkanDescriptorSet>> _DescriptorSetsMap;
     std::unordered_map<std::uint32_t, std::vector<vk::DescriptorSet>>              _DescriptorSets;
     std::unique_ptr<Graphics::FVulkanDescriptorPool>                               _DescriptorPool;
-    std::uint32_t                                                                  _DescriptorSetsUpdateMask;
+    std::uint32_t                                                                  _DescriptorSetsUpdateMask{ 0xFFFFFFFF };
 };
 
 _ASSET_END

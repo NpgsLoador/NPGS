@@ -167,14 +167,14 @@ private:
 private:
     FVulkanCore* _VulkanCore;
 
-    std::vector<std::pair<ECallbackType, std::string>>                     _AutoRemovedCallbacks;
+    std::vector<std::pair<ECallbackType, std::string>> _AutoRemovedCallbacks;
     // std::array<vk::FormatProperties, magic_enum::enum_count<vk::Format>()> _FormatProperties;
 
-    std::unique_ptr<FVulkanCommandPool>    _GraphicsCommandPool;
-    std::unique_ptr<FVulkanCommandPool>    _PresentCommandPool;
-    std::unique_ptr<FVulkanCommandPool>    _ComputeCommandPool;
-    std::unique_ptr<FVulkanCommandBuffer>  _TransferCommandBuffer;
-    std::unique_ptr<FVulkanCommandBuffer>  _PresentCommandBuffer;
+    std::unique_ptr<FVulkanCommandPool>   _GraphicsCommandPool;
+    std::unique_ptr<FVulkanCommandPool>   _PresentCommandPool;
+    std::unique_ptr<FVulkanCommandPool>   _ComputeCommandPool;
+    std::unique_ptr<FVulkanCommandBuffer> _TransferCommandBuffer;
+    std::unique_ptr<FVulkanCommandBuffer> _PresentCommandBuffer;
 };
 
 _GRAPHICS_END

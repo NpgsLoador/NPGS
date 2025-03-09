@@ -2,7 +2,6 @@
 
 #include <cstdlib>
 #include <algorithm>
-#include <limits>
 
 #include <vulkan/vulkan.hpp>
 #include <vulkan/vulkan_to_string.hpp>
@@ -16,12 +15,6 @@ _RUNTIME_BEGIN
 _GRAPHICS_BEGIN
 
 FVulkanCore::FVulkanCore()
-    :
-    _GraphicsQueueFamilyIndex(vk::QueueFamilyIgnored),
-    _PresentQueueFamilyIndex(vk::QueueFamilyIgnored),
-    _ComputeQueueFamilyIndex(vk::QueueFamilyIgnored),
-    _CurrentImageIndex(std::numeric_limits<std::uint32_t>::max()),
-    _ApiVersion(VK_API_VERSION_1_4)
 {
     UseLatestApiVersion();
 }

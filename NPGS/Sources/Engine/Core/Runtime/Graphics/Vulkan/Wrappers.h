@@ -42,8 +42,8 @@ public:
     std::vector<vk::PipelineColorBlendAttachmentState> ColorBlendAttachmentStates;
     std::vector<vk::DynamicState>                      DynamicStates;
 
-    std::uint32_t                                      DynamicViewportCount = 1;
-    std::uint32_t                                      DynamicScissorCount  = 1;
+    std::uint32_t                                      DynamicViewportCount{ 1 };
+    std::uint32_t                                      DynamicScissorCount{ 1 };
 
 public:
     FGraphicsPipelineCreateInfoPack();
@@ -615,12 +615,13 @@ private:
     VmaAllocationInfo                         _AllocationInfo;
     const vk::PhysicalDeviceProperties*       _PhysicalDeviceProperties;
     const vk::PhysicalDeviceMemoryProperties* _PhysicalDeviceMemoryProperties;
-    void*                                     _MappedDataMemory;
-    void*                                     _MappedTargetMemory;
     vk::DeviceSize                            _AllocationSize;
     vk::MemoryPropertyFlags                   _MemoryPropertyFlags;
-    bool                                      _bPersistentlyMapped;
     bool                                      _bHostingVma;
+
+    void*                                     _MappedDataMemory{ nullptr };
+    void*                                     _MappedTargetMemory{ nullptr };
+    bool                                      _bPersistentlyMapped{ false };
 
     static std::unordered_map<vk::DeviceMemory, std::size_t, FVulkanDeviceMemoryHash> _HandleTracker;
 };
@@ -656,8 +657,8 @@ private:
 private:
     const vk::PhysicalDeviceMemoryProperties* _PhysicalDeviceMemoryProperties;
     VmaAllocator                              _Allocator;
-    VmaAllocation                             _Allocation;
-    VmaAllocationInfo                         _AllocationInfo;
+    VmaAllocation                             _Allocation{ nullptr };
+    VmaAllocationInfo                         _AllocationInfo{};
 };
 
 // Wrapper for vk::BufferView
@@ -821,8 +822,8 @@ private:
 private:
     const vk::PhysicalDeviceMemoryProperties* _PhysicalDeviceMemoryProperties;
     VmaAllocator                              _Allocator;
-    VmaAllocation                             _Allocation;
-    VmaAllocationInfo                         _AllocationInfo;
+    VmaAllocation                             _Allocation{ nullptr };
+    VmaAllocationInfo                         _AllocationInfo{};
 };
 
 // Wrapper for vk::ImageView
@@ -991,8 +992,7 @@ public:
     TVulkanResourceMemory(std::unique_ptr<ResourceType>&& Resource, std::unique_ptr<MemoryType>&& Memory)
         :
         _Resource(std::move(Resource)),
-        _Memory(std::move(Memory)),
-        _bMemoryBound(false)
+        _Memory(std::move(Memory))
     {
     }
 
@@ -1073,7 +1073,7 @@ public:
 protected:
     std::unique_ptr<ResourceType> _Resource;
     std::unique_ptr<MemoryType>   _Memory;
-    bool                          _bMemoryBound;
+    bool                          _bMemoryBound{ false };
 };
 
 class FVulkanBufferMemory : public TVulkanResourceMemory<FVulkanBuffer>

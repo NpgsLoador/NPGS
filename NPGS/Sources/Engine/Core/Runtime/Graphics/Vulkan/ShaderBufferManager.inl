@@ -1,4 +1,4 @@
-#include "ShaderResourceManager.h"
+#include "ShaderBufferManager.h"
 
 #include <utility>
 
@@ -13,9 +13,9 @@ _GRAPHICS_BEGIN
 
 template <typename StructType>
 requires std::is_class_v<StructType>
-inline void FShaderResourceManager::CreateBuffers(const FUniformBufferCreateInfo& BufferCreateInfo,
-                                                  const VmaAllocationCreateInfo* AllocationCreateInfo,
-                                                  std::uint32_t BufferCount)
+inline void FShaderBufferManager::CreateBuffers(const FUniformBufferCreateInfo& BufferCreateInfo,
+                                                const VmaAllocationCreateInfo* AllocationCreateInfo,
+                                                std::uint32_t BufferCount)
 {
     const auto* VulkanContext = FVulkanContext::GetClassInstance();
     FUniformBufferInfo BufferInfo;
@@ -63,7 +63,7 @@ inline void FShaderResourceManager::CreateBuffers(const FUniformBufferCreateInfo
     _UniformBuffers.emplace(BufferCreateInfo.Name, std::move(BufferInfo));
 }
 
-NPGS_INLINE void FShaderResourceManager::RemoveBuffer(const std::string& Name)
+NPGS_INLINE void FShaderBufferManager::RemoveBuffer(const std::string& Name)
 {
     auto it = _UniformBuffers.find(Name);
     if (it == _UniformBuffers.end())
@@ -77,7 +77,7 @@ NPGS_INLINE void FShaderResourceManager::RemoveBuffer(const std::string& Name)
 
 template <typename StructType>
 requires std::is_class_v<StructType>
-inline void FShaderResourceManager::UpdateEntrieBuffers(const std::string& Name, const StructType& Data)
+inline void FShaderBufferManager::UpdateEntrieBuffers(const std::string& Name, const StructType& Data)
 {
     // auto it = _UniformBuffers.find(Name);
     // if (it == _UniformBuffers.end())
@@ -95,7 +95,7 @@ inline void FShaderResourceManager::UpdateEntrieBuffers(const std::string& Name,
 
 template <typename StructType>
 requires std::is_class_v<StructType>
-inline void FShaderResourceManager::UpdateEntrieBuffer(std::uint32_t FrameIndex, const std::string& Name, const StructType& Data)
+inline void FShaderBufferManager::UpdateEntrieBuffer(std::uint32_t FrameIndex, const std::string& Name, const StructType& Data)
 {
     // auto it = _UniformBuffers.find(Name);
     // if (it == _UniformBuffers.end())
@@ -111,8 +111,8 @@ inline void FShaderResourceManager::UpdateEntrieBuffer(std::uint32_t FrameIndex,
 }
 
 template <typename FieldType>
-NPGS_INLINE std::vector<FShaderResourceManager::TUpdater<FieldType>>
-FShaderResourceManager::GetFieldUpdaters(const std::string& BufferName, const std::string& FieldName) const
+NPGS_INLINE std::vector<FShaderBufferManager::TUpdater<FieldType>>
+FShaderBufferManager::GetFieldUpdaters(const std::string& BufferName, const std::string& FieldName) const
 {
     auto& BufferInfo = _UniformBuffers.at(BufferName);
     std::vector<TUpdater<FieldType>> Updaters;
@@ -125,28 +125,28 @@ FShaderResourceManager::GetFieldUpdaters(const std::string& BufferName, const st
 }
 
 template <typename FieldType>
-NPGS_INLINE FShaderResourceManager::TUpdater<FieldType>
-FShaderResourceManager::GetFieldUpdater(std::uint32_t FrameIndex, const std::string& BufferName, const std::string& FieldName) const
+NPGS_INLINE FShaderBufferManager::TUpdater<FieldType>
+FShaderBufferManager::GetFieldUpdater(std::uint32_t FrameIndex, const std::string& BufferName, const std::string& FieldName) const
 {
     auto& BufferInfo = _UniformBuffers.at(BufferName);
     return TUpdater<FieldType>(BufferInfo.Buffers[FrameIndex], BufferInfo.Fields.at(FieldName).Offset, BufferInfo.Fields.at(FieldName).Size);
 }
 
 template <typename... Args>
-NPGS_INLINE void FShaderResourceManager::BindShadersToBuffers(const std::string& BufferName, Args&&... ShaderNames)
+NPGS_INLINE void FShaderBufferManager::BindShadersToBuffers(const std::string& BufferName, Args&&... ShaderNames)
 {
     std::vector<std::string> ShaderNameList{ std::forward<Args>(ShaderNames)... };
     BindShaderListToBuffers(BufferName, ShaderNameList);
 }
 
 template <typename... Args>
-NPGS_INLINE void FShaderResourceManager::BindShadersToBuffer(std::uint32_t FrameIndex, const std::string& BufferName, Args&&... ShaderNames)
+NPGS_INLINE void FShaderBufferManager::BindShadersToBuffer(std::uint32_t FrameIndex, const std::string& BufferName, Args&&... ShaderNames)
 {
     std::vector<std::string> ShaderNameList{ std::forward<Args>(ShaderNames)... };
     BindShaderListToBuffer(FrameIndex, BufferName, ShaderNameList);
 }
 
-NPGS_INLINE const Graphics::FDeviceLocalBuffer& FShaderResourceManager::GetBuffer(std::uint32_t FrameIndex, const std::string& BufferName)
+NPGS_INLINE const Graphics::FDeviceLocalBuffer& FShaderBufferManager::GetBuffer(std::uint32_t FrameIndex, const std::string& BufferName)
 {
     auto& BufferInfo = _UniformBuffers.at(BufferName);
     return BufferInfo.Buffers[FrameIndex];

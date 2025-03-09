@@ -346,8 +346,6 @@ FStagingBuffer::FStagingBuffer(vk::Device Device, const vk::PhysicalDeviceProper
     _Device(Device),
     _PhysicalDeviceProperties(&PhysicalDeviceProperties),
     _PhysicalDeviceMemoryProperties(&PhysicalDeviceMemoryProperties),
-    _BufferMemory(nullptr),
-    _AliasedImage(nullptr),
     _Allocator(nullptr)
 {
     Expand(Size);
@@ -364,8 +362,6 @@ FStagingBuffer::FStagingBuffer(VmaAllocator Allocator, const VmaAllocationCreate
     _Device(FVulkanCore::GetClassInstance()->GetDevice()),
     _PhysicalDeviceProperties(&FVulkanCore::GetClassInstance()->GetPhysicalDeviceProperties()),
     _PhysicalDeviceMemoryProperties(&FVulkanCore::GetClassInstance()->GetPhysicalDeviceMemoryProperties()),
-    _BufferMemory(nullptr),
-    _AliasedImage(nullptr),
     _Allocator(Allocator),
     _AllocationCreateInfo(AllocationCreateInfo)
 {
@@ -532,7 +528,7 @@ FStagingBufferPool* FStagingBufferPool::GetInstance()
 }
 
 FDeviceLocalBuffer::FDeviceLocalBuffer(vk::DeviceSize Size, vk::BufferUsageFlags Usage)
-    : _BufferMemory(nullptr), _StagingBufferPool(FStagingBufferPool::GetInstance()), _Allocator(nullptr)
+    : _Allocator(nullptr)
 {
     CreateBuffer(Size, Usage);
 }
@@ -543,7 +539,7 @@ FDeviceLocalBuffer::FDeviceLocalBuffer(const VmaAllocationCreateInfo& Allocation
 }
 
 FDeviceLocalBuffer::FDeviceLocalBuffer(VmaAllocator Allocator, const VmaAllocationCreateInfo& AllocationCreateInfo, const vk::BufferCreateInfo& BufferCreateInfo)
-    : _BufferMemory(nullptr), _StagingBufferPool(FStagingBufferPool::GetInstance()), _Allocator(Allocator)
+    : _Allocator(Allocator)
 {
     CreateBuffer(AllocationCreateInfo, BufferCreateInfo);
 }
@@ -551,7 +547,6 @@ FDeviceLocalBuffer::FDeviceLocalBuffer(VmaAllocator Allocator, const VmaAllocati
 FDeviceLocalBuffer::FDeviceLocalBuffer(FDeviceLocalBuffer&& Other) noexcept
     :
     _BufferMemory(std::move(Other._BufferMemory)),
-    _StagingBufferPool(std::exchange(Other._StagingBufferPool, nullptr)),
     _Allocator(std::exchange(Other._Allocator, nullptr))
 {
 }
@@ -560,9 +555,8 @@ FDeviceLocalBuffer& FDeviceLocalBuffer::operator=(FDeviceLocalBuffer&& Other) no
 {
     if (this != &Other)
     {
-        _BufferMemory      = std::move(Other._BufferMemory);
-        _StagingBufferPool = std::exchange(Other._StagingBufferPool, nullptr);
-        _Allocator         = std::exchange(Other._Allocator, nullptr);
+        _BufferMemory = std::move(Other._BufferMemory);
+        _Allocator    = std::exchange(Other._Allocator, nullptr);
     }
 
     return *this;
@@ -581,7 +575,8 @@ void FDeviceLocalBuffer::CopyData(vk::DeviceSize MapOffset, vk::DeviceSize Targe
     VmaAllocationCreateInfo StagingCreateInfo{ .usage = VMA_MEMORY_USAGE_CPU_TO_GPU };
     VmaAllocationCreateInfo* AllocationCreateInfo = _Allocator ? &StagingCreateInfo : nullptr;
 
-    FStagingBuffer* StagingBuffer = _StagingBufferPool->AcquireBuffer(Size, AllocationCreateInfo);
+    auto* StagingBufferPool = Graphics::FStagingBufferPool::GetInstance();
+    auto* StagingBuffer     = StagingBufferPool->AcquireBuffer(Size, AllocationCreateInfo);
     StagingBuffer->SubmitBufferData(MapOffset, TargetOffset, Size, Data);
 
     auto& TransferCommandBuffer = VulkanContext->GetTransferCommandBuffer();
@@ -589,7 +584,7 @@ void FDeviceLocalBuffer::CopyData(vk::DeviceSize MapOffset, vk::DeviceSize Targe
     vk::BufferCopy Region(0, TargetOffset, Size);
     TransferCommandBuffer->copyBuffer(*StagingBuffer->GetBuffer(), *_BufferMemory->GetResource(), Region);
     TransferCommandBuffer.End();
-    _StagingBufferPool->ReleaseBuffer(StagingBuffer);
+    StagingBufferPool->ReleaseBuffer(StagingBuffer);
 
     VulkanContext->ExecuteGraphicsCommands(TransferCommandBuffer);
 }
@@ -625,7 +620,8 @@ void FDeviceLocalBuffer::CopyData(vk::DeviceSize ElementIndex, vk::DeviceSize El
     VmaAllocationCreateInfo StagingCreateInfo{ .usage = VMA_MEMORY_USAGE_CPU_TO_GPU };
     VmaAllocationCreateInfo* AllocationCreateInfo = _Allocator ? &StagingCreateInfo : nullptr;
 
-    FStagingBuffer* StagingBuffer = _StagingBufferPool->AcquireBuffer(DstStride * ElementSize, AllocationCreateInfo);
+    auto* StagingBufferPool = Graphics::FStagingBufferPool::GetInstance();
+    auto* StagingBuffer     = StagingBufferPool->AcquireBuffer(DstStride * ElementSize, AllocationCreateInfo);
     StagingBuffer->SubmitBufferData(MapOffset, SrcStride * ElementIndex, SrcStride * ElementSize, Data);
 
     auto& TransferCommandBuffer = VulkanContext->GetTransferCommandBuffer();
@@ -639,7 +635,7 @@ void FDeviceLocalBuffer::CopyData(vk::DeviceSize ElementIndex, vk::DeviceSize El
 
     TransferCommandBuffer->copyBuffer(*StagingBuffer->GetBuffer(), *_BufferMemory->GetResource(), Regions);
     TransferCommandBuffer.End();
-    _StagingBufferPool->ReleaseBuffer(StagingBuffer);
+    StagingBufferPool->ReleaseBuffer(StagingBuffer);
 
     VulkanContext->ExecuteGraphicsCommands(TransferCommandBuffer);
 }

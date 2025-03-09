@@ -504,13 +504,13 @@ void FApplication::ExecuteMainRender()
             glfwWaitEvents();
         }
 
-        vk::Viewport Viewport(0.0f, static_cast<float>(_WindowSize.height), static_cast<float>(_WindowSize.width),
-                              -static_cast<float>(_WindowSize.height), 0.0f, 1.0f);
+        vk::Viewport CommonViewport(0.0f, 0.0f, static_cast<float>(_WindowSize.width),
+                                    static_cast<float>(_WindowSize.height), 0.0f, 1.0f);
 
         vk::Viewport ShadowMapViewport(0.0f, 0.0f, static_cast<float>(ShadowMapExtent.width),
                                        static_cast<float>(ShadowMapExtent.height), 0.0f, 1.0f);
 
-        vk::Rect2D Scissor(vk::Offset2D(), _WindowSize);
+        vk::Rect2D CommonScissor(vk::Offset2D(), _WindowSize);
         vk::Rect2D ShadowMapScissor(vk::Offset2D(), ShadowMapExtent);
 
         InFlightFences[CurrentFrame].WaitAndReset();
@@ -627,11 +627,11 @@ void FApplication::ExecuteMainRender()
 
         CurrentBuffer->pipelineBarrier2(DepthRenderEndDependencyInfo);
 
-        CurrentBuffer->setViewport(0, Viewport);
-        CurrentBuffer->setScissor(0, Scissor);
+        CurrentBuffer->setViewport(0, CommonViewport);
+        CurrentBuffer->setScissor(0, CommonScissor);
 
         vk::RenderingInfo SceneRenderingInfo = vk::RenderingInfo()
-            .setRenderArea(Scissor)
+            .setRenderArea(CommonScissor)
             .setLayerCount(1)
             .setColorAttachments(ColorAttachmentInfo)
             .setPDepthAttachment(&DepthStencilAttachmentInfo);
@@ -692,7 +692,7 @@ void FApplication::ExecuteMainRender()
         CurrentBuffer->pipelineBarrier2(ColorRenderEndDependencyInfo);
 
         vk::RenderingInfo PostRenderingInfo = vk::RenderingInfo()
-            .setRenderArea(Scissor)
+            .setRenderArea(CommonScissor)
             .setLayerCount(1)
             .setColorAttachments(PostProcessAttachmentInfo);
 

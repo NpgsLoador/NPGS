@@ -3,13 +3,13 @@
 
 layout(location = 0) out vec4 FragColor;
 
-layout(location = 0) in VertexToFragment
+layout(location = 0) in _FragInput
 {
     vec3 Normal;
 	vec2 TexCoord;
 	vec3 FragPos;
     vec4 FragPosLightSpace;
-} InputData;
+} FragInput;
 
 struct FMaterial
 {
@@ -24,12 +24,12 @@ struct FLight
     vec3 Specular;
 };
 
-layout(set = 0, binding = 1) uniform LightMaterial
+layout(std140, set = 0, binding = 1) uniform LightMaterial
 {
-    FMaterial iMaterial;
-    FLight    iLight;
-    vec3      iViewPos;
-};
+    FMaterial Material;
+    FLight    Light;
+    vec3      ViewPos;
+} iLightMaterial;
 
 layout(set = 1, binding = 0) uniform sampler   iSampler;
 layout(set = 1, binding = 1) uniform texture2D iDiffuseTex;
@@ -70,34 +70,34 @@ void main()
 #if defined(LAMP_BOX)
     FragColor = vec4(1.0, 1.0, 1.0, 1.0);
 #else
-    vec3 AmbientColor = iLight.Ambient * texture(sampler2D(iDiffuseTex, iSampler), InputData.TexCoord).rgb;
+    vec3 AmbientColor = iLightMaterial.Light.Ambient * texture(sampler2D(iDiffuseTex, iSampler), FragInput.TexCoord).rgb;
 
-    vec3 FragPosDx  = dFdx(InputData.FragPos);
-    vec3 FragPosDy  = dFdy(InputData.FragPos);
-    vec2 TexCoordDx = dFdx(InputData.TexCoord);
-    vec2 TexCoordDy = dFdy(InputData.TexCoord);
+    vec3 FragPosDx  = dFdx(FragInput.FragPos);
+    vec3 FragPosDy  = dFdy(FragInput.FragPos);
+    vec2 TexCoordDx = dFdx(FragInput.TexCoord);
+    vec2 TexCoordDy = dFdy(FragInput.TexCoord);
 
     vec3 Tangent   = normalize(FragPosDx * TexCoordDy.y - FragPosDy * TexCoordDx.y);
     vec3 Bitangent = normalize(FragPosDy * TexCoordDx.x - FragPosDx * TexCoordDy.x);
-    vec3 Normal    = normalize(InputData.Normal);
+    vec3 Normal    = normalize(FragInput.Normal);
 
     Tangent   = normalize(Tangent - Normal * dot(Normal, Tangent));
     Bitangent = cross(Normal, Tangent);
 
     mat3x3 TbnMatrix = mat3x3(Tangent, Bitangent, Normal);
 
-    vec3  NormalRgb    = normalize(TbnMatrix * texture(sampler2D(iNormalTex, iSampler), InputData.TexCoord).rgb * 2.0 - 1.0);
-    vec3  LightDir     = normalize(iLight.Position - InputData.FragPos);
+    vec3  NormalRgb    = normalize(TbnMatrix * texture(sampler2D(iNormalTex, iSampler), FragInput.TexCoord).rgb * 2.0 - 1.0);
+    vec3  LightDir     = normalize(iLightMaterial.Light.Position - FragInput.FragPos);
     float DiffuseCoef  = max(dot(NormalRgb, LightDir), 0.0);
-    vec3  DiffuseColor = iLight.Diffuse * DiffuseCoef * texture(sampler2D(iDiffuseTex, iSampler), InputData.TexCoord).rgb;
+    vec3  DiffuseColor = iLightMaterial.Light.Diffuse * DiffuseCoef * texture(sampler2D(iDiffuseTex, iSampler), FragInput.TexCoord).rgb;
 
-    vec3  ViewDir       = normalize(iViewPos - InputData.FragPos);
+    vec3  ViewDir       = normalize(iLightMaterial.ViewPos - FragInput.FragPos);
     vec3  HalfWayDir    = normalize(LightDir + ViewDir);
-    float SpecularCoef  = pow(max(dot(NormalRgb, HalfWayDir), 0.0), iMaterial.Shininess);
-    vec3  SpecularColor = iLight.Specular * SpecularCoef * texture(sampler2D(iSpecularTex, iSampler), InputData.TexCoord).rgb;
+    float SpecularCoef  = pow(max(dot(NormalRgb, HalfWayDir), 0.0), iLightMaterial.Material.Shininess);
+    vec3  SpecularColor = iLightMaterial.Light.Specular * SpecularCoef * texture(sampler2D(iSpecularTex, iSampler), FragInput.TexCoord).rgb;
 
     float Bias   = max(0.05 * (1.0 - dot(NormalRgb, LightDir)), 0.005);
-    float Shadow = CalcShadow(InputData.FragPosLightSpace, Bias);
+    float Shadow = CalcShadow(FragInput.FragPosLightSpace, Bias);
     vec3  Result = AmbientColor + (1.0 - Shadow) * (DiffuseColor + SpecularColor);
     FragColor    = vec4(Result, 1.0);
 #endif

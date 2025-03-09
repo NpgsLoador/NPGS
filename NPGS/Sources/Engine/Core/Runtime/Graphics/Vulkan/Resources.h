@@ -217,7 +217,6 @@ private:
 
 private:
     std::unique_ptr<FVulkanBufferMemory> _BufferMemory;
-    FStagingBufferPool*                  _StagingBufferPool;
     VmaAllocator                         _Allocator;
 };
 

@@ -113,8 +113,7 @@ private:
                        vk::Format FinalFormat, vk::ImageCreateFlags Flags, bool bGenerateMipmaps);
 
 private:
-    Graphics::FStagingBufferPool* _StagingBufferPool;
-    vk::Extent2D                  _ImageExtent;
+    vk::Extent2D _ImageExtent;
 };
 
 class FTextureCube : public FTextureBase
@@ -160,8 +159,7 @@ private:
                        vk::Format FinalFormat, vk::ImageCreateFlags Flags, bool bGenerateMipmaps);
 
 private:
-    Graphics::FStagingBufferPool* _StagingBufferPool;
-    vk::Extent2D                  _ImageExtent;
+    vk::Extent2D _ImageExtent;
 };
 
 

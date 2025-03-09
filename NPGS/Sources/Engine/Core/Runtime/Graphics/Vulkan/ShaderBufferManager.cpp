@@ -1,4 +1,4 @@
-#include "ShaderResourceManager.h"
+#include "ShaderBufferManager.h"
 
 #include <algorithm>
 #include <array>
@@ -13,12 +13,12 @@ _NPGS_BEGIN
 _RUNTIME_BEGIN
 _GRAPHICS_BEGIN
 
-FShaderResourceManager::FShaderResourceManager()
+FShaderBufferManager::FShaderBufferManager()
     : _Allocator(FVulkanContext::GetClassInstance()->GetVmaAllocator())
 {
 }
 
-void FShaderResourceManager::BindShaderToBuffers(const std::string& BufferName, const std::string& ShaderName, vk::DeviceSize Range)
+void FShaderBufferManager::BindShaderToBuffers(const std::string& BufferName, const std::string& ShaderName, vk::DeviceSize Range)
 {
     auto it = _UniformBuffers.find(BufferName);
     if (it == _UniformBuffers.end())
@@ -47,8 +47,8 @@ void FShaderResourceManager::BindShaderToBuffers(const std::string& BufferName, 
     }
 }
 
-void FShaderResourceManager::BindShaderToBuffer(std::uint32_t FrameIndex, const std::string& BufferName,
-                                                const std::string& ShaderName, vk::DeviceSize Range)
+void FShaderBufferManager::BindShaderToBuffer(std::uint32_t FrameIndex, const std::string& BufferName,
+                                              const std::string& ShaderName, vk::DeviceSize Range)
 {
     auto it = _UniformBuffers.find(BufferName);
     if (it == _UniformBuffers.end())
@@ -74,7 +74,7 @@ void FShaderResourceManager::BindShaderToBuffer(std::uint32_t FrameIndex, const 
     Shader->WriteDynamicDescriptors<vk::DescriptorBufferInfo>(Set, Binding, FrameIndex, Usage, { WriteBufferInfo });
 }
 
-void FShaderResourceManager::BindShaderListToBuffers(const std::string& BufferName, const std::vector<std::string>& ShaderNameList)
+void FShaderBufferManager::BindShaderListToBuffers(const std::string& BufferName, const std::vector<std::string>& ShaderNameList)
 {
     auto it = _UniformBuffers.find(BufferName);
     if (it == _UniformBuffers.end())
@@ -106,7 +106,7 @@ void FShaderResourceManager::BindShaderListToBuffers(const std::string& BufferNa
     }
 }
 
-void FShaderResourceManager::BindShaderListToBuffer(std::uint32_t FrameIndex, const std::string& BufferName, const std::vector<std::string>& ShaderNameList)
+void FShaderBufferManager::BindShaderListToBuffer(std::uint32_t FrameIndex, const std::string& BufferName, const std::vector<std::string>& ShaderNameList)
 {
     auto it = _UniformBuffers.find(BufferName);
     if (it == _UniformBuffers.end())
@@ -135,9 +135,9 @@ void FShaderResourceManager::BindShaderListToBuffer(std::uint32_t FrameIndex, co
     }
 }
 
-FShaderResourceManager* FShaderResourceManager::GetInstance()
+FShaderBufferManager* FShaderBufferManager::GetInstance()
 {
-    static FShaderResourceManager kInstance;
+    static FShaderBufferManager kInstance;
     return &kInstance;
 }
 

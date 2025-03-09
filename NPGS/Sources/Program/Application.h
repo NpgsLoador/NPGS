@@ -48,7 +48,7 @@ private:
 
     std::string                               _WindowTitle;
     vk::Extent2D                              _WindowSize;
-    GLFWwindow*                               _Window = nullptr;
+    GLFWwindow*                               _Window;
     bool                                      _bEnableVSync;
     bool                                      _bEnableFullscreen;
 

@@ -6,20 +6,20 @@ layout(location = 1) in vec3   Normal;
 layout(location = 2) in vec2   TexCoord;
 layout(location = 3) in mat4x4 Model;
 
-layout(location = 0) out VertexToFragment
+layout(location = 0) out _VertOutput
 {
 	vec3 Normal;
 	vec2 TexCoord;
 	vec3 FragPos;
 	vec4 FragPosLightSpace;
-} OutputData;
+} VertOutput;
 
-layout(set = 0, binding = 0) uniform Matrices
+layout(std140, set = 0, binding = 0) uniform Matrices
 {
-	mat4x4 iView;
-	mat4x4 iProjection;
-	mat4x4 iLightSpaceMatrix;
-};
+	mat4x4 View;
+	mat4x4 Projection;
+	mat4x4 LightSpaceMatrix;
+} iMatrices;
 
 out gl_PerVertex
 {
@@ -28,9 +28,10 @@ out gl_PerVertex
 
 void main()
 {
-	OutputData.TexCoord          = TexCoord;
-	OutputData.Normal            = vec3(transpose(inverse(Model)) * vec4(Normal, 1.0));
-	OutputData.FragPos           = vec3(Model * vec4(Position, 1.0));
-	OutputData.FragPosLightSpace = iLightSpaceMatrix * vec4(OutputData.FragPos, 1.0);
-	gl_Position                  = iProjection * iView * Model * vec4(Position, 1.0);
+	VertOutput.TexCoord = TexCoord;
+	VertOutput.Normal   = vec3(transpose(inverse(Model)) * vec4(Normal, 1.0));
+	VertOutput.FragPos  = vec3(Model * vec4(Position, 1.0));
+	VertOutput.FragPosLightSpace = iMatrices.LightSpaceMatrix * vec4(VertOutput.FragPos, 1.0);
+
+	gl_Position = iMatrices.Projection * iMatrices.View * Model * vec4(Position, 1.0);
 }
