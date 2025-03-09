@@ -266,7 +266,7 @@ NPGS_INLINE float APlanet::GetBalanceTemperature() const
     return _ExtraProperties.BalanceTemperature;
 }
 
-NPGS_INLINE bool APlanet::GetMigration() const
+NPGS_INLINE bool APlanet::IsMigrated() const
 {
     return _ExtraProperties.bIsMigrated;
 }

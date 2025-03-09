@@ -110,7 +110,7 @@ NPGS_INLINE AStar& AStar::SetMinCoilMass(float MinCoilMass)
     return *this;
 }
 
-NPGS_INLINE AStar& AStar::SetIsSingleStar(bool bIsSingleStar)
+NPGS_INLINE AStar& AStar::SetSingleton(bool bIsSingleStar)
 {
     _ExtraProperties.bIsSingleStar = bIsSingleStar;
     return *this;
@@ -220,12 +220,12 @@ NPGS_INLINE float AStar::GetMinCoilMass() const
     return _ExtraProperties.MinCoilMass;
 }
 
-NPGS_INLINE bool AStar::GetIsSingleStar() const
+NPGS_INLINE bool AStar::IsSingleStar() const
 {
     return _ExtraProperties.bIsSingleStar;
 }
 
-NPGS_INLINE bool AStar::GetHasPlanets() const
+NPGS_INLINE bool AStar::HasPlanets() const
 {
     return _ExtraProperties.bHasPlanets;
 }

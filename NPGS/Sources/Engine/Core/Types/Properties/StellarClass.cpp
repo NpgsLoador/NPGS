@@ -14,12 +14,12 @@ _ASTRO_BEGIN
 // FStellarClass implementations
 // -----------------------------
 FStellarClass::FStellarClass()
-    : _StellarType(EStellarType::kNormalStar), _SpectralType(0)
+    : _StellarType(EStellarType::kNormalStar)
 {
 }
 
 FStellarClass::FStellarClass(EStellarType StellarType, const FSpectralType& SpectralType)
-    : _StellarType(StellarType), _SpectralType(0)
+    : _StellarType(StellarType)
 {
     Load(SpectralType);
 }

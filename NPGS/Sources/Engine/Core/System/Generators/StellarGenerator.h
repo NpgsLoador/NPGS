@@ -70,7 +70,7 @@ public:
             Star.SetAge(Age);
             Star.SetFeH(FeH);
             Star.SetInitialMass(InitialMassSol);
-            Star.SetIsSingleStar(bIsSingleStar);
+            Star.SetSingleton(bIsSingleStar);
 
             return Star;
         }

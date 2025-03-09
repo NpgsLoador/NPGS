@@ -107,7 +107,7 @@ public:
     AStar& SetStellarWindSpeed(float StellarWindSpeed);
     AStar& SetStellarWindMassLossRate(float StellarWindMassLossRate);
     AStar& SetMinCoilMass(float MinCoilMass);
-    AStar& SetIsSingleStar(bool bIsSingleStar);
+    AStar& SetSingleton(bool bIsSingleStar);
     AStar& SetHasPlanets(bool bHasPlanets);
     AStar& SetStarFrom(EStarFrom From);
     AStar& SetEvolutionPhase(EEvolutionPhase Phase);
@@ -132,8 +132,8 @@ public:
     float  GetStellarWindSpeed() const;
     float  GetStellarWindMassLossRate() const;
     float  GetMinCoilMass() const;
-    bool   GetIsSingleStar() const;
-    bool   GetHasPlanets() const;
+    bool   IsSingleStar() const;
+    bool   HasPlanets() const;
     EStarFrom       GetStarFrom() const;
     EEvolutionPhase GetEvolutionPhase() const;
     const Astro::FStellarClass& GetStellarClass() const;

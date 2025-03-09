@@ -74,8 +74,8 @@ int main() {
     auto s1 = sg.GenerateStar(b1);
     auto s2 = sg.GenerateStar(b2);
 
-    s1.SetIsSingleStar(false);
-    s2.SetIsSingleStar(false);
+    s1.SetSingleton(false);
+    s2.SetSingleton(false);
 
     FStellarSystem ss;
     ss.StarsData().push_back(std::make_unique<Astro::AStar>(s1));

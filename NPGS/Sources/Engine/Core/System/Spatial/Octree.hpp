@@ -22,7 +22,7 @@ class TOctreeNode
 {
 public:
     TOctreeNode(const glm::vec3& Center, float Radius, TOctreeNode* Previous)
-        : _Center(Center), _Previous(Previous), _Radius(Radius), _bIsValid(true)
+        : _Center(Center), _Previous(Previous), _Radius(Radius)
     {
     }
 
@@ -55,7 +55,7 @@ public:
         return Distance <= Radius;
     }
 
-    const bool GetValidation() const
+    const bool IsValid() const
     {
         return _bIsValid;
     }
@@ -165,7 +165,7 @@ private:
     glm::vec3    _Center;
     TOctreeNode* _Previous;
     float        _Radius;
-    bool         _bIsValid;
+    bool         _bIsValid{ true };
 
     std::array<std::unique_ptr<TOctreeNode>, 8> _Next;
     std::vector<glm::vec3>                      _Points;
@@ -412,7 +412,7 @@ private:
 
         if (Node->GetNext(0) == nullptr)
         {
-            return Node->GetValidation() ? 1 : 0;
+            return Node->IsValid() ? 1 : 0;
         }
 
         std::size_t Capacity = 0;

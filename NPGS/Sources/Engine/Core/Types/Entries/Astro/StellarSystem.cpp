@@ -72,11 +72,6 @@ FOrbit::FOrbitalDetails& FOrbit::FOrbitalDetails::SetOrbitalObject(INpgsObject* 
     return *this;
 }
 
-FOrbit::FOrbit()
-    : _Parent{}, _Normal(), _Period(0.0f)
-{
-}
-
 FOrbit& FOrbit::SetParent(INpgsObject* Object, EObjectType Type)
 {
     switch (Type)

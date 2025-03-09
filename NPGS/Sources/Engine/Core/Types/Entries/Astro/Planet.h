@@ -121,7 +121,7 @@ public:
     const boost::multiprecision::uint128_t  GetMass() const;
     const boost::multiprecision::uint128_t& GetCrustMineralMass() const;
     float                                   GetBalanceTemperature() const;
-    bool                                    GetMigration() const;
+    bool                                    IsMigrated() const;
     EPlanetType                             GetPlanetType() const;
 
     template <typename DigitalType>

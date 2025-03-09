@@ -327,7 +327,7 @@ void FUniverse::CountStars()
         {
             ++TotalStars;
 
-            if (Star->GetIsSingleStar())
+            if (Star->IsSingleStar())
             {
                 ++TotalSingles;
             }
@@ -889,7 +889,7 @@ void FUniverse::GenerateSlots(float MinDistance, std::size_t SampleCount, float 
             {
                 glm::vec3 Center = Node->GetCenter();
                 float Distance = glm::length(Center);
-                if (!Node->GetValidation() && Distance >= Radius && Distance <= Radius + LeafRadius)
+                if (!Node->IsValid() && Distance >= Radius && Distance <= Radius + LeafRadius)
                 {
                     Node->SetValidation(true);
                     if (++ValidLeafCount == SampleCount)
@@ -905,7 +905,7 @@ void FUniverse::GenerateSlots(float MinDistance, std::size_t SampleCount, float 
             {
                 glm::vec3 Center = Node->GetCenter();
                 float Distance = glm::length(Center);
-                if (Node->GetValidation() && Distance >= Radius - LeafRadius && Distance <= Radius)
+                if (Node->IsValid() && Distance >= Radius - LeafRadius && Distance <= Radius)
                 {
                     Node->SetValidation(false);
                     if (--ValidLeafCount == SampleCount)
@@ -921,7 +921,7 @@ void FUniverse::GenerateSlots(float MinDistance, std::size_t SampleCount, float 
     // 遍历八叉树，为每个有效的叶子节点生成一个恒星
     _Octree->Traverse([&Offset, LeafRadius, MinDistance, this](FNodeType& Node) -> void
     {
-        if (Node.IsLeafNode() && Node.GetValidation())
+        if (Node.IsLeafNode() && Node.IsValid())
         {
             glm::vec3 Center(Node.GetCenter());
             glm::vec3 StellarSlot(Center.x + Offset(_RandomEngine),
@@ -949,7 +949,7 @@ void FUniverse::OctreeLinkToStellarSystems(std::vector<Astro::AStar>& Stars, std
 
     _Octree->Traverse([&](FNodeType& Node) -> void
     {
-        if (Node.IsLeafNode() && Node.GetValidation())
+        if (Node.IsLeafNode() && Node.IsValid())
         {
             for (const auto& Point : Node.GetPoints())
             {
@@ -997,7 +997,7 @@ void FUniverse::GenerateBinaryStars(int MaxThread)
     for (auto& System : _StellarSystems)
     {
         const auto& Star = System.StarsData().front();
-        if (!Star->GetIsSingleStar())
+        if (!Star->IsSingleStar())
         {
             BinarySystems.push_back(&System);
         }

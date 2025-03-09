@@ -184,7 +184,7 @@ private:
     static std::string SpecialMarkToString(FStellarClass::ESpecialMark SpecialMark);
 
 private:
-    std::uint64_t _SpectralType;
+    std::uint64_t _SpectralType{};
     EStellarType  _StellarType;
 };
 

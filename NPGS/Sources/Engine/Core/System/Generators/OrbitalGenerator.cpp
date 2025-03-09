@@ -27,7 +27,7 @@ _GENERATOR_BEGIN
 #define CalculatePlanetMassByIndex(Index)                                                                                            \
 CalculatePlanetMass(kSolarMass * CoreMassesSol[Index],                \
 					kSolarMass * NewCoreMassesSol[Index],             \
-					Planets[Index]->GetMigration()                    \
+					Planets[Index]->IsMigrated()                      \
 					? MigratedOriginSemiMajorAxisAu                   \
 					: Orbits[Index]->GetSemiMajorAxis() / kAuToMeter, \
 					PlanetaryDisk, Star, Planets[Index].get())
@@ -319,7 +319,7 @@ void FOrbitalGenerator::GenerateOrbitals(Astro::FStellarSystem& System)
 
     for (std::size_t i = 0; i != System.StarsData().size(); ++i)
     {
-        if (System.StarsData()[i]->GetHasPlanets())
+        if (System.StarsData()[i]->HasPlanets())
         {
             GeneratePlanets(i, System.OrbitsData()[i]->ObjectsData().front(), System);
         }

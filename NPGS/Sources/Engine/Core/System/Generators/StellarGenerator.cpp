@@ -655,7 +655,7 @@ Astro::AStar FStellarGenerator::GenerateStar(FBasicProperties& Properties)
     Astro::AStar::EEvolutionPhase EvolutionPhase = static_cast<Astro::AStar::EEvolutionPhase>(StarData[_kPhaseIndex]);
 
     Star.SetInitialMass(Star.GetInitialMass() * kSolarMass);
-    Star.SetIsSingleStar(Properties.bIsSingleStar);
+    Star.SetSingleton(Properties.bIsSingleStar);
     Star.SetAge(Age);
     Star.SetMass(MassSol * kSolarMass);
     Star.SetLifetime(Lifetime);
@@ -2040,12 +2040,12 @@ void FStellarGenerator::ProcessDeathStar(EStellarTypeGenerationOption DeathStarT
     if (DeathStarTypeOption == EStellarTypeGenerationOption::kMergeStar ||
         DeathStarType == Astro::FStellarClass::EStellarType::kNeutronStar)
     {
-        float MergeStarProbability = 0.1f * static_cast<int>(DeathStar.GetIsSingleStar());
+        float MergeStarProbability = 0.1f * static_cast<int>(DeathStar.IsSingleStar());
         MergeStarProbability *= static_cast<int>(DeathStarTypeOption != EStellarTypeGenerationOption::kDeathStar);
         Util::TBernoulliDistribution MergeProbability(MergeStarProbability);
         if (DeathStarTypeOption == EStellarTypeGenerationOption::kMergeStar || MergeProbability(_RandomEngine))
         {
-            DeathStar.SetIsSingleStar(true);
+            DeathStar.SetSingleton(true);
             DeathStarFrom = Astro::AStar::EStarFrom::kWhiteDwarfMerge;
             Util::TBernoulliDistribution BlackHoleProbability(0.114514);
             float MassSol = 0.0f;

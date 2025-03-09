@@ -46,10 +46,10 @@ private:
     std::queue<std::function<void()>> _Tasks;
     std::mutex                        _Mutex;
     std::condition_variable           _Condition;
-    bool                              _Terminate;
     int                               _kMaxThreadCount;
     int                               _kPhysicalCoreCount;
     int                               _kHyperThreadIndex;
+    bool                              _Terminate{ false };
 };
 
 template <typename DataType, typename ResultType>
