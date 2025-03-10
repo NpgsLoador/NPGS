@@ -5,7 +5,6 @@
 #include <utility>
 
 #include <vulkan/vulkan.hpp>
-#include <vulkan/vulkan_to_string.hpp>
 
 #include "Engine/Core/Base/Assert.h"
 #include "Engine/Core/Runtime/Graphics/Vulkan/Core.h"
@@ -586,11 +585,7 @@ vk::Result FVulkanDeviceMemory::MapMemoryForSubmit(vk::DeviceSize Offset, vk::De
 {
     if (_Allocator != nullptr && _Allocation != nullptr)
     {
-        if (VkResult Result = vmaMapMemory(_Allocator, _Allocation, &Target); Result != VK_SUCCESS)
-        {
-            return static_cast<vk::Result>(Result);
-        }
-
+        VulkanCheck(vmaMapMemory(_Allocator, _Allocation, &Target));
         if (Offset > 0)
         {
             Target = static_cast<std::byte*>(Target) + Offset;
@@ -620,11 +615,7 @@ vk::Result FVulkanDeviceMemory::MapMemoryForFetch(vk::DeviceSize Offset, vk::Dev
 {
     if (_Allocator != nullptr && _Allocation != nullptr)
     {
-        if (VkResult Result = vmaMapMemory(_Allocator, _Allocation, &Data); Result != VK_SUCCESS)
-        {
-            return static_cast<vk::Result>(Result);
-        }
-
+        VulkanCheck(vmaMapMemory(_Allocator, _Allocation, &Data));
         if (Offset > 0)
         {
             Data = static_cast<std::byte*>(Data) + Offset;
@@ -690,20 +681,13 @@ vk::Result FVulkanDeviceMemory::SubmitData(vk::DeviceSize MapOffset, vk::DeviceS
     {
         if (_Allocator != nullptr && _Allocation != nullptr)
         {
-            if (VkResult Result = vmaMapMemory(_Allocator, _Allocation, &Target); Result != VK_SUCCESS)
-            {
-                return static_cast<vk::Result>(Result);
-            }
-
+            VulkanCheck(vmaMapMemory(_Allocator, _Allocation, &Target));
             _MappedTargetMemory = Target;
         }
         else
         {
             vk::DeviceSize MappedBase = _bPersistentlyMapped ? 0 : MapOffset;
-            if (vk::Result Result = MapMemoryForSubmit(MappedBase, Size, Target); Result != vk::Result::eSuccess)
-            {
-                return Result;
-            }
+            VulkanHppCheck(MapMemoryForSubmit(MappedBase, Size, Target));
         }
     }
     else
@@ -717,11 +701,7 @@ vk::Result FVulkanDeviceMemory::SubmitData(vk::DeviceSize MapOffset, vk::DeviceS
     {
         if (_Allocator != nullptr && _Allocation != nullptr)
         {
-            if (VkResult Result = vmaFlushAllocation(_Allocator, _Allocation, SubmitOffset, Size); Result != VK_SUCCESS)
-            {
-                NpgsCoreError("Failed to flush allocation: {}.", vk::to_string(static_cast<vk::Result>(Result)));
-                return static_cast<vk::Result>(Result);
-            }
+            VulkanCheckWithMessage(vmaFlushAllocation(_Allocator, _Allocation, SubmitOffset, Size), "Failed to flush allocation");
         }
         else
         {
@@ -761,20 +741,13 @@ vk::Result FVulkanDeviceMemory::FetchData(vk::DeviceSize MapOffset, vk::DeviceSi
     {
         if (_Allocator != nullptr && _Allocation != nullptr)
         {
-            if (VkResult Result = vmaMapMemory(_Allocator, _Allocation, &Data); Result != VK_SUCCESS)
-            {
-                return static_cast<vk::Result>(Result);
-            }
-
+            VulkanCheck(vmaMapMemory(_Allocator, _Allocation, &Data));
             _MappedDataMemory = Data;
         }
         else
         {
             vk::DeviceSize MappedBase = _bPersistentlyMapped ? 0 : MapOffset;
-            if (vk::Result Result = MapMemoryForFetch(MappedBase, Size, Data); Result != vk::Result::eSuccess)
-            {
-                return Result;
-            }
+            VulkanHppCheck(MapMemoryForFetch(MappedBase, Size, Data));
         }
     }
     else
@@ -788,11 +761,7 @@ vk::Result FVulkanDeviceMemory::FetchData(vk::DeviceSize MapOffset, vk::DeviceSi
     {
         if (_Allocator != nullptr && _Allocation != nullptr)
         {
-            if (VkResult Result = vmaInvalidateAllocation(_Allocator, _Allocation, FetchOffset, Size); Result != VK_SUCCESS)
-            {
-                NpgsCoreError("Failed to invalidate allocation: {}.", vk::to_string(static_cast<vk::Result>(Result)));
-                return static_cast<vk::Result>(Result);
-            }
+            VulkanCheckWithMessage(vmaInvalidateAllocation(_Allocator, _Allocation, FetchOffset, Size), "Failed to invalidate allocation");
         }
         else
         {
@@ -852,13 +821,8 @@ vk::Result FVulkanDeviceMemory::AllocateDeviceMemory(const vk::MemoryAllocateInf
 vk::Result FVulkanDeviceMemory::AllocateDeviceMemory(const VmaAllocationCreateInfo& AllocationCreateInfo,
                                                      const vk::MemoryRequirements& MemoryRequirements)
 {
-    VkResult Result = vmaAllocateMemory(_Allocator, reinterpret_cast<const VkMemoryRequirements*>(&MemoryRequirements),
-                                        &AllocationCreateInfo, &_Allocation, &_AllocationInfo);
-    if (Result != VK_SUCCESS)
-    {
-        NpgsCoreError("Failed to allocate memory: {}.", vk::to_string(static_cast<vk::Result>(Result)));
-        return static_cast<vk::Result>(Result);
-    }
+    VulkanCheckWithMessage(vmaAllocateMemory(_Allocator, reinterpret_cast<const VkMemoryRequirements*>(&MemoryRequirements),
+                                             &AllocationCreateInfo, &_Allocation, &_AllocationInfo), "Failed to allocate memory");
 
     _Handle         = _AllocationInfo.deviceMemory;
     _AllocationSize = MemoryRequirements.size;
@@ -872,7 +836,7 @@ vk::Result FVulkanDeviceMemory::AllocateDeviceMemory(const VmaAllocationCreateIn
 
     if (_AllocationInfo.pMappedData != nullptr)
     {
-        NpgsAssert(false, "Don't use VMA_ALLOCATION_CREATE_MAPPED_BIT, try to use EnablePersistentMapping or SetPersistentMapping");
+        NpgsAssert(false, "Don't use VMA_ALLOCATION_CREATE_MAPPED_BIT, try to use SetPersistentMapping");
     }
 
     NpgsCoreTrace("Device memory allocated successfully.");
@@ -1002,15 +966,9 @@ vk::Result FVulkanBuffer::CreateBuffer(const vk::BufferCreateInfo& CreateInfo)
 
 vk::Result FVulkanBuffer::CreateBuffer(const VmaAllocationCreateInfo& AllocationCreateInfo, const vk::BufferCreateInfo& CreateInfo)
 {
-    VkBuffer Buffer;
-    VkResult Result = vmaCreateBuffer(_Allocator, reinterpret_cast<const VkBufferCreateInfo*>(&CreateInfo),
-                                      &AllocationCreateInfo, &Buffer, &_Allocation, &_AllocationInfo);
-    if (Result != VK_SUCCESS)
-    {
-        NpgsCoreError("Failed to create buffer: {}", vk::to_string(static_cast<vk::Result>(Result)));
-        return static_cast<vk::Result>(Result);
-    }
-
+    VkBuffer Buffer = nullptr;
+    VulkanCheckWithMessage(vmaCreateBuffer(_Allocator, reinterpret_cast<const VkBufferCreateInfo*>(&CreateInfo),
+                                           &AllocationCreateInfo, &Buffer, &_Allocation, &_AllocationInfo), "Failed to create buffer");
     _Handle = Buffer;
 
     NpgsCoreTrace("Buffer created successfully.");
@@ -1165,10 +1123,8 @@ vk::Result FVulkanDescriptorPool::AllocateSets(const std::vector<vk::DescriptorS
                                                std::vector<FVulkanDescriptorSet>& Sets) const
 {
     std::vector<vk::DescriptorSet> DescriptorSets(Layouts.size());
-    if (vk::Result Result = AllocateSets(Layouts, DescriptorSets); Result != vk::Result::eSuccess)
-    {
-        return Result;
-    }
+    VulkanHppCheck(AllocateSets(Layouts, DescriptorSets));
+
     Sets.resize(DescriptorSets.size());
     for (std::size_t i = 0; i != DescriptorSets.size(); ++i)
     {
@@ -1202,10 +1158,8 @@ vk::Result FVulkanDescriptorPool::AllocateSets(const std::vector<FVulkanDescript
     }
 
     std::vector<vk::DescriptorSet> DescriptorSets(Layouts.size());
-    if (vk::Result Result = AllocateSets(DescriptorSetLayouts, DescriptorSets); Result != vk::Result::eSuccess)
-    {
-        return Result;
-    }
+    VulkanHppCheck(AllocateSets(DescriptorSetLayouts, DescriptorSets));
+
     Sets.resize(DescriptorSets.size());
     for (std::size_t i = 0; i != DescriptorSets.size(); ++i)
     {
@@ -1325,25 +1279,13 @@ vk::Result FVulkanFence::Reset() const
 
 vk::Result FVulkanFence::WaitAndReset() const
 {
-    vk::Result WaitResult = Wait();
-    if (WaitResult != vk::Result::eSuccess)
-    {
-        return WaitResult;
-    }
-
-    vk::Result ResetResult = Reset();
-    return ResetResult;
+    VulkanHppCheck(Wait());
+    return Reset();
 }
 
 vk::Result FVulkanFence::GetStatus() const
 {
-    vk::Result Result = _Device.getFenceStatus(_Handle);
-    if (Result != vk::Result::eSuccess)
-    {
-        NpgsCoreError("Failed to get fence status: {}.", vk::to_string(Result));
-        return Result;
-    }
-
+    VulkanHppCheckWithMessage(_Device.getFenceStatus(_Handle), "Failed to get fence status");
     return vk::Result::eSuccess;
 }
 
@@ -1495,15 +1437,9 @@ vk::Result FVulkanImage::CreateImage(const vk::ImageCreateInfo& CreateInfo)
 
 vk::Result FVulkanImage::CreateImage(const VmaAllocationCreateInfo& AllocationCreateInfo, const vk::ImageCreateInfo& CreateInfo)
 {
-    VkImage Image;
-    VkResult Result = vmaCreateImage(_Allocator, reinterpret_cast<const VkImageCreateInfo*>(&CreateInfo),
-                                     &AllocationCreateInfo, &Image, &_Allocation, &_AllocationInfo);
-    if (Result != VK_SUCCESS)
-    {
-        NpgsCoreError("Failed to create image: {}", vk::to_string(static_cast<vk::Result>(Result)));
-        return static_cast<vk::Result>(Result);
-    }
-
+    VkImage Image = nullptr;
+    VulkanCheckWithMessage(vmaCreateImage(_Allocator, reinterpret_cast<const VkImageCreateInfo*>(&CreateInfo),
+                                          &AllocationCreateInfo, &Image, &_Allocation, &_AllocationInfo), "Failed to create image");
     _Handle = Image;
 
     NpgsCoreTrace("Image created successfully.");

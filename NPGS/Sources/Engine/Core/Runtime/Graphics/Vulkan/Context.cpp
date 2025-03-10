@@ -135,8 +135,7 @@ void FVulkanContext::RemoveRegisteredCallbacks()
 vk::Result FVulkanContext::ExecuteGraphicsCommands(vk::CommandBuffer CommandBuffer) const
 {
     FVulkanFence Fence(_VulkanCore->GetDevice());
-    vk::Result Result;
-    if ((Result = SubmitCommandBufferToGraphics(CommandBuffer, *Fence)) == vk::Result::eSuccess)
+    if (vk::Result Result = SubmitCommandBufferToGraphics(CommandBuffer, *Fence); Result == vk::Result::eSuccess)
     {
         Fence.Wait();
     }
@@ -152,8 +151,7 @@ vk::Result FVulkanContext::ExecuteGraphicsCommands(vk::CommandBuffer CommandBuff
 vk::Result FVulkanContext::ExecutePresentCommands(vk::CommandBuffer CommandBuffer) const
 {
     FVulkanFence Fence(_VulkanCore->GetDevice());
-    vk::Result Result;
-    if ((Result = SubmitCommandBufferToPresent(CommandBuffer, *Fence)) == vk::Result::eSuccess)
+    if (vk::Result Result = SubmitCommandBufferToPresent(CommandBuffer, *Fence); Result == vk::Result::eSuccess)
     {
         Fence.Wait();
     }
@@ -169,8 +167,7 @@ vk::Result FVulkanContext::ExecutePresentCommands(vk::CommandBuffer CommandBuffe
 vk::Result FVulkanContext::ExecuteComputeCommands(vk::CommandBuffer CommandBuffer) const
 {
     FVulkanFence Fence(_VulkanCore->GetDevice());
-    vk::Result Result;
-    if ((Result = SubmitCommandBufferToCompute(CommandBuffer, *Fence)) == vk::Result::eSuccess)
+    if (vk::Result Result = SubmitCommandBufferToCompute(CommandBuffer, *Fence); Result == vk::Result::eSuccess)
     {
         Fence.Wait();
     }
@@ -281,16 +278,16 @@ FVulkanContext::SubmitCommandBufferToCompute(vk::CommandBuffer Buffer, vk::Semap
 
 vk::Result FVulkanContext::TransferImageOwnershipToPresent(vk::CommandBuffer PresentCommandBuffer) const
 {
-    vk::CommandBufferBeginInfo CommandBufferBeginInfo(vk::CommandBufferUsageFlagBits::eOneTimeSubmit);
-    try
-    {
-        PresentCommandBuffer.begin(CommandBufferBeginInfo);
-    }
-    catch (const vk::SystemError& e)
-    {
-        NpgsCoreError("Failed to begin present command buffer: {}", e.what());
-        return static_cast<vk::Result>(e.code().value());
-    }
+    // vk::CommandBufferBeginInfo CommandBufferBeginInfo(vk::CommandBufferUsageFlagBits::eOneTimeSubmit);
+    // try
+    // {
+    //     PresentCommandBuffer.begin(CommandBufferBeginInfo);
+    // }
+    // catch (const vk::SystemError& e)
+    // {
+    //     NpgsCoreError("Failed to begin present command buffer: {}", e.what());
+    //     return static_cast<vk::Result>(e.code().value());
+    // }
 
     TransferImageOwnershipToPresentImpl(PresentCommandBuffer);
     return vk::Result::eSuccess;
@@ -298,12 +295,7 @@ vk::Result FVulkanContext::TransferImageOwnershipToPresent(vk::CommandBuffer Pre
 
 vk::Result FVulkanContext::TransferImageOwnershipToPresent(const FVulkanCommandBuffer& PresentCommandBuffer) const
 {
-    if (vk::Result Result = PresentCommandBuffer.Begin(vk::CommandBufferUsageFlagBits::eOneTimeSubmit);
-        Result != vk::Result::eSuccess)
-    {
-        return Result;
-    }
-
+    // VulkanHppCheck(PresentCommandBuffer.Begin(vk::CommandBufferUsageFlagBits::eOneTimeSubmit));
     TransferImageOwnershipToPresentImpl(*PresentCommandBuffer);
     return vk::Result::eSuccess;
 }
@@ -316,17 +308,24 @@ FVulkanContext* FVulkanContext::GetClassInstance()
 
 void FVulkanContext::TransferImageOwnershipToPresentImpl(vk::CommandBuffer PresentCommandBuffer) const
 {
-    vk::ImageMemoryBarrier ImageMemoryBarrier(vk::AccessFlagBits::eColorAttachmentWrite,
-                                              vk::AccessFlagBits::eNone,
-                                              vk::ImageLayout::ePresentSrcKHR,
-                                              vk::ImageLayout::ePresentSrcKHR,
-                                              _VulkanCore->GetGraphicsQueueFamilyIndex(), 
-                                              _VulkanCore->GetPresentQueueFamilyIndex(), 
-                                              _VulkanCore->GetSwapchainImage(_VulkanCore->GetCurrentImageIndex()), 
-                                              vk::ImageSubresourceRange(vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1));
+    vk::ImageMemoryBarrier2 ImageMemoryBarrier(
+        vk::PipelineStageFlagBits2::eColorAttachmentOutput,
+        vk::AccessFlagBits2::eColorAttachmentWrite,
+        vk::PipelineStageFlagBits2::eBottomOfPipe,
+        vk::AccessFlagBits2::eNone,
+        vk::ImageLayout::eColorAttachmentOptimal,
+        vk::ImageLayout::ePresentSrcKHR,
+        _VulkanCore->GetGraphicsQueueFamilyIndex(),
+        _VulkanCore->GetPresentQueueFamilyIndex(),
+        _VulkanCore->GetSwapchainImage(_VulkanCore->GetCurrentImageIndex()),
+        vk::ImageSubresourceRange(vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1)
+    );
 
-    PresentCommandBuffer.pipelineBarrier(vk::PipelineStageFlagBits::eColorAttachmentOutput,
-                                         vk::PipelineStageFlagBits::eBottomOfPipe, {}, {}, {}, ImageMemoryBarrier);
+    vk::DependencyInfo DependencyInfo = vk::DependencyInfo()
+        .setDependencyFlags(vk::DependencyFlagBits::eByRegion)
+        .setImageMemoryBarriers(ImageMemoryBarrier);
+
+    PresentCommandBuffer.pipelineBarrier2(DependencyInfo);
 }
 
 _GRAPHICS_END

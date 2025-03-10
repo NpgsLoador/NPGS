@@ -74,21 +74,6 @@ NPGS_INLINE void FVulkanContext::SetDeviceExtensions(const std::vector<const cha
     _VulkanCore->SetDeviceExtensions(Extensions);
 }
 
-NPGS_INLINE vk::Result FVulkanContext::CheckInstanceLayers()
-{
-    return _VulkanCore->CheckInstanceLayers();
-}
-
-NPGS_INLINE vk::Result FVulkanContext::CheckInstanceExtensions(const std::string& Layer)
-{
-    return _VulkanCore->CheckInstanceExtensions(Layer);
-}
-
-NPGS_INLINE vk::Result FVulkanContext::CheckDeviceExtensions()
-{
-    return _VulkanCore->CheckDeviceExtensions();
-}
-
 NPGS_INLINE vk::Result FVulkanContext::CreateInstance(vk::InstanceCreateFlags Flags)
 {
     return _VulkanCore->CreateInstance(Flags);

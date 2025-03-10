@@ -47,9 +47,6 @@ public:
     void SetInstanceExtensions(const std::vector<const char*>& Extensions);
     void AddDeviceExtension(const char* Extension);
     void SetDeviceExtensions(const std::vector<const char*>& Extensions);
-    vk::Result CheckInstanceLayers();
-    vk::Result CheckInstanceExtensions(const std::string& Layer);
-    vk::Result CheckDeviceExtensions();
 
     vk::Result CreateInstance(vk::InstanceCreateFlags Flags = {});
     vk::Result CreateDevice(std::uint32_t PhysicalDeviceIndex = 0, vk::DeviceCreateFlags Flags = {});

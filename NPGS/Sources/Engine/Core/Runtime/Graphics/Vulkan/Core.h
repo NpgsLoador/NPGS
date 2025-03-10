@@ -9,11 +9,34 @@
 
 #include <vma/vk_mem_alloc.h>
 #include <vulkan/vulkan_handles.hpp>
+#include <vulkan/vulkan_to_string.hpp>
+
 #include "Engine/Core/Base/Base.h"
+#include "Engine/Utils/Logger.h"
 
 _NPGS_BEGIN
 _RUNTIME_BEGIN
 _GRAPHICS_BEGIN
+
+// Validation macros
+// -----------------
+#define VulkanCheck(Target) if (VkResult Result = Target; Result != VK_SUCCESS) return static_cast<vk::Result>(Result);
+
+#define VulkanCheckWithMessage(Target, Message)                                       \
+if (VkResult Result = Target; Result != VK_SUCCESS)                                   \
+{                                                                                     \
+    NpgsCoreError("{}: {}", Message, vk::to_string(static_cast<vk::Result>(Result))); \
+    return static_cast<vk::Result>(Result);                                           \
+}
+
+#define VulkanHppCheck(Target) if (vk::Result Result = Target; Result != vk::Result::eSuccess) return Result;
+
+#define VulkanHppCheckWithMessage(Target, Message)              \
+if (vk::Result Result = Target; Result != vk::Result::eSuccess) \
+{                                                               \
+    NpgsCoreError("{}: {}", Message, vk::to_string(Result));    \
+    return Result;                                              \
+}
 
 class FVulkanCore
 {
@@ -41,9 +64,6 @@ public:
     void SetInstanceExtensions(const std::vector<const char*>& Extensions);
     void AddDeviceExtension(const char* Extension);
     void SetDeviceExtensions(const std::vector<const char*>& Extensions);
-    vk::Result CheckInstanceLayers();
-    vk::Result CheckInstanceExtensions(const std::string& Layer);
-    vk::Result CheckDeviceExtensions();
 
     vk::Result CreateInstance(vk::InstanceCreateFlags Flags);
     vk::Result CreateDevice(std::uint32_t PhysicalDeviceIndex, vk::DeviceCreateFlags Flags);
@@ -106,6 +126,10 @@ private:
     FVulkanCore& operator=(FVulkanCore&&)      = delete;
 
     void AddElementChecked(const char* Element, std::vector<const char*>& Vector);
+
+    vk::Result CheckInstanceLayers();
+    vk::Result CheckInstanceExtensions();
+    vk::Result CheckDeviceExtensions();
 
     vk::Result UseLatestApiVersion();
     vk::Result CreateDebugMessenger();

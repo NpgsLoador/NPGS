@@ -2,12 +2,11 @@
 
 #include <cstdlib>
 #include <algorithm>
+#include <ranges>
 
 #include <vulkan/vulkan.hpp>
-#include <vulkan/vulkan_to_string.hpp>
 
 #include "Engine/Core/Runtime/Graphics/Vulkan/ExtFunctionsImpl.h"
-#include "Engine/Utils/Logger.h"
 #include "Engine/Utils/Utils.h"
 
 _NPGS_BEGIN
@@ -89,138 +88,6 @@ FVulkanCore::~FVulkanCore()
     }
 }
 
-vk::Result FVulkanCore::CheckInstanceLayers()
-{
-    std::vector<vk::LayerProperties> AvailableLayers;
-    try
-    {
-        AvailableLayers = vk::enumerateInstanceLayerProperties();
-    }
-    catch (const vk::SystemError& e)
-    {
-        NpgsCoreError("Failed to enumerate instance layers: {}", e.what());
-        return static_cast<vk::Result>(e.code().value());
-    }
-
-    if (AvailableLayers.empty())
-    {
-        _InstanceLayers.clear();
-        return vk::Result::eSuccess;
-    }
-
-    for (const char*& RequestedLayer : _InstanceLayers)
-    {
-        bool bLayerFound = false;
-        for (const auto& AvailableLayer : AvailableLayers)
-        {
-            if (Util::Equal(RequestedLayer, AvailableLayer.layerName))
-            {
-                bLayerFound = true;
-                break;
-            }
-        }
-        if (!bLayerFound)
-        {
-            RequestedLayer = nullptr;
-        }
-    }
-
-    std::erase_if(_InstanceLayers, [](const char* Layer) -> bool
-    {
-        return Layer == nullptr;
-    });
-
-    return vk::Result::eSuccess;
-}
-
-vk::Result FVulkanCore::CheckInstanceExtensions(const std::string& Layer)
-{
-    std::vector<vk::ExtensionProperties> AvailableExtensions;
-    try
-    {
-        AvailableExtensions = vk::enumerateInstanceExtensionProperties(Layer);
-    }
-    catch (const vk::SystemError& e)
-    {
-        NpgsCoreError("Failed to enumerate instance extensions: {}", e.what());
-        return static_cast<vk::Result>(e.code().value());
-    }
-
-    if (AvailableExtensions.empty())
-    {
-        _InstanceExtensions.clear();
-        return vk::Result::eSuccess;
-    }
-
-    for (const char*& RequestedExtension : _InstanceExtensions)
-    {
-        bool bExtensionFound = false;
-        for (const auto& AvailableExtension : AvailableExtensions)
-        {
-            if (Util::Equal(RequestedExtension, AvailableExtension.extensionName))
-            {
-                bExtensionFound = true;
-                break;
-            }
-        }
-        if (!bExtensionFound)
-        {
-            RequestedExtension = nullptr;
-        }
-    }
-
-    std::erase_if(_InstanceExtensions, [](const char* Extension) -> bool
-    {
-        return Extension == nullptr;
-    });
-
-    return vk::Result::eSuccess;
-}
-
-vk::Result FVulkanCore::CheckDeviceExtensions()
-{
-    std::vector<vk::ExtensionProperties> AvailableExtensions;
-    try
-    {
-        AvailableExtensions = _PhysicalDevice.enumerateDeviceExtensionProperties();
-    }
-    catch (const vk::SystemError& e)
-    {
-        NpgsCoreError("Failed to enumerate device extensions: {}", e.what());
-        return static_cast<vk::Result>(e.code().value());
-    }
-
-    if (AvailableExtensions.empty())
-    {
-        _DeviceExtensions.clear();
-        return vk::Result::eSuccess;
-    }
-
-    for (const char*& RequestedExtension : _DeviceExtensions)
-    {
-        bool bExtensionFound = false;
-        for (const auto& AvailableExtension : AvailableExtensions)
-        {
-            if (Util::Equal(RequestedExtension, AvailableExtension.extensionName))
-            {
-                bExtensionFound = true;
-                break;
-            }
-        }
-        if (!bExtensionFound)
-        {
-            RequestedExtension = nullptr;
-        }
-    }
-
-    std::erase_if(_DeviceExtensions, [](const char* Extension) -> bool
-    {
-        return Extension == nullptr;
-    });
-
-    return vk::Result::eSuccess;
-}
-
 vk::Result FVulkanCore::CreateInstance(vk::InstanceCreateFlags Flags)
 {
 #ifdef _DEBUG
@@ -231,6 +98,9 @@ vk::Result FVulkanCore::CreateInstance(vk::InstanceCreateFlags Flags)
     vk::ApplicationInfo ApplicationInfo("Von-Neumann in Galaxy Simulator", VK_MAKE_VERSION(1, 0, 0),
                                         "No Engine", VK_MAKE_VERSION(1, 0, 0), _ApiVersion);
     vk::InstanceCreateInfo InstanceCreateInfo(Flags, &ApplicationInfo, _InstanceLayers, _InstanceExtensions);
+
+    VulkanHppCheck(CheckInstanceLayers());
+    VulkanHppCheck(CheckInstanceExtensions());
 
     try
     {
@@ -243,10 +113,7 @@ vk::Result FVulkanCore::CreateInstance(vk::InstanceCreateFlags Flags)
     }
 
 #ifdef _DEBUG
-    if (vk::Result Result = CreateDebugMessenger(); Result != vk::Result::eSuccess)
-    {
-        return Result;
-    }
+    VulkanHppCheck(CreateDebugMessenger());
 #endif // _DEBUG
 
     NpgsCoreInfo("Vulkan instance created successfully.");
@@ -255,8 +122,9 @@ vk::Result FVulkanCore::CreateInstance(vk::InstanceCreateFlags Flags)
 
 vk::Result FVulkanCore::CreateDevice(std::uint32_t PhysicalDeviceIndex, vk::DeviceCreateFlags Flags)
 {
-    EnumeratePhysicalDevices();
-    DeterminePhysicalDevice(PhysicalDeviceIndex, true, true);
+    VulkanHppCheck(EnumeratePhysicalDevices());
+    VulkanHppCheck(DeterminePhysicalDevice(PhysicalDeviceIndex, true, true));
+    VulkanHppCheck(CheckDeviceExtensions());
 
     float QueuePriority = 1.0f;
     std::vector<vk::DeviceQueueCreateInfo> DeviceQueueCreateInfos;
@@ -282,13 +150,17 @@ vk::Result FVulkanCore::CreateDevice(std::uint32_t PhysicalDeviceIndex, vk::Devi
     vk::PhysicalDeviceVulkan12Features Features12;
     vk::PhysicalDeviceVulkan13Features Features13;
     vk::PhysicalDeviceVulkan14Features Features14;
+    vk::PhysicalDeviceCustomBorderColorFeaturesEXT CustomBorderColorFeatures;
 
     Features2.setPNext(&Features11);
     Features11.setPNext(&Features12);
     Features12.setPNext(&Features13);
     Features13.setPNext(&Features14);
+    Features14.setPNext(&CustomBorderColorFeatures);
 
     _PhysicalDevice.getFeatures2(&Features2);
+
+    CustomBorderColorFeatures.setCustomBorderColors(vk::True).setCustomBorderColorWithoutFormat(vk::True);
 
     void* pNext = nullptr;
     vk::PhysicalDeviceFeatures PhysicalDeviceFeatures = Features2.features;
@@ -355,7 +227,7 @@ vk::Result FVulkanCore::CreateDevice(std::uint32_t PhysicalDeviceIndex, vk::Devi
 
 vk::Result FVulkanCore::RecreateDevice(std::uint32_t PhysicalDeviceIndex, vk::DeviceCreateFlags Flags)
 {
-    WaitIdle();
+    VulkanHppCheck(WaitIdle());
 
     if (_Swapchain)
     {
@@ -517,13 +389,9 @@ vk::Result FVulkanCore::CreateSwapchain(vk::Extent2D Extent, bool bLimitFps, boo
     }
 
     // 2.设置 Swapchain 像素格式和色彩空间
-    vk::Result Result;
     if (_AvailableSurfaceFormats.empty())
     {
-        if ((Result = ObtainPhysicalDeviceSurfaceFormats()) != vk::Result::eSuccess)
-        {
-            return Result;
-        }
+        VulkanHppCheck(ObtainPhysicalDeviceSurfaceFormats());
     }
 
     std::vector<vk::SurfaceFormatKHR> SurfaceFormats;
@@ -590,10 +458,7 @@ vk::Result FVulkanCore::CreateSwapchain(vk::Extent2D Extent, bool bLimitFps, boo
         }
     }
 
-    if ((Result = CreateSwapchainInternal()) != vk::Result::eSuccess)
-    {
-        return Result;
-    }
+    VulkanHppCheck(CreateSwapchainInternal());
 
     for (auto& Callback : _CreateSwapchainCallbacks)
     {
@@ -665,10 +530,7 @@ vk::Result FVulkanCore::RecreateSwapchain()
     }
     _SwapchainImageViews.clear();
 
-    if (vk::Result Result = CreateSwapchainInternal(); Result != vk::Result::eSuccess)
-    {
-        return Result;
-    }
+    VulkanHppCheck(CreateSwapchainInternal());
 
     for (auto& Callback : _CreateSwapchainCallbacks)
     {
@@ -785,6 +647,158 @@ void FVulkanCore::AddElementChecked(const char* Element, std::vector<const char*
     {
         Vector.push_back(Element);
     }
+}
+
+vk::Result FVulkanCore::CheckInstanceLayers()
+{
+    std::vector<vk::LayerProperties> AvailableLayers;
+    try
+    {
+        AvailableLayers = vk::enumerateInstanceLayerProperties();
+    }
+    catch (const vk::SystemError& e)
+    {
+        NpgsCoreError("Failed to enumerate instance layers: {}", e.what());
+        return static_cast<vk::Result>(e.code().value());
+    }
+
+    if (AvailableLayers.empty())
+    {
+        _InstanceLayers.clear();
+        return vk::Result::eSuccess;
+    }
+
+    for (const char*& RequestedLayer : _InstanceLayers)
+    {
+        bool bLayerFound = false;
+        for (const auto& AvailableLayer : AvailableLayers)
+        {
+            if (Util::Equal(RequestedLayer, AvailableLayer.layerName))
+            {
+                bLayerFound = true;
+                break;
+            }
+        }
+        if (!bLayerFound)
+        {
+            RequestedLayer = nullptr;
+        }
+    }
+
+    std::erase_if(_InstanceLayers, [](const char* Layer) -> bool
+    {
+        return Layer == nullptr;
+    });
+
+    return vk::Result::eSuccess;
+}
+
+vk::Result FVulkanCore::CheckInstanceExtensions()
+{
+    std::vector<vk::ExtensionProperties> AvailableExtensions;
+    try
+    {
+        AvailableExtensions = vk::enumerateInstanceExtensionProperties(nullptr);
+    }
+    catch (const vk::SystemError & e)
+    {
+        NpgsCoreError("Failed to enumerate instance extensions: {}", e.what());
+        return static_cast<vk::Result>(e.code().value());
+    }
+
+    for (const char* Layer : _InstanceLayers)
+    {
+        if (Layer == nullptr)
+        {
+            continue;
+        }
+
+        std::vector<vk::ExtensionProperties> LayerAvailableExtensions;
+        try
+        {
+            LayerAvailableExtensions = vk::enumerateInstanceExtensionProperties(std::string(Layer));
+            AvailableExtensions.append_range(LayerAvailableExtensions | std::views::as_rvalue);
+        }
+        catch (const vk::SystemError& e)
+        {
+            NpgsCoreError("Failed to enumerate instance extensions for layer {}: {}", Layer, e.what());
+            return static_cast<vk::Result>(e.code().value());
+        }
+    }
+
+    if (AvailableExtensions.empty())
+    {
+        _InstanceExtensions.clear();
+        return vk::Result::eSuccess;
+    }
+
+    for (const char*& RequestedExtension : _InstanceExtensions)
+    {
+        bool bExtensionFound = false;
+        for (const auto& AvailableExtension : AvailableExtensions)
+        {
+            if (Util::Equal(RequestedExtension, AvailableExtension.extensionName))
+            {
+                bExtensionFound = true;
+                break;
+            }
+        }
+        if (!bExtensionFound)
+        {
+            RequestedExtension = nullptr;
+        }
+    }
+
+    std::erase_if(_InstanceExtensions, [](const char* Extension) -> bool
+    {
+        return Extension == nullptr;
+    });
+
+    return vk::Result::eSuccess;
+}
+
+vk::Result FVulkanCore::CheckDeviceExtensions()
+{
+    std::vector<vk::ExtensionProperties> AvailableExtensions;
+    try
+    {
+        AvailableExtensions = _PhysicalDevice.enumerateDeviceExtensionProperties();
+    }
+    catch (const vk::SystemError& e)
+    {
+        NpgsCoreError("Failed to enumerate device extensions: {}", e.what());
+        return static_cast<vk::Result>(e.code().value());
+    }
+
+    if (AvailableExtensions.empty())
+    {
+        _DeviceExtensions.clear();
+        return vk::Result::eSuccess;
+    }
+
+    for (const char*& RequestedExtension : _DeviceExtensions)
+    {
+        bool bExtensionFound = false;
+        for (const auto& AvailableExtension : AvailableExtensions)
+        {
+            if (Util::Equal(RequestedExtension, AvailableExtension.extensionName))
+            {
+                bExtensionFound = true;
+                break;
+            }
+        }
+        if (!bExtensionFound)
+        {
+            RequestedExtension = nullptr;
+        }
+    }
+
+    std::erase_if(_DeviceExtensions, [](const char* Extension) -> bool
+    {
+        return Extension == nullptr;
+    });
+
+    return vk::Result::eSuccess;
 }
 
 vk::Result FVulkanCore::UseLatestApiVersion()

@@ -33,6 +33,7 @@ void main()
 	mat3x3 TbnMatrix = mat3x3(normalize(vec3(Model * vec4(Tangent,   0.0))),
 						      normalize(vec3(Model * vec4(Bitangent, 0.0))),
 						      normalize(vec3(Model * vec4(Normal,    0.0))));
+
 	VertOutput.TbnMatrix = TbnMatrix;
 	VertOutput.TexCoord  = TexCoord;
 	VertOutput.FragPos   = vec3(Model * vec4(Position, 1.0));

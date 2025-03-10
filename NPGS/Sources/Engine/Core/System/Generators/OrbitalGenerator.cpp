@@ -24,13 +24,7 @@ _NPGS_BEGIN
 _SYSTEM_BEGIN
 _GENERATOR_BEGIN
 
-#define CalculatePlanetMassByIndex(Index)                                                                                            \
-CalculatePlanetMass(kSolarMass * CoreMassesSol[Index],                \
-					kSolarMass * NewCoreMassesSol[Index],             \
-					Planets[Index]->IsMigrated()                      \
-					? MigratedOriginSemiMajorAxisAu                   \
-					: Orbits[Index]->GetSemiMajorAxis() / kAuToMeter, \
-					PlanetaryDisk, Star, Planets[Index].get())
+#define CalculatePlanetMassByIndex(Index) CalculatePlanetMass(kSolarMass * CoreMassesSol[Index], kSolarMass * NewCoreMassesSol[Index], Planets[Index]->IsMigrated() ? MigratedOriginSemiMajorAxisAu : Orbits[Index]->GetSemiMajorAxis() / kAuToMeter, PlanetaryDisk, Star, Planets[Index].get())
 
 // Tool functions
 // --------------

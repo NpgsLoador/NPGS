@@ -259,6 +259,7 @@ spirv-cross-cpp.lib
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Sources\Engine\Core\Math\TangentSpaceTools.cpp" />
     <ClCompile Include="Sources\Engine\Core\Runtime\AssetLoaders\AssetManager.cpp" />
     <ClCompile Include="Sources\Engine\Core\Runtime\AssetLoaders\GetAssetFullPath.cpp" />
     <ClCompile Include="Sources\Engine\Core\Runtime\AssetLoaders\Shader.cpp" />
@@ -300,6 +301,7 @@ spirv-cross-cpp.lib
     <ClInclude Include="Sources\Engine\Core\Base\Config\EngineConfig.h" />
     <ClInclude Include="Sources\Engine\Core\Base\Assert.h" />
     <ClInclude Include="Sources\Engine\Core\Base\Base.h" />
+    <ClInclude Include="Sources\Engine\Core\Math\TangentSpaceTools.h" />
     <ClInclude Include="Sources\Engine\Core\Math\NumericConstants.h" />
     <ClInclude Include="Sources\Engine\Core\Runtime\AssetLoaders\AssetManager.h" />
     <ClInclude Include="Sources\Engine\Core\Runtime\AssetLoaders\CommaSeparatedValues.hpp" />
@@ -333,7 +335,7 @@ spirv-cross-cpp.lib
     <ClInclude Include="Sources\Engine\Utils\Utils.h" />
     <ClInclude Include="Sources\Program\Application.h" />
     <ClInclude Include="Sources\Program\Npgs.h" />
-    <ClInclude Include="Sources\Program\DataStructures.h" />
+    <ClInclude Include="Sources\Engine\Core\Runtime\Graphics\Buffers\BufferStructs.h" />
     <ClInclude Include="Sources\Program\Universe.h" />
     <ClInclude Include="Sources\stdafx.h" />
     <ClInclude Include="Sources\xstdafx.h" />
@@ -365,6 +367,7 @@ spirv-cross-cpp.lib
     <None Include="Sources\Engine\Shaders\Common\CoordConverter.glsl" />
     <None Include="Sources\Engine\Shaders\Common\NumericConstants.glsl" />
     <None Include="Sources\Engine\Shaders\Common\Random\Hash.glsl" />
+    <None Include="Sources\Engine\Shaders\PbrScene.frag.glsl" />
     <None Include="Sources\Engine\Shaders\PostProcess.frag.glsl" />
     <None Include="Sources\Engine\Shaders\PostProcess.vert.glsl" />
     <None Include="Sources\Engine\Shaders\Scene.frag.glsl" />

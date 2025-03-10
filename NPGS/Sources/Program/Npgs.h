@@ -4,12 +4,14 @@
 #include "Engine/Core/Base/Base.h"
 
 #include "Engine/Core/Math/NumericConstants.h"
+#include "Engine/Core/Math/TangentSpaceTools.h"
 
 #include "Engine/Core/Runtime/AssetLoaders/AssetManager.h"
 #include "Engine/Core/Runtime/AssetLoaders/CommaSeparatedValues.hpp"
 #include "Engine/Core/Runtime/AssetLoaders/GetAssetFullPath.h"
 #include "Engine/Core/Runtime/AssetLoaders/Texture.h"
 
+#include "Engine/Core/Runtime/Graphics/Buffers/BufferStructs.h"
 #include "Engine/Core/Runtime/Graphics/Vulkan/Context.h"
 #include "Engine/Core/Runtime/Graphics/Vulkan/Core.h"
 #include "Engine/Core/Runtime/Graphics/Vulkan/Resources.h"

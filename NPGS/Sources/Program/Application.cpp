@@ -11,64 +11,21 @@
 
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
-#include <glm/gtc/type_aligned.hpp>
 #include <glm/gtc/type_ptr.hpp>
 #include <Windows.h>
 
 #include "Engine/Core/Base/Config/EngineConfig.h"
 #include "Engine/Core/Math/NumericConstants.h"
+#include "Engine/Core/Math/TangentSpaceTools.h"
 #include "Engine/Core/Runtime/AssetLoaders/AssetManager.h"
 #include "Engine/Core/Runtime/AssetLoaders/Shader.h"
 #include "Engine/Core/Runtime/AssetLoaders/Texture.h"
+#include "Engine/Core/Runtime/Graphics/Buffers/BufferStructs.h"
 #include "Engine/Core/Runtime/Graphics/Renderers/PipelineManager.h"
 #include "Engine/Core/Runtime/Graphics/Vulkan/ShaderBufferManager.h"
 #include "Engine/Utils/Logger.h"
-#include "DataStructures.h"
-#include "Vertices.inc"
 
 _NPGS_BEGIN
-
-namespace
-{
-    void CalculateTangentBitangent(std::vector<FVertex>& Vertices, std::size_t Index)
-    {
-        const auto& Vertex0 = Vertices[Index + 0];
-        const auto& Vertex1 = Vertices[Index + 1];
-        const auto& Vertex2 = Vertices[Index + 2];
-
-        const glm::vec3 Edge1 = Vertex1.Position - Vertex0.Position;
-        const glm::vec3 Edge2 = Vertex2.Position - Vertex0.Position;
-
-        const glm::vec2 DeltaUv1 = Vertex1.TexCoord - Vertex0.TexCoord;
-        const glm::vec2 DeltaUv2 = Vertex2.TexCoord - Vertex0.TexCoord;
-
-        const float Factor = 1.0f / (DeltaUv1.x * DeltaUv2.y - DeltaUv2.x * DeltaUv1.y);
-        const glm::vec3 Tangent   = glm::normalize(Factor * ( DeltaUv2.y * Edge1 - DeltaUv1.y * Edge2));
-        const glm::vec3 Bitangent = glm::normalize(Factor * (-DeltaUv2.x * Edge1 + DeltaUv1.x * Edge2));
-
-        Vertices[Index + 0].Tangent += Tangent;
-        Vertices[Index + 1].Tangent += Tangent;
-        Vertices[Index + 2].Tangent += Tangent;
-
-        Vertices[Index + 0].Bitangent += Bitangent;
-        Vertices[Index + 1].Bitangent += Bitangent;
-        Vertices[Index + 2].Bitangent += Bitangent;
-    }
-
-    void CalculateAllTangents(std::vector<FVertex>& Vertices)
-    {
-        for (std::size_t i = 0; i < Vertices.size(); i += 3)
-        {
-            CalculateTangentBitangent(Vertices, i);
-        }
-
-        for (auto& Vertex : Vertices)
-        {
-            Vertex.Tangent   = glm::normalize(Vertex.Tangent);
-            Vertex.Bitangent = glm::normalize(Vertex.Bitangent);
-        }
-    }
-}
 
 namespace Art    = Runtime::Asset;
 namespace Grt    = Runtime::Graphics;
@@ -179,16 +136,16 @@ void FApplication::ExecuteMainRender()
     Art::FShader::FResourceInfo SceneResourceInfo
     {
         {
-            { 0, sizeof(FVertex), false },
-            { 1, sizeof(FInstanceData), true }
+            { 0, sizeof(Grt::FVertex), false },
+            { 1, sizeof(Grt::FInstanceData), true }
         },
         {
-            { 0, 0, offsetof(FVertex, Position) },
-            { 0, 1, offsetof(FVertex, Normal) },
-            { 0, 2, offsetof(FVertex, TexCoord) },
-            { 0, 3, offsetof(FVertex, Tangent) },
-            { 0, 4, offsetof(FVertex, Bitangent) },
-            { 1, 5, offsetof(FInstanceData, Model) }
+            { 0, 0, offsetof(Grt::FVertex, Position) },
+            { 0, 1, offsetof(Grt::FVertex, Normal) },
+            { 0, 2, offsetof(Grt::FVertex, TexCoord) },
+            { 0, 3, offsetof(Grt::FVertex, Tangent) },
+            { 0, 4, offsetof(Grt::FVertex, Bitangent) },
+            { 1, 5, offsetof(Grt::FInstanceData, Model) }
         },
         {
             { 0, 0, false },
@@ -199,29 +156,29 @@ void FApplication::ExecuteMainRender()
     Art::FShader::FResourceInfo ShadowMapResourceInfo
     {
         {
-            { 0, sizeof(FVertex), false },
-            { 1, sizeof(FInstanceData), true }
+            { 0, sizeof(Grt::FVertex), false },
+            { 1, sizeof(Grt::FInstanceData), true }
         },
         {
-            { 0, 0, offsetof(FVertex, Position) },
-            { 1, 1, offsetof(FInstanceData, Model) }
+            { 0, 0, offsetof(Grt::FVertex, Position) },
+            { 1, 1, offsetof(Grt::FInstanceData, Model) }
         },
         { { 0, 0, false } },
     };
 
     Art::FShader::FResourceInfo SkyboxResourceInfo
     {
-        { { 0, sizeof(FSkyboxVertex), false } },
-        { { 0, 0, offsetof(FSkyboxVertex, Position) } },
+        { { 0, sizeof(Grt::FSkyboxVertex), false } },
+        { { 0, 0, offsetof(Grt::FSkyboxVertex, Position) } },
         { { 0, 0, false } }
     };
 
     Art::FShader::FResourceInfo PostResourceInfo
     {
-        { { 0, sizeof(FQuadVertex), false } },
+        { { 0, sizeof(Grt::FQuadVertex), false } },
         {
-            { 0, 0, offsetof(FQuadVertex, Position) },
-            { 0, 1, offsetof(FQuadVertex, TexCoord) }
+            { 0, 0, offsetof(Grt::FQuadVertex, Position) },
+            { 0, 1, offsetof(Grt::FQuadVertex, TexCoord) }
         }
     };
 
@@ -296,8 +253,8 @@ void FApplication::ExecuteMainRender()
     };
 
     auto ShaderBufferManager = Grt::FShaderBufferManager::GetInstance();
-    ShaderBufferManager->CreateBuffers<FMatrices>(MatricesCreateInfo, &UniformBufferAllocationCreateInfo);
-    ShaderBufferManager->CreateBuffers<FLightMaterial>(LightMaterialCreateInfo, &UniformBufferAllocationCreateInfo);
+    ShaderBufferManager->CreateBuffers<Grt::FMatrices>(MatricesCreateInfo, &UniformBufferAllocationCreateInfo);
+    ShaderBufferManager->CreateBuffers<Grt::FLightMaterial>(LightMaterialCreateInfo, &UniformBufferAllocationCreateInfo);
 
     // Bind descriptor sets
     // --------------------
@@ -373,7 +330,7 @@ void FApplication::ExecuteMainRender()
 
     // Init instance data
     // ------------------
-    std::vector<FInstanceData> InstanceData;
+    std::vector<Grt::FInstanceData> InstanceData;
     glm::mat4x4 Model(1.0f);
     // plane
     InstanceData.emplace_back(Model);
@@ -393,14 +350,88 @@ void FApplication::ExecuteMainRender()
     Model = glm::rotate(Model, glm::radians(60.0f), glm::normalize(glm::vec3(1.0, 0.0, 1.0)));
     InstanceData.emplace_back(Model);
 
+    // sphere
+    Model = glm::mat4x4(1.0f);
+    Model = glm::translate(Model, glm::vec3(0.0, 2.0, 2.0));
+    InstanceData.emplace_back(Model);
+
     // lamp
     glm::vec3 LightPos(-2.0f, 4.0f, -1.0f);
     Model = glm::mat4x4(1.0f);
     Model = glm::scale(glm::translate(Model, LightPos), glm::vec3(0.2f));
     InstanceData.emplace_back(Model);
 
+    // Create sphere vertices
+    // ----------------------
+    std::vector<glm::vec3> Positions;
+    std::vector<glm::vec3> Normals;
+    std::vector<glm::vec2> TexCoords;
+
+    const std::uint32_t kSegmentsX = 64;
+    const std::uint32_t kSegmentsY = 64;
+
+    for (std::uint32_t x = 0; x <= kSegmentsX; ++x)
+    {
+        for (std::uint32_t y = 0; y <= kSegmentsY; ++y)
+        {
+            float SegmentX = static_cast<float>(x) / static_cast<float>(kSegmentsX);
+            float SegmentY = static_cast<float>(y) / static_cast<float>(kSegmentsY);
+
+            // 使用球面参数方程计算顶点坐标
+            // x = cos(φ) * sin(θ)
+            // y = cos(θ)
+            // z = sin(φ) * sin(θ)
+            // 其中 φ ∈ [0, 2π], θ ∈ [0, π]
+            float PositionX = std::cos(SegmentX * 2.0f * Math::kPi) * std::sin(SegmentY * Math::kPi);
+            float PositionY = std::cos(SegmentY * Math::kPi);
+            float PositionZ = std::sin(SegmentX * 2.0f * Math::kPi) * std::sin(SegmentY * Math::kPi);
+
+            Positions.emplace_back(PositionX, PositionY, PositionZ);
+            Normals.emplace_back(PositionX, PositionY, PositionZ);
+            TexCoords.emplace_back(SegmentX, SegmentY);
+        }
+    }
+
+    std::vector<std::uint32_t> SphereIndices;
+    bool bIsOddRow = false;
+    for (std::uint32_t y = 0; y != kSegmentsY; ++y)
+    {
+        if (!bIsOddRow)
+        {
+            for (std::uint32_t x = 0; x <= kSegmentsX; ++x)
+            {
+                SphereIndices.push_back(y * (kSegmentsX + 1) + x);
+                SphereIndices.push_back((y + 1) * (kSegmentsX + 1) + x);
+            }
+        }
+        else
+        {
+            for (std::int32_t x = kSegmentsX; x >= 0; --x)
+            {
+                SphereIndices.push_back((y + 1) * (kSegmentsX + 1) + x);
+                SphereIndices.push_back(y * (kSegmentsX + 1) + x);
+            }
+        }
+
+        bIsOddRow = !bIsOddRow;
+    }
+
+    std::vector<Grt::FVertex> SphereVertices;
+    for (std::size_t i = 0; i != Positions.size(); ++i)
+    {
+        Grt::FVertex Vertex{};
+        Vertex.Position = Positions[i];
+        Vertex.Normal   = Normals[i];
+        Vertex.TexCoord = TexCoords[i];
+
+        SphereVertices.push_back(Vertex);
+    }
+
     // Create vertex buffers
     // ---------------------
+
+#include "Vertices.inc"
+
     VmaAllocationCreateInfo VertexBufferAllocationCreateInfo
     {
         .flags = VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT,
@@ -408,29 +439,34 @@ void FApplication::ExecuteMainRender()
         .requiredFlags = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT
     };
 
-    CalculateAllTangents(CubeVertices);
-    CalculateAllTangents(PlaneVertices);
+    Math::CalculateAllTangents(CubeVertices);
+    Math::CalculateAllTangents(PlaneVertices);
+    Math::CalculateTangentBitangentSphere(SphereVertices, kSegmentsX, kSegmentsY);
 
     vk::BufferCreateInfo VertexBufferCreateInfo = vk::BufferCreateInfo()
-        .setSize(CubeVertices.size() * sizeof(FVertex))
+        .setSize(CubeVertices.size() * sizeof(Grt::FVertex))
         .setUsage(vk::BufferUsageFlagBits::eVertexBuffer | vk::BufferUsageFlagBits::eTransferDst);
 
     Grt::FDeviceLocalBuffer CubeVertexBuffer(VertexBufferAllocationCreateInfo, VertexBufferCreateInfo);
     CubeVertexBuffer.CopyData(CubeVertices);
 
-    VertexBufferCreateInfo.setSize(SkyboxVertices.size() * sizeof(FVertex));
+    VertexBufferCreateInfo.setSize(SkyboxVertices.size() * sizeof(Grt::FSkyboxVertex));
     Grt::FDeviceLocalBuffer SkyboxVertexBuffer(VertexBufferAllocationCreateInfo, VertexBufferCreateInfo);
     SkyboxVertexBuffer.CopyData(SkyboxVertices);
 
-    VertexBufferCreateInfo.setSize(QuadVertices.size() * sizeof(FQuadVertex));
+    VertexBufferCreateInfo.setSize(QuadVertices.size() * sizeof(Grt::FQuadVertex));
     Grt::FDeviceLocalBuffer QuadVertexBuffer(VertexBufferAllocationCreateInfo, VertexBufferCreateInfo);
     QuadVertexBuffer.CopyData(QuadVertices);
 
-    VertexBufferCreateInfo.setSize(PlaneVertices.size() * sizeof(FVertex));
+    VertexBufferCreateInfo.setSize(PlaneVertices.size() * sizeof(Grt::FVertex));
     Grt::FDeviceLocalBuffer PlaneVertexBuffer(VertexBufferAllocationCreateInfo, VertexBufferCreateInfo);
     PlaneVertexBuffer.CopyData(PlaneVertices);
 
-    VertexBufferCreateInfo.setSize(InstanceData.size() * sizeof(FInstanceData));
+    VertexBufferCreateInfo.setSize(SphereVertices.size() * sizeof(Grt::FVertex));
+    Grt::FDeviceLocalBuffer SphereVertexBuffer(VertexBufferAllocationCreateInfo, VertexBufferCreateInfo);
+    SphereVertexBuffer.CopyData(SphereVertices);
+
+    VertexBufferCreateInfo.setSize(InstanceData.size() * sizeof(Grt::FInstanceData));
     Grt::FDeviceLocalBuffer InstanceBuffer(VertexBufferAllocationCreateInfo, VertexBufferCreateInfo);
     InstanceBuffer.CopyData(InstanceData);
 
@@ -546,9 +582,14 @@ void FApplication::ExecuteMainRender()
 
     std::array PlaneVertexBuffers{ *PlaneVertexBuffer.GetBuffer(), *InstanceBuffer.GetBuffer() };
     std::array CubeVertexBuffers{ *CubeVertexBuffer.GetBuffer(), *InstanceBuffer.GetBuffer() };
+    std::array SphereVertexBuffers{ *SphereVertexBuffer.GetBuffer(), *InstanceBuffer.GetBuffer() };
     std::array PlaneOffsets{ Offset, Offset };
     std::array CubeOffsets{ Offset, Offset + sizeof(glm::mat4x4) };
-    std::array LampOffsets{ Offset, Offset + 4 * sizeof(glm::mat4x4) };
+    std::array SphereOffsets{ Offset, Offset + 4 * sizeof(glm::mat4x4) };
+    std::array LampOffsets{ Offset, Offset + 5 * sizeof(glm::mat4x4) };
+
+    Grt::FMatrices      Matrices{};
+    Grt::FLightMaterial LightMaterial{};
 
     while (!glfwWindowShouldClose(_Window))
     {
@@ -584,8 +625,8 @@ void FApplication::ExecuteMainRender()
         LightMaterial.Material.Shininess = 64.0f;
         LightMaterial.Light.Position     = LightPos;
         LightMaterial.Light.Ambient      = glm::vec3(0.1f);
-        LightMaterial.Light.Diffuse      = glm::vec3(1.0f);
-        LightMaterial.Light.Specular     = glm::vec3(1.0f);
+        LightMaterial.Light.Diffuse      = glm::vec3(30.0f);
+        LightMaterial.Light.Specular     = glm::vec3(30.0f);
         LightMaterial.ViewPos            = _FreeCamera->GetCameraVector(SysSpa::FCamera::EVectorType::kPosition);
 
         ShaderBufferManager->UpdateEntrieBuffer(CurrentFrame, "LightMaterial", LightMaterial);
@@ -663,6 +704,8 @@ void FApplication::ExecuteMainRender()
         CurrentBuffer->draw(6, 1, 0, 0);
         CurrentBuffer->bindVertexBuffers(0, CubeVertexBuffers, CubeOffsets);
         CurrentBuffer->draw(36, 3, 0, 0);
+        CurrentBuffer->bindVertexBuffers(0, SphereVertexBuffers, SphereOffsets);
+        CurrentBuffer->draw(static_cast<std::uint32_t>(SphereVertices.size()), 1, 0, 0);
         CurrentBuffer->endRendering();
 
         vk::ImageMemoryBarrier2 DepthRenderEndBarrier(
@@ -703,9 +746,13 @@ void FApplication::ExecuteMainRender()
                                           SceneShader->GetDescriptorSets(CurrentFrame), {});
         CurrentBuffer->draw(6, 1, 0, 0);
 
-        // Draw cubes
+        // Draw cube
         CurrentBuffer->bindVertexBuffers(0, CubeVertexBuffers, CubeOffsets);
         CurrentBuffer->draw(36, 3, 0, 0);
+
+        // Draw sphere
+        CurrentBuffer->bindVertexBuffers(0, SphereVertexBuffers, SphereOffsets);
+        CurrentBuffer->draw(static_cast<std::uint32_t>(SphereVertices.size()), 1, 0, 0);
 
         // Draw lamp
         CurrentBuffer->bindPipeline(vk::PipelineBindPoint::eGraphics, LampPipeline);

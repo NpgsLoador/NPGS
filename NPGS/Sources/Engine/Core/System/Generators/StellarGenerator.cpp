@@ -28,25 +28,22 @@ _GENERATOR_BEGIN
 
 // Tool macros
 // -----------
-#define GenerateDeathStarPlaceholder(Lifetime)                                                            \
-{                                                                                                         \
-    Astro::FStellarClass::FSpectralType DeathStarClass                                                    \
-	{                                                                                                     \
-        .HSpectralClass  = Astro::FStellarClass::ESpectralClass::kSpectral_Unknown,                       \
-        .MSpectralClass  = Astro::FStellarClass::ESpectralClass::kSpectral_Unknown,                       \
-        .LuminosityClass = Astro::FStellarClass::ELuminosityClass::kLuminosity_Unknown,                   \
-        .SpecialMark     = std::to_underlying(Astro::FStellarClass::ESpecialMark::kCode_Null),            \
-        .Subclass        = 0.0f,                                                                          \
-        .AmSubclass      = 0.0f,                                                                          \
-        .bIsAmStar       = false                                                                          \
-    };                                                                                                    \
-                                                                                                          \
-    Astro::AStar DeathStar;                                                                               \
-    DeathStar.SetStellarClass(                                                                            \
-        Astro::FStellarClass(Astro::FStellarClass::EStellarType::kDeathStarPlaceholder, DeathStarClass)); \
-    DeathStar.SetLifetime(Lifetime);                                                                      \
-    throw DeathStar;                                                                                      \
-}
+#define GenerateDeathStarPlaceholder(Lifetime)                                                                              \
+Astro::FStellarClass::FSpectralType DeathStarClass                                                                          \
+{                                                                                                                           \
+    .HSpectralClass  = Astro::FStellarClass::ESpectralClass::kSpectral_Unknown,                                             \
+    .MSpectralClass  = Astro::FStellarClass::ESpectralClass::kSpectral_Unknown,                                             \
+    .LuminosityClass = Astro::FStellarClass::ELuminosityClass::kLuminosity_Unknown,                                         \
+    .SpecialMark     = std::to_underlying(Astro::FStellarClass::ESpecialMark::kCode_Null),                                  \
+    .Subclass        = 0.0f,                                                                                                \
+    .AmSubclass      = 0.0f,                                                                                                \
+    .bIsAmStar       = false                                                                                                \
+};                                                                                                                          \
+                                                                                                                            \
+Astro::AStar DeathStar;                                                                                                     \
+DeathStar.SetStellarClass(Astro::FStellarClass(Astro::FStellarClass::EStellarType::kDeathStarPlaceholder, DeathStarClass)); \
+DeathStar.SetLifetime(Lifetime);                                                                                            \
+throw DeathStar;
 
 // Tool functions
 // --------------

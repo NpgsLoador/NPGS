@@ -737,7 +737,7 @@ void FTextureBase::BlitGenerateTexture(vk::Image SrcImage, vk::Extent3D Extent, 
                 vk::QueueFamilyIgnored,
                 vk::QueueFamilyIgnored,
                 SrcImage,
-                { vk::ImageAspectFlagBits::eColor, 0, 1, 0, ArrayLayers }
+                vk::ImageSubresourceRange(vk::ImageAspectFlagBits::eColor, 0, 1, 0, ArrayLayers)
             );
 
             vk::DependencyInfo DependencyInfo = vk::DependencyInfo()

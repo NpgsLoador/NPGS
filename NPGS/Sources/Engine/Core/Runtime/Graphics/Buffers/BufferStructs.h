@@ -1,6 +1,15 @@
 #pragma once
 
+#define GLM_ENABLE_EXPERIMENTAL
+#define GLM_FORCE_ALIGNED_GENTYPES
 #include <glm/glm.hpp>
+#include <glm/gtx/type_aligned.hpp>
+
+#include "Engine/Core/Base/Base.h"
+
+_NPGS_BEGIN
+_RUNTIME_BEGIN
+_GRAPHICS_BEGIN
 
 // Vertex structs
 // --------------
@@ -43,7 +52,7 @@ struct FGameArgs
     float Time;
     float TimeDelta;
     float TimeRate;
-} GameArgs{};
+};
 
 struct FBlackHoleArgs
 {
@@ -56,14 +65,14 @@ struct FBlackHoleArgs
     float AccretionRate;
     float InterRadiusLy;
     float OuterRadiusLy;
-} BlackHoleArgs{};
+};
 
 struct FMatrices
 {
     glm::aligned_mat4x4 View{ glm::mat4x4(1.0f) };
     glm::aligned_mat4x4 Projection{ glm::mat4x4(1.0f) };
     glm::aligned_mat4x4 LightSpaceMatrix{ glm::mat4x4(1.0f) };
-} Matrices;
+};
 
 struct FMaterial
 {
@@ -83,4 +92,8 @@ struct FLightMaterial
     FMaterial         Material;
     FLight            Light;
     glm::aligned_vec3 ViewPos;
-} LightMaterial;
+};
+
+_GRAPHICS_END
+_RUNTIME_END
+_NPGS_END
