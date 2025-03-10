@@ -6,9 +6,9 @@ layout(location = 0) out vec4 FragColor;
 layout(location = 0) in _FragInput
 {
     mat3x3 TbnMatrix;
-	vec2 TexCoord;
-	vec3 FragPos;
-    vec4 LightSpaceFragPos;
+	vec2   TexCoord;
+	vec3   FragPos;
+    vec4   LightSpaceFragPos;
 } FragInput;
 
 struct FMaterial

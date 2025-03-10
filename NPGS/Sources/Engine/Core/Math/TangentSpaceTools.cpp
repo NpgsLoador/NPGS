@@ -33,7 +33,7 @@ void CalculateTangentBitangent(std::vector<Runtime::Graphics::FVertex>& Vertices
 void CalculateTangentBitangentWithIndices(std::vector<Runtime::Graphics::FVertex>& Vertices,
                                           const std::vector<std::uint32_t> Indices)
 {
-    for (std::size_t i = 0; i != Indices.size(); ++i)
+    for (std::size_t i = 0; i < Indices.size(); i += 3)
     {
         const auto& Vertex0 = Vertices[Indices[i + 0]];
         const auto& Vertex1 = Vertices[Indices[i + 1]];

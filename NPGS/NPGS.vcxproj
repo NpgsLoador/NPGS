@@ -368,6 +368,7 @@ spirv-cross-cpp.lib
     <None Include="Sources\Engine\Shaders\Common\NumericConstants.glsl" />
     <None Include="Sources\Engine\Shaders\Common\Random\Hash.glsl" />
     <None Include="Sources\Engine\Shaders\PbrScene.frag.glsl" />
+    <None Include="Sources\Engine\Shaders\PbrScene.vert.glsl" />
     <None Include="Sources\Engine\Shaders\PostProcess.frag.glsl" />
     <None Include="Sources\Engine\Shaders\PostProcess.vert.glsl" />
     <None Include="Sources\Engine\Shaders\Scene.frag.glsl" />

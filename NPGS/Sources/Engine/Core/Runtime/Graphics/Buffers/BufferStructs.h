@@ -1,9 +1,8 @@
 #pragma once
 
-#define GLM_ENABLE_EXPERIMENTAL
 #define GLM_FORCE_ALIGNED_GENTYPES
 #include <glm/glm.hpp>
-#include <glm/gtx/type_aligned.hpp>
+#include <glm/gtc/type_aligned.hpp>
 
 #include "Engine/Core/Base/Base.h"
 
@@ -92,6 +91,21 @@ struct FLightMaterial
     FMaterial         Material;
     FLight            Light;
     glm::aligned_vec3 ViewPos;
+};
+
+struct FPbrArgs
+{
+    glm::vec3 Albedo;
+    float Metallic;
+    float Roughness;
+    float AmbientOcclusion;
+};
+
+struct FLightArgs
+{
+    glm::aligned_vec3 LightPos;
+    glm::aligned_vec3 LightColor;
+    glm::aligned_vec3 CameraPos;
 };
 
 _GRAPHICS_END

@@ -150,7 +150,7 @@ vk::Result FVulkanCore::CreateDevice(std::uint32_t PhysicalDeviceIndex, vk::Devi
     vk::PhysicalDeviceVulkan12Features Features12;
     vk::PhysicalDeviceVulkan13Features Features13;
     vk::PhysicalDeviceVulkan14Features Features14;
-    vk::PhysicalDeviceCustomBorderColorFeaturesEXT CustomBorderColorFeatures;
+    vk::PhysicalDeviceCustomBorderColorFeaturesEXT CustomBorderColorFeatures(vk::True, vk::True);
 
     Features2.setPNext(&Features11);
     Features11.setPNext(&Features12);
@@ -160,9 +160,7 @@ vk::Result FVulkanCore::CreateDevice(std::uint32_t PhysicalDeviceIndex, vk::Devi
 
     _PhysicalDevice.getFeatures2(&Features2);
 
-    CustomBorderColorFeatures.setCustomBorderColors(vk::True).setCustomBorderColorWithoutFormat(vk::True);
-
-    void* pNext = nullptr;
+    void* pNext = &CustomBorderColorFeatures;
     vk::PhysicalDeviceFeatures PhysicalDeviceFeatures = Features2.features;
 
     if (_ApiVersion >= VK_API_VERSION_1_1)

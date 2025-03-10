@@ -323,5 +323,6 @@
       <Filter>头文件</Filter>
     </None>
     <None Include="Sources\Engine\Shaders\PbrScene.frag.glsl" />
+    <None Include="Sources\Engine\Shaders\PbrScene.vert.glsl" />
   </ItemGroup>
 </Project>

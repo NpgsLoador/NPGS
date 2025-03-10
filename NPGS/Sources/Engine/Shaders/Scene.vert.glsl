@@ -11,9 +11,9 @@ layout(location = 5) in mat4x4 Model;
 layout(location = 0) out _VertOutput
 {
 	mat3x3 TbnMatrix;
-	vec2 TexCoord;
-	vec3 FragPos;
-	vec4 LightSpaceFragPos;
+	vec2   TexCoord;
+	vec3   FragPos;
+	vec4   LightSpaceFragPos;
 } VertOutput;
 
 layout(std140, set = 0, binding = 0) uniform Matrices
