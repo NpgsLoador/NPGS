@@ -3,6 +3,7 @@
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
+#include <future>
 
 #include <dxgi1_6.h>
 
@@ -12,6 +13,7 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
+#include <vulkan/vulkan.hpp>
 #include <Windows.h>
 
 #include "Engine/Core/Base/Config/EngineConfig.h"
@@ -33,6 +35,7 @@ FApplication::FApplication(const vk::Extent2D& WindowSize, const std::string& Wi
                            bool bEnableVSync, bool bEnableFullscreen, bool bEnableHdr)
     :
     _VulkanContext(Grt::FVulkanContext::GetClassInstance()),
+    _ThreadPool(Runtime::Thread::FThreadPool::GetInstance()),
     _WindowTitle(WindowTitle),
     _WindowSize(WindowSize),
     _bEnableVSync(bEnableVSync),
@@ -177,9 +180,9 @@ void FApplication::ExecuteMainRender()
 
         LightMaterial.Material.Shininess = 64.0f;
         LightMaterial.Light.Position     = LightPos;
-        LightMaterial.Light.Ambient      = glm::vec3(0.1f);
-        LightMaterial.Light.Diffuse      = glm::vec3(10.0f);
-        LightMaterial.Light.Specular     = glm::vec3(10.0f);
+        LightMaterial.Light.Ambient      = glm::vec3(0.2f);
+        LightMaterial.Light.Diffuse      = glm::vec3(6.0f);
+        LightMaterial.Light.Specular     = glm::vec3(6.0f);
         LightMaterial.ViewPos            = _FreeCamera->GetCameraVector(SysSpa::FCamera::EVectorType::kPosition);
 
         ShaderBufferManager->UpdateEntrieBuffer(CurrentFrame, "Matrices", Matrices);
@@ -302,10 +305,10 @@ void FApplication::ExecuteMainRender()
         // CurrentBuffer->draw(36, 1, 0, 0);
 
         // Draw plane
-        CurrentBuffer->bindPipeline(vk::PipelineBindPoint::eGraphics, PbrScenePipeline);
+        CurrentBuffer->bindPipeline(vk::PipelineBindPoint::eGraphics, ScenePipeline);
         CurrentBuffer->bindVertexBuffers(0, PlaneVertexBuffers, PlaneOffsets);
-        CurrentBuffer->bindDescriptorSets(vk::PipelineBindPoint::eGraphics, PbrScenePipelineLayout, 0,
-                                          PbrSceneShader->GetDescriptorSets(CurrentFrame), {});
+        CurrentBuffer->bindDescriptorSets(vk::PipelineBindPoint::eGraphics, ScenePipelineLayout, 0,
+                                          SceneShader->GetDescriptorSets(CurrentFrame), {});
         CurrentBuffer->draw(6, 1, 0, 0);
 
         // Draw cube
@@ -436,24 +439,23 @@ void FApplication::CreateAttachments()
         .setStoreOp(vk::AttachmentStoreOp::eStore)
         .setClearValue(vk::ClearColorValue(0.0f, 0.0f, 0.0f, 1.0f));
 
-    VmaAllocationCreateInfo AllocationCreateInfo
-    {
-        .flags = VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT,
-        .usage = VMA_MEMORY_USAGE_GPU_ONLY,
-    };
-
-    vk::Extent2D ShadowMapExtent(4096, 4096);
-
     auto CreateFramebuffers = [&]() -> void
     {
+        VmaAllocationCreateInfo AllocationCreateInfo
+        {
+            .flags = VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT,
+            .usage = VMA_MEMORY_USAGE_GPU_ONLY,
+        };
+
+        vk::Extent2D ShadowMapExtent(4096, 4096);
+
         _VulkanContext->WaitIdle();
-        auto SwapchainImageFormat = _VulkanContext->GetSwapchainCreateInfo().imageFormat;
 
         _ColorAttachment = std::make_unique<Grt::FColorAttachment>(
-            AllocationCreateInfo, SwapchainImageFormat, _WindowSize, 1, vk::SampleCountFlagBits::e8);
+            AllocationCreateInfo, vk::Format::eR16G16B16A16Sfloat, _WindowSize, 1, vk::SampleCountFlagBits::e8);
 
         _ResolveAttachment = std::make_unique<Grt::FColorAttachment>(
-            AllocationCreateInfo, SwapchainImageFormat, _WindowSize, 1,
+            AllocationCreateInfo, vk::Format::eR16G16B16A16Sfloat, _WindowSize, 1,
             vk::SampleCountFlagBits::e1, vk::ImageUsageFlagBits::eSampled);
 
         _DepthStencilAttachment = std::make_unique<Grt::FDepthStencilAttachment>(
@@ -555,31 +557,59 @@ void FApplication::LoadAssets()
     AssetManager->AddAsset<Art::FShader>("SkyboxShader", SkyboxShaderFiles, SkyboxResourceInfo);
     AssetManager->AddAsset<Art::FShader>("PostShader", PostShaderFiles, PostResourceInfo);
 
-    std::vector<std::string> CliffSideFiles{ "CliffSide/cliff_side_diff_1k.jpg", "CliffSide/cliff_side_nor_dx_1k.jpg", "CliffSide/cliff_side_disp_1k.jpg", "CliffSide/cliff_side_arm_1k.jpg" };
+    std::vector<std::string> TextureNames
+    { 
+        "CliffSideDiffuse",
+        "CliffSideNormal",
+        "CliffSideDisplacement",
+        "CliffSideArm"
+    };
 
-#if !defined(_DEBUG) && !defined(_RELEASE)
-    CliffSideFiles = { "CliffSide/cliff_side_diff_16k.jpg", "CliffSide/cliff_side_nor_dx_16k.jpg", "CliffSide/cliff_side_disp_16k.jpg", "CliffSide/cliff_side_arm_16k.jpg" };
+    std::vector<std::string> TextureFiles
+    {
+        "CliffSide/cliff_side_diff_1k.jpg",
+        "CliffSide/cliff_side_nor_dx_1k.jpg",
+        "CliffSide/cliff_side_disp_1k.jpg",
+        "CliffSide/cliff_side_arm_1k.jpg"
+    };
+
+    std::vector<vk::Format> TextureFormats
+    {
+        vk::Format::eR8G8B8A8Srgb,
+        vk::Format::eR8G8B8A8Unorm,
+        vk::Format::eR8G8B8A8Unorm,
+        vk::Format::eR8G8B8A8Unorm
+    };
+
+#if !defined(_DEBUG)
+    TextureFiles =
+    {
+        "CliffSide/cliff_side_diff_16k.jpg",
+        "CliffSide/cliff_side_nor_dx_16k.jpg",
+        "CliffSide/cliff_side_disp_16k.jpg",
+        "CliffSide/cliff_side_arm_16k.jpg"
+    };
 #endif
-
-    AssetManager->AddAsset<Art::FTexture2D>(
-        "CliffSideDiffuse", TextureAllocationCreateInfo, CliffSideFiles[0],
-        vk::Format::eR8G8B8A8Srgb, vk::Format::eR8G8B8A8Srgb, vk::ImageCreateFlags(), true, false);
-
-    AssetManager->AddAsset<Art::FTexture2D>(
-        "CliffSideNormal", TextureAllocationCreateInfo, CliffSideFiles[1],
-        vk::Format::eR8G8B8A8Unorm, vk::Format::eR8G8B8A8Unorm, vk::ImageCreateFlags(), true, false);
-
-    AssetManager->AddAsset<Art::FTexture2D>(
-        "CliffSideDisplacement", TextureAllocationCreateInfo, CliffSideFiles[2],
-        vk::Format::eR8G8B8A8Unorm, vk::Format::eR8G8B8A8Unorm, vk::ImageCreateFlags(), true, false);
-
-    AssetManager->AddAsset<Art::FTexture2D>(
-        "CliffSideArm", TextureAllocationCreateInfo, CliffSideFiles[3],
-        vk::Format::eR8G8B8A8Unorm, vk::Format::eR8G8B8A8Unorm, vk::ImageCreateFlags(), true, false);
 
     AssetManager->AddAsset<Art::FTextureCube>(
         "Skybox", TextureAllocationCreateInfo, "Skybox", vk::Format::eR8G8B8A8Srgb,
         vk::Format::eR8G8B8A8Srgb, vk::ImageCreateFlags(), true, false);
+
+    // std::vector<std::future<void>> Futures;
+
+    for (std::size_t i = 0; i != TextureNames.size(); ++i)
+    {
+        // Futures.push_back(_ThreadPool->Submit([&, i]() -> void
+        // {
+            AssetManager->AddAsset<Art::FTexture2D>(TextureNames[i], TextureAllocationCreateInfo, TextureFiles[i],
+                                                    TextureFormats[i], TextureFormats[i], vk::ImageCreateFlags(), true, false);
+        // }));
+    }
+
+    // for (auto& Future : Futures)
+    // {
+    //     Future.get();
+    // }
 }
 
 void FApplication::CreateUniformBuffers()
@@ -692,7 +722,7 @@ void FApplication::BindDescriptorSets(Art::FAssetManager* AssetManager)
 
     static Grt::FVulkanSampler kFramebufferSampler(SamplerCreateInfo);
 
-    auto CreatePostDescriptors = [&]() -> void
+    auto CreatePostDescriptors = [&, PostShader = PostShader, SceneShader = SceneShader]() -> void
     {
         vk::DescriptorImageInfo ColorImageInfo(
             *kFramebufferSampler, *_ResolveAttachment->GetImageView(), vk::ImageLayout::eShaderReadOnlyOptimal);
@@ -874,9 +904,11 @@ void FApplication::CreatePipelines()
         .setColorWriteMask(vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG |
                            vk::ColorComponentFlagBits::eB | vk::ColorComponentFlagBits::eA);
 
+    vk::Format AttachmentFormat = vk::Format::eR16G16B16A16Sfloat;
+
     vk::PipelineRenderingCreateInfo SceneRenderingCreateInfo = vk::PipelineRenderingCreateInfo()
         .setColorAttachmentCount(1)
-        .setColorAttachmentFormats(_VulkanContext->GetSwapchainCreateInfo().imageFormat)
+        .setColorAttachmentFormats(AttachmentFormat)
         .setDepthAttachmentFormat(vk::Format::eD32Sfloat);
 
     Grt::FGraphicsPipelineCreateInfoPack ScenePipelineCreateInfoPack;

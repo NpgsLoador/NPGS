@@ -1,0 +1,51 @@
+#ifndef TRANSFERFUNCTIONS_GLSL_
+#define TRANSFERFUNCTIONS_GLSL_
+
+float PqEotf(float Vx)
+{
+    const float kMx1 = 2610.0 / 16384.0;
+    const float kMx2 = 2523.0 / 4096.0 * 128.0;
+    const float kCx1 = 3424.0 / 4096.0;
+    const float kCx2 = 2413.0 / 4096.0 * 32.0;
+    const float kCx3 = 2392.0 / 4096.0 * 32.0;
+
+    Vx = pow(Vx, 1 / kMx2);
+
+    if (Vx <= kCx1)
+    {
+        return 0.0;
+    }
+
+    return pow((Vx - kCx1) / (kCx2 - kCx3 * Vx), 1.0 / kMx1);
+}
+
+vec3 PqEotf(vec3 Color)
+{
+    return vec3(PqEotf(Color.r), PqEotf(Color.g), PqEotf(Color.b));
+}
+
+float InversePqEotf(float Vx)
+{
+    const float kMx1 = 2610.0 / 16384.0;
+    const float kMx2 = 2523.0 / 4096.0 * 128.0;
+    const float kCx1 = 3424.0 / 4096.0;
+    const float kCx2 = 2413.0 / 4096.0 * 32.0;
+    const float kCx3 = 2392.0 / 4096.0 * 32.0;
+
+    Vx = pow(Vx, kMx1);
+
+    return pow((kCx1 + kCx2 * Vx) / (1 + kCx3 * Vx), kMx2);
+}
+
+vec3 InversePqEotf(vec3 Color)
+{
+    return vec3(InversePqEotf(Color.r), InversePqEotf(Color.g), InversePqEotf(Color.b));
+}
+
+vec3 ScRgbToPq(vec3 Color)
+{
+    vec3 PqBright = Color * 80.0 / 10000.0;
+    return InversePqEotf(PqBright);
+}
+
+#endif // !TRANSFERFUNCTIONS_GLSL_

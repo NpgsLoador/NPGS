@@ -5,7 +5,7 @@
 #include <vector>
 
 #include <GLFW/glfw3.h>
-#include <vulkan/vulkan.hpp>
+#include <vulkan/vulkan_handles.hpp>
 
 #include "Engine/Core/Base/Base.h"
 #include "Engine/Core/Runtime/AssetLoaders/AssetManager.h"
@@ -13,19 +13,13 @@
 #include "Engine/Core/Runtime/Graphics/Vulkan/Context.h"
 #include "Engine/Core/Runtime/Graphics/Vulkan/Resources.h"
 #include "Engine/Core/Runtime/Graphics/Vulkan/Wrappers.h"
+#include "Engine/Core/Runtime/Threads/ThreadPool.h"
 #include "Engine/Core/System/Spatial/Camera.h"
 
 _NPGS_BEGIN
 
 class FApplication
 {
-private:
-    struct FRenderer
-    {
-        std::vector<Runtime::Graphics::FVulkanFramebuffer> Framebuffers;
-        std::unique_ptr<Runtime::Graphics::FVulkanRenderPass> RenderPass;
-    };
-
 public:
     FApplication(const vk::Extent2D& WindowSize, const std::string& WindowTitle,
                  bool bEnableVSync, bool bEnableFullscreen, bool bEnableHdr);
@@ -56,6 +50,7 @@ private:
 
 private:
     Runtime::Graphics::FVulkanContext* _VulkanContext;
+    Runtime::Thread::FThreadPool*      _ThreadPool;
 
     GLFWwindow*  _Window{ nullptr };
     std::string  _WindowTitle;
@@ -65,10 +60,10 @@ private:
     bool         _bEnableHdr;
 
     std::unique_ptr<System::Spatial::FCamera> _FreeCamera;
-    double                                    _DeltaTime{};
-    double                                    _LastX{};
-    double                                    _LastY{};
-    bool                                      _bFirstMouse{ true };
+    double  _DeltaTime{};
+    double  _LastX{};
+    double  _LastY{};
+    bool    _bFirstMouse{ true };
 
     vk::RenderingAttachmentInfo _ColorAttachmentInfo;
     vk::RenderingAttachmentInfo _ResolveAttachmentInfo;

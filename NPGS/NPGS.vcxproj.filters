@@ -324,5 +324,6 @@
     </None>
     <None Include="Sources\Engine\Shaders\PbrScene.frag.glsl" />
     <None Include="Sources\Engine\Shaders\PbrScene.vert.glsl" />
+    <None Include="Sources\Engine\Shaders\Common\TransferFunctions.glsl" />
   </ItemGroup>
 </Project>

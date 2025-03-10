@@ -8,7 +8,7 @@ int main()
 {
     FLogger::Initialize();
 
-    FApplication App({ 1280, 960 }, "Learn glNext FPS:", false, false, false);
+    FApplication App({ 1280, 960 }, "Learn glNext FPS:", false, false, true);
     App.ExecuteMainRender();
     return 0;
 }
