@@ -17,10 +17,8 @@
 #include "Engine/Core/Base/Config/EngineConfig.h"
 #include "Engine/Core/Math/NumericConstants.h"
 #include "Engine/Core/Math/TangentSpaceTools.h"
-#include "Engine/Core/Runtime/AssetLoaders/AssetManager.h"
 #include "Engine/Core/Runtime/AssetLoaders/Shader.h"
 #include "Engine/Core/Runtime/AssetLoaders/Texture.h"
-#include "Engine/Core/Runtime/Graphics/Buffers/BufferStructs.h"
 #include "Engine/Core/Runtime/Graphics/Renderers/PipelineManager.h"
 #include "Engine/Core/Runtime/Graphics/Vulkan/ShaderBufferManager.h"
 #include "Engine/Utils/Logger.h"
@@ -49,204 +47,22 @@ FApplication::FApplication(const vk::Extent2D& WindowSize, const std::string& Wi
 
 FApplication::~FApplication()
 {
+    Terminate();
 }
 
 void FApplication::ExecuteMainRender()
 {
-    std::unique_ptr<Grt::FColorAttachment> ColorAttachment;
-    std::unique_ptr<Grt::FColorAttachment> ResolveAttachment;
-    std::unique_ptr<Grt::FDepthStencilAttachment> DepthStencilAttachment;
-    std::unique_ptr<Grt::FDepthStencilAttachment> ShadowMapAttachment;
+    auto* AssetManager        = Art::FAssetManager::GetInstance();
+    auto* ShaderBufferManager = Grt::FShaderBufferManager::GetInstance();
+    auto* PipelineManager     = Grt::FPipelineManager::GetInstance();
 
-    vk::RenderingAttachmentInfo ColorAttachmentInfo = vk::RenderingAttachmentInfo()
-        .setImageLayout(vk::ImageLayout::eColorAttachmentOptimal)
-        .setResolveMode(vk::ResolveModeFlagBits::eAverage)
-        .setResolveImageLayout(vk::ImageLayout::eColorAttachmentOptimal)
-        .setLoadOp(vk::AttachmentLoadOp::eClear)
-        .setStoreOp(vk::AttachmentStoreOp::eStore)
-        .setClearValue(vk::ClearColorValue(0.0f, 0.0f, 0.0f, 1.0f));
-
-    vk::RenderingAttachmentInfo DepthStencilAttachmentInfo = vk::RenderingAttachmentInfo()
-        .setImageLayout(vk::ImageLayout::eDepthStencilAttachmentOptimal)
-        .setLoadOp(vk::AttachmentLoadOp::eClear)
-        .setStoreOp(vk::AttachmentStoreOp::eDontCare)
-        .setClearValue(vk::ClearDepthStencilValue(1.0f, 0));
-
-    vk::RenderingAttachmentInfo ShadowMapAttachmentInfo = vk::RenderingAttachmentInfo()
-        .setImageLayout(vk::ImageLayout::eDepthAttachmentOptimal)
-        .setLoadOp(vk::AttachmentLoadOp::eClear)
-        .setStoreOp(vk::AttachmentStoreOp::eDontCare)
-        .setClearValue(vk::ClearDepthStencilValue(1.0f, 0));
-
-    vk::RenderingAttachmentInfo PostProcessAttachmentInfo = vk::RenderingAttachmentInfo()
-        .setImageLayout(vk::ImageLayout::eColorAttachmentOptimal)
-        .setLoadOp(vk::AttachmentLoadOp::eClear)
-        .setStoreOp(vk::AttachmentStoreOp::eStore)
-        .setClearValue(vk::ClearColorValue(0.0f, 0.0f, 0.0f, 1.0f));
-
-    VmaAllocationCreateInfo AttachmentAllocationCreateInfo
-    {
-        .flags = VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT,
-        .usage = VMA_MEMORY_USAGE_GPU_ONLY,
-    };
-
-    vk::Extent2D ShadowMapExtent(4096, 4096);
-
-    auto CreateFramebuffers = [&]() -> void
-    {
-        _VulkanContext->WaitIdle();
-        auto SwapchainImageFormat = _VulkanContext->GetSwapchainCreateInfo().imageFormat;
-
-        ColorAttachment = std::make_unique<Grt::FColorAttachment>(
-            AttachmentAllocationCreateInfo, SwapchainImageFormat, _WindowSize, 1, vk::SampleCountFlagBits::e8);
-
-        ResolveAttachment = std::make_unique<Grt::FColorAttachment>(
-            AttachmentAllocationCreateInfo, SwapchainImageFormat, _WindowSize, 1,
-            vk::SampleCountFlagBits::e1, vk::ImageUsageFlagBits::eSampled);
-
-        DepthStencilAttachment = std::make_unique<Grt::FDepthStencilAttachment>(
-            AttachmentAllocationCreateInfo, vk::Format::eD32Sfloat, _WindowSize, 1, vk::SampleCountFlagBits::e8);
-
-        ShadowMapAttachment = std::make_unique<Grt::FDepthStencilAttachment>(
-            AttachmentAllocationCreateInfo, vk::Format::eD32Sfloat, ShadowMapExtent, 1,
-            vk::SampleCountFlagBits::e1, vk::ImageUsageFlagBits::eSampled);
-
-        ColorAttachmentInfo.setImageView(*ColorAttachment->GetImageView())
-                           .setResolveImageView(*ResolveAttachment->GetImageView());
-        DepthStencilAttachmentInfo.setImageView(*DepthStencilAttachment->GetImageView());
-        ShadowMapAttachmentInfo.setImageView(*ShadowMapAttachment->GetImageView());
-    };
-
-    auto DestroyFramebuffers = [&]() -> void
-    {
-        _VulkanContext->WaitIdle();
-    };
-
-    CreateFramebuffers();
-
-    _VulkanContext->RegisterAutoRemovedCallbacks(
-        Grt::FVulkanContext::ECallbackType::kCreateSwapchain, "CreateFramebuffers", CreateFramebuffers);
-    _VulkanContext->RegisterAutoRemovedCallbacks(
-        Grt::FVulkanContext::ECallbackType::kDestroySwapchain, "DestroyFramebuffers", DestroyFramebuffers);
-
-    // Create pipeline layout
-    // ----------------------
-    auto* AssetManager = Art::FAssetManager::GetInstance();
-
-    Art::FShader::FResourceInfo SceneResourceInfo
-    {
-        {
-            { 0, sizeof(Grt::FVertex), false },
-            { 1, sizeof(Grt::FInstanceData), true }
-        },
-        {
-            { 0, 0, offsetof(Grt::FVertex, Position) },
-            { 0, 1, offsetof(Grt::FVertex, Normal) },
-            { 0, 2, offsetof(Grt::FVertex, TexCoord) },
-            { 0, 3, offsetof(Grt::FVertex, Tangent) },
-            { 0, 4, offsetof(Grt::FVertex, Bitangent) },
-            { 1, 5, offsetof(Grt::FInstanceData, Model) }
-        },
-        {
-            { 0, 0, false },
-            { 0, 1, false }
-        }
-    };
-
-    Art::FShader::FResourceInfo PbrSceneResourceInfo
-    {
-        {
-            { 0, sizeof(Grt::FVertex), false },
-            { 1, sizeof(Grt::FInstanceData), true }
-        },
-        {
-            { 0, 0, offsetof(Grt::FVertex, Position) },
-            { 0, 1, offsetof(Grt::FVertex, Normal) },
-            { 0, 2, offsetof(Grt::FVertex, TexCoord) },
-            { 0, 3, offsetof(Grt::FVertex, Tangent) },
-            { 0, 4, offsetof(Grt::FVertex, Bitangent) },
-            { 1, 5, offsetof(Grt::FInstanceData, Model) }
-        },
-        {
-            { 0, 0, false },
-            { 0, 1, false }
-        }
-    };
-
-    Art::FShader::FResourceInfo ShadowMapResourceInfo
-    {
-        {
-            { 0, sizeof(Grt::FVertex), false },
-            { 1, sizeof(Grt::FInstanceData), true }
-        },
-        {
-            { 0, 0, offsetof(Grt::FVertex, Position) },
-            { 1, 1, offsetof(Grt::FInstanceData, Model) }
-        },
-        { { 0, 0, false } },
-    };
-
-    Art::FShader::FResourceInfo SkyboxResourceInfo
-    {
-        { { 0, sizeof(Grt::FSkyboxVertex), false } },
-        { { 0, 0, offsetof(Grt::FSkyboxVertex, Position) } },
-        { { 0, 0, false } }
-    };
-
-    Art::FShader::FResourceInfo PostResourceInfo
-    {
-        { { 0, sizeof(Grt::FQuadVertex), false } },
-        {
-            { 0, 0, offsetof(Grt::FQuadVertex, Position) },
-            { 0, 1, offsetof(Grt::FQuadVertex, TexCoord) }
-        }
-    };
-
-    std::vector<std::string> SceneShaderFiles({ "Scene.vert.spv", "Scene.frag.spv" });
-    std::vector<std::string> PbrSceneShaderFiles({ "PbrScene.vert.spv", "PbrScene.frag.spv" });
-    std::vector<std::string> LampShaderFiles({ "Scene.vert.spv", "Scene_Lamp.frag.spv" });
-    std::vector<std::string> ShadowMapShaderFiles({ "ShadowMap.vert.spv", "ShadowMap.frag.spv" });
-    std::vector<std::string> SkyboxShaderFiles({ "Skybox.vert.spv", "Skybox.frag.spv" });
-    std::vector<std::string> PostShaderFiles({ "PostProcess.vert.spv", "PostProcess.frag.spv" });
-
-    VmaAllocationCreateInfo TextureAllocationCreateInfo
-    {
-        .flags = VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT,
-        .usage = VMA_MEMORY_USAGE_GPU_ONLY
-    };
-
-    AssetManager->AddAsset<Art::FShader>("SceneShader", SceneShaderFiles, SceneResourceInfo);
-    AssetManager->AddAsset<Art::FShader>("PbrSceneShader", PbrSceneShaderFiles, PbrSceneResourceInfo);
-    AssetManager->AddAsset<Art::FShader>("LampShader", LampShaderFiles, SceneResourceInfo);
-    AssetManager->AddAsset<Art::FShader>("ShadowMapShader", ShadowMapShaderFiles, ShadowMapResourceInfo);
-    AssetManager->AddAsset<Art::FShader>("SkyboxShader", SkyboxShaderFiles, SkyboxResourceInfo);
-    AssetManager->AddAsset<Art::FShader>("PostShader", PostShaderFiles, PostResourceInfo);
-
-    std::vector<std::string> CliffSideFiles{ "CliffSide/cliff_side_diff_1k.jpg", "CliffSide/cliff_side_nor_dx_1k.jpg", "CliffSide/cliff_side_disp_1k.jpg", "CliffSide/cliff_side_arm_1k.jpg" };
-
-#if !defined(_DEBUG) && !defined(_RELEASE)
-    CliffSideFiles = { "CliffSide/cliff_side_diff_16k.jpg", "CliffSide/cliff_side_nor_dx_16k.jpg", "CliffSide/cliff_side_disp_16k.jpg", "CliffSide/cliff_side_arm_16k.jpg" };
-#endif
-
-    AssetManager->AddAsset<Art::FTexture2D>(
-        "CliffSideDiffuse", TextureAllocationCreateInfo, CliffSideFiles[0],
-        vk::Format::eR8G8B8A8Srgb, vk::Format::eR8G8B8A8Srgb, vk::ImageCreateFlags(), true, false);
-
-    AssetManager->AddAsset<Art::FTexture2D>(
-        "CliffSideNormal", TextureAllocationCreateInfo, CliffSideFiles[1],
-        vk::Format::eR8G8B8A8Unorm, vk::Format::eR8G8B8A8Unorm, vk::ImageCreateFlags(), true, false);
-
-    AssetManager->AddAsset<Art::FTexture2D>(
-        "CliffSideDisplacement", TextureAllocationCreateInfo, CliffSideFiles[2],
-        vk::Format::eR8G8B8A8Unorm, vk::Format::eR8G8B8A8Unorm, vk::ImageCreateFlags(), true, false);
-
-    AssetManager->AddAsset<Art::FTexture2D>(
-        "CliffSideArm", TextureAllocationCreateInfo, CliffSideFiles[3],
-        vk::Format::eR8G8B8A8Unorm, vk::Format::eR8G8B8A8Unorm, vk::ImageCreateFlags(), true, false);
-
-    AssetManager->AddAsset<Art::FTextureCube>(
-        "Skybox", TextureAllocationCreateInfo, "Skybox", vk::Format::eR8G8B8A8Srgb,
-        vk::Format::eR8G8B8A8Srgb, vk::ImageCreateFlags(), true, false);
+    CreateAttachments();
+    LoadAssets();
+    CreateUniformBuffers();
+    BindDescriptorSets(AssetManager);
+    InitInstanceData();
+    InitVerticesData();
+    CreatePipelines();
 
     auto* SceneShader     = AssetManager->GetAsset<Art::FShader>("SceneShader");
     auto* PbrSceneShader  = AssetManager->GetAsset<Art::FShader>("PbrSceneShader");
@@ -254,348 +70,6 @@ void FApplication::ExecuteMainRender()
     auto* ShadowMapShader = AssetManager->GetAsset<Art::FShader>("ShadowMapShader");
     auto* SkyboxShader    = AssetManager->GetAsset<Art::FShader>("SkyboxShader");
     auto* PostShader      = AssetManager->GetAsset<Art::FShader>("PostShader");
-
-    auto* CliffSideDiffuse      = AssetManager->GetAsset<Art::FTexture2D>("CliffSideDiffuse");
-    auto* CliffSideNormal       = AssetManager->GetAsset<Art::FTexture2D>("CliffSideNormal");
-    auto* CliffSideDisplacement = AssetManager->GetAsset<Art::FTexture2D>("CliffSideDisplacement");
-    auto* CliffSideArm          = AssetManager->GetAsset<Art::FTexture2D>("CliffSideArm");
-    auto* Skybox                = AssetManager->GetAsset<Art::FTextureCube>("Skybox");
-
-    Grt::FShaderBufferManager::FUniformBufferCreateInfo MatricesCreateInfo
-    {
-        .Name    = "Matrices",
-        .Fields  = { "View", "Projection", "LightSpaceMatrix" },
-        .Set     = 0,
-        .Binding = 0,
-        .Usage   = vk::DescriptorType::eUniformBuffer
-    };
-
-    Grt::FShaderBufferManager::FUniformBufferCreateInfo LightMaterialCreateInfo
-    {
-        .Name    = "LightMaterial",
-        .Fields  = { "Material", "Light", "ViewPos" },
-        .Set     = 0,
-        .Binding = 1,
-        .Usage   = vk::DescriptorType::eUniformBuffer
-    };
-
-    Grt::FShaderBufferManager::FUniformBufferCreateInfo LightArgsCreateInfo
-    {
-        .Name    = "LightArgs",
-        .Fields  = { "LightPositions", "LightColors", "CameraPos" },
-        .Set     = 0,
-        .Binding = 1,
-        .Usage   = vk::DescriptorType::eUniformBuffer
-    };
-
-    VmaAllocationCreateInfo UniformBufferAllocationCreateInfo
-    {
-        .flags = VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT,
-        .usage = VMA_MEMORY_USAGE_CPU_TO_GPU,
-        .requiredFlags = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT | VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT
-    };
-
-    auto ShaderBufferManager = Grt::FShaderBufferManager::GetInstance();
-    ShaderBufferManager->CreateBuffers<Grt::FMatrices>(MatricesCreateInfo, &UniformBufferAllocationCreateInfo);
-    ShaderBufferManager->CreateBuffers<Grt::FLightMaterial>(LightMaterialCreateInfo, &UniformBufferAllocationCreateInfo);
-    ShaderBufferManager->CreateBuffers<Grt::FLightArgs>(LightArgsCreateInfo, &UniformBufferAllocationCreateInfo);
-
-    // Bind descriptor sets
-    // --------------------
-    vk::SamplerCreateInfo SamplerCreateInfo = Art::FTextureBase::CreateDefaultSamplerCreateInfo();
-    Grt::FVulkanSampler Sampler(SamplerCreateInfo);
-
-    vk::DescriptorImageInfo SamplerInfo(*Sampler);
-    SceneShader->WriteSharedDescriptors<vk::DescriptorImageInfo>(1, 0, vk::DescriptorType::eSampler, { SamplerInfo });
-    PbrSceneShader->WriteSharedDescriptors<vk::DescriptorImageInfo>(1, 0, vk::DescriptorType::eSampler, { SamplerInfo });
-
-    std::vector<vk::DescriptorImageInfo> ImageInfos;
-    ImageInfos.push_back(CliffSideDiffuse->CreateDescriptorImageInfo(nullptr));
-    SceneShader->WriteSharedDescriptors(1, 1, vk::DescriptorType::eSampledImage, ImageInfos);
-    PbrSceneShader->WriteSharedDescriptors(1, 1, vk::DescriptorType::eSampledImage, ImageInfos);
-    ImageInfos.clear();
-    ImageInfos.push_back(CliffSideNormal->CreateDescriptorImageInfo(nullptr));
-    SceneShader->WriteSharedDescriptors(1, 2, vk::DescriptorType::eSampledImage, ImageInfos);
-    PbrSceneShader->WriteSharedDescriptors(1, 2, vk::DescriptorType::eSampledImage, ImageInfos);
-    ImageInfos.clear();
-    ImageInfos.push_back(CliffSideDiffuse->CreateDescriptorImageInfo(nullptr));
-    SceneShader->WriteSharedDescriptors(1, 3, vk::DescriptorType::eSampledImage, ImageInfos);
-    ImageInfos.clear();
-    ImageInfos.push_back(CliffSideArm->CreateDescriptorImageInfo(nullptr));
-    PbrSceneShader->WriteSharedDescriptors(1, 3, vk::DescriptorType::eSampledImage, ImageInfos);
-    //ImageInfos.clear();
-    //ImageInfos.push_back(CliffSideDisplacement->CreateDescriptorImageInfo(nullptr));
-    //PbrSceneShader->WriteSharedDescriptors(1, 4, vk::DescriptorType::eSampledImage, ImageInfos);
-
-    SamplerCreateInfo
-        .setMipmapMode(vk::SamplerMipmapMode::eNearest)
-        .setAddressModeU(vk::SamplerAddressMode::eClampToEdge)
-        .setAddressModeV(vk::SamplerAddressMode::eClampToEdge)
-        .setAddressModeW(vk::SamplerAddressMode::eClampToEdge);
-
-    Grt::FVulkanSampler SkyboxSampler(SamplerCreateInfo);
-
-    ImageInfos.clear();
-    ImageInfos.push_back(Skybox->CreateDescriptorImageInfo(SkyboxSampler));
-    SkyboxShader->WriteSharedDescriptors(1, 0, vk::DescriptorType::eCombinedImageSampler, ImageInfos);
-
-    vk::SamplerCustomBorderColorCreateInfoEXT BorderColorCreateInfo(
-        vk::ClearColorValue(1.0f, 1.0f, 1.0f, 1.0f), vk::Format::eR32G32B32A32Sfloat);
-
-    SamplerCreateInfo
-        .setPNext(&BorderColorCreateInfo)
-        .setMagFilter(vk::Filter::eNearest)
-        .setMinFilter(vk::Filter::eNearest)
-        .setMipmapMode(vk::SamplerMipmapMode::eNearest)
-        .setAddressModeU(vk::SamplerAddressMode::eClampToBorder)
-        .setAddressModeV(vk::SamplerAddressMode::eClampToBorder)
-        .setAddressModeW(vk::SamplerAddressMode::eClampToBorder)
-        .setAnisotropyEnable(vk::False)
-        .setMinLod(0.0f)
-        .setMaxLod(0.0f)
-        .setBorderColor(vk::BorderColor::eFloatCustomEXT);
-
-    Grt::FVulkanSampler FramebufferSampler(SamplerCreateInfo);
-
-    auto CreatePostDescriptors = [&]() -> void
-    {
-        vk::DescriptorImageInfo ColorImageInfo(
-            *FramebufferSampler, *ResolveAttachment->GetImageView(), vk::ImageLayout::eShaderReadOnlyOptimal);
-        vk::DescriptorImageInfo ShadowMapImageInfo(
-            *FramebufferSampler, *ShadowMapAttachment->GetImageView(), vk::ImageLayout::eShaderReadOnlyOptimal);
-
-        ImageInfos.clear();
-        ImageInfos.push_back(ColorImageInfo);
-        PostShader->WriteSharedDescriptors(0, 0, vk::DescriptorType::eCombinedImageSampler, ImageInfos);
-
-        ImageInfos.clear();
-        ImageInfos.push_back(ShadowMapImageInfo);
-        SceneShader->WriteSharedDescriptors(1, 4, vk::DescriptorType::eCombinedImageSampler, ImageInfos);
-    };
-
-    CreatePostDescriptors();
-
-    _VulkanContext->RegisterAutoRemovedCallbacks(
-        Grt::FVulkanContext::ECallbackType::kCreateSwapchain, "CreatePostDescriptor", CreatePostDescriptors);
-
-    ShaderBufferManager->BindShadersToBuffers("Matrices", "SceneShader", "PbrSceneShader", "LampShader", "ShadowMapShader", "SkyboxShader");
-    ShaderBufferManager->BindShadersToBuffers("LightMaterial", "SceneShader", "LampShader");
-    ShaderBufferManager->BindShaderToBuffers("LightArgs", "PbrSceneShader");
-
-    // Init instance data
-    // ------------------
-    std::vector<Grt::FInstanceData> InstanceData;
-    glm::mat4x4 Model(1.0f);
-    // plane
-    InstanceData.emplace_back(Model);
-
-    // cube
-    Model = glm::mat4x4(1.0f);
-    Model = glm::translate(Model, glm::vec3(0.0f, 1.5f, 0.0f));
-    InstanceData.emplace_back(Model);
-
-    Model = glm::mat4x4(1.0f);
-    Model = glm::translate(Model, glm::vec3(2.0f, 0.0f, 1.0f));
-    InstanceData.emplace_back(Model);
-
-    Model = glm::mat4x4(1.0f);
-    Model = glm::translate(Model, glm::vec3(-1.0f, 0.0f, 2.0f));
-    Model = glm::scale(Model, glm::vec3(0.5f));
-    Model = glm::rotate(Model, glm::radians(60.0f), glm::normalize(glm::vec3(1.0, 0.0, 1.0)));
-    InstanceData.emplace_back(Model);
-
-    // sphere
-    Model = glm::mat4x4(1.0f);
-    InstanceData.emplace_back(Model);
-
-    // lamp
-    glm::vec3 LightPos(-2.0f, 4.0f, -1.0f);
-    Model = glm::mat4x4(1.0f);
-    Model = glm::scale(glm::translate(Model, LightPos), glm::vec3(0.2f));
-    InstanceData.emplace_back(Model);
-
-    // Create sphere vertices
-    // ----------------------
-    std::vector<glm::vec3> Positions;
-    std::vector<glm::vec3> Normals;
-    std::vector<glm::vec2> TexCoords;
-
-    const std::uint32_t kSegmentsX = 16;
-    const std::uint32_t kSegmentsY = 16;
-
-    for (std::uint32_t x = 0; x <= kSegmentsX; ++x)
-    {
-        for (std::uint32_t y = 0; y <= kSegmentsY; ++y)
-        {
-            float SegmentX = static_cast<float>(x) / static_cast<float>(kSegmentsX);
-            float SegmentY = static_cast<float>(y) / static_cast<float>(kSegmentsY);
-
-            // 使用球面参数方程计算顶点坐标
-            // x = cos(φ) * sin(θ)
-            // y = cos(θ)
-            // z = sin(φ) * sin(θ)
-            // 其中 φ ∈ [0, 2π], θ ∈ [0, π]
-            float PositionX = std::cos(SegmentX * 2.0f * Math::kPi) * std::sin(SegmentY * Math::kPi);
-            float PositionY = std::cos(SegmentY * Math::kPi);
-            float PositionZ = std::sin(SegmentX * 2.0f * Math::kPi) * std::sin(SegmentY * Math::kPi);
-
-            Positions.emplace_back(PositionX, PositionY, PositionZ);
-            Normals.emplace_back(PositionX, PositionY, PositionZ);
-            TexCoords.emplace_back(SegmentX, SegmentY);
-        }
-    }
-
-    std::vector<std::uint32_t> SphereIndices;
-    bool bIsOddRow = false;
-    for (std::uint32_t y = 0; y != kSegmentsY; ++y)
-    {
-        if (!bIsOddRow)
-        {
-            for (std::uint32_t x = 0; x <= kSegmentsX; ++x)
-            {
-                SphereIndices.push_back(y * (kSegmentsX + 1) + x);
-                SphereIndices.push_back((y + 1) * (kSegmentsX + 1) + x);
-            }
-        }
-        else
-        {
-            for (std::int32_t x = kSegmentsX; x >= 0; --x)
-            {
-                SphereIndices.push_back((y + 1) * (kSegmentsX + 1) + x);
-                SphereIndices.push_back(y * (kSegmentsX + 1) + x);
-            }
-        }
-
-        bIsOddRow = !bIsOddRow;
-    }
-
-    std::vector<Grt::FVertex> SphereVertices;
-    for (std::size_t i = 0; i != Positions.size(); ++i)
-    {
-        Grt::FVertex Vertex{};
-        Vertex.Position = Positions[i];
-        Vertex.Normal   = Normals[i];
-        Vertex.TexCoord = TexCoords[i];
-
-        SphereVertices.push_back(Vertex);
-    }
-
-    // Create vertex buffers
-    // ---------------------
-
-#include "Vertices.inc"
-
-    VmaAllocationCreateInfo ArrayBufferAllocationCreateInfo
-    {
-        .flags = VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT,
-        .usage = VMA_MEMORY_USAGE_GPU_ONLY,
-        .requiredFlags = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT
-    };
-
-    Math::CalculateAllTangents(CubeVertices);
-    Math::CalculateAllTangents(PlaneVertices);
-    Math::CalculateTangentBitangentSphere(SphereVertices, kSegmentsX, kSegmentsY);
-
-    vk::BufferCreateInfo VertexBufferCreateInfo = vk::BufferCreateInfo()
-        .setSize(CubeVertices.size() * sizeof(Grt::FVertex))
-        .setUsage(vk::BufferUsageFlagBits::eVertexBuffer | vk::BufferUsageFlagBits::eTransferDst);
-
-    Grt::FDeviceLocalBuffer CubeVertexBuffer(ArrayBufferAllocationCreateInfo, VertexBufferCreateInfo);
-    CubeVertexBuffer.CopyData(CubeVertices);
-
-    VertexBufferCreateInfo.setSize(SkyboxVertices.size() * sizeof(Grt::FSkyboxVertex));
-    Grt::FDeviceLocalBuffer SkyboxVertexBuffer(ArrayBufferAllocationCreateInfo, VertexBufferCreateInfo);
-    SkyboxVertexBuffer.CopyData(SkyboxVertices);
-
-    VertexBufferCreateInfo.setSize(QuadVertices.size() * sizeof(Grt::FQuadVertex));
-    Grt::FDeviceLocalBuffer QuadVertexBuffer(ArrayBufferAllocationCreateInfo, VertexBufferCreateInfo);
-    QuadVertexBuffer.CopyData(QuadVertices);
-
-    VertexBufferCreateInfo.setSize(PlaneVertices.size() * sizeof(Grt::FVertex));
-    Grt::FDeviceLocalBuffer PlaneVertexBuffer(ArrayBufferAllocationCreateInfo, VertexBufferCreateInfo);
-    PlaneVertexBuffer.CopyData(PlaneVertices);
-
-    VertexBufferCreateInfo.setSize(SphereVertices.size() * sizeof(Grt::FVertex));
-    Grt::FDeviceLocalBuffer SphereVertexBuffer(ArrayBufferAllocationCreateInfo, VertexBufferCreateInfo);
-    SphereVertexBuffer.CopyData(SphereVertices);
-
-    VertexBufferCreateInfo.setSize(InstanceData.size() * sizeof(Grt::FInstanceData));
-    Grt::FDeviceLocalBuffer InstanceBuffer(ArrayBufferAllocationCreateInfo, VertexBufferCreateInfo);
-    InstanceBuffer.CopyData(InstanceData);
-
-    vk::BufferCreateInfo IndexBufferCreateInfo = vk::BufferCreateInfo()
-        .setSize(SphereIndices.size() * sizeof(std::uint32_t))
-        .setUsage(vk::BufferUsageFlagBits::eIndexBuffer | vk::BufferUsageFlagBits::eTransferDst);
-
-    Grt::FDeviceLocalBuffer SphereIndexBuffer(ArrayBufferAllocationCreateInfo, IndexBufferCreateInfo);
-    SphereIndexBuffer.CopyData(SphereIndices);
-
-    IndexBufferCreateInfo.setSize(CubeIndices.size() * sizeof(std::uint32_t));
-    Grt::FDeviceLocalBuffer CubeIndexBuffer(ArrayBufferAllocationCreateInfo, IndexBufferCreateInfo);
-    CubeIndexBuffer.CopyData(CubeIndices);
-
-    // Create graphics pipeline
-    // ------------------------
-    auto* PipelineManager = Grt::FPipelineManager::GetInstance();
-
-    vk::PipelineColorBlendAttachmentState ColorBlendAttachmentState = vk::PipelineColorBlendAttachmentState()
-        .setColorWriteMask(vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG |
-                           vk::ColorComponentFlagBits::eB | vk::ColorComponentFlagBits::eA);
-
-    vk::PipelineRenderingCreateInfo SceneRenderingCreateInfo = vk::PipelineRenderingCreateInfo()
-        .setColorAttachmentCount(1)
-        .setColorAttachmentFormats(_VulkanContext->GetSwapchainCreateInfo().imageFormat)
-        .setDepthAttachmentFormat(vk::Format::eD32Sfloat);
-
-    Grt::FGraphicsPipelineCreateInfoPack ScenePipelineCreateInfoPack;
-    ScenePipelineCreateInfoPack.DynamicStates.push_back(vk::DynamicState::eViewport);
-    ScenePipelineCreateInfoPack.DynamicStates.push_back(vk::DynamicState::eScissor);
-    ScenePipelineCreateInfoPack.GraphicsPipelineCreateInfo.setPNext(&SceneRenderingCreateInfo);
-    ScenePipelineCreateInfoPack.InputAssemblyStateCreateInfo.setTopology(vk::PrimitiveTopology::eTriangleList);
-    ScenePipelineCreateInfoPack.MultisampleStateCreateInfo
-        .setRasterizationSamples(vk::SampleCountFlagBits::e8)
-        .setSampleShadingEnable(vk::True)
-        .setMinSampleShading(1.0f);
-
-    ScenePipelineCreateInfoPack.DepthStencilStateCreateInfo
-        .setDepthTestEnable(vk::True)
-        .setDepthWriteEnable(vk::True)
-        .setDepthCompareOp(vk::CompareOp::eLess)
-        .setDepthBoundsTestEnable(vk::False)
-        .setStencilTestEnable(vk::False);
-
-    ScenePipelineCreateInfoPack.ColorBlendAttachmentStates.emplace_back(ColorBlendAttachmentState);
-
-    PipelineManager->CreateGraphicsPipeline("ScenePipeline", "SceneShader", ScenePipelineCreateInfoPack);
-    PipelineManager->CreateGraphicsPipeline("LampPipeline", "LampShader", ScenePipelineCreateInfoPack);
-    PipelineManager->CreateGraphicsPipeline("PbrScenePipeline", "PbrSceneShader", ScenePipelineCreateInfoPack);
-
-    ScenePipelineCreateInfoPack.InputAssemblyStateCreateInfo.setTopology(vk::PrimitiveTopology::eTriangleList);
-    ScenePipelineCreateInfoPack.DepthStencilStateCreateInfo.setDepthCompareOp(vk::CompareOp::eLessOrEqual);
-    PipelineManager->CreateGraphicsPipeline("SkyboxPipeline", "SkyboxShader", ScenePipelineCreateInfoPack);
-
-    vk::PipelineRenderingCreateInfo PostRenderingCreateInfo = vk::PipelineRenderingCreateInfo()
-        .setColorAttachmentCount(1)
-        .setColorAttachmentFormats(_VulkanContext->GetSwapchainCreateInfo().imageFormat);
-
-    Grt::FGraphicsPipelineCreateInfoPack PostPipelineCreateInfoPack = ScenePipelineCreateInfoPack;
-
-    PostPipelineCreateInfoPack.GraphicsPipelineCreateInfo.setPNext(&PostRenderingCreateInfo);
-    PostPipelineCreateInfoPack.DepthStencilStateCreateInfo = vk::PipelineDepthStencilStateCreateInfo();
-    PostPipelineCreateInfoPack.RasterizationStateCreateInfo = vk::PipelineRasterizationStateCreateInfo();
-    PostPipelineCreateInfoPack.MultisampleStateCreateInfo = vk::PipelineMultisampleStateCreateInfo();
-
-    PipelineManager->CreateGraphicsPipeline("PostPipeline", "PostShader", PostPipelineCreateInfoPack);
-
-    vk::PipelineRenderingCreateInfo ShadowMapRenderingCreateInfo = vk::PipelineRenderingCreateInfo()
-        .setDepthAttachmentFormat(vk::Format::eD32Sfloat);
-
-    Grt::FGraphicsPipelineCreateInfoPack ShadowMapPipelineCreateInfoPack = ScenePipelineCreateInfoPack;
-    ShadowMapPipelineCreateInfoPack.GraphicsPipelineCreateInfo.setPNext(&ShadowMapRenderingCreateInfo);
-    ShadowMapPipelineCreateInfoPack.RasterizationStateCreateInfo = vk::PipelineRasterizationStateCreateInfo();
-    ShadowMapPipelineCreateInfoPack.MultisampleStateCreateInfo = vk::PipelineMultisampleStateCreateInfo();
-
-    PipelineManager->CreateGraphicsPipeline("ShadowMapPipeline", "ShadowMapShader", ShadowMapPipelineCreateInfoPack);
 
     vk::Pipeline ScenePipeline;
     vk::Pipeline PbrScenePipeline;
@@ -643,6 +117,7 @@ void FApplication::ExecuteMainRender()
     std::uint32_t  DynamicOffset = 0;
     std::uint32_t  CurrentFrame  = 0;
 
+    glm::vec3   LightPos(-2.0f, 4.0f, -1.0f);
     glm::mat4x4 LightProjection  = glm::infinitePerspective(glm::radians(60.0f), 1.0f, 1.0f);
     glm::mat4x4 LightView        = glm::lookAt(LightPos, glm::vec3(0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
     glm::mat4x4 LightSpaceMatrix = LightProjection * LightView;
@@ -650,9 +125,9 @@ void FApplication::ExecuteMainRender()
     vk::ImageSubresourceRange ColorSubresourceRange(vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1);
     vk::ImageSubresourceRange DepthSubresourceRange(vk::ImageAspectFlagBits::eDepth, 0, 1, 0, 1);
 
-    std::array PlaneVertexBuffers{ *PlaneVertexBuffer.GetBuffer(), *InstanceBuffer.GetBuffer() };
-    std::array CubeVertexBuffers{ *CubeVertexBuffer.GetBuffer(), *InstanceBuffer.GetBuffer() };
-    std::array SphereVertexBuffers{ *SphereVertexBuffer.GetBuffer(), *InstanceBuffer.GetBuffer() };
+    std::array PlaneVertexBuffers{ *_PlaneVertexBuffer->GetBuffer(), *_InstanceBuffer->GetBuffer() };
+    std::array CubeVertexBuffers{ *_CubeVertexBuffer->GetBuffer(), *_InstanceBuffer->GetBuffer() };
+    std::array SphereVertexBuffers{ *_SphereVertexBuffer->GetBuffer(), *_InstanceBuffer->GetBuffer() };
     std::array PlaneOffsets{ Offset, Offset };
     std::array CubeOffsets{ Offset, Offset + sizeof(glm::mat4x4) };
     std::array SphereOffsets{ Offset, Offset + 4 * sizeof(glm::mat4x4) };
@@ -662,10 +137,12 @@ void FApplication::ExecuteMainRender()
     Grt::FLightMaterial LightMaterial{};
     Grt::FLightArgs     LightArgs{};
 
+    vk::Extent2D ShadowMapExtent(4096, 4096);
+
     auto CameraPosUpdater = ShaderBufferManager->GetFieldUpdaters<glm::aligned_vec3>("LightArgs", "CameraPos");
 
     LightArgs.LightPos   = LightPos;
-    LightArgs.LightColor = glm::vec3(10.0f);
+    LightArgs.LightColor = glm::vec3(30.0f);
 
     ShaderBufferManager->UpdateEntrieBuffers("LightArgs", LightArgs);
 
@@ -740,7 +217,7 @@ void FApplication::ExecuteMainRender()
             vk::ImageLayout::eColorAttachmentOptimal,
             vk::QueueFamilyIgnored,
             vk::QueueFamilyIgnored,
-            *ResolveAttachment->GetImage(),
+            *_ResolveAttachment->GetImage(),
             ColorSubresourceRange
         );
 
@@ -753,7 +230,7 @@ void FApplication::ExecuteMainRender()
             vk::ImageLayout::eDepthAttachmentOptimal,
             vk::QueueFamilyIgnored,
             vk::QueueFamilyIgnored,
-            *ShadowMapAttachment->GetImage(),
+            *_ShadowMapAttachment->GetImage(),
             DepthSubresourceRange
         );
 
@@ -772,7 +249,7 @@ void FApplication::ExecuteMainRender()
         vk::RenderingInfo ShadowMapRenderingInfo = vk::RenderingInfo()
             .setRenderArea(ShadowMapScissor)
             .setLayerCount(1)
-            .setPDepthAttachment(&ShadowMapAttachmentInfo);
+            .setPDepthAttachment(&_ShadowMapAttachmentInfo);
 
         CurrentBuffer->beginRendering(ShadowMapRenderingInfo);
         // Draw scene for depth mapping
@@ -794,7 +271,7 @@ void FApplication::ExecuteMainRender()
             vk::ImageLayout::eShaderReadOnlyOptimal,
             vk::QueueFamilyIgnored,
             vk::QueueFamilyIgnored,
-            *ShadowMapAttachment->GetImage(),
+            *_ShadowMapAttachment->GetImage(),
             DepthSubresourceRange
         );
 
@@ -811,8 +288,8 @@ void FApplication::ExecuteMainRender()
         vk::RenderingInfo SceneRenderingInfo = vk::RenderingInfo()
             .setRenderArea(CommonScissor)
             .setLayerCount(1)
-            .setColorAttachments(ColorAttachmentInfo)
-            .setPDepthAttachment(&DepthStencilAttachmentInfo);
+            .setColorAttachments(_ColorAttachmentInfo)
+            .setPDepthAttachment(&_DepthStencilAttachmentInfo);
 
         CurrentBuffer->beginRendering(SceneRenderingInfo);
 
@@ -825,10 +302,10 @@ void FApplication::ExecuteMainRender()
         // CurrentBuffer->draw(36, 1, 0, 0);
 
         // Draw plane
-        CurrentBuffer->bindPipeline(vk::PipelineBindPoint::eGraphics, ScenePipeline);
+        CurrentBuffer->bindPipeline(vk::PipelineBindPoint::eGraphics, PbrScenePipeline);
         CurrentBuffer->bindVertexBuffers(0, PlaneVertexBuffers, PlaneOffsets);
-        CurrentBuffer->bindDescriptorSets(vk::PipelineBindPoint::eGraphics, ScenePipelineLayout, 0,
-                                          SceneShader->GetDescriptorSets(CurrentFrame), {});
+        CurrentBuffer->bindDescriptorSets(vk::PipelineBindPoint::eGraphics, PbrScenePipelineLayout, 0,
+                                          PbrSceneShader->GetDescriptorSets(CurrentFrame), {});
         CurrentBuffer->draw(6, 1, 0, 0);
 
         // Draw cube
@@ -844,19 +321,19 @@ void FApplication::ExecuteMainRender()
         CurrentBuffer->endRendering();
 
         // Draw skybox
-        ColorAttachmentInfo.setLoadOp(vk::AttachmentLoadOp::eLoad);
-        DepthStencilAttachmentInfo.setLoadOp(vk::AttachmentLoadOp::eLoad);
+        _ColorAttachmentInfo.setLoadOp(vk::AttachmentLoadOp::eLoad);
+        _DepthStencilAttachmentInfo.setLoadOp(vk::AttachmentLoadOp::eLoad);
 
         CurrentBuffer->beginRendering(SceneRenderingInfo);
         CurrentBuffer->bindPipeline(vk::PipelineBindPoint::eGraphics, SkyboxPipeline);
-        CurrentBuffer->bindVertexBuffers(0, *SkyboxVertexBuffer.GetBuffer(), Offset);
+        CurrentBuffer->bindVertexBuffers(0, *_SkyboxVertexBuffer->GetBuffer(), Offset);
         CurrentBuffer->bindDescriptorSets(vk::PipelineBindPoint::eGraphics, SkyboxPipelineLayout, 0,
                                           SkyboxShader->GetDescriptorSets(CurrentFrame), {});
         CurrentBuffer->draw(36, 1, 0, 0);
         CurrentBuffer->endRendering();
 
-        ColorAttachmentInfo.setLoadOp(vk::AttachmentLoadOp::eClear);
-        DepthStencilAttachmentInfo.setLoadOp(vk::AttachmentLoadOp::eClear);
+        _ColorAttachmentInfo.setLoadOp(vk::AttachmentLoadOp::eClear);
+        _DepthStencilAttachmentInfo.setLoadOp(vk::AttachmentLoadOp::eClear);
 
         vk::ImageMemoryBarrier2 ColorRenderEndBarrier(
             vk::PipelineStageFlagBits2::eColorAttachmentOutput,
@@ -867,7 +344,7 @@ void FApplication::ExecuteMainRender()
             vk::ImageLayout::eShaderReadOnlyOptimal,
             vk::QueueFamilyIgnored,
             vk::QueueFamilyIgnored,
-            *ResolveAttachment->GetImage(),
+            *_ResolveAttachment->GetImage(),
             ColorSubresourceRange
         );
 
@@ -882,13 +359,13 @@ void FApplication::ExecuteMainRender()
         vk::RenderingInfo PostRenderingInfo = vk::RenderingInfo()
             .setRenderArea(CommonScissor)
             .setLayerCount(1)
-            .setColorAttachments(PostProcessAttachmentInfo);
+            .setColorAttachments(_PostProcessAttachmentInfo);
 
-        PostProcessAttachmentInfo.setImageView(_VulkanContext->GetSwapchainImageView(ImageIndex));
+        _PostProcessAttachmentInfo.setImageView(_VulkanContext->GetSwapchainImageView(ImageIndex));
 
         CurrentBuffer->beginRendering(PostRenderingInfo);
         CurrentBuffer->bindPipeline(vk::PipelineBindPoint::eGraphics, PostPipeline);
-        CurrentBuffer->bindVertexBuffers(0, *QuadVertexBuffer.GetBuffer(), Offset);
+        CurrentBuffer->bindVertexBuffers(0, *_QuadVertexBuffer->GetBuffer(), Offset);
 
         CurrentBuffer->bindDescriptorSets(vk::PipelineBindPoint::eGraphics, PostPipelineLayout, 0,
                                           PostShader->GetDescriptorSets(CurrentFrame), {});
@@ -929,8 +406,528 @@ void FApplication::ExecuteMainRender()
 
     _VulkanContext->WaitIdle();
     _VulkanContext->GetGraphicsCommandPool().FreeBuffers(CommandBuffers);
+}
 
-    Terminate();
+void FApplication::CreateAttachments()
+{
+    _ColorAttachmentInfo
+        .setImageLayout(vk::ImageLayout::eColorAttachmentOptimal)
+        .setResolveMode(vk::ResolveModeFlagBits::eAverage)
+        .setResolveImageLayout(vk::ImageLayout::eColorAttachmentOptimal)
+        .setLoadOp(vk::AttachmentLoadOp::eClear)
+        .setStoreOp(vk::AttachmentStoreOp::eStore)
+        .setClearValue(vk::ClearColorValue(0.0f, 0.0f, 0.0f, 1.0f));
+
+    _DepthStencilAttachmentInfo
+        .setImageLayout(vk::ImageLayout::eDepthStencilAttachmentOptimal)
+        .setLoadOp(vk::AttachmentLoadOp::eClear)
+        .setStoreOp(vk::AttachmentStoreOp::eDontCare)
+        .setClearValue(vk::ClearDepthStencilValue(1.0f, 0));
+
+    _ShadowMapAttachmentInfo
+        .setImageLayout(vk::ImageLayout::eDepthAttachmentOptimal)
+        .setLoadOp(vk::AttachmentLoadOp::eClear)
+        .setStoreOp(vk::AttachmentStoreOp::eDontCare)
+        .setClearValue(vk::ClearDepthStencilValue(1.0f, 0));
+
+    _PostProcessAttachmentInfo
+        .setImageLayout(vk::ImageLayout::eColorAttachmentOptimal)
+        .setLoadOp(vk::AttachmentLoadOp::eClear)
+        .setStoreOp(vk::AttachmentStoreOp::eStore)
+        .setClearValue(vk::ClearColorValue(0.0f, 0.0f, 0.0f, 1.0f));
+
+    VmaAllocationCreateInfo AllocationCreateInfo
+    {
+        .flags = VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT,
+        .usage = VMA_MEMORY_USAGE_GPU_ONLY,
+    };
+
+    vk::Extent2D ShadowMapExtent(4096, 4096);
+
+    auto CreateFramebuffers = [&]() -> void
+    {
+        _VulkanContext->WaitIdle();
+        auto SwapchainImageFormat = _VulkanContext->GetSwapchainCreateInfo().imageFormat;
+
+        _ColorAttachment = std::make_unique<Grt::FColorAttachment>(
+            AllocationCreateInfo, SwapchainImageFormat, _WindowSize, 1, vk::SampleCountFlagBits::e8);
+
+        _ResolveAttachment = std::make_unique<Grt::FColorAttachment>(
+            AllocationCreateInfo, SwapchainImageFormat, _WindowSize, 1,
+            vk::SampleCountFlagBits::e1, vk::ImageUsageFlagBits::eSampled);
+
+        _DepthStencilAttachment = std::make_unique<Grt::FDepthStencilAttachment>(
+            AllocationCreateInfo, vk::Format::eD32Sfloat, _WindowSize, 1, vk::SampleCountFlagBits::e8);
+
+        _ShadowMapAttachment = std::make_unique<Grt::FDepthStencilAttachment>(
+            AllocationCreateInfo, vk::Format::eD32Sfloat, ShadowMapExtent, 1,
+            vk::SampleCountFlagBits::e1, vk::ImageUsageFlagBits::eSampled);
+
+        _ColorAttachmentInfo.setImageView(*_ColorAttachment->GetImageView())
+                            .setResolveImageView(*_ResolveAttachment->GetImageView());
+
+        _DepthStencilAttachmentInfo.setImageView(*_DepthStencilAttachment->GetImageView());
+        _ShadowMapAttachmentInfo.setImageView(*_ShadowMapAttachment->GetImageView());
+    };
+
+    auto DestroyFramebuffers = [&]() -> void
+    {
+        _VulkanContext->WaitIdle();
+    };
+
+    CreateFramebuffers();
+
+    _VulkanContext->RegisterAutoRemovedCallbacks(
+        Grt::FVulkanContext::ECallbackType::kCreateSwapchain, "CreateFramebuffers", CreateFramebuffers);
+    _VulkanContext->RegisterAutoRemovedCallbacks(
+        Grt::FVulkanContext::ECallbackType::kDestroySwapchain, "DestroyFramebuffers", DestroyFramebuffers);
+}
+
+void FApplication::LoadAssets()
+{
+    Art::FShader::FResourceInfo SceneResourceInfo
+    {
+        {
+            { 0, sizeof(Grt::FVertex), false },
+            { 1, sizeof(Grt::FInstanceData), true }
+        },
+        {
+            { 0, 0, offsetof(Grt::FVertex, Position) },
+            { 0, 1, offsetof(Grt::FVertex, Normal) },
+            { 0, 2, offsetof(Grt::FVertex, TexCoord) },
+            { 0, 3, offsetof(Grt::FVertex, Tangent) },
+            { 0, 4, offsetof(Grt::FVertex, Bitangent) },
+            { 1, 5, offsetof(Grt::FInstanceData, Model) }
+        },
+        {
+            { 0, 0, false },
+            { 0, 1, false }
+        }
+    };
+
+    Art::FShader::FResourceInfo ShadowMapResourceInfo
+    {
+        {
+            { 0, sizeof(Grt::FVertex), false },
+            { 1, sizeof(Grt::FInstanceData), true }
+        },
+        {
+            { 0, 0, offsetof(Grt::FVertex, Position) },
+            { 1, 1, offsetof(Grt::FInstanceData, Model) }
+        },
+        { { 0, 0, false } },
+    };
+
+    Art::FShader::FResourceInfo SkyboxResourceInfo
+    {
+        { { 0, sizeof(Grt::FSkyboxVertex), false } },
+        { { 0, 0, offsetof(Grt::FSkyboxVertex, Position) } },
+        { { 0, 0, false } }
+    };
+
+    Art::FShader::FResourceInfo PostResourceInfo
+    {
+        { { 0, sizeof(Grt::FQuadVertex), false } },
+        {
+            { 0, 0, offsetof(Grt::FQuadVertex, Position) },
+            { 0, 1, offsetof(Grt::FQuadVertex, TexCoord) }
+        }
+    };
+
+    std::vector<std::string> SceneShaderFiles({ "Scene.vert.spv", "Scene.frag.spv" });
+    std::vector<std::string> PbrSceneShaderFiles({ "PbrScene.vert.spv", "PbrScene.frag.spv" });
+    std::vector<std::string> LampShaderFiles({ "Scene.vert.spv", "Scene_Lamp.frag.spv" });
+    std::vector<std::string> ShadowMapShaderFiles({ "ShadowMap.vert.spv", "ShadowMap.frag.spv" });
+    std::vector<std::string> SkyboxShaderFiles({ "Skybox.vert.spv", "Skybox.frag.spv" });
+    std::vector<std::string> PostShaderFiles({ "PostProcess.vert.spv", "PostProcess.frag.spv" });
+
+    VmaAllocationCreateInfo TextureAllocationCreateInfo
+    {
+        .flags = VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT,
+        .usage = VMA_MEMORY_USAGE_GPU_ONLY
+    };
+
+    auto* AssetManager = Art::FAssetManager::GetInstance();
+    AssetManager->AddAsset<Art::FShader>("SceneShader", SceneShaderFiles, SceneResourceInfo);
+    AssetManager->AddAsset<Art::FShader>("PbrSceneShader", PbrSceneShaderFiles, SceneResourceInfo);
+    AssetManager->AddAsset<Art::FShader>("LampShader", LampShaderFiles, SceneResourceInfo);
+    AssetManager->AddAsset<Art::FShader>("ShadowMapShader", ShadowMapShaderFiles, ShadowMapResourceInfo);
+    AssetManager->AddAsset<Art::FShader>("SkyboxShader", SkyboxShaderFiles, SkyboxResourceInfo);
+    AssetManager->AddAsset<Art::FShader>("PostShader", PostShaderFiles, PostResourceInfo);
+
+    std::vector<std::string> CliffSideFiles{ "CliffSide/cliff_side_diff_1k.jpg", "CliffSide/cliff_side_nor_dx_1k.jpg", "CliffSide/cliff_side_disp_1k.jpg", "CliffSide/cliff_side_arm_1k.jpg" };
+
+#if !defined(_DEBUG) && !defined(_RELEASE)
+    CliffSideFiles = { "CliffSide/cliff_side_diff_16k.jpg", "CliffSide/cliff_side_nor_dx_16k.jpg", "CliffSide/cliff_side_disp_16k.jpg", "CliffSide/cliff_side_arm_16k.jpg" };
+#endif
+
+    AssetManager->AddAsset<Art::FTexture2D>(
+        "CliffSideDiffuse", TextureAllocationCreateInfo, CliffSideFiles[0],
+        vk::Format::eR8G8B8A8Srgb, vk::Format::eR8G8B8A8Srgb, vk::ImageCreateFlags(), true, false);
+
+    AssetManager->AddAsset<Art::FTexture2D>(
+        "CliffSideNormal", TextureAllocationCreateInfo, CliffSideFiles[1],
+        vk::Format::eR8G8B8A8Unorm, vk::Format::eR8G8B8A8Unorm, vk::ImageCreateFlags(), true, false);
+
+    AssetManager->AddAsset<Art::FTexture2D>(
+        "CliffSideDisplacement", TextureAllocationCreateInfo, CliffSideFiles[2],
+        vk::Format::eR8G8B8A8Unorm, vk::Format::eR8G8B8A8Unorm, vk::ImageCreateFlags(), true, false);
+
+    AssetManager->AddAsset<Art::FTexture2D>(
+        "CliffSideArm", TextureAllocationCreateInfo, CliffSideFiles[3],
+        vk::Format::eR8G8B8A8Unorm, vk::Format::eR8G8B8A8Unorm, vk::ImageCreateFlags(), true, false);
+
+    AssetManager->AddAsset<Art::FTextureCube>(
+        "Skybox", TextureAllocationCreateInfo, "Skybox", vk::Format::eR8G8B8A8Srgb,
+        vk::Format::eR8G8B8A8Srgb, vk::ImageCreateFlags(), true, false);
+}
+
+void FApplication::CreateUniformBuffers()
+{
+    Grt::FShaderBufferManager::FUniformBufferCreateInfo MatricesCreateInfo
+    {
+        .Name    = "Matrices",
+        .Fields  = { "View", "Projection", "LightSpaceMatrix" },
+        .Set     = 0,
+        .Binding = 0,
+        .Usage   = vk::DescriptorType::eUniformBuffer
+    };
+
+    Grt::FShaderBufferManager::FUniformBufferCreateInfo LightMaterialCreateInfo
+    {
+        .Name    = "LightMaterial",
+        .Fields  = { "Material", "Light", "ViewPos" },
+        .Set     = 0,
+        .Binding = 1,
+        .Usage   = vk::DescriptorType::eUniformBuffer
+    };
+
+    Grt::FShaderBufferManager::FUniformBufferCreateInfo LightArgsCreateInfo
+    {
+        .Name    = "LightArgs",
+        .Fields  = { "LightPositions", "LightColors", "CameraPos" },
+        .Set     = 0,
+        .Binding = 1,
+        .Usage   = vk::DescriptorType::eUniformBuffer
+    };
+
+    VmaAllocationCreateInfo AllocationCreateInfo
+    {
+        .flags = VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT,
+        .usage = VMA_MEMORY_USAGE_CPU_TO_GPU,
+        .requiredFlags = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT | VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT
+    };
+
+    auto* ShaderBufferManager = Grt::FShaderBufferManager::GetInstance();
+    ShaderBufferManager->CreateBuffers<Grt::FMatrices>(MatricesCreateInfo, &AllocationCreateInfo);
+    ShaderBufferManager->CreateBuffers<Grt::FLightMaterial>(LightMaterialCreateInfo, &AllocationCreateInfo);
+    ShaderBufferManager->CreateBuffers<Grt::FLightArgs>(LightArgsCreateInfo, &AllocationCreateInfo);
+}
+
+void FApplication::BindDescriptorSets(Art::FAssetManager* AssetManager)
+{
+    auto* SceneShader     = AssetManager->GetAsset<Art::FShader>("SceneShader");
+    auto* PbrSceneShader  = AssetManager->GetAsset<Art::FShader>("PbrSceneShader");
+    auto* LampShader      = AssetManager->GetAsset<Art::FShader>("LampShader");
+    auto* ShadowMapShader = AssetManager->GetAsset<Art::FShader>("ShadowMapShader");
+    auto* SkyboxShader    = AssetManager->GetAsset<Art::FShader>("SkyboxShader");
+    auto* PostShader      = AssetManager->GetAsset<Art::FShader>("PostShader");
+
+    auto* CliffSideDiffuse      = AssetManager->GetAsset<Art::FTexture2D>("CliffSideDiffuse");
+    auto* CliffSideNormal       = AssetManager->GetAsset<Art::FTexture2D>("CliffSideNormal");
+    auto* CliffSideDisplacement = AssetManager->GetAsset<Art::FTexture2D>("CliffSideDisplacement");
+    auto* CliffSideArm          = AssetManager->GetAsset<Art::FTexture2D>("CliffSideArm");
+    auto* Skybox                = AssetManager->GetAsset<Art::FTextureCube>("Skybox");
+
+    vk::SamplerCreateInfo SamplerCreateInfo = Art::FTextureBase::CreateDefaultSamplerCreateInfo();
+    static Grt::FVulkanSampler kSampler(SamplerCreateInfo);
+
+    vk::DescriptorImageInfo SamplerInfo(*kSampler);
+    SceneShader->WriteSharedDescriptors(1, 0, vk::DescriptorType::eSampler, SamplerInfo);
+    PbrSceneShader->WriteSharedDescriptors(1, 0, vk::DescriptorType::eSampler, SamplerInfo);
+
+    auto CliffSideDiffuseImageInfo = CliffSideDiffuse->CreateDescriptorImageInfo(nullptr);
+    SceneShader->WriteSharedDescriptors(1, 1, vk::DescriptorType::eSampledImage, CliffSideDiffuseImageInfo);
+    PbrSceneShader->WriteSharedDescriptors(1, 1, vk::DescriptorType::eSampledImage, CliffSideDiffuseImageInfo);
+
+    auto CliffSideNormalImageInfo = CliffSideNormal->CreateDescriptorImageInfo(nullptr);
+    SceneShader->WriteSharedDescriptors(1, 2, vk::DescriptorType::eSampledImage, CliffSideNormalImageInfo);
+    PbrSceneShader->WriteSharedDescriptors(1, 2, vk::DescriptorType::eSampledImage, CliffSideNormalImageInfo);
+
+    auto CliffSideDisplacementImageInfo = CliffSideDisplacement->CreateDescriptorImageInfo(nullptr);
+    SceneShader->WriteSharedDescriptors(1, 3, vk::DescriptorType::eSampledImage, CliffSideDisplacementImageInfo);
+
+    auto CliffSideArmImageInfo = CliffSideArm->CreateDescriptorImageInfo(nullptr);
+    PbrSceneShader->WriteSharedDescriptors(1, 3, vk::DescriptorType::eSampledImage, CliffSideArmImageInfo);
+
+    // auto CliffSideDiffuseImageInfo = CliffSideDiffuse->CreateDescriptorImageInfo(Sampler);
+    // PbrSceneShader->WriteSharedDescriptors(1, 4, vk::DescriptorType::eSampledImage, CliffSideDiffuseImageInfo);
+
+    SamplerCreateInfo
+        .setMipmapMode(vk::SamplerMipmapMode::eNearest)
+        .setAddressModeU(vk::SamplerAddressMode::eClampToEdge)
+        .setAddressModeV(vk::SamplerAddressMode::eClampToEdge)
+        .setAddressModeW(vk::SamplerAddressMode::eClampToEdge);
+
+    static Grt::FVulkanSampler kSkyboxSampler(SamplerCreateInfo);
+
+    auto SkyboxImageInfo = Skybox->CreateDescriptorImageInfo(kSkyboxSampler);
+    SkyboxShader->WriteSharedDescriptors(1, 0, vk::DescriptorType::eCombinedImageSampler, SkyboxImageInfo);
+
+    vk::SamplerCustomBorderColorCreateInfoEXT BorderColorCreateInfo(
+        vk::ClearColorValue(1.0f, 1.0f, 1.0f, 1.0f), vk::Format::eR32G32B32A32Sfloat);
+
+    SamplerCreateInfo
+        .setPNext(&BorderColorCreateInfo)
+        .setMagFilter(vk::Filter::eNearest)
+        .setMinFilter(vk::Filter::eNearest)
+        .setMipmapMode(vk::SamplerMipmapMode::eNearest)
+        .setAddressModeU(vk::SamplerAddressMode::eClampToBorder)
+        .setAddressModeV(vk::SamplerAddressMode::eClampToBorder)
+        .setAddressModeW(vk::SamplerAddressMode::eClampToBorder)
+        .setAnisotropyEnable(vk::False)
+        .setMinLod(0.0f)
+        .setMaxLod(0.0f)
+        .setBorderColor(vk::BorderColor::eFloatCustomEXT);
+
+    static Grt::FVulkanSampler kFramebufferSampler(SamplerCreateInfo);
+
+    auto CreatePostDescriptors = [&]() -> void
+    {
+        vk::DescriptorImageInfo ColorImageInfo(
+            *kFramebufferSampler, *_ResolveAttachment->GetImageView(), vk::ImageLayout::eShaderReadOnlyOptimal);
+        vk::DescriptorImageInfo ShadowMapImageInfo(
+            *kFramebufferSampler, *_ShadowMapAttachment->GetImageView(), vk::ImageLayout::eShaderReadOnlyOptimal);
+
+        PostShader->WriteSharedDescriptors(0, 0, vk::DescriptorType::eCombinedImageSampler, ColorImageInfo);
+        SceneShader->WriteSharedDescriptors(1, 4, vk::DescriptorType::eCombinedImageSampler, ShadowMapImageInfo);
+    };
+
+    CreatePostDescriptors();
+
+    _VulkanContext->RegisterAutoRemovedCallbacks(
+        Grt::FVulkanContext::ECallbackType::kCreateSwapchain, "CreatePostDescriptor", CreatePostDescriptors);
+
+    auto* ShaderBufferManager = Grt::FShaderBufferManager::GetInstance();
+    ShaderBufferManager->BindShadersToBuffers("Matrices", "SceneShader", "PbrSceneShader", "LampShader", "ShadowMapShader", "SkyboxShader");
+    ShaderBufferManager->BindShadersToBuffers("LightMaterial", "SceneShader", "LampShader");
+    ShaderBufferManager->BindShaderToBuffers("LightArgs", "PbrSceneShader");
+}
+
+void FApplication::InitInstanceData()
+{
+    glm::mat4x4 Model(1.0f);
+    // plane
+    _InstanceData.emplace_back(Model);
+
+    // cube
+    Model = glm::mat4x4(1.0f);
+    Model = glm::translate(Model, glm::vec3(0.0f, 1.5f, 0.0f));
+    _InstanceData.emplace_back(Model);
+
+    Model = glm::mat4x4(1.0f);
+    Model = glm::translate(Model, glm::vec3(2.0f, 0.0f, 1.0f));
+    _InstanceData.emplace_back(Model);
+
+    Model = glm::mat4x4(1.0f);
+    Model = glm::translate(Model, glm::vec3(-1.0f, 0.0f, 2.0f));
+    Model = glm::scale(Model, glm::vec3(0.5f));
+    Model = glm::rotate(Model, glm::radians(60.0f), glm::normalize(glm::vec3(1.0, 0.0, 1.0)));
+    _InstanceData.emplace_back(Model);
+
+    // sphere
+    Model = glm::mat4x4(1.0f);
+    _InstanceData.emplace_back(Model);
+
+    // lamp
+    glm::vec3 LightPos(-2.0f, 4.0f, -1.0f);
+    Model = glm::mat4x4(1.0f);
+    Model = glm::scale(glm::translate(Model, LightPos), glm::vec3(0.2f));
+    _InstanceData.emplace_back(Model);
+}
+
+void FApplication::InitVerticesData()
+{
+#include "Vertices.inc"
+
+    // Create sphere vertices
+    // ----------------------
+    std::vector<glm::vec3> Positions;
+    std::vector<glm::vec3> Normals;
+    std::vector<glm::vec2> TexCoords;
+
+    const std::uint32_t kSegmentsX = 16;
+    const std::uint32_t kSegmentsY = 16;
+
+    for (std::uint32_t x = 0; x <= kSegmentsX; ++x)
+    {
+        for (std::uint32_t y = 0; y <= kSegmentsY; ++y)
+        {
+            float SegmentX = static_cast<float>(x) / static_cast<float>(kSegmentsX);
+            float SegmentY = static_cast<float>(y) / static_cast<float>(kSegmentsY);
+
+            // 使用球面参数方程计算顶点坐标
+            // x = cos(φ) * sin(θ)
+            // y = cos(θ)
+            // z = sin(φ) * sin(θ)
+            // 其中 φ ∈ [0, 2π], θ ∈ [0, π]
+            float PositionX = std::cos(SegmentX * 2.0f * Math::kPi) * std::sin(SegmentY * Math::kPi);
+            float PositionY = std::cos(SegmentY * Math::kPi);
+            float PositionZ = std::sin(SegmentX * 2.0f * Math::kPi) * std::sin(SegmentY * Math::kPi);
+
+            Positions.emplace_back(PositionX, PositionY, PositionZ);
+            Normals.emplace_back(PositionX, PositionY, PositionZ);
+            TexCoords.emplace_back(SegmentX, SegmentY);
+        }
+    }
+
+    std::vector<std::uint32_t> SphereIndices;
+    bool bIsOddRow = false;
+    for (std::uint32_t y = 0; y != kSegmentsY; ++y)
+    {
+        if (!bIsOddRow)
+        {
+            for (std::uint32_t x = 0; x <= kSegmentsX; ++x)
+            {
+                SphereIndices.push_back(y * (kSegmentsX + 1) + x);
+                SphereIndices.push_back((y + 1) * (kSegmentsX + 1) + x);
+            }
+        }
+        else
+        {
+            for (std::int32_t x = kSegmentsX; x >= 0; --x)
+            {
+                SphereIndices.push_back((y + 1) * (kSegmentsX + 1) + x);
+                SphereIndices.push_back(y * (kSegmentsX + 1) + x);
+            }
+        }
+
+        bIsOddRow = !bIsOddRow;
+    }
+
+    std::vector<Grt::FVertex> SphereVertices;
+    for (std::size_t i = 0; i != Positions.size(); ++i)
+    {
+        Grt::FVertex Vertex{};
+        Vertex.Position = Positions[i];
+        Vertex.Normal   = Normals[i];
+        Vertex.TexCoord = TexCoords[i];
+
+        SphereVertices.push_back(Vertex);
+    }
+
+    VmaAllocationCreateInfo AllocationCreateInfo
+    {
+        .flags = VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT,
+        .usage = VMA_MEMORY_USAGE_GPU_ONLY,
+        .requiredFlags = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT
+    };
+
+    Math::CalculateAllTangents(CubeVertices);
+    Math::CalculateAllTangents(PlaneVertices);
+    Math::CalculateTangentBitangentSphere(SphereVertices, kSegmentsX, kSegmentsY);
+
+    vk::BufferCreateInfo VertexBufferCreateInfo = vk::BufferCreateInfo()
+        .setSize(SphereVertices.size() * sizeof(Grt::FVertex))
+        .setUsage(vk::BufferUsageFlagBits::eVertexBuffer | vk::BufferUsageFlagBits::eTransferDst);
+
+    _SphereVertexBuffer = std::make_unique<Grt::FDeviceLocalBuffer>(AllocationCreateInfo, VertexBufferCreateInfo);
+    _SphereVertexBuffer->CopyData(SphereVertices);
+
+    VertexBufferCreateInfo.setSize(CubeVertices.size() * sizeof(Grt::FVertex));
+    _CubeVertexBuffer = std::make_unique<Grt::FDeviceLocalBuffer>(AllocationCreateInfo, VertexBufferCreateInfo);
+    _CubeVertexBuffer->CopyData(CubeVertices);
+
+    VertexBufferCreateInfo.setSize(SkyboxVertices.size() * sizeof(Grt::FSkyboxVertex));
+    _SkyboxVertexBuffer = std::make_unique<Grt::FDeviceLocalBuffer>(AllocationCreateInfo, VertexBufferCreateInfo);
+    _SkyboxVertexBuffer->CopyData(SkyboxVertices);
+
+    VertexBufferCreateInfo.setSize(PlaneVertices.size() * sizeof(Grt::FVertex));
+    _PlaneVertexBuffer = std::make_unique<Grt::FDeviceLocalBuffer>(AllocationCreateInfo, VertexBufferCreateInfo);
+    _PlaneVertexBuffer->CopyData(PlaneVertices);
+
+    VertexBufferCreateInfo.setSize(QuadVertices.size() * sizeof(Grt::FQuadVertex));
+    _QuadVertexBuffer = std::make_unique<Grt::FDeviceLocalBuffer>(AllocationCreateInfo, VertexBufferCreateInfo);
+    _QuadVertexBuffer->CopyData(QuadVertices);
+
+    VertexBufferCreateInfo.setSize(_InstanceData.size() * sizeof(Grt::FInstanceData));
+    _InstanceBuffer = std::make_unique<Grt::FDeviceLocalBuffer>(AllocationCreateInfo, VertexBufferCreateInfo);
+    _InstanceBuffer->CopyData(_InstanceData);
+
+    vk::BufferCreateInfo IndexBufferCreateInfo = vk::BufferCreateInfo()
+        .setSize(SphereIndices.size() * sizeof(std::uint32_t))
+        .setUsage(vk::BufferUsageFlagBits::eIndexBuffer | vk::BufferUsageFlagBits::eTransferDst);
+
+    _SphereIndexBuffer = std::make_unique<Grt::FDeviceLocalBuffer>(AllocationCreateInfo, IndexBufferCreateInfo);
+    _SphereIndexBuffer->CopyData(SphereIndices);
+
+    IndexBufferCreateInfo.setSize(CubeIndices.size() * sizeof(std::uint32_t));
+    _CubeIndexBuffer = std::make_unique<Grt::FDeviceLocalBuffer>(AllocationCreateInfo, IndexBufferCreateInfo);
+    _CubeIndexBuffer->CopyData(CubeIndices);
+}
+
+void FApplication::CreatePipelines()
+{
+    auto* PipelineManager = Grt::FPipelineManager::GetInstance();
+
+    vk::PipelineColorBlendAttachmentState ColorBlendAttachmentState = vk::PipelineColorBlendAttachmentState()
+        .setColorWriteMask(vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG |
+                           vk::ColorComponentFlagBits::eB | vk::ColorComponentFlagBits::eA);
+
+    vk::PipelineRenderingCreateInfo SceneRenderingCreateInfo = vk::PipelineRenderingCreateInfo()
+        .setColorAttachmentCount(1)
+        .setColorAttachmentFormats(_VulkanContext->GetSwapchainCreateInfo().imageFormat)
+        .setDepthAttachmentFormat(vk::Format::eD32Sfloat);
+
+    Grt::FGraphicsPipelineCreateInfoPack ScenePipelineCreateInfoPack;
+    ScenePipelineCreateInfoPack.DynamicStates.push_back(vk::DynamicState::eViewport);
+    ScenePipelineCreateInfoPack.DynamicStates.push_back(vk::DynamicState::eScissor);
+    ScenePipelineCreateInfoPack.GraphicsPipelineCreateInfo.setPNext(&SceneRenderingCreateInfo);
+    ScenePipelineCreateInfoPack.InputAssemblyStateCreateInfo.setTopology(vk::PrimitiveTopology::eTriangleList);
+    ScenePipelineCreateInfoPack.MultisampleStateCreateInfo
+        .setRasterizationSamples(vk::SampleCountFlagBits::e8)
+        .setSampleShadingEnable(vk::True)
+        .setMinSampleShading(1.0f);
+
+    ScenePipelineCreateInfoPack.DepthStencilStateCreateInfo
+        .setDepthTestEnable(vk::True)
+        .setDepthWriteEnable(vk::True)
+        .setDepthCompareOp(vk::CompareOp::eLess)
+        .setDepthBoundsTestEnable(vk::False)
+        .setStencilTestEnable(vk::False);
+
+    ScenePipelineCreateInfoPack.ColorBlendAttachmentStates.emplace_back(ColorBlendAttachmentState);
+
+    PipelineManager->CreateGraphicsPipeline("ScenePipeline", "SceneShader", ScenePipelineCreateInfoPack);
+    PipelineManager->CreateGraphicsPipeline("LampPipeline", "LampShader", ScenePipelineCreateInfoPack);
+    PipelineManager->CreateGraphicsPipeline("PbrScenePipeline", "PbrSceneShader", ScenePipelineCreateInfoPack);
+
+    ScenePipelineCreateInfoPack.InputAssemblyStateCreateInfo.setTopology(vk::PrimitiveTopology::eTriangleList);
+    ScenePipelineCreateInfoPack.DepthStencilStateCreateInfo.setDepthCompareOp(vk::CompareOp::eLessOrEqual);
+    PipelineManager->CreateGraphicsPipeline("SkyboxPipeline", "SkyboxShader", ScenePipelineCreateInfoPack);
+
+    vk::PipelineRenderingCreateInfo PostRenderingCreateInfo = vk::PipelineRenderingCreateInfo()
+        .setColorAttachmentCount(1)
+        .setColorAttachmentFormats(_VulkanContext->GetSwapchainCreateInfo().imageFormat);
+
+    Grt::FGraphicsPipelineCreateInfoPack PostPipelineCreateInfoPack = ScenePipelineCreateInfoPack;
+
+    PostPipelineCreateInfoPack.GraphicsPipelineCreateInfo.setPNext(&PostRenderingCreateInfo);
+    PostPipelineCreateInfoPack.DepthStencilStateCreateInfo = vk::PipelineDepthStencilStateCreateInfo();
+    PostPipelineCreateInfoPack.RasterizationStateCreateInfo = vk::PipelineRasterizationStateCreateInfo();
+    PostPipelineCreateInfoPack.MultisampleStateCreateInfo = vk::PipelineMultisampleStateCreateInfo();
+
+    PipelineManager->CreateGraphicsPipeline("PostPipeline", "PostShader", PostPipelineCreateInfoPack);
+
+    vk::PipelineRenderingCreateInfo ShadowMapRenderingCreateInfo = vk::PipelineRenderingCreateInfo()
+        .setDepthAttachmentFormat(vk::Format::eD32Sfloat);
+
+    Grt::FGraphicsPipelineCreateInfoPack ShadowMapPipelineCreateInfoPack = ScenePipelineCreateInfoPack;
+    ShadowMapPipelineCreateInfoPack.GraphicsPipelineCreateInfo.setPNext(&ShadowMapRenderingCreateInfo);
+    ShadowMapPipelineCreateInfoPack.RasterizationStateCreateInfo = vk::PipelineRasterizationStateCreateInfo();
+    ShadowMapPipelineCreateInfoPack.MultisampleStateCreateInfo = vk::PipelineMultisampleStateCreateInfo();
+
+    PipelineManager->CreateGraphicsPipeline("ShadowMapPipeline", "ShadowMapShader", ShadowMapPipelineCreateInfoPack);
 }
 
 void FApplication::Terminate()

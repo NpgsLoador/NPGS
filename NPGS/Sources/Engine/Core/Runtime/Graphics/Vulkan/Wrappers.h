@@ -692,18 +692,32 @@ public:
     using Base = TVulkanHandleNoDestroy<vk::DescriptorSet>;
     using Base::Base;
 
+    void Write(const vk::DescriptorImageInfo& ImageInfo, vk::DescriptorType Type,
+               std::uint32_t BindingPoint, std::uint32_t ArrayElements = 0) const;
+
     void Write(const std::vector<vk::DescriptorImageInfo>& ImageInfos, vk::DescriptorType Type,
+               std::uint32_t BindingPoint, std::uint32_t ArrayElement = 0) const;
+
+    void Write(const vk::DescriptorBufferInfo& BufferInfo, vk::DescriptorType Type,
                std::uint32_t BindingPoint, std::uint32_t ArrayElement = 0) const;
 
     void Write(const std::vector<vk::DescriptorBufferInfo>& BufferInfos, vk::DescriptorType Type,
                std::uint32_t BindingPoint, std::uint32_t ArrayElement = 0) const;
 
+    void Write(const vk::BufferView& BufferView, vk::DescriptorType Type,
+               std::uint32_t BindingPoint, std::uint32_t ArrayElement = 0) const;
+
     void Write(const std::vector<vk::BufferView>& BufferViews, vk::DescriptorType Type,
+               std::uint32_t BindingPoint, std::uint32_t ArrayElement = 0) const;
+
+    void Write(const FVulkanBufferView& BufferView, vk::DescriptorType Type,
                std::uint32_t BindingPoint, std::uint32_t ArrayElement = 0) const;
 
     void Write(const std::vector<FVulkanBufferView>& BufferViews, vk::DescriptorType Type,
                std::uint32_t BindingPoint, std::uint32_t ArrayElement = 0) const;
 
+    static void Update(const vk::WriteDescriptorSet& Write);
+    static void Update(const vk::WriteDescriptorSet& Write, const vk::CopyDescriptorSet& Copy);
     static void Update(const std::vector<vk::WriteDescriptorSet>& Writes, const std::vector<vk::CopyDescriptorSet>& Copies = {});
 };
 

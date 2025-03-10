@@ -7,10 +7,10 @@ layout(location = 0) out vec4 FragColor;
 
 layout(location = 0) in _FragInput
 {
+	vec3 Normal;
+	vec2 TexCoord;
+	vec3 FragPos;
 	mat3x3 TbnMatrix;
-	vec2   TexCoord;
-	vec3   WorldPos;
-	vec3   Normal;
 } FragInput;
 
 layout(std140, set = 0, binding = 1) uniform LightArgs
@@ -63,9 +63,9 @@ void main()
     vec3 TexNormal = texture(sampler2D(iNormalTex, iSampler), FragInput.TexCoord).rgb;
 	vec3 RgbNormal = TexNormal * 2.0 - 1.0;
     vec3 Normal    = normalize(RgbNormal);
-	vec3 ViewDir   = FragInput.TbnMatrix * normalize(iLightArgs.CameraPos - FragInput.WorldPos);
-	vec3 Albedo    = texture(sampler2D(iDiffuseTex, iSampler), FragInput.TexCoord).rgb;
-	vec3 ArmColor  = texture(sampler2D(iArmTex, iSampler), FragInput.TexCoord).rgb;
+
+	vec3  Albedo   = texture(sampler2D(iDiffuseTex, iSampler), FragInput.TexCoord).rgb;
+	vec3  ArmColor = texture(sampler2D(iArmTex, iSampler), FragInput.TexCoord).rgb;
 	float AmbientOcclusion = ArmColor.r;
 	float Roughness        = ArmColor.g;
 	float Metallic         = ArmColor.b;
@@ -75,10 +75,11 @@ void main()
 
 	vec3 RadianceSum = vec3(0.0);
 
-	vec3 LightDir = FragInput.TbnMatrix * normalize(iLightArgs.LightPos - FragInput.WorldPos);
+	vec3 LightDir = FragInput.TbnMatrix * normalize(iLightArgs.LightPos  - FragInput.FragPos);
+	vec3 ViewDir  = FragInput.TbnMatrix * normalize(iLightArgs.CameraPos - FragInput.FragPos);
 	vec3 HalfDir  = normalize(LightDir + ViewDir);
 
-	float Distance    = length(iLightArgs.LightPos - FragInput.WorldPos);
+	float Distance    = length(iLightArgs.LightPos - FragInput.FragPos);
 	float Attenuation = 1.0 / pow(Distance, 2);
 	vec3  Radiance    = iLightArgs.LightColor * Attenuation;
 
@@ -91,7 +92,7 @@ void main()
 	vec3  CookTorranceSpec = Numerator / (Denominator + 1e-3);
 
 	vec3 Specular = FresnelEquation;
-	vec3 Diffuse  = 1.0 - Specular;
+	vec3 Diffuse  = iLightArgs.LightColor - Specular;
 	Diffuse      *= 1.0 - Metallic;
 
 	float NdotL = max(dot(Normal, LightDir), 0.0);

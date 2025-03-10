@@ -86,37 +86,75 @@ NPGS_INLINE const VmaAllocationInfo& FVulkanBuffer::GetAllocationInfo() const
 
 // Wrapper for vk::DescriptorSet
 // -----------------------------
+NPGS_INLINE void FVulkanDescriptorSet::Write(const vk::DescriptorImageInfo& ImageInfo, vk::DescriptorType Type,
+                                             std::uint32_t BindingPoint, std::uint32_t ArrayElements) const
+{
+    vk::WriteDescriptorSet WriteDescriptorSet(_Handle, BindingPoint, ArrayElements, Type, ImageInfo);
+    Update(WriteDescriptorSet);
+}
+
 NPGS_INLINE void FVulkanDescriptorSet::Write(const std::vector<vk::DescriptorImageInfo>& ImageInfos, vk::DescriptorType Type,
                                              std::uint32_t BindingPoint, std::uint32_t ArrayElement) const
 {
     vk::WriteDescriptorSet WriteDescriptorSet(_Handle, BindingPoint, ArrayElement, Type, ImageInfos);
-    Update({ WriteDescriptorSet });
+    Update(WriteDescriptorSet);
+}
+
+NPGS_INLINE void FVulkanDescriptorSet::Write(const vk::DescriptorBufferInfo& BufferInfo, vk::DescriptorType Type,
+                                             std::uint32_t BindingPoint, std::uint32_t ArrayElement) const
+{
+    vk::WriteDescriptorSet WriteDescriptorSet(_Handle, BindingPoint, ArrayElement, Type, {}, BufferInfo);
+    Update(WriteDescriptorSet);
 }
 
 NPGS_INLINE void FVulkanDescriptorSet::Write(const std::vector<vk::DescriptorBufferInfo>& BufferInfos, vk::DescriptorType Type,
                                              std::uint32_t BindingPoint, std::uint32_t ArrayElement) const
 {
     vk::WriteDescriptorSet WriteDescriptorSet(_Handle, BindingPoint, ArrayElement, Type, {}, BufferInfos);
-    Update({ WriteDescriptorSet });
+    Update(WriteDescriptorSet);
+}
+
+NPGS_INLINE void FVulkanDescriptorSet::Write(const vk::BufferView& BufferView, vk::DescriptorType Type,
+                                             std::uint32_t BindingPoint, std::uint32_t ArrayElement) const
+{
+    vk::WriteDescriptorSet WriteDescriptorSet(_Handle, BindingPoint, ArrayElement, Type, {}, {}, BufferView);
+    Update(WriteDescriptorSet);
 }
 
 NPGS_INLINE void FVulkanDescriptorSet::Write(const std::vector<vk::BufferView>& BufferViews, vk::DescriptorType Type,
                                              std::uint32_t BindingPoint, std::uint32_t ArrayElement) const
 {
     vk::WriteDescriptorSet WriteDescriptorSet(_Handle, BindingPoint, ArrayElement, Type, {}, {}, BufferViews);
-    Update({ WriteDescriptorSet });
+    Update(WriteDescriptorSet);
+}
+
+NPGS_INLINE void FVulkanDescriptorSet::Write(const FVulkanBufferView& BufferView, vk::DescriptorType Type,
+                                             std::uint32_t BindingPoint, std::uint32_t ArrayElement) const
+{
+    Write(*BufferView, Type, BindingPoint, ArrayElement);
 }
 
 NPGS_INLINE void FVulkanDescriptorSet::Write(const std::vector<FVulkanBufferView>& BufferViews, vk::DescriptorType Type,
                                              std::uint32_t BindingPoint, std::uint32_t ArrayElement) const
 {
-    std::vector<vk::BufferView> BufferViewHandles;
-    BufferViewHandles.reserve(BufferViews.size());
+    std::vector<vk::BufferView> NativeArray;
+    NativeArray.reserve(BufferViews.size());
     for (const auto& BufferView : BufferViews)
     {
-        BufferViewHandles.push_back(*BufferView);
+        NativeArray.push_back(*BufferView);
     }
-    Write(BufferViewHandles, Type, BindingPoint, ArrayElement);
+
+    Write(NativeArray, Type, BindingPoint, ArrayElement);
+}
+
+NPGS_INLINE void FVulkanDescriptorSet::Update(const vk::WriteDescriptorSet& Write)
+{
+    FVulkanCore::GetClassInstance()->GetDevice().updateDescriptorSets(Write, {});
+}
+
+NPGS_INLINE void FVulkanDescriptorSet::Update(const vk::WriteDescriptorSet& Write, const vk::CopyDescriptorSet& Copy)
+{
+    FVulkanCore::GetClassInstance()->GetDevice().updateDescriptorSets(Write, Copy);
 }
 
 NPGS_INLINE void FVulkanDescriptorSet::Update(const std::vector<vk::WriteDescriptorSet>& Writes,

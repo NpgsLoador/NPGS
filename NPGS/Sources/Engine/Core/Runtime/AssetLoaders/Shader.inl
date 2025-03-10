@@ -7,6 +7,25 @@ _ASSET_BEGIN
 template <typename DescriptorInfoType>
 requires std::is_class_v<DescriptorInfoType>
 inline void FShader::WriteSharedDescriptors(std::uint32_t Set, std::uint32_t Binding, vk::DescriptorType Type,
+                                            const DescriptorInfoType& DescriptorInfo)
+{
+    auto SetIt = _DescriptorSetsMap.find(Set);
+    if (SetIt == _DescriptorSetsMap.end())
+    {
+        return;
+    }
+
+    for (const auto& DescriptorSet : SetIt->second)
+    {
+        DescriptorSet.Write(DescriptorInfo, Type, Binding);
+    }
+
+    MarkAllFramesForUpdate();
+}
+
+template <typename DescriptorInfoType>
+requires std::is_class_v<DescriptorInfoType>
+inline void FShader::WriteSharedDescriptors(std::uint32_t Set, std::uint32_t Binding, vk::DescriptorType Type,
                                             const std::vector<DescriptorInfoType>& DescriptorInfos)
 {
     auto SetIt = _DescriptorSetsMap.find(Set);
@@ -19,6 +38,23 @@ inline void FShader::WriteSharedDescriptors(std::uint32_t Set, std::uint32_t Bin
     {
         DescriptorSet.Write(DescriptorInfos, Type, Binding);
     }
+
+    MarkAllFramesForUpdate();
+}
+
+template<typename DescriptorInfoType>
+requires std::is_class_v<DescriptorInfoType>
+inline void FShader::WriteDynamicDescriptors(std::uint32_t Set, std::uint32_t Binding, std::uint32_t FrameIndex,
+                                             vk::DescriptorType Type, const DescriptorInfoType& DescriptorInfo)
+{
+    auto SetIt = _DescriptorSetsMap.find(Set);
+    if (SetIt == _DescriptorSetsMap.end())
+    {
+        return;
+    }
+
+    const auto& DescriptorSet = SetIt->second[FrameIndex];
+    DescriptorSet.Write(DescriptorInfo, Type, Binding);
 
     MarkAllFramesForUpdate();
 }
