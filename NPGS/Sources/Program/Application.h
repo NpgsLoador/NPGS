@@ -82,14 +82,11 @@ private:
     std::unique_ptr<Runtime::Graphics::FDeviceLocalBuffer> _SphereVertexBuffer;
     std::unique_ptr<Runtime::Graphics::FDeviceLocalBuffer> _SphereIndexBuffer;
     std::unique_ptr<Runtime::Graphics::FDeviceLocalBuffer> _CubeVertexBuffer;
-    std::unique_ptr<Runtime::Graphics::FDeviceLocalBuffer> _CubeIndexBuffer;
-
     std::unique_ptr<Runtime::Graphics::FDeviceLocalBuffer> _SkyboxVertexBuffer;
     std::unique_ptr<Runtime::Graphics::FDeviceLocalBuffer> _PlaneVertexBuffer;
     std::unique_ptr<Runtime::Graphics::FDeviceLocalBuffer> _QuadVertexBuffer;
 
     std::uint32_t _SphereIndicesCount;
-    std::uint32_t _CubeIndicesCount;
 };
 
 _NPGS_END

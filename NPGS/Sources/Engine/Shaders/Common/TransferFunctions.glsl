@@ -1,6 +1,12 @@
 #ifndef TRANSFERFUNCTIONS_GLSL_
 #define TRANSFERFUNCTIONS_GLSL_
 
+const mat3 kSrgbToBt2020 = mat3x3(
+    0.6274, 0.0691, 0.0164,
+    0.3293, 0.9195, 0.0880,
+    0.0433, 0.0113, 0.8956
+);
+
 float PqEotf(float Vx)
 {
     const float kMx1 = 2610.0 / 16384.0;
@@ -42,10 +48,13 @@ vec3 InversePqEotf(vec3 Color)
     return vec3(InversePqEotf(Color.r), InversePqEotf(Color.g), InversePqEotf(Color.b));
 }
 
-vec3 ScRgbToPq(vec3 Color)
+vec3 ScRgbToPqWithGamut(vec3 Color)
 {
-    vec3 PqBright = Color * 80.0 / 10000.0;
-    return InversePqEotf(PqBright);
+    vec3 Bt2020Color      = kSrgbToBt2020 * Color;
+    vec3 Bright           = Bt2020Color * 80.0;
+    vec3 NormalizedLinear = Bright / 10000.0;
+
+    return InversePqEotf(NormalizedLinear);
 }
 
 #endif // !TRANSFERFUNCTIONS_GLSL_

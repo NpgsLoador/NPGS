@@ -59,6 +59,8 @@ void FApplication::ExecuteMainRender()
     auto* ShaderBufferManager = Grt::FShaderBufferManager::GetInstance();
     auto* PipelineManager     = Grt::FPipelineManager::GetInstance();
 
+    vk::Extent2D ShadowMapExtent(8192, 8192);
+
     CreateAttachments();
     LoadAssets();
     CreateUniformBuffers();
@@ -140,12 +142,10 @@ void FApplication::ExecuteMainRender()
     Grt::FLightMaterial LightMaterial{};
     Grt::FLightArgs     LightArgs{};
 
-    vk::Extent2D ShadowMapExtent(4096, 4096);
-
     auto CameraPosUpdater = ShaderBufferManager->GetFieldUpdaters<glm::aligned_vec3>("LightArgs", "CameraPos");
 
-    LightArgs.LightPos   = glm::vec3(0.0f, 0.0f, 10.0f);
-    LightArgs.LightColor = glm::vec3(150.0f);
+    LightArgs.LightPos   = LightPos;
+    LightArgs.LightColor = glm::vec3(300.0f);
 
     ShaderBufferManager->UpdateEntrieBuffers("LightArgs", LightArgs);
 
@@ -178,15 +178,15 @@ void FApplication::ExecuteMainRender()
         Matrices.Projection       = _FreeCamera->GetProjectionMatrix(WindowAspect, 0.001f);
         Matrices.LightSpaceMatrix = LightSpaceMatrix;
 
-        // LightMaterial.Material.Shininess = 64.0f;
-        // LightMaterial.Light.Position     = LightPos;
-        // LightMaterial.Light.Ambient      = glm::vec3(0.2f);
-        // LightMaterial.Light.Diffuse      = glm::vec3(1.0f);
-        // LightMaterial.Light.Specular     = glm::vec3(1.0f);
-        // LightMaterial.ViewPos            = _FreeCamera->GetCameraVector(SysSpa::FCamera::EVectorType::kPosition);
+        LightMaterial.Material.Shininess = 64.0f;
+        LightMaterial.Light.Position     = LightPos;
+        LightMaterial.Light.Ambient      = glm::vec3(0.2f);
+        LightMaterial.Light.Diffuse      = glm::vec3(12.5f);
+        LightMaterial.Light.Specular     = glm::vec3(12.5f);
+        LightMaterial.ViewPos            = _FreeCamera->GetCameraVector(SysSpa::FCamera::EVectorType::kPosition);
 
         ShaderBufferManager->UpdateEntrieBuffer(CurrentFrame, "Matrices", Matrices);
-        // ShaderBufferManager->UpdateEntrieBuffer(CurrentFrame, "LightMaterial", LightMaterial);
+        ShaderBufferManager->UpdateEntrieBuffer(CurrentFrame, "LightMaterial", LightMaterial);
 
         CameraPosUpdater[CurrentFrame] << _FreeCamera->GetCameraVector(SysSpa::FCamera::EVectorType::kPosition);
 
@@ -245,44 +245,44 @@ void FApplication::ExecuteMainRender()
 
         CurrentBuffer->pipelineBarrier2(InitialDependencyInfo);
 
-        //// Set shadow map viewport
-        //CurrentBuffer->setViewport(0, ShadowMapViewport);
-        //CurrentBuffer->setScissor(0, ShadowMapScissor);
+        // Set shadow map viewport
+        CurrentBuffer->setViewport(0, ShadowMapViewport);
+        CurrentBuffer->setScissor(0, ShadowMapScissor);
 
-        //vk::RenderingInfo ShadowMapRenderingInfo = vk::RenderingInfo()
-        //    .setRenderArea(ShadowMapScissor)
-        //    .setLayerCount(1)
-        //    .setPDepthAttachment(&_ShadowMapAttachmentInfo);
+        vk::RenderingInfo ShadowMapRenderingInfo = vk::RenderingInfo()
+            .setRenderArea(ShadowMapScissor)
+            .setLayerCount(1)
+            .setPDepthAttachment(&_ShadowMapAttachmentInfo);
 
-        //CurrentBuffer->beginRendering(ShadowMapRenderingInfo);
-        //// Draw scene for depth mapping
-        //CurrentBuffer->bindPipeline(vk::PipelineBindPoint::eGraphics, ShadowMapPipeline);
-        //CurrentBuffer->bindDescriptorSets(vk::PipelineBindPoint::eGraphics, ShadowMapPipelineLayout, 0,
-        //                                  ShadowMapShader->GetDescriptorSets(CurrentFrame), {});
-        //CurrentBuffer->bindVertexBuffers(0, PlaneVertexBuffers, PlaneOffsets);
-        //CurrentBuffer->draw(6, 1, 0, 0);
-        //CurrentBuffer->bindVertexBuffers(0, CubeVertexBuffers, CubeOffsets);
-        //CurrentBuffer->draw(36, 3, 0, 0);
-        //CurrentBuffer->endRendering();
+        CurrentBuffer->beginRendering(ShadowMapRenderingInfo);
+        // Draw scene for depth mapping
+        CurrentBuffer->bindPipeline(vk::PipelineBindPoint::eGraphics, ShadowMapPipeline);
+        CurrentBuffer->bindDescriptorSets(vk::PipelineBindPoint::eGraphics, ShadowMapPipelineLayout, 0,
+                                          ShadowMapShader->GetDescriptorSets(CurrentFrame), {});
+        CurrentBuffer->bindVertexBuffers(0, PlaneVertexBuffers, PlaneOffsets);
+        CurrentBuffer->draw(6, 1, 0, 0);
+        CurrentBuffer->bindVertexBuffers(0, CubeVertexBuffers, CubeOffsets);
+        CurrentBuffer->draw(36, 3, 0, 0);
+        CurrentBuffer->endRendering();
 
-        //vk::ImageMemoryBarrier2 DepthRenderEndBarrier(
-        //    vk::PipelineStageFlagBits2::eLateFragmentTests,
-        //    vk::AccessFlagBits2::eDepthStencilAttachmentWrite,
-        //    vk::PipelineStageFlagBits2::eFragmentShader,
-        //    vk::AccessFlagBits2::eShaderRead,
-        //    vk::ImageLayout::eDepthAttachmentOptimal,
-        //    vk::ImageLayout::eShaderReadOnlyOptimal,
-        //    vk::QueueFamilyIgnored,
-        //    vk::QueueFamilyIgnored,
-        //    *_ShadowMapAttachment->GetImage(),
-        //    DepthSubresourceRange
-        //);
+        vk::ImageMemoryBarrier2 DepthRenderEndBarrier(
+            vk::PipelineStageFlagBits2::eLateFragmentTests,
+            vk::AccessFlagBits2::eDepthStencilAttachmentWrite,
+            vk::PipelineStageFlagBits2::eFragmentShader,
+            vk::AccessFlagBits2::eShaderRead,
+            vk::ImageLayout::eDepthAttachmentOptimal,
+            vk::ImageLayout::eShaderReadOnlyOptimal,
+            vk::QueueFamilyIgnored,
+            vk::QueueFamilyIgnored,
+            *_ShadowMapAttachment->GetImage(),
+            DepthSubresourceRange
+        );
 
-        //vk::DependencyInfo DepthRenderEndDependencyInfo = vk::DependencyInfo()
-        //    .setDependencyFlags(vk::DependencyFlagBits::eByRegion)
-        //    .setImageMemoryBarriers(DepthRenderEndBarrier);
+        vk::DependencyInfo DepthRenderEndDependencyInfo = vk::DependencyInfo()
+            .setDependencyFlags(vk::DependencyFlagBits::eByRegion)
+            .setImageMemoryBarriers(DepthRenderEndBarrier);
 
-        //CurrentBuffer->pipelineBarrier2(DepthRenderEndDependencyInfo);
+        CurrentBuffer->pipelineBarrier2(DepthRenderEndDependencyInfo);
 
         // Set scene viewport
         CurrentBuffer->setViewport(0, FlippedViewport);
@@ -296,46 +296,46 @@ void FApplication::ExecuteMainRender()
 
         CurrentBuffer->beginRendering(SceneRenderingInfo);
 
+        //CurrentBuffer->bindPipeline(vk::PipelineBindPoint::eGraphics, PbrScenePipeline);
+        //CurrentBuffer->bindVertexBuffers(0, SphereVertexBuffers, SphereOffsets);
+        //CurrentBuffer->bindIndexBuffer(*_SphereIndexBuffer->GetBuffer(), 0, vk::IndexType::eUint32);
+        //CurrentBuffer->bindDescriptorSets(vk::PipelineBindPoint::eGraphics, PbrScenePipelineLayout, 0,
+        //                                  PbrSceneShader->GetDescriptorSets(CurrentFrame), {});
+        //CurrentBuffer->drawIndexed(_SphereIndicesCount, 1, 0, 0, 0);
+
+        // Draw plane
         CurrentBuffer->bindPipeline(vk::PipelineBindPoint::eGraphics, PbrScenePipeline);
-        CurrentBuffer->bindVertexBuffers(0, SphereVertexBuffers, SphereOffsets);
-        CurrentBuffer->bindIndexBuffer(*_SphereIndexBuffer->GetBuffer(), 0, vk::IndexType::eUint32);
+        CurrentBuffer->bindVertexBuffers(0, PlaneVertexBuffers, PlaneOffsets);
         CurrentBuffer->bindDescriptorSets(vk::PipelineBindPoint::eGraphics, PbrScenePipelineLayout, 0,
                                           PbrSceneShader->GetDescriptorSets(CurrentFrame), {});
-        CurrentBuffer->drawIndexed(_SphereIndicesCount, 1, 0, 0, 0);
+        CurrentBuffer->draw(6, 1, 0, 0);
 
-        //// Draw plane
-        //CurrentBuffer->bindPipeline(vk::PipelineBindPoint::eGraphics, ScenePipeline);
-        //CurrentBuffer->bindVertexBuffers(0, PlaneVertexBuffers, PlaneOffsets);
-        //CurrentBuffer->bindDescriptorSets(vk::PipelineBindPoint::eGraphics, ScenePipelineLayout, 0,
-        //                                  SceneShader->GetDescriptorSets(CurrentFrame), {});
-        //CurrentBuffer->draw(6, 1, 0, 0);
+        // Draw cube
+        CurrentBuffer->bindVertexBuffers(0, CubeVertexBuffers, CubeOffsets);
+        CurrentBuffer->draw(36, 3, 0, 0);
 
-        //// Draw cube
-        //CurrentBuffer->bindVertexBuffers(0, CubeVertexBuffers, CubeOffsets);
-        //CurrentBuffer->draw(36, 3, 0, 0);
-
-        //// Draw lamp
-        //CurrentBuffer->bindPipeline(vk::PipelineBindPoint::eGraphics, LampPipeline);
-        //CurrentBuffer->bindVertexBuffers(0, CubeVertexBuffers, LampOffsets);
-        //CurrentBuffer->bindDescriptorSets(vk::PipelineBindPoint::eGraphics, LampPipelineLayout, 0,
-        //                                  LampShader->GetDescriptorSets(CurrentFrame), {});
-        //CurrentBuffer->draw(36, 1, 0, 0);
+        // Draw lamp
+        CurrentBuffer->bindPipeline(vk::PipelineBindPoint::eGraphics, LampPipeline);
+        CurrentBuffer->bindVertexBuffers(0, CubeVertexBuffers, LampOffsets);
+        CurrentBuffer->bindDescriptorSets(vk::PipelineBindPoint::eGraphics, LampPipelineLayout, 0,
+                                          LampShader->GetDescriptorSets(CurrentFrame), {});
+        CurrentBuffer->draw(36, 3, 0, 0);
         CurrentBuffer->endRendering();
 
-        //// Draw skybox
-        //_ColorAttachmentInfo.setLoadOp(vk::AttachmentLoadOp::eLoad);
-        //_DepthStencilAttachmentInfo.setLoadOp(vk::AttachmentLoadOp::eLoad);
+        // Draw skybox
+        _ColorAttachmentInfo.setLoadOp(vk::AttachmentLoadOp::eLoad);
+        _DepthStencilAttachmentInfo.setLoadOp(vk::AttachmentLoadOp::eLoad);
 
-        //CurrentBuffer->beginRendering(SceneRenderingInfo);
-        //CurrentBuffer->bindPipeline(vk::PipelineBindPoint::eGraphics, SkyboxPipeline);
-        //CurrentBuffer->bindVertexBuffers(0, *_SkyboxVertexBuffer->GetBuffer(), Offset);
-        //CurrentBuffer->bindDescriptorSets(vk::PipelineBindPoint::eGraphics, SkyboxPipelineLayout, 0,
-        //                                  SkyboxShader->GetDescriptorSets(CurrentFrame), {});
-        //CurrentBuffer->draw(36, 1, 0, 0);
-        //CurrentBuffer->endRendering();
+        CurrentBuffer->beginRendering(SceneRenderingInfo);
+        CurrentBuffer->bindPipeline(vk::PipelineBindPoint::eGraphics, SkyboxPipeline);
+        CurrentBuffer->bindVertexBuffers(0, *_SkyboxVertexBuffer->GetBuffer(), Offset);
+        CurrentBuffer->bindDescriptorSets(vk::PipelineBindPoint::eGraphics, SkyboxPipelineLayout, 0,
+                                          SkyboxShader->GetDescriptorSets(CurrentFrame), {});
+        CurrentBuffer->draw(36, 3, 0, 0);
+        CurrentBuffer->endRendering();
 
-        //_ColorAttachmentInfo.setLoadOp(vk::AttachmentLoadOp::eClear);
-        //_DepthStencilAttachmentInfo.setLoadOp(vk::AttachmentLoadOp::eClear);
+        _ColorAttachmentInfo.setLoadOp(vk::AttachmentLoadOp::eClear);
+        _DepthStencilAttachmentInfo.setLoadOp(vk::AttachmentLoadOp::eClear);
 
         vk::ImageMemoryBarrier2 ColorRenderEndBarrier(
             vk::PipelineStageFlagBits2::eColorAttachmentOutput,
@@ -448,7 +448,7 @@ void FApplication::CreateAttachments()
             .usage = VMA_MEMORY_USAGE_GPU_ONLY,
         };
 
-        vk::Extent2D ShadowMapExtent(4096, 4096);
+        vk::Extent2D ShadowMapExtent(8192, 8192);
 
         _VulkanContext->WaitIdle();
 
@@ -562,35 +562,18 @@ void FApplication::LoadAssets()
 
     std::vector<std::string> TextureNames
     { 
-        // "CliffSideDiffuse",
-        // "CliffSideNormal",
-        // "CliffSideDisplacement",
-        // "CliffSideArm"
-        "RustedIronAo",
-        "RustedIronDiffuse",
-        "RustedIronMetallic",
-        "RustedIronNormal",
-        "RustedIronRoughness"
+        "PbrDisplacement",
+        "PbrDiffuse",
+        "PbrNormal",
+        "PbrArm"
     };
 
     std::vector<std::string> TextureFiles
     {
-        // "CliffSide/cliff_side_diff_1k.jpg",
-        // "CliffSide/cliff_side_nor_dx_1k.jpg",
-        // "CliffSide/cliff_side_disp_1k.jpg",
-        // "CliffSide/cliff_side_arm_1k.jpg"
-
-        "RustedIron/rustediron2_ao.png",
-        "RustedIron/rustediron2_diffuse.png",
-        "RustedIron/rustediron2_metallic.png",
-        "RustedIron/rustediron2_normal.png",
-        "RustedIron/rustediron2_roughness.png"
-
-        // "CliffSide/cliff_side_ao_1k.jpg",
-        // "CliffSide/cliff_side_diff_1k.jpg",
-        // "CliffSide/cliff_side_arm_1k.jpg",
-        // "CliffSide/cliff_side_nor_dx_1k.jpg",
-        // "CliffSide/cliff_side_rough_1k.jpg",
+        "CliffSide/cliff_side_disp_4k.jpg",
+        "CliffSide/cliff_side_diff_4k.jpg",
+        "CliffSide/cliff_side_nor_dx_4k.jpg",
+        "CliffSide/cliff_side_arm_4k.jpg"
     };
 
     std::vector<vk::Format> TextureFormats
@@ -598,19 +581,17 @@ void FApplication::LoadAssets()
         vk::Format::eR8G8B8A8Unorm,
         vk::Format::eR8G8B8A8Srgb,
         vk::Format::eR8G8B8A8Unorm,
-        vk::Format::eR8G8B8A8Unorm,
         vk::Format::eR8G8B8A8Unorm
     };
 
 #if !defined(_DEBUG)
-    TextureFiles =
-    {
-        "CliffSide/cliff_side_ao_4k.jpg",
-        "CliffSide/cliff_side_diff_4k.jpg",
-        "CliffSide/cliff_side_arm_4k.jpg",
-        "CliffSide/cliff_side_nor_dx_4k.jpg",
-        "CliffSide/cliff_side_rough_4k.jpg"
-    };
+    // TextureFiles =
+    // {
+    //     "CliffSide/cliff_side_disp_16k.jpg",
+    //     "CliffSide/cliff_side_diff_16k.jpg",
+    //     "CliffSide/cliff_side_nor_dx_16k.jpg",
+    //     "CliffSide/cliff_side_arm_16k.jpg"
+    // };
 #endif
 
     AssetManager->AddAsset<Art::FTextureCube>(
@@ -695,16 +676,11 @@ void FApplication::BindDescriptorSets(Art::FAssetManager* AssetManager)
     auto* SkyboxShader    = AssetManager->GetAsset<Art::FShader>("SkyboxShader");
     auto* PostShader      = AssetManager->GetAsset<Art::FShader>("PostShader");
 
-    auto* CliffSideDiffuse      = AssetManager->GetAsset<Art::FTexture2D>("CliffSideDiffuse");
-    auto* CliffSideNormal       = AssetManager->GetAsset<Art::FTexture2D>("CliffSideNormal");
-    auto* CliffSideDisplacement = AssetManager->GetAsset<Art::FTexture2D>("CliffSideDisplacement");
-    auto* CliffSideArm          = AssetManager->GetAsset<Art::FTexture2D>("CliffSideArm");
-    auto* RustedIronAo          = AssetManager->GetAsset<Art::FTexture2D>("RustedIronAo");
-    auto* RustedIronDiffuse     = AssetManager->GetAsset<Art::FTexture2D>("RustedIronDiffuse");
-    auto* RustedIronMetallic    = AssetManager->GetAsset<Art::FTexture2D>("RustedIronMetallic");
-    auto* RustedIronNormal      = AssetManager->GetAsset<Art::FTexture2D>("RustedIronNormal");
-    auto* RustedIronRoughness   = AssetManager->GetAsset<Art::FTexture2D>("RustedIronRoughness");
-    auto* Skybox                = AssetManager->GetAsset<Art::FTextureCube>("Skybox");
+    auto* PbrDisplacement = AssetManager->GetAsset<Art::FTexture2D>("PbrDisplacement");
+    auto* PbrDiffuse      = AssetManager->GetAsset<Art::FTexture2D>("PbrDiffuse");
+    auto* PbrNormal       = AssetManager->GetAsset<Art::FTexture2D>("PbrNormal");
+    auto* PbrArm          = AssetManager->GetAsset<Art::FTexture2D>("PbrArm");
+    auto* Skybox          = AssetManager->GetAsset<Art::FTextureCube>("Skybox");
 
     vk::SamplerCreateInfo SamplerCreateInfo = Art::FTextureBase::CreateDefaultSamplerCreateInfo();
     static Grt::FVulkanSampler kSampler(SamplerCreateInfo);
@@ -722,20 +698,14 @@ void FApplication::BindDescriptorSets(Art::FAssetManager* AssetManager)
     //auto CliffSideDisplacementImageInfo = CliffSideDisplacement->CreateDescriptorImageInfo(nullptr);
     //SceneShader->WriteSharedDescriptors(1, 3, vk::DescriptorType::eSampledImage, CliffSideDisplacementImageInfo);
 
-    auto RustedIronAoImageInfo = RustedIronAo->CreateDescriptorImageInfo(nullptr);
-    PbrSceneShader->WriteSharedDescriptors(1, 1, vk::DescriptorType::eSampledImage, RustedIronAoImageInfo);
+    auto PbrDiffuseImageInfo = PbrDiffuse->CreateDescriptorImageInfo(nullptr);
+    PbrSceneShader->WriteSharedDescriptors(1, 1, vk::DescriptorType::eSampledImage, PbrDiffuseImageInfo);
 
-    auto RustedIronDiffuseImageInfo = RustedIronDiffuse->CreateDescriptorImageInfo(nullptr);
-    PbrSceneShader->WriteSharedDescriptors(1, 2, vk::DescriptorType::eSampledImage, RustedIronDiffuseImageInfo);
+    auto PbrNormalImageInfo = PbrNormal->CreateDescriptorImageInfo(nullptr);
+    PbrSceneShader->WriteSharedDescriptors(1, 2, vk::DescriptorType::eSampledImage, PbrNormalImageInfo);
 
-    auto RustedIronMetallicImageInfo = RustedIronMetallic->CreateDescriptorImageInfo(nullptr);
-    PbrSceneShader->WriteSharedDescriptors(1, 3, vk::DescriptorType::eSampledImage, RustedIronMetallicImageInfo);
-
-    auto RustedIronNormalImageInfo = RustedIronNormal->CreateDescriptorImageInfo(nullptr);
-    PbrSceneShader->WriteSharedDescriptors(1, 4, vk::DescriptorType::eSampledImage, RustedIronNormalImageInfo);
-
-    auto RustedIronRoughnessImageInfo = RustedIronRoughness->CreateDescriptorImageInfo(nullptr);
-    PbrSceneShader->WriteSharedDescriptors(1, 5, vk::DescriptorType::eSampledImage, RustedIronRoughnessImageInfo);
+    auto PbrArmImageInfo = PbrArm->CreateDescriptorImageInfo(nullptr);
+    PbrSceneShader->WriteSharedDescriptors(1, 3, vk::DescriptorType::eSampledImage, PbrArmImageInfo);
 
     SamplerCreateInfo
         .setMipmapMode(vk::SamplerMipmapMode::eNearest)
@@ -766,7 +736,7 @@ void FApplication::BindDescriptorSets(Art::FAssetManager* AssetManager)
 
     static Grt::FVulkanSampler kFramebufferSampler(SamplerCreateInfo);
 
-    auto CreatePostDescriptors = [&, PostShader = PostShader, SceneShader = SceneShader]() -> void
+    auto CreatePostDescriptors = [&, PostShader, SceneShader, PbrSceneShader]() -> void
     {
         vk::DescriptorImageInfo ColorImageInfo(
             *kFramebufferSampler, *_ResolveAttachment->GetImageView(), vk::ImageLayout::eShaderReadOnlyOptimal);
@@ -775,6 +745,7 @@ void FApplication::BindDescriptorSets(Art::FAssetManager* AssetManager)
 
         PostShader->WriteSharedDescriptors(0, 0, vk::DescriptorType::eCombinedImageSampler, ColorImageInfo);
         SceneShader->WriteSharedDescriptors(1, 4, vk::DescriptorType::eCombinedImageSampler, ShadowMapImageInfo);
+        PbrSceneShader->WriteSharedDescriptors(1, 4, vk::DescriptorType::eCombinedImageSampler, ShadowMapImageInfo);
     };
 
     CreatePostDescriptors();
@@ -831,8 +802,8 @@ void FApplication::InitVerticesData()
     std::vector<glm::vec3> Normals;
     std::vector<glm::vec2> TexCoords;
 
-    const std::uint32_t kSegmentsX = 64;
-    const std::uint32_t kSegmentsY = 64;
+    const std::uint32_t kSegmentsX = 4;
+    const std::uint32_t kSegmentsY = 4;
 
     for (std::uint32_t x = 0; x <= kSegmentsX; ++x)
     {
@@ -879,8 +850,6 @@ void FApplication::InitVerticesData()
 
         bIsOddRow = !bIsOddRow;
     }
-
-    _SphereIndicesCount = static_cast<std::uint32_t>(SphereIndices.size());
 
     std::vector<Grt::FVertex> SphereVertices;
     for (std::size_t i = 0; i != Positions.size(); ++i)
@@ -937,10 +906,7 @@ void FApplication::InitVerticesData()
 
     _SphereIndexBuffer = std::make_unique<Grt::FDeviceLocalBuffer>(AllocationCreateInfo, IndexBufferCreateInfo);
     _SphereIndexBuffer->CopyData(SphereIndices);
-
-    IndexBufferCreateInfo.setSize(CubeIndices.size() * sizeof(std::uint32_t));
-    _CubeIndexBuffer = std::make_unique<Grt::FDeviceLocalBuffer>(AllocationCreateInfo, IndexBufferCreateInfo);
-    _CubeIndexBuffer->CopyData(CubeIndices);
+    _SphereIndicesCount = static_cast<std::uint32_t>(SphereIndices.size());
 }
 
 void FApplication::CreatePipelines()
@@ -963,6 +929,10 @@ void FApplication::CreatePipelines()
     ScenePipelineCreateInfoPack.DynamicStates.push_back(vk::DynamicState::eScissor);
     ScenePipelineCreateInfoPack.GraphicsPipelineCreateInfo.setPNext(&SceneRenderingCreateInfo);
     ScenePipelineCreateInfoPack.InputAssemblyStateCreateInfo.setTopology(vk::PrimitiveTopology::eTriangleList);
+    ScenePipelineCreateInfoPack.RasterizationStateCreateInfo
+        .setCullMode(vk::CullModeFlagBits::eBack)
+        .setFrontFace(vk::FrontFace::eCounterClockwise);
+
     ScenePipelineCreateInfoPack.MultisampleStateCreateInfo
         .setRasterizationSamples(vk::SampleCountFlagBits::e8)
         .setSampleShadingEnable(vk::True)
@@ -981,10 +951,7 @@ void FApplication::CreatePipelines()
     PipelineManager->CreateGraphicsPipeline("LampPipeline", "LampShader", ScenePipelineCreateInfoPack);
 
     Grt::FGraphicsPipelineCreateInfoPack PbrScenePipelineCreateInfoPack = ScenePipelineCreateInfoPack;
-    PbrScenePipelineCreateInfoPack.InputAssemblyStateCreateInfo.setTopology(vk::PrimitiveTopology::eTriangleStrip);
-    PbrScenePipelineCreateInfoPack.RasterizationStateCreateInfo
-        .setCullMode(vk::CullModeFlagBits::eBack)
-        .setFrontFace(vk::FrontFace::eCounterClockwise);
+    PbrScenePipelineCreateInfoPack.InputAssemblyStateCreateInfo.setTopology(vk::PrimitiveTopology::eTriangleList);
 
     PipelineManager->CreateGraphicsPipeline("PbrScenePipeline", "PbrSceneShader", PbrScenePipelineCreateInfoPack);
 
