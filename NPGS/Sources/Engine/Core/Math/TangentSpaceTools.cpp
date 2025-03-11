@@ -1,5 +1,6 @@
 #include "TangentSpaceTools.h"
 
+#include <cmath>
 #include "Engine/Core/Math/NumericConstants.h"
 
 _NPGS_BEGIN
@@ -68,44 +69,80 @@ void CalculateTangentBitangentWithIndices(std::vector<Runtime::Graphics::FVertex
 void CalculateTangentBitangentSphere(std::vector<Runtime::Graphics::FVertex>& Vertices,
                                      std::uint32_t SegmentsX, std::uint32_t SegmentsY)
 {
-    for (std::uint32_t y = 0; y <= SegmentsY; ++y)
+    // 初始化切线和副切线向量为零
+    for (auto& Vertex : Vertices)
     {
-        // θ ∈ [0, π]
-        float Theta = static_cast<float>(y) / static_cast<float>(SegmentsY) * kPi;
+        Vertex.Tangent   = glm::vec3(0.0f);
+        Vertex.Bitangent = glm::vec3(0.0f);
+    }
 
-        for (std::uint32_t x = 0; x <= SegmentsX; ++x)
+    auto ProcessTriangle = [&](const std::vector<std::size_t>& Indices) -> void
+    {
+        const glm::vec3& Vertex0 = Vertices[Indices[0]].Position;
+        const glm::vec3& Vertex1 = Vertices[Indices[1]].Position;
+        const glm::vec3& Vertex2 = Vertices[Indices[2]].Position;
+
+        const glm::vec2& TexCoord0 = Vertices[Indices[0]].TexCoord;
+        const glm::vec2& TexCoord1 = Vertices[Indices[1]].TexCoord;
+        const glm::vec2& TexCoord2 = Vertices[Indices[2]].TexCoord;
+
+        // 计算边和纹理坐标差值
+        const glm::vec3 Edge1    = Vertex1 - Vertex0;
+        const glm::vec3 Edge2    = Vertex2 - Vertex0;
+        const glm::vec2 DeltaUv1 = TexCoord1 - TexCoord0;
+        const glm::vec2 DeltaUv2 = TexCoord2 - TexCoord0;
+
+        // 计算切线和副切线
+        float Factor = 1.0f / (DeltaUv1.x * DeltaUv2.y - DeltaUv2.x * DeltaUv1.y);
+        if (std::isfinite(Factor))
         {
-            // φ ∈ [0, 2π] 
-            float Phi = static_cast<float>(x) / static_cast<float>(SegmentsX) * 2.0f * kPi;
+            const glm::vec3 Tangent   = glm::normalize(Factor * ( DeltaUv2.y * Edge1 - DeltaUv1.y * Edge2));
+            const glm::vec3 Bitangent = glm::normalize(Factor * (-DeltaUv2.x * Edge1 + DeltaUv1.x * Edge2));
 
-            std::size_t Index = y * (SegmentsX + 1) + x;
-
-            // 球面上一点的位置向量就是其法线方向
-            // Normal = normalize(P)
-            glm::vec3 Normal = glm::normalize(Vertices[Index].Position);
-
-            // 切线方向是 φ 方向的偏导数
-            // T = normalize(∂P/∂φ) = normalize((-sin(φ)×sin(θ), 0, cos(φ)×sin(θ)))
-            glm::vec3 Tangent(-std::sin(Phi) * std::sin(Theta), 0, std::cos(Phi) * std::sin(Theta));
-            Tangent = glm::normalize(Tangent);
-
-            // 副切线方向是 θ 方向的偏导数
-            // B = normalize(∂P/∂θ) = normalize((cos(φ)×cos(θ), -sin(θ), sin(φ)×cos(θ)))
-            glm::vec3 Bitangent(std::cos(Phi) * std::cos(Theta), -std::sin(Theta), std::sin(Phi) * std::cos(Theta));
-            Bitangent = glm::normalize(Bitangent);
-
-            // 确保 TBN 是右手坐标系
-            // 检查 B 是否等于 N×T
-            glm::vec3 CrossProduct = glm::cross(Normal, Tangent);
-            if (glm::dot(CrossProduct, Bitangent) < 0.0f)
-            {
-                Tangent = -Tangent;
-            }
-
-            Vertices[Index].Normal    = Normal;
-            Vertices[Index].Tangent   = Tangent;
-            Vertices[Index].Bitangent = Bitangent;
+            // 累加到顶点上
+            Vertices[Indices[0]].Tangent   += Tangent;
+            Vertices[Indices[1]].Tangent   += Tangent;
+            Vertices[Indices[2]].Tangent   += Tangent;
+            Vertices[Indices[0]].Bitangent += Bitangent;
+            Vertices[Indices[1]].Bitangent += Bitangent;
+            Vertices[Indices[2]].Bitangent += Bitangent;
         }
+    };
+
+    // 计算每个网格面片的切线空间
+    for (std::uint32_t y = 0; y < SegmentsY; ++y)
+    {
+        for (std::uint32_t x = 0; x < SegmentsX; ++x)
+        {
+            // 获取形成四边形的四个顶点索引
+            std::size_t Index0 = y       * (SegmentsX + 1) + x;       // 左上
+            std::size_t Index1 = y       * (SegmentsX + 1) + (x + 1); // 右上
+            std::size_t Index2 = (y + 1) * (SegmentsX + 1) + x;       // 左下
+            std::size_t Index3 = (y + 1) * (SegmentsX + 1) + (x + 1); // 右下
+
+            // 处理第一个三角形 (Index0, Index1, Index2)
+            ProcessTriangle({ Index0, Index1, Index2 });
+
+            // 处理第二个三角形 (Index1, Index3, Index2)
+            ProcessTriangle({ Index1, Index3, Index2 });
+        }
+    }
+
+    // 归一化所有顶点的切线和副切线，并确保正交性
+    for (auto& Vertex : Vertices)
+    {
+        // 首先确保 Normal 是归一化的
+        Vertex.Normal = glm::normalize(Vertex.Position);
+
+        // 归一化切线和副切线
+        Vertex.Tangent   = glm::normalize(Vertex.Tangent);
+        Vertex.Bitangent = glm::normalize(Vertex.Bitangent);
+
+        // 使用 Gram-Schmidt 正交化过程确保切线与法线垂直
+        Vertex.Tangent = glm::normalize(Vertex.Tangent - Vertex.Normal * glm::dot(Vertex.Normal, Vertex.Tangent));
+
+        // 确保副切线与法线和切线都垂直（右手系）
+        Vertex.Bitangent = glm::cross(Vertex.Normal, Vertex.Tangent);
     }
 }
 

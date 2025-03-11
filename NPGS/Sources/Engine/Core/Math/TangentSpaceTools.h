@@ -1,8 +1,8 @@
 #pragma once
 
-#include <cmath>
 #include <cstddef>
 #include <cstdint>
+#include <vector>
 
 #include "Engine/Core/Base/Base.h"
 #include "Engine/Core/Runtime/Graphics/Buffers/BufferStructs.h"

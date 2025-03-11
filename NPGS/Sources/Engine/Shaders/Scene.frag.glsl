@@ -70,20 +70,23 @@ void main()
 #if defined(LAMP_BOX)
     FragColor = vec4(max(max(iLightMaterial.Light.Ambient, iLightMaterial.Light.Diffuse), iLightMaterial.Light.Specular), 1.0);
 #else
-    vec3 AmbientColor = iLightMaterial.Light.Ambient * texture(sampler2D(iDiffuseTex, iSampler), FragInput.TexCoord).rgb;
+    vec3 DiffuseTexColor  = texture(sampler2D(iDiffuseTex,  iSampler), FragInput.TexCoord).rgb;
+    vec3 NormalTexColor   = texture(sampler2D(iNormalTex,   iSampler), FragInput.TexCoord).rgb;
+    vec3 SpecularTexColor = texture(sampler2D(iSpecularTex, iSampler), FragInput.TexCoord).rgb;
 
-    vec3  RgbNormal    = texture(sampler2D(iNormalTex, iSampler), FragInput.TexCoord).rgb;
-    vec3  TexNormal    = normalize(FragInput.TbnMatrix * (RgbNormal * 2.0 - 1.0));
+    vec3 AmbientColor = iLightMaterial.Light.Ambient * DiffuseTexColor;
+
+    vec3  Normal       = normalize(FragInput.TbnMatrix * (NormalTexColor * 2.0 - 1.0));
     vec3  LightDir     = normalize(iLightMaterial.Light.Position - FragInput.FragPos);
-    float DiffuseCoef  = max(dot(TexNormal, LightDir), 0.0);
-    vec3  DiffuseColor = iLightMaterial.Light.Diffuse * DiffuseCoef * texture(sampler2D(iDiffuseTex, iSampler), FragInput.TexCoord).rgb;
+    float DiffuseCoef  = max(dot(Normal, LightDir), 0.0);
+    vec3  DiffuseColor = iLightMaterial.Light.Diffuse * DiffuseCoef * DiffuseTexColor;
 
     vec3  ViewDir       = normalize(iLightMaterial.ViewPos - FragInput.FragPos);
     vec3  HalfWayDir    = normalize(LightDir + ViewDir);
-    float SpecularCoef  = pow(max(dot(TexNormal, HalfWayDir), 0.0), iLightMaterial.Material.Shininess);
-    vec3  SpecularColor = iLightMaterial.Light.Specular * SpecularCoef * texture(sampler2D(iSpecularTex, iSampler), FragInput.TexCoord).rgb;
+    float SpecularCoef  = pow(max(dot(Normal, HalfWayDir), 0.0), iLightMaterial.Material.Shininess);
+    vec3  SpecularColor = iLightMaterial.Light.Specular * SpecularCoef * SpecularTexColor;
 
-    float Bias   = max(0.05 * (1.0 - dot(TexNormal, LightDir)), 0.005);
+    float Bias   = max(0.05 * (1.0 - dot(Normal, LightDir)), 0.005);
     float Shadow = CalcShadow(FragInput.LightSpaceFragPos, Bias);
     vec3  Result = AmbientColor + (1.0 - Shadow) * (DiffuseColor + SpecularColor);
     FragColor    = vec4(Result, 1.0);

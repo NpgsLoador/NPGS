@@ -21,9 +21,11 @@ layout(std140, set = 0, binding = 1) uniform LightArgs
 } iLightArgs;
 
 layout(set = 1, binding = 0) uniform sampler   iSampler;
-layout(set = 1, binding = 1) uniform texture2D iDiffuseTex;
-layout(set = 1, binding = 2) uniform texture2D iNormalTex;
-layout(set = 1, binding = 3) uniform texture2D iArmTex;
+layout(set = 1, binding = 1) uniform texture2D iAoTex;
+layout(set = 1, binding = 2) uniform texture2D iDiffuseTex;
+layout(set = 1, binding = 3) uniform texture2D iMetallicTex;
+layout(set = 1, binding = 4) uniform texture2D iNormalTex;
+layout(set = 1, binding = 5) uniform texture2D iRoughnessTex;
 
 float TrowbridgeReitzGGX(vec3 Normal, vec3 HalfDir, float Roughness)
 {
@@ -37,18 +39,18 @@ float TrowbridgeReitzGGX(vec3 Normal, vec3 HalfDir, float Roughness)
 	return Numerator / Denominator;
 }
 
-float GemoetrySchlickGGX(float CosTheta, float Roughness)
+float GeometrySchlickGGX(float CosTheta, float Roughness)
 {
 	float Kx = pow(Roughness + 1.0, 2) / 8.0;
 	return CosTheta / (CosTheta * (1.0 - Kx) + Kx);
 }
 
-float GemoetyrSmithGGX(vec3 Normal, vec3 ViewDir, vec3 LightDir, float Roughness)
+float GeometrySmith(vec3 Normal, vec3 ViewDir, vec3 LightDir, float Roughness)
 {
-	float NdotV = dot(Normal, ViewDir);
-	float NdotL = dot(Normal, LightDir);
-	float GGX1  = GemoetrySchlickGGX(NdotV, Roughness);
-	float GGX2  = GemoetrySchlickGGX(NdotL, Roughness);
+	float NdotV = max(dot(Normal, ViewDir),  0.01);
+	float NdotL = max(dot(Normal, LightDir), 0.01);
+	float GGX1  = GeometrySchlickGGX(NdotV, Roughness);
+	float GGX2  = GeometrySchlickGGX(NdotL, Roughness);
 
 	return GGX1 * GGX2;
 }
@@ -60,45 +62,45 @@ vec3 FresnelSchlick(float HdotV, vec3 Fx)
 
 void main()
 {
-    vec3 TexNormal = texture(sampler2D(iNormalTex, iSampler), FragInput.TexCoord).rgb;
-	vec3 RgbNormal = TexNormal * 2.0 - 1.0;
-    vec3 Normal    = normalize(RgbNormal);
+	vec3  TexAlbedo    = texture(sampler2D(iDiffuseTex,   iSampler), FragInput.TexCoord).rgb;
+	vec3  TexNormal    = texture(sampler2D(iNormalTex,    iSampler), FragInput.TexCoord).rgb;
+	float TexAo        = texture(sampler2D(iAoTex,        iSampler), FragInput.TexCoord).r;
+	float TexMetallic  = texture(sampler2D(iMetallicTex,  iSampler), FragInput.TexCoord).b;
+	float TexRoughness = texture(sampler2D(iRoughnessTex, iSampler), FragInput.TexCoord).r;
 
-	vec3  Albedo   = texture(sampler2D(iDiffuseTex, iSampler), FragInput.TexCoord).rgb;
-	vec3  ArmColor = texture(sampler2D(iArmTex, iSampler), FragInput.TexCoord).rgb;
-	float AmbientOcclusion = ArmColor.r;
-	float Roughness        = ArmColor.g;
-	float Metallic         = ArmColor.b;
-
-	vec3 Fx = vec3(0.04);
-	Fx = mix(Fx, Albedo, Metallic);
+	vec3 Normal = normalize(TexNormal * 2.0 - 1.0);
+	vec3 Fx     = vec3(0.04);
+	Fx = mix(Fx, TexAlbedo, TexMetallic);
 
 	vec3 RadianceSum = vec3(0.0);
 
-	vec3 LightDir = FragInput.TbnMatrix * normalize(iLightArgs.LightPos  - FragInput.FragPos);
-	vec3 ViewDir  = FragInput.TbnMatrix * normalize(iLightArgs.CameraPos - FragInput.FragPos);
+	vec3 LightDir = normalize(FragInput.TbnMatrix * (iLightArgs.LightPos  - FragInput.FragPos));
+	vec3 ViewDir  = normalize(FragInput.TbnMatrix * (iLightArgs.CameraPos - FragInput.FragPos));
 	vec3 HalfDir  = normalize(LightDir + ViewDir);
+
+	float ViewAngle         = dot(ViewDir, Normal);
+	float AdjustedRoughness = mix(TexRoughness, max(TexRoughness, 0.3), 1.0 - smoothstep(0.0, 0.2, ViewAngle));
 
 	float Distance    = length(iLightArgs.LightPos - FragInput.FragPos);
 	float Attenuation = 1.0 / pow(Distance, 2);
 	vec3  Radiance    = iLightArgs.LightColor * Attenuation;
 
-	float NormalDistFunc  = TrowbridgeReitzGGX(Normal, HalfDir, Roughness);
-	float GemoertyFunc    = GemoetyrSmithGGX(Normal, ViewDir, LightDir, Roughness);
+	float NormalDistFunc  = TrowbridgeReitzGGX(Normal, HalfDir, AdjustedRoughness);
+	float GemoertyFunc    = GeometrySmith(Normal, ViewDir, LightDir, AdjustedRoughness);
 	vec3  FresnelEquation = FresnelSchlick(clamp(dot(HalfDir, ViewDir), 0.0, 1.0), Fx);
 
-	vec3  Numerator   = NormalDistFunc * GemoertyFunc * FresnelEquation;
-	float Denominator = 4.0 * max(dot(ViewDir, Normal), 0.0) * max(dot(LightDir, Normal), 0.0);
+	vec3  Numerator        = NormalDistFunc * GemoertyFunc * FresnelEquation;
+	float Denominator      = 4.0 * max(dot(ViewDir, Normal), 0.01) * max(dot(LightDir, Normal), 0.01);
 	vec3  CookTorranceSpec = Numerator / (Denominator + 1e-3);
 
 	vec3 Specular = FresnelEquation;
-	vec3 Diffuse  = iLightArgs.LightColor - Specular;
-	Diffuse      *= 1.0 - Metallic;
+	vec3 Diffuse  = vec3(1.0) - Specular;
+	Diffuse      *= 1.0 - TexMetallic;
 
 	float NdotL = max(dot(Normal, LightDir), 0.0);
-	RadianceSum += (Diffuse * Albedo / kPi + CookTorranceSpec) * Radiance * NdotL;
+	RadianceSum += (Diffuse * TexAlbedo / kPi + CookTorranceSpec) * Radiance * NdotL;
 
-	vec3 Ambient = vec3(0.03) * Albedo * AmbientOcclusion;
+	vec3 Ambient = vec3(0.03) * TexAlbedo * TexAo;
 	vec3 Color   = Ambient + RadianceSum;
 
 	FragColor = vec4(Color, 1.0);

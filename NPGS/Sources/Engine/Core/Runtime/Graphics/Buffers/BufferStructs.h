@@ -1,5 +1,7 @@
 #pragma once
 
+#include <array>
+
 #define GLM_FORCE_ALIGNED_GENTYPES
 #include <glm/glm.hpp>
 #include <glm/gtc/type_aligned.hpp>
@@ -47,23 +49,23 @@ struct FQuadOnlyVertex
 struct FGameArgs
 {
     glm::aligned_vec2 Resolution;
-    float FovRadians;
-    float Time;
-    float TimeDelta;
-    float TimeRate;
+    float             FovRadians;
+    float             Time;
+    float             TimeDelta;
+    float             TimeRate;
 };
 
 struct FBlackHoleArgs
 {
     glm::aligned_vec3 WorldUpView;
     glm::aligned_vec3 BlackHoleRelativePos;
-    glm::vec3 BlackHoleRelativeDiskNormal;
-    float BlackHoleMassSol;
-    float Spin;
-    float Mu;
-    float AccretionRate;
-    float InterRadiusLy;
-    float OuterRadiusLy;
+    glm::vec3         BlackHoleRelativeDiskNormal;
+    float             BlackHoleMassSol;
+    float             Spin;
+    float             Mu;
+    float             AccretionRate;
+    float             InterRadiusLy;
+    float             OuterRadiusLy;
 };
 
 struct FMatrices
@@ -96,9 +98,9 @@ struct FLightMaterial
 struct FPbrArgs
 {
     glm::vec3 Albedo;
-    float Metallic;
-    float Roughness;
-    float AmbientOcclusion;
+    float     Metallic;
+    float     Roughness;
+    float     AmbientOcclusion;
 };
 
 struct FLightArgs

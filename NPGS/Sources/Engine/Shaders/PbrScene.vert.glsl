@@ -40,9 +40,11 @@ void main()
 	// vec3  NewPosition  = Position + Normal * Displacement;
 	VertOutput.FragPos = vec3(Model * vec4(Position, 1.0));
 
-	mat3x3 TbnMatrix = mat3x3(normalize(vec3(Model * vec4(Tangent,   0.0))),
-							  normalize(vec3(Model * vec4(Bitangent, 0.0))),
-							  normalize(vec3(Model * vec4(Normal,    0.0))));
+	vec3 T = normalize(vec3(Model * vec4(Tangent, 0.0)));
+	vec3 N = normalize(vec3(Model * vec4(Normal,  0.0)));
+	vec3 B = normalize(cross(T, N));
+
+	mat3x3 TbnMatrix = mat3x3(T, B, N);
 	VertOutput.TbnMatrix = transpose(TbnMatrix);
 
 	gl_Position = iMatrices.Projection * iMatrices.View * vec4(VertOutput.FragPos, 1.0);
