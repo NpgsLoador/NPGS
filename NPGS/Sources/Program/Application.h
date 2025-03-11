@@ -85,8 +85,13 @@ private:
     std::unique_ptr<Runtime::Graphics::FDeviceLocalBuffer> _SkyboxVertexBuffer;
     std::unique_ptr<Runtime::Graphics::FDeviceLocalBuffer> _PlaneVertexBuffer;
     std::unique_ptr<Runtime::Graphics::FDeviceLocalBuffer> _QuadVertexBuffer;
+    std::unique_ptr<Runtime::Graphics::FDeviceLocalBuffer> _TerrainVertexBuffer;
+    std::unique_ptr<Runtime::Graphics::FDeviceLocalBuffer> _TerrainIndexBuffer;
 
-    std::uint32_t _SphereIndicesCount;
+    std::uint32_t _SphereIndicesCount{};
+    std::uint32_t _TerrainIndicesCount{};
+    std::uint32_t _NumStrips{};
+    std::uint32_t _NumVertsPerStrip{};
 };
 
 _NPGS_END

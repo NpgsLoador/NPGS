@@ -42,10 +42,10 @@ void FCamera::ProcessKeyboard(EMovement Direction, double DeltaTime)
         _Position -= _Up * Velocity;
         break;
     case EMovement::kRollLeft:
-        ProcessRotation(0.0f, 0.0f, -10.0f * Velocity);
+        ProcessRotation(0.0f, 0.0f, -10.0f * kRotateSpeed * DeltaTime);
         break;
     case EMovement::kRollRight:
-        ProcessRotation(0.0f, 0.0f,  10.0f * Velocity);
+        ProcessRotation(0.0f, 0.0f,  10.0f * kRotateSpeed * DeltaTime);
         break;
     }
 

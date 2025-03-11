@@ -13,12 +13,14 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
+#include <stb_image.h>
 #include <vulkan/vulkan.hpp>
 #include <Windows.h>
 
 #include "Engine/Core/Base/Config/EngineConfig.h"
 #include "Engine/Core/Math/NumericConstants.h"
 #include "Engine/Core/Math/TangentSpaceTools.h"
+#include "Engine/Core/Runtime/AssetLoaders/GetAssetFullPath.h"
 #include "Engine/Core/Runtime/AssetLoaders/Shader.h"
 #include "Engine/Core/Runtime/AssetLoaders/Texture.h"
 #include "Engine/Core/Runtime/Graphics/Renderers/PipelineManager.h"
@@ -73,6 +75,7 @@ void FApplication::ExecuteMainRender()
     auto* PbrSceneShader  = AssetManager->GetAsset<Art::FShader>("PbrSceneShader");
     auto* LampShader      = AssetManager->GetAsset<Art::FShader>("LampShader");
     auto* ShadowMapShader = AssetManager->GetAsset<Art::FShader>("ShadowMapShader");
+    auto* TerrainShader   = AssetManager->GetAsset<Art::FShader>("TerrainShader");
     auto* SkyboxShader    = AssetManager->GetAsset<Art::FShader>("SkyboxShader");
     auto* PostShader      = AssetManager->GetAsset<Art::FShader>("PostShader");
 
@@ -80,6 +83,7 @@ void FApplication::ExecuteMainRender()
     vk::Pipeline PbrScenePipeline;
     vk::Pipeline LampPipeline;
     vk::Pipeline ShadowMapPipeline;
+    vk::Pipeline TerrainPipeline;
     vk::Pipeline PostPipeline;
     vk::Pipeline SkyboxPipeline;
 
@@ -89,6 +93,7 @@ void FApplication::ExecuteMainRender()
         PbrScenePipeline  = PipelineManager->GetPipeline("PbrScenePipeline");
         LampPipeline      = PipelineManager->GetPipeline("LampPipeline");
         ShadowMapPipeline = PipelineManager->GetPipeline("ShadowMapPipeline");
+        TerrainPipeline   = PipelineManager->GetPipeline("TerrainPipeline");
         PostPipeline      = PipelineManager->GetPipeline("PostPipeline");
         SkyboxPipeline    = PipelineManager->GetPipeline("SkyboxPipeline");
     };
@@ -102,6 +107,7 @@ void FApplication::ExecuteMainRender()
     auto PbrScenePipelineLayout  = PipelineManager->GetPipelineLayout("PbrScenePipeline");
     auto LampPipelineLayout      = PipelineManager->GetPipelineLayout("LampPipeline");
     auto ShadowMapPipelineLayout = PipelineManager->GetPipelineLayout("ShadowMapPipeline");
+    auto TerrainPipelineLayout   = PipelineManager->GetPipelineLayout("TerrainPipeline");
     auto PostPipelineLayout      = PipelineManager->GetPipelineLayout("PostPipeline");
     auto SkyboxPipelineLayout    = PipelineManager->GetPipelineLayout("SkyboxPipeline");
 
@@ -245,44 +251,44 @@ void FApplication::ExecuteMainRender()
 
         CurrentBuffer->pipelineBarrier2(InitialDependencyInfo);
 
-        // Set shadow map viewport
-        CurrentBuffer->setViewport(0, ShadowMapViewport);
-        CurrentBuffer->setScissor(0, ShadowMapScissor);
+        //// Set shadow map viewport
+        //CurrentBuffer->setViewport(0, ShadowMapViewport);
+        //CurrentBuffer->setScissor(0, ShadowMapScissor);
 
-        vk::RenderingInfo ShadowMapRenderingInfo = vk::RenderingInfo()
-            .setRenderArea(ShadowMapScissor)
-            .setLayerCount(1)
-            .setPDepthAttachment(&_ShadowMapAttachmentInfo);
+        //vk::RenderingInfo ShadowMapRenderingInfo = vk::RenderingInfo()
+        //    .setRenderArea(ShadowMapScissor)
+        //    .setLayerCount(1)
+        //    .setPDepthAttachment(&_ShadowMapAttachmentInfo);
 
-        CurrentBuffer->beginRendering(ShadowMapRenderingInfo);
-        // Draw scene for depth mapping
-        CurrentBuffer->bindPipeline(vk::PipelineBindPoint::eGraphics, ShadowMapPipeline);
-        CurrentBuffer->bindDescriptorSets(vk::PipelineBindPoint::eGraphics, ShadowMapPipelineLayout, 0,
-                                          ShadowMapShader->GetDescriptorSets(CurrentFrame), {});
-        CurrentBuffer->bindVertexBuffers(0, PlaneVertexBuffers, PlaneOffsets);
-        CurrentBuffer->draw(6, 1, 0, 0);
-        CurrentBuffer->bindVertexBuffers(0, CubeVertexBuffers, CubeOffsets);
-        CurrentBuffer->draw(36, 3, 0, 0);
-        CurrentBuffer->endRendering();
+        //CurrentBuffer->beginRendering(ShadowMapRenderingInfo);
+        //// Draw scene for depth mapping
+        //CurrentBuffer->bindPipeline(vk::PipelineBindPoint::eGraphics, ShadowMapPipeline);
+        //CurrentBuffer->bindDescriptorSets(vk::PipelineBindPoint::eGraphics, ShadowMapPipelineLayout, 0,
+        //                                  ShadowMapShader->GetDescriptorSets(CurrentFrame), {});
+        //CurrentBuffer->bindVertexBuffers(0, PlaneVertexBuffers, PlaneOffsets);
+        //CurrentBuffer->draw(6, 1, 0, 0);
+        //CurrentBuffer->bindVertexBuffers(0, CubeVertexBuffers, CubeOffsets);
+        //CurrentBuffer->draw(36, 3, 0, 0);
+        //CurrentBuffer->endRendering();
 
-        vk::ImageMemoryBarrier2 DepthRenderEndBarrier(
-            vk::PipelineStageFlagBits2::eLateFragmentTests,
-            vk::AccessFlagBits2::eDepthStencilAttachmentWrite,
-            vk::PipelineStageFlagBits2::eFragmentShader,
-            vk::AccessFlagBits2::eShaderRead,
-            vk::ImageLayout::eDepthAttachmentOptimal,
-            vk::ImageLayout::eShaderReadOnlyOptimal,
-            vk::QueueFamilyIgnored,
-            vk::QueueFamilyIgnored,
-            *_ShadowMapAttachment->GetImage(),
-            DepthSubresourceRange
-        );
+        //vk::ImageMemoryBarrier2 DepthRenderEndBarrier(
+        //    vk::PipelineStageFlagBits2::eLateFragmentTests,
+        //    vk::AccessFlagBits2::eDepthStencilAttachmentWrite,
+        //    vk::PipelineStageFlagBits2::eFragmentShader,
+        //    vk::AccessFlagBits2::eShaderRead,
+        //    vk::ImageLayout::eDepthAttachmentOptimal,
+        //    vk::ImageLayout::eShaderReadOnlyOptimal,
+        //    vk::QueueFamilyIgnored,
+        //    vk::QueueFamilyIgnored,
+        //    *_ShadowMapAttachment->GetImage(),
+        //    DepthSubresourceRange
+        //);
 
-        vk::DependencyInfo DepthRenderEndDependencyInfo = vk::DependencyInfo()
-            .setDependencyFlags(vk::DependencyFlagBits::eByRegion)
-            .setImageMemoryBarriers(DepthRenderEndBarrier);
+        //vk::DependencyInfo DepthRenderEndDependencyInfo = vk::DependencyInfo()
+        //    .setDependencyFlags(vk::DependencyFlagBits::eByRegion)
+        //    .setImageMemoryBarriers(DepthRenderEndBarrier);
 
-        CurrentBuffer->pipelineBarrier2(DepthRenderEndDependencyInfo);
+        //CurrentBuffer->pipelineBarrier2(DepthRenderEndDependencyInfo);
 
         // Set scene viewport
         CurrentBuffer->setViewport(0, FlippedViewport);
@@ -296,46 +302,50 @@ void FApplication::ExecuteMainRender()
 
         CurrentBuffer->beginRendering(SceneRenderingInfo);
 
+        CurrentBuffer->bindPipeline(vk::PipelineBindPoint::eGraphics, TerrainPipeline);
+        CurrentBuffer->bindDescriptorSets(vk::PipelineBindPoint::eGraphics, TerrainPipelineLayout, 0,
+                                          TerrainShader->GetDescriptorSets(CurrentFrame), {});
+        CurrentBuffer->bindVertexBuffers(0, *_TerrainVertexBuffer->GetBuffer(), Offset);
+        CurrentBuffer->bindIndexBuffer(*_TerrainIndexBuffer->GetBuffer(), 0, vk::IndexType::eUint32);
+
+        for (int Strip = 0; Strip != _NumStrips; ++Strip)
+        {
+            CurrentBuffer->drawIndexed(_NumVertsPerStrip, 1, _NumVertsPerStrip * Strip, 0, 0);
+        }
+
+        //// Draw plane
         //CurrentBuffer->bindPipeline(vk::PipelineBindPoint::eGraphics, PbrScenePipeline);
-        //CurrentBuffer->bindVertexBuffers(0, SphereVertexBuffers, SphereOffsets);
-        //CurrentBuffer->bindIndexBuffer(*_SphereIndexBuffer->GetBuffer(), 0, vk::IndexType::eUint32);
+        //CurrentBuffer->bindVertexBuffers(0, PlaneVertexBuffers, PlaneOffsets);
         //CurrentBuffer->bindDescriptorSets(vk::PipelineBindPoint::eGraphics, PbrScenePipelineLayout, 0,
         //                                  PbrSceneShader->GetDescriptorSets(CurrentFrame), {});
-        //CurrentBuffer->drawIndexed(_SphereIndicesCount, 1, 0, 0, 0);
+        //CurrentBuffer->draw(6, 1, 0, 0);
 
-        // Draw plane
-        CurrentBuffer->bindPipeline(vk::PipelineBindPoint::eGraphics, PbrScenePipeline);
-        CurrentBuffer->bindVertexBuffers(0, PlaneVertexBuffers, PlaneOffsets);
-        CurrentBuffer->bindDescriptorSets(vk::PipelineBindPoint::eGraphics, PbrScenePipelineLayout, 0,
-                                          PbrSceneShader->GetDescriptorSets(CurrentFrame), {});
-        CurrentBuffer->draw(6, 1, 0, 0);
+        //// Draw cube
+        //CurrentBuffer->bindVertexBuffers(0, CubeVertexBuffers, CubeOffsets);
+        //CurrentBuffer->draw(36, 3, 0, 0);
 
-        // Draw cube
-        CurrentBuffer->bindVertexBuffers(0, CubeVertexBuffers, CubeOffsets);
-        CurrentBuffer->draw(36, 3, 0, 0);
+        //// Draw lamp
+        //CurrentBuffer->bindPipeline(vk::PipelineBindPoint::eGraphics, LampPipeline);
+        //CurrentBuffer->bindVertexBuffers(0, CubeVertexBuffers, LampOffsets);
+        //CurrentBuffer->bindDescriptorSets(vk::PipelineBindPoint::eGraphics, LampPipelineLayout, 0,
+        //                                  LampShader->GetDescriptorSets(CurrentFrame), {});
+        //CurrentBuffer->draw(36, 3, 0, 0);
+        //CurrentBuffer->endRendering();
 
-        // Draw lamp
-        CurrentBuffer->bindPipeline(vk::PipelineBindPoint::eGraphics, LampPipeline);
-        CurrentBuffer->bindVertexBuffers(0, CubeVertexBuffers, LampOffsets);
-        CurrentBuffer->bindDescriptorSets(vk::PipelineBindPoint::eGraphics, LampPipelineLayout, 0,
-                                          LampShader->GetDescriptorSets(CurrentFrame), {});
-        CurrentBuffer->draw(36, 3, 0, 0);
+        //// Draw skybox
+        //_ColorAttachmentInfo.setLoadOp(vk::AttachmentLoadOp::eLoad);
+        //_DepthStencilAttachmentInfo.setLoadOp(vk::AttachmentLoadOp::eLoad);
+
+        //CurrentBuffer->beginRendering(SceneRenderingInfo);
+        //CurrentBuffer->bindPipeline(vk::PipelineBindPoint::eGraphics, SkyboxPipeline);
+        //CurrentBuffer->bindVertexBuffers(0, *_SkyboxVertexBuffer->GetBuffer(), Offset);
+        //CurrentBuffer->bindDescriptorSets(vk::PipelineBindPoint::eGraphics, SkyboxPipelineLayout, 0,
+        //                                  SkyboxShader->GetDescriptorSets(CurrentFrame), {});
+        //CurrentBuffer->draw(36, 3, 0, 0);
         CurrentBuffer->endRendering();
 
-        // Draw skybox
-        _ColorAttachmentInfo.setLoadOp(vk::AttachmentLoadOp::eLoad);
-        _DepthStencilAttachmentInfo.setLoadOp(vk::AttachmentLoadOp::eLoad);
-
-        CurrentBuffer->beginRendering(SceneRenderingInfo);
-        CurrentBuffer->bindPipeline(vk::PipelineBindPoint::eGraphics, SkyboxPipeline);
-        CurrentBuffer->bindVertexBuffers(0, *_SkyboxVertexBuffer->GetBuffer(), Offset);
-        CurrentBuffer->bindDescriptorSets(vk::PipelineBindPoint::eGraphics, SkyboxPipelineLayout, 0,
-                                          SkyboxShader->GetDescriptorSets(CurrentFrame), {});
-        CurrentBuffer->draw(36, 3, 0, 0);
-        CurrentBuffer->endRendering();
-
-        _ColorAttachmentInfo.setLoadOp(vk::AttachmentLoadOp::eClear);
-        _DepthStencilAttachmentInfo.setLoadOp(vk::AttachmentLoadOp::eClear);
+        //_ColorAttachmentInfo.setLoadOp(vk::AttachmentLoadOp::eClear);
+        //_DepthStencilAttachmentInfo.setLoadOp(vk::AttachmentLoadOp::eClear);
 
         vk::ImageMemoryBarrier2 ColorRenderEndBarrier(
             vk::PipelineStageFlagBits2::eColorAttachmentOutput,
@@ -521,6 +531,13 @@ void FApplication::LoadAssets()
         { { 0, 0, false } },
     };
 
+    Art::FShader::FResourceInfo TerrainResourceInfo
+    {
+        { { 0, sizeof(Grt::FSkyboxVertex), false } },
+        { { 0, 0, offsetof(Grt::FSkyboxVertex, Position) } },
+        { { 0, 0, false } }
+    };
+
     Art::FShader::FResourceInfo SkyboxResourceInfo
     {
         { { 0, sizeof(Grt::FSkyboxVertex), false } },
@@ -536,13 +553,14 @@ void FApplication::LoadAssets()
             { 0, 1, offsetof(Grt::FQuadVertex, TexCoord) }
         },
         {},
-        { { vk::ShaderStageFlagBits::eFragment, {"iEnableHdr"} } }
+        { { vk::ShaderStageFlagBits::eFragment, { "bEnableHdr" } } }
     };
 
     std::vector<std::string> SceneShaderFiles({ "Scene.vert.spv", "Scene.frag.spv" });
     std::vector<std::string> PbrSceneShaderFiles({ "PbrScene.vert.spv", "PbrScene.frag.spv" });
     std::vector<std::string> LampShaderFiles({ "Scene.vert.spv", "Scene_Lamp.frag.spv" });
     std::vector<std::string> ShadowMapShaderFiles({ "ShadowMap.vert.spv", "ShadowMap.frag.spv" });
+    std::vector<std::string> TerrainShaderFiles({ "Terrain.vert.spv", "Terrain.frag.spv" });
     std::vector<std::string> SkyboxShaderFiles({ "Skybox.vert.spv", "Skybox.frag.spv" });
     std::vector<std::string> PostShaderFiles({ "PostProcess.vert.spv", "PostProcess.frag.spv" });
 
@@ -557,6 +575,7 @@ void FApplication::LoadAssets()
     AssetManager->AddAsset<Art::FShader>("PbrSceneShader", PbrSceneShaderFiles, SceneResourceInfo);
     AssetManager->AddAsset<Art::FShader>("LampShader", LampShaderFiles, SceneResourceInfo);
     AssetManager->AddAsset<Art::FShader>("ShadowMapShader", ShadowMapShaderFiles, ShadowMapResourceInfo);
+    AssetManager->AddAsset<Art::FShader>("TerrainShader", TerrainShaderFiles, TerrainResourceInfo);
     AssetManager->AddAsset<Art::FShader>("SkyboxShader", SkyboxShaderFiles, SkyboxResourceInfo);
     AssetManager->AddAsset<Art::FShader>("PostShader", PostShaderFiles, PostResourceInfo);
 
@@ -754,7 +773,9 @@ void FApplication::BindDescriptorSets(Art::FAssetManager* AssetManager)
         Grt::FVulkanContext::ECallbackType::kCreateSwapchain, "CreatePostDescriptor", CreatePostDescriptors);
 
     auto* ShaderBufferManager = Grt::FShaderBufferManager::GetInstance();
-    ShaderBufferManager->BindShadersToBuffers("Matrices", "SceneShader", "PbrSceneShader", "LampShader", "ShadowMapShader", "SkyboxShader");
+    ShaderBufferManager->BindShadersToBuffers("Matrices", "SceneShader", "PbrSceneShader", "LampShader",
+                                              "ShadowMapShader", "TerrainShader", "SkyboxShader");
+
     ShaderBufferManager->BindShadersToBuffers("LightMaterial", "SceneShader", "LampShader");
     ShaderBufferManager->BindShaderToBuffers("LightArgs", "PbrSceneShader");
     // ShaderBufferManager->BindShaderToBuffers("PbrArgs", "PbrSceneShader");
@@ -907,6 +928,55 @@ void FApplication::InitVerticesData()
     _SphereIndexBuffer = std::make_unique<Grt::FDeviceLocalBuffer>(AllocationCreateInfo, IndexBufferCreateInfo);
     _SphereIndexBuffer->CopyData(SphereIndices);
     _SphereIndicesCount = static_cast<std::uint32_t>(SphereIndices.size());
+
+    // Create height map vertices
+    // --------------------------
+    int ImageWidth    = 0;
+    int ImageHeight   = 0;
+    int ImageChannels = 0;
+
+    std::byte* ImageData = reinterpret_cast<std::byte*>(
+        stbi_load(Art::GetAssetFullPath(Art::EAssetType::kTexture, "IceLandHeightMapLowRes.png").c_str(),
+                  &ImageWidth, &ImageHeight, &ImageChannels, 0));
+
+    std::vector<Grt::FSkyboxVertex> TerrainVertices;
+    float Scale = 64.0f / 256.0f;
+    float Shift = 16.0f;
+    for (int i = 0; i != ImageHeight; ++i)
+    {
+        for (int j = 0; j != ImageWidth; ++j)
+        {
+            std::byte* Texel = ImageData + (i * ImageWidth + j) * ImageChannels;
+            int y = static_cast<int>(Texel[0]);
+
+            glm::vec3 Vertex(-ImageHeight / 2.0f + i, y * Scale - Shift, -ImageWidth / 2.0f + j);
+            TerrainVertices.emplace_back(Vertex);
+        }
+    }
+
+    stbi_image_free(ImageData);
+
+    std::vector<std::uint32_t> TerrainIndices;
+    for (int i = 0; i != ImageHeight - 1; ++i)
+    {
+        for (int j = 0; j != ImageWidth; ++j)
+        {
+            for (int k = 0; k != 2; ++k)
+            {
+                TerrainIndices.push_back(j + ImageWidth * (i + k));
+            }
+        }
+    }
+
+    VertexBufferCreateInfo.setSize(TerrainVertices.size() * sizeof(Grt::FSkyboxVertex));
+    _TerrainVertexBuffer = std::make_unique<Grt::FDeviceLocalBuffer>(AllocationCreateInfo, VertexBufferCreateInfo);
+    _TerrainVertexBuffer->CopyData(TerrainVertices);
+    IndexBufferCreateInfo.setSize(TerrainIndices.size() * sizeof(std::uint32_t));
+    _TerrainIndexBuffer = std::make_unique<Grt::FDeviceLocalBuffer>(AllocationCreateInfo, IndexBufferCreateInfo);
+    _TerrainIndexBuffer->CopyData(TerrainIndices);
+    _TerrainIndicesCount = static_cast<std::uint32_t>(TerrainIndices.size());
+    _NumStrips = ImageHeight - 1;
+    _NumVertsPerStrip = ImageWidth * 2;
 }
 
 void FApplication::CreatePipelines()
@@ -950,21 +1020,28 @@ void FApplication::CreatePipelines()
     PipelineManager->CreateGraphicsPipeline("ScenePipeline", "SceneShader", ScenePipelineCreateInfoPack);
     PipelineManager->CreateGraphicsPipeline("LampPipeline", "LampShader", ScenePipelineCreateInfoPack);
 
+    Grt::FGraphicsPipelineCreateInfoPack TerrainPipelineCreateInfoPack = ScenePipelineCreateInfoPack;
+    TerrainPipelineCreateInfoPack.InputAssemblyStateCreateInfo.setTopology(vk::PrimitiveTopology::eTriangleStrip);
+    TerrainPipelineCreateInfoPack.RasterizationStateCreateInfo = vk::PipelineRasterizationStateCreateInfo();
+
+    PipelineManager->CreateGraphicsPipeline("TerrainPipeline", "TerrainShader", TerrainPipelineCreateInfoPack);
+
     Grt::FGraphicsPipelineCreateInfoPack PbrScenePipelineCreateInfoPack = ScenePipelineCreateInfoPack;
     PbrScenePipelineCreateInfoPack.InputAssemblyStateCreateInfo.setTopology(vk::PrimitiveTopology::eTriangleList);
 
     PipelineManager->CreateGraphicsPipeline("PbrScenePipeline", "PbrSceneShader", PbrScenePipelineCreateInfoPack);
 
-    ScenePipelineCreateInfoPack.InputAssemblyStateCreateInfo.setTopology(vk::PrimitiveTopology::eTriangleList);
-    ScenePipelineCreateInfoPack.DepthStencilStateCreateInfo.setDepthCompareOp(vk::CompareOp::eLessOrEqual);
-    PipelineManager->CreateGraphicsPipeline("SkyboxPipeline", "SkyboxShader", ScenePipelineCreateInfoPack);
+    Grt::FGraphicsPipelineCreateInfoPack SkyboxPipelineCreateInfoPack = ScenePipelineCreateInfoPack;
+    SkyboxPipelineCreateInfoPack.InputAssemblyStateCreateInfo.setTopology(vk::PrimitiveTopology::eTriangleList);
+    SkyboxPipelineCreateInfoPack.RasterizationStateCreateInfo = vk::PipelineRasterizationStateCreateInfo();
+    SkyboxPipelineCreateInfoPack.DepthStencilStateCreateInfo.setDepthCompareOp(vk::CompareOp::eLessOrEqual);
+    PipelineManager->CreateGraphicsPipeline("SkyboxPipeline", "SkyboxShader", SkyboxPipelineCreateInfoPack);
 
     vk::PipelineRenderingCreateInfo PostRenderingCreateInfo = vk::PipelineRenderingCreateInfo()
         .setColorAttachmentCount(1)
         .setColorAttachmentFormats(_VulkanContext->GetSwapchainCreateInfo().imageFormat);
 
     Grt::FGraphicsPipelineCreateInfoPack PostPipelineCreateInfoPack = ScenePipelineCreateInfoPack;
-
     PostPipelineCreateInfoPack.GraphicsPipelineCreateInfo.setPNext(&PostRenderingCreateInfo);
     PostPipelineCreateInfoPack.DepthStencilStateCreateInfo = vk::PipelineDepthStencilStateCreateInfo();
     PostPipelineCreateInfoPack.RasterizationStateCreateInfo = vk::PipelineRasterizationStateCreateInfo();

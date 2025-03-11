@@ -325,5 +325,7 @@
     <None Include="Sources\Engine\Shaders\PbrScene.frag.glsl" />
     <None Include="Sources\Engine\Shaders\PbrScene.vert.glsl" />
     <None Include="Sources\Engine\Shaders\Common\TransferFunctions.glsl" />
+    <None Include="Sources\Engine\Shaders\Terrain.vert.glsl" />
+    <None Include="Sources\Engine\Shaders\Terrain.frag.glsl" />
   </ItemGroup>
 </Project>
