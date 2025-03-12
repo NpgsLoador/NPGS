@@ -25,7 +25,7 @@ layout(set = 0, binding = 1) uniform BlackHoleArgs
     float iSpin;                        // 无量纲自旋参数
     float iMu;                          // 吸积物比荷的倒数
     float iAccretionRate;               // 吸积率
-    float iInterRadiusLy;               // 盘内缘，单位光年
+    float iInnerRadiusLy;               // 盘内缘，单位光年
     float iOuterRadiusLy;               // 盘外缘，单位光年
 };
 
@@ -232,7 +232,7 @@ float Shape(float x, float Alpha, float Beta)
 
 vec4 DiskColor(vec4 BaseColor, float TimeRate, float StepLength, vec3 RayPos, vec3 LastRayPos,
                vec3 RayDir, vec3 LastRayDir, vec3 WorldUpView, vec3 BlackHolePos, vec3 DiskNormal,
-               float Rs, float InterRadiusLy, float OuterRadiusLy, float DiskTemperatureArgument,
+               float Rs, float InnerRadiusLy, float OuterRadiusLy, float DiskTemperatureArgument,
                float QuadraticedPeakTemperature, float ShiftMax)
 {
     vec3 CameraPos = WorldToBlackHoleSpace(vec4(0.0, 0.0, 0.0, 1.0),  BlackHolePos, DiskNormal, WorldUpView);
@@ -243,19 +243,19 @@ vec4 DiskColor(vec4 BaseColor, float TimeRate, float StepLength, vec3 RayPos, ve
     float PosY = PosOnDisk.y;
 
     vec4 Color = vec4(0.0);
-    if (abs(PosY) < 0.5 * Rs && PosR < OuterRadiusLy && PosR > InterRadiusLy)
+    if (abs(PosY) < 0.5 * Rs && PosR < OuterRadiusLy && PosR > InnerRadiusLy)
     {
-        float EffectiveRadius = 1.0 - ((PosR - InterRadiusLy) / (OuterRadiusLy - InterRadiusLy) * 0.5);
-        if ((OuterRadiusLy - InterRadiusLy) > 9.0 * Rs)
+        float EffectiveRadius = 1.0 - ((PosR - InnerRadiusLy) / (OuterRadiusLy - InnerRadiusLy) * 0.5);
+        if ((OuterRadiusLy - InnerRadiusLy) > 9.0 * Rs)
         {
-            if (PosR < 5.0 * Rs + InterRadiusLy)
+            if (PosR < 5.0 * Rs + InnerRadiusLy)
             {
-                EffectiveRadius = 1.0 - ((PosR - InterRadiusLy) / (9.0 * Rs) * 0.5);
+                EffectiveRadius = 1.0 - ((PosR - InnerRadiusLy) / (9.0 * Rs) * 0.5);
             }
             else
             {
-                EffectiveRadius = 1.0 - (0.5 / 0.9 * 0.5 + ((PosR - InterRadiusLy) / (OuterRadiusLy - InterRadiusLy) -
-                                  5.0 * Rs / (OuterRadiusLy - InterRadiusLy)) / (1.0 - 5.0 * Rs / (OuterRadiusLy - InterRadiusLy)) * 0.5);
+                EffectiveRadius = 1.0 - (0.5 / 0.9 * 0.5 + ((PosR - InnerRadiusLy) / (OuterRadiusLy - InnerRadiusLy) -
+                                  5.0 * Rs / (OuterRadiusLy - InnerRadiusLy)) / (1.0 - 5.0 * Rs / (OuterRadiusLy - InnerRadiusLy)) * 0.5);
             }
         }
 
@@ -274,7 +274,7 @@ vec4 DiskColor(vec4 BaseColor, float TimeRate, float StepLength, vec3 RayPos, ve
             float PosThetaWithoutTime = Vec2ToTheta(PosOnDisk.zx, vec2(1.0, 0.0));
             float PosTheta            = fract((PosThetaWithoutTime + AngularVelocity * EffectiveTime0 + Phase0) / 2.0 / kPi) * k2Pi;
 
-            float DiskTemperature  = pow(DiskTemperatureArgument * pow(Rs, 3) / pow(PosR, 3) * max(1.0 - sqrt(InterRadiusLy / PosR), 0.000001), 0.25);
+            float DiskTemperature  = pow(DiskTemperatureArgument * pow(Rs, 3) / pow(PosR, 3) * max(1.0 - sqrt(InnerRadiusLy / PosR), 0.000001), 0.25);
             vec3  CloudVelocity    = kLightYearToMeter / kSpeedOfLight * AngularVelocity * cross(vec3(0.0, 1.0, 0.0), PosOnDisk);
             float RelativeVelocity = dot(-DirOnDisk, CloudVelocity);
 
@@ -328,7 +328,7 @@ vec4 DiskColor(vec4 BaseColor, float TimeRate, float StepLength, vec3 RayPos, ve
             Color1 *= 0.5 - 0.5 * cos(k2Pi * fract(iTime * TimeRate / (HalfPiTimeInside) + 0.5));
 
             Color = Color1 + Color0;
-            Color *= 1.0 + 20.0 * exp(-10.0 * (PosR - InterRadiusLy) / (OuterRadiusLy - InterRadiusLy));
+            Color *= 1.0 + 20.0 * exp(-10.0 * (PosR - InnerRadiusLy) / (OuterRadiusLy - InnerRadiusLy));
 
             float BrightWithoutRedShift = 4.5 * pow(DiskTemperature, 4) / QuadraticedPeakTemperature;
             if (DiskTemperature > 1000.0)
@@ -338,12 +338,12 @@ vec4 DiskColor(vec4 BaseColor, float TimeRate, float StepLength, vec3 RayPos, ve
 
             DiskTemperature = min(100000.0, DiskTemperature);
 
-            Color.xyz *= BrightWithoutRedShift * min(1.0, 1.8 * (OuterRadiusLy - PosR) / (OuterRadiusLy - InterRadiusLy)) *
-                         KelvinToRgb(DiskTemperature / exp((PosR - InterRadiusLy) / (0.6 * (OuterRadiusLy - InterRadiusLy))));
+            Color.xyz *= BrightWithoutRedShift * min(1.0, 1.8 * (OuterRadiusLy - PosR) / (OuterRadiusLy - InnerRadiusLy)) *
+                         KelvinToRgb(DiskTemperature / exp((PosR - InnerRadiusLy) / (0.6 * (OuterRadiusLy - InnerRadiusLy))));
             Color.xyz *= min(ShiftMax, RedShift) * min(ShiftMax, Dopler);
             RedShift=min(RedShift, ShiftMax);
-            Color.xyz *= pow((1.0 - (1.0 - min(1.0, RedShift)) * (PosR - InterRadiusLy) / (OuterRadiusLy - InterRadiusLy)), 9.0);
-            Color.xyz *= min(1.0, 1.0 + 0.5 * ((PosR - InterRadiusLy) / InterRadiusLy + InterRadiusLy / (PosR - InterRadiusLy)) - max(1.0, RedShift));
+            Color.xyz *= pow((1.0 - (1.0 - min(1.0, RedShift)) * (PosR - InnerRadiusLy) / (OuterRadiusLy - InnerRadiusLy)), 9.0);
+            Color.xyz *= min(1.0, 1.0 + 0.5 * ((PosR - InnerRadiusLy) / InnerRadiusLy + InnerRadiusLy / (PosR - InnerRadiusLy)) - max(1.0, RedShift));
 
             Color *= StepLength / Rs;
         }
@@ -367,7 +367,7 @@ void main()
     float EddingtonAccRate = 6.327 * iMu / pow(kSpeedOfLight, 2) * iBlackHoleMassSol * kSolarMass / AccretionEffective;         // 爱丁顿吸积率
     float DiskArgument = 3.0 * kGravityConstant * kSolarMass / pow(Rs, 3) * iBlackHoleMassSol * iAccretionRate / (8.0 * kPi * kSigma);  // 吸积盘温度系数
 
-    // 计算峰值温度的四次方，用于自适应亮度。峰值温度出现在 49 * iInterRadiusLy / 36 处
+    // 计算峰值温度的四次方，用于自适应亮度。峰值温度出现在 49 * iInnerRadiusLy / 36 处
     float QuadraticedPeakTemperature = DiskArgument * 0.05665278;
 
     Rs = Rs / kLightYearToMeter;
@@ -412,7 +412,7 @@ void main()
         {
             Result = DiskColor(Result, iTimeRate, StepLength, RayPos, LastRayPos, RayDir, LastRayDir,
                                iWorldUpView, iBlackHoleRelativePos, iBlackHoleRelativeDiskNormal, Rs,
-                               iInterRadiusLy, iOuterRadiusLy, DiskArgument, QuadraticedPeakTemperature, ShiftMax); // 吸积盘颜色
+                               iInnerRadiusLy, iOuterRadiusLy, DiskArgument, QuadraticedPeakTemperature, ShiftMax); // 吸积盘颜色
         }
 
         if (Result.a > 0.99)
@@ -446,14 +446,14 @@ void main()
             RayStep *= (max(abs(dot(iBlackHoleRelativeDiskNormal, PosToBlackHole)), Rs) * (2.0 * iOuterRadiusLy - DistanceToBlackHole) +
                         DistanceToBlackHole * (DistanceToBlackHole - iOuterRadiusLy)) / iOuterRadiusLy;
         }
-        else if ((DistanceToBlackHole) >= iInterRadiusLy)
+        else if ((DistanceToBlackHole) >= iInnerRadiusLy)
         {
             RayStep *= max(abs(dot(iBlackHoleRelativeDiskNormal, PosToBlackHole)), Rs);
         }
         else if ((DistanceToBlackHole) > 2.0 * Rs)
         {
             RayStep *= (max(abs(dot(iBlackHoleRelativeDiskNormal, PosToBlackHole)), Rs) * (DistanceToBlackHole - 2.0 * Rs) +
-                        DistanceToBlackHole * (iInterRadiusLy - DistanceToBlackHole)) / (iInterRadiusLy - 2.0 * Rs);
+                        DistanceToBlackHole * (iInnerRadiusLy - DistanceToBlackHole)) / (iInnerRadiusLy - 2.0 * Rs);
         }
         else
         {

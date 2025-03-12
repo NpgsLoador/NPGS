@@ -111,6 +111,7 @@ private:
     void InitializeShaders(const std::vector<std::string>& ShaderFiles, const FResourceInfo& ResourceInfo);
     FShaderInfo LoadShader(const std::string& Filename);
     void ReflectShader(const FShaderInfo& ShaderInfo, const FResourceInfo& ResourceInfo);
+    void AddDescriptorSetBindings(std::uint32_t Set, const vk::DescriptorSetLayoutBinding& LayoutBinding);
     void CreateDescriptors();
     void UpdateDescriptorSets(std::uint32_t FrameIndex);
     void MarkAllFramesForUpdate();

@@ -8,7 +8,8 @@ _SPATIAL_BEGIN
 
 NPGS_INLINE void FCamera::ProcessMouseScroll(double OffsetY)
 {
-    _Speed += static_cast<float>(OffsetY * 0.1);
+    float SpeedFactor = 0.1f * _Speed;
+    _Speed += static_cast<float>(OffsetY * SpeedFactor);
 
     if (_Speed <= 0)
     {

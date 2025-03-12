@@ -30,9 +30,9 @@ public:
     void CreateAttachments();
     void LoadAssets();
     void CreateUniformBuffers();
-    void BindDescriptorSets(Runtime::Asset::FAssetManager* AssetManager);
-    void InitInstanceData();
-    void InitVerticesData();
+    void BindDescriptorSets();
+    void InitializeInstanceData();
+    void InitializeVerticesData();
     void CreatePipelines();
     void Terminate();
 
@@ -86,12 +86,9 @@ private:
     std::unique_ptr<Runtime::Graphics::FDeviceLocalBuffer> _PlaneVertexBuffer;
     std::unique_ptr<Runtime::Graphics::FDeviceLocalBuffer> _QuadVertexBuffer;
     std::unique_ptr<Runtime::Graphics::FDeviceLocalBuffer> _TerrainVertexBuffer;
-    std::unique_ptr<Runtime::Graphics::FDeviceLocalBuffer> _TerrainIndexBuffer;
 
     std::uint32_t _SphereIndicesCount{};
-    std::uint32_t _TerrainIndicesCount{};
-    std::uint32_t _NumStrips{};
-    std::uint32_t _NumVertsPerStrip{};
+    std::uint32_t _TessResolution{ 40 };
 };
 
 _NPGS_END

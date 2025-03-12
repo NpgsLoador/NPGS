@@ -315,7 +315,7 @@ void FShader::ReflectShader(const FShaderInfo& ShaderInfo, const FResourceInfo& 
             .setDescriptorCount(ArraySize)
             .setStageFlags(ShaderInfo.Stage);
 
-        _ReflectionInfo.DescriptorSetBindings[Set].push_back(LayoutBinding);
+        AddDescriptorSetBindings(Set, LayoutBinding);
 
         vk::DescriptorPoolSize PoolSize(LayoutBinding.descriptorType, Config::Graphics::kMaxFrameInFlight);
     }
@@ -337,6 +337,8 @@ void FShader::ReflectShader(const FShaderInfo& ShaderInfo, const FResourceInfo& 
             .setDescriptorType(bIsDynamic ? vk::DescriptorType::eStorageBufferDynamic : vk::DescriptorType::eStorageBuffer)
             .setDescriptorCount(ArraySize)
             .setStageFlags(ShaderInfo.Stage);
+
+        AddDescriptorSetBindings(Set, LayoutBinding);
     }
 
     for (const auto& CombinedSampler : Resources->sampled_images)
@@ -356,7 +358,7 @@ void FShader::ReflectShader(const FShaderInfo& ShaderInfo, const FResourceInfo& 
             .setDescriptorCount(ArraySize)
             .setStageFlags(ShaderInfo.Stage);
 
-        _ReflectionInfo.DescriptorSetBindings[Set].push_back(LayoutBinding);
+        AddDescriptorSetBindings(Set, LayoutBinding);
     }
 
     for (const auto& Sampler : Resources->separate_samplers)
@@ -375,7 +377,7 @@ void FShader::ReflectShader(const FShaderInfo& ShaderInfo, const FResourceInfo& 
             .setDescriptorCount(ArraySize)
             .setStageFlags(ShaderInfo.Stage);
 
-        _ReflectionInfo.DescriptorSetBindings[Set].push_back(LayoutBinding);
+        AddDescriptorSetBindings(Set, LayoutBinding);
     }
 
     for (const auto& Image : Resources->separate_images)
@@ -394,7 +396,7 @@ void FShader::ReflectShader(const FShaderInfo& ShaderInfo, const FResourceInfo& 
             .setDescriptorCount(ArraySize)
             .setStageFlags(ShaderInfo.Stage);
 
-        _ReflectionInfo.DescriptorSetBindings[Set].push_back(LayoutBinding);
+        AddDescriptorSetBindings(Set, LayoutBinding);
     }
 
     for (const auto& Image : Resources->storage_images)
@@ -413,7 +415,7 @@ void FShader::ReflectShader(const FShaderInfo& ShaderInfo, const FResourceInfo& 
             .setDescriptorCount(ArraySize)
             .setStageFlags(ShaderInfo.Stage);
 
-        _ReflectionInfo.DescriptorSetBindings[Set].push_back(LayoutBinding);
+        AddDescriptorSetBindings(Set, LayoutBinding);
     }
 
     if (ShaderInfo.Stage == vk::ShaderStageFlagBits::eVertex)
@@ -491,6 +493,34 @@ void FShader::ReflectShader(const FShaderInfo& ShaderInfo, const FResourceInfo& 
     }
 
     NpgsCoreTrace("Shader reflection completed.");
+}
+
+void FShader::AddDescriptorSetBindings(std::uint32_t Set, const vk::DescriptorSetLayoutBinding& LayoutBinding)
+{
+    auto it = _ReflectionInfo.DescriptorSetBindings.find(Set);
+    if (it == _ReflectionInfo.DescriptorSetBindings.end())
+    {
+        _ReflectionInfo.DescriptorSetBindings[Set].push_back(LayoutBinding);
+        return;
+    }
+
+    bool bMergedStage = false;
+    auto& ExistedLayoutBindingVector = it->second;
+    for (auto& ExistedLayoutBinding : ExistedLayoutBindingVector)
+    {
+        if (ExistedLayoutBinding.binding         == LayoutBinding.binding &&
+            ExistedLayoutBinding.descriptorType  == LayoutBinding.descriptorType &&
+            ExistedLayoutBinding.descriptorCount == LayoutBinding.descriptorCount)
+        {
+            ExistedLayoutBinding.stageFlags |= LayoutBinding.stageFlags;
+            bMergedStage = true;
+        }
+    }
+
+    if (!bMergedStage)
+    {
+        ExistedLayoutBindingVector.push_back(LayoutBinding);
+    }
 }
 
 void FShader::CreateDescriptors()

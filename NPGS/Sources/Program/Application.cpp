@@ -3,6 +3,7 @@
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
+#include <array>
 #include <future>
 
 #include <dxgi1_6.h>
@@ -57,19 +58,17 @@ FApplication::~FApplication()
 
 void FApplication::ExecuteMainRender()
 {
-    auto* AssetManager        = Art::FAssetManager::GetInstance();
-    auto* ShaderBufferManager = Grt::FShaderBufferManager::GetInstance();
-    auto* PipelineManager     = Grt::FPipelineManager::GetInstance();
-
-    vk::Extent2D ShadowMapExtent(8192, 8192);
-
     CreateAttachments();
     LoadAssets();
     CreateUniformBuffers();
-    BindDescriptorSets(AssetManager);
-    InitInstanceData();
-    InitVerticesData();
+    BindDescriptorSets();
+    InitializeInstanceData();
+    InitializeVerticesData();
     CreatePipelines();
+
+    auto* AssetManager        = Art::FAssetManager::GetInstance();
+    auto* ShaderBufferManager = Grt::FShaderBufferManager::GetInstance();
+    auto* PipelineManager     = Grt::FPipelineManager::GetInstance();
 
     auto* SceneShader     = AssetManager->GetAsset<Art::FShader>("SceneShader");
     auto* PbrSceneShader  = AssetManager->GetAsset<Art::FShader>("PbrSceneShader");
@@ -132,6 +131,7 @@ void FApplication::ExecuteMainRender()
     glm::mat4x4 LightProjection  = glm::infinitePerspective(glm::radians(60.0f), 1.0f, 1.0f);
     glm::mat4x4 LightView        = glm::lookAt(LightPos, glm::vec3(0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
     glm::mat4x4 LightSpaceMatrix = LightProjection * LightView;
+    vk::Extent2D ShadowMapExtent(8192, 8192);
 
     vk::ImageSubresourceRange ColorSubresourceRange(vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1);
     vk::ImageSubresourceRange DepthSubresourceRange(vk::ImageAspectFlagBits::eDepth, 0, 1, 0, 1);
@@ -144,7 +144,14 @@ void FApplication::ExecuteMainRender()
     std::array SphereOffsets{ Offset, Offset + 4 * sizeof(glm::mat4x4) };
     std::array LampOffsets{ Offset, Offset + 5 * sizeof(glm::mat4x4) };
 
+    std::array<std::uint32_t, 4> TessArgs{};
+    TessArgs[0] = 50;
+    TessArgs[1] = 1000;
+    TessArgs[2] = 16;
+    TessArgs[3] = _VulkanContext->GetPhysicalDevice().getProperties().limits.maxTessellationGenerationLevel;
+
     Grt::FMatrices      Matrices{};
+    Grt::FMvpMatrices   MvpMatrices{};
     Grt::FLightMaterial LightMaterial{};
     Grt::FLightArgs     LightArgs{};
 
@@ -180,19 +187,24 @@ void FApplication::ExecuteMainRender()
         // --------------
         float WindowAspect = static_cast<float>(_WindowSize.width) / static_cast<float>(_WindowSize.height);
 
-        Matrices.View             = _FreeCamera->GetViewMatrix();
-        Matrices.Projection       = _FreeCamera->GetProjectionMatrix(WindowAspect, 0.001f);
-        Matrices.LightSpaceMatrix = LightSpaceMatrix;
+        // Matrices.View             = _FreeCamera->GetViewMatrix();
+        // Matrices.Projection       = _FreeCamera->GetProjectionMatrix(WindowAspect, 0.001f);
+        // Matrices.LightSpaceMatrix = LightSpaceMatrix;
 
-        LightMaterial.Material.Shininess = 64.0f;
-        LightMaterial.Light.Position     = LightPos;
-        LightMaterial.Light.Ambient      = glm::vec3(0.2f);
-        LightMaterial.Light.Diffuse      = glm::vec3(12.5f);
-        LightMaterial.Light.Specular     = glm::vec3(12.5f);
-        LightMaterial.ViewPos            = _FreeCamera->GetCameraVector(SysSpa::FCamera::EVectorType::kPosition);
+        MvpMatrices.Model      = glm::mat4x4(1.0f);
+        MvpMatrices.View       = _FreeCamera->GetViewMatrix();
+        MvpMatrices.Projection = _FreeCamera->GetProjectionMatrix(WindowAspect, 0.001f);
 
-        ShaderBufferManager->UpdateEntrieBuffer(CurrentFrame, "Matrices", Matrices);
-        ShaderBufferManager->UpdateEntrieBuffer(CurrentFrame, "LightMaterial", LightMaterial);
+        // LightMaterial.Material.Shininess = 64.0f;
+        // LightMaterial.Light.Position     = LightPos;
+        // LightMaterial.Light.Ambient      = glm::vec3(0.2f);
+        // LightMaterial.Light.Diffuse      = glm::vec3(12.5f);
+        // LightMaterial.Light.Specular     = glm::vec3(12.5f);
+        // LightMaterial.ViewPos            = _FreeCamera->GetCameraVector(SysSpa::FCamera::EVectorType::kPosition);
+
+        // ShaderBufferManager->UpdateEntrieBuffer(CurrentFrame, "Matrices", Matrices);
+        ShaderBufferManager->UpdateEntrieBuffer(CurrentFrame, "MvpMatrices", MvpMatrices);
+        // ShaderBufferManager->UpdateEntrieBuffer(CurrentFrame, "LightMaterial", LightMaterial);
 
         CameraPosUpdater[CurrentFrame] << _FreeCamera->GetCameraVector(SysSpa::FCamera::EVectorType::kPosition);
 
@@ -305,13 +317,16 @@ void FApplication::ExecuteMainRender()
         CurrentBuffer->bindPipeline(vk::PipelineBindPoint::eGraphics, TerrainPipeline);
         CurrentBuffer->bindDescriptorSets(vk::PipelineBindPoint::eGraphics, TerrainPipelineLayout, 0,
                                           TerrainShader->GetDescriptorSets(CurrentFrame), {});
+        CurrentBuffer->pushConstants(TerrainPipelineLayout, vk::ShaderStageFlagBits::eTessellationControl, 0,
+                                     static_cast<std::uint32_t>(TessArgs.size()) * sizeof(float), TessArgs.data());
         CurrentBuffer->bindVertexBuffers(0, *_TerrainVertexBuffer->GetBuffer(), Offset);
-        CurrentBuffer->bindIndexBuffer(*_TerrainIndexBuffer->GetBuffer(), 0, vk::IndexType::eUint32);
+        CurrentBuffer->draw(_TessResolution * _TessResolution * 4, 1, 0, 0);
+        //CurrentBuffer->bindIndexBuffer(*_TerrainIndexBuffer->GetBuffer(), 0, vk::IndexType::eUint32);
 
-        for (int Strip = 0; Strip != _NumStrips; ++Strip)
-        {
-            CurrentBuffer->drawIndexed(_NumVertsPerStrip, 1, _NumVertsPerStrip * Strip, 0, 0);
-        }
+        //for (int Strip = 0; Strip != _NumStrips; ++Strip)
+        //{
+        //    CurrentBuffer->drawIndexed(_NumVertsPerStrip, 1, _NumVertsPerStrip * Strip, 0, 0);
+        //}
 
         //// Draw plane
         //CurrentBuffer->bindPipeline(vk::PipelineBindPoint::eGraphics, PbrScenePipeline);
@@ -533,9 +548,13 @@ void FApplication::LoadAssets()
 
     Art::FShader::FResourceInfo TerrainResourceInfo
     {
-        { { 0, sizeof(Grt::FSkyboxVertex), false } },
-        { { 0, 0, offsetof(Grt::FSkyboxVertex, Position) } },
-        { { 0, 0, false } }
+        { { 0, sizeof(Grt::FTempVertex), false } },
+        {
+            { 0, 0, offsetof(Grt::FTempVertex, Position) },
+            { 0, 1, offsetof(Grt::FTempVertex, TexCoord) }
+        },
+        { { 0, 0, false } },
+        { { vk::ShaderStageFlagBits::eTessellationControl, { "MinDistance", "MaxDistance", "MinTessLevel", "MaxTessLevel" } } }
     };
 
     Art::FShader::FResourceInfo SkyboxResourceInfo
@@ -560,7 +579,7 @@ void FApplication::LoadAssets()
     std::vector<std::string> PbrSceneShaderFiles({ "PbrScene.vert.spv", "PbrScene.frag.spv" });
     std::vector<std::string> LampShaderFiles({ "Scene.vert.spv", "Scene_Lamp.frag.spv" });
     std::vector<std::string> ShadowMapShaderFiles({ "ShadowMap.vert.spv", "ShadowMap.frag.spv" });
-    std::vector<std::string> TerrainShaderFiles({ "Terrain.vert.spv", "Terrain.frag.spv" });
+    std::vector<std::string> TerrainShaderFiles({ "Terrain.vert.spv", "Terrain.tesc.spv", "Terrain.tese.spv", "Terrain.frag.spv" });
     std::vector<std::string> SkyboxShaderFiles({ "Skybox.vert.spv", "Skybox.frag.spv" });
     std::vector<std::string> PostShaderFiles({ "PostProcess.vert.spv", "PostProcess.frag.spv" });
 
@@ -617,14 +636,18 @@ void FApplication::LoadAssets()
         "Skybox", TextureAllocationCreateInfo, "Skybox", vk::Format::eR8G8B8A8Srgb,
         vk::Format::eR8G8B8A8Srgb, vk::ImageCreateFlags(), true, false);
 
+    AssetManager->AddAsset<Art::FTexture2D>(
+        "IceLand", TextureAllocationCreateInfo, "IceLandHeightMapHighRes.png",
+        vk::Format::eR8G8B8A8Unorm, vk::Format::eR8G8B8A8Unorm, vk::ImageCreateFlags(), false, false);
+
     // std::vector<std::future<void>> Futures;
 
     for (std::size_t i = 0; i != TextureNames.size(); ++i)
     {
         // Futures.push_back(_ThreadPool->Submit([&, i]() -> void
         // {
-            AssetManager->AddAsset<Art::FTexture2D>(TextureNames[i], TextureAllocationCreateInfo, TextureFiles[i],
-                                                    TextureFormats[i], TextureFormats[i], vk::ImageCreateFlags(), true, false);
+        //     AssetManager->AddAsset<Art::FTexture2D>(TextureNames[i], TextureAllocationCreateInfo, TextureFiles[i],
+        //                                             TextureFormats[i], TextureFormats[i], vk::ImageCreateFlags(), true, false);
         // }));
     }
 
@@ -640,6 +663,15 @@ void FApplication::CreateUniformBuffers()
     {
         .Name    = "Matrices",
         .Fields  = { "View", "Projection", "LightSpaceMatrix" },
+        .Set     = 0,
+        .Binding = 0,
+        .Usage   = vk::DescriptorType::eUniformBuffer
+    };
+
+    Grt::FShaderBufferManager::FUniformBufferCreateInfo MvpMatricesCreateInfo
+    {
+        .Name    = "MvpMatrices",
+        .Fields  = { "Model", "View", "Projection" },
         .Set     = 0,
         .Binding = 0,
         .Usage   = vk::DescriptorType::eUniformBuffer
@@ -681,17 +713,21 @@ void FApplication::CreateUniformBuffers()
 
     auto* ShaderBufferManager = Grt::FShaderBufferManager::GetInstance();
     ShaderBufferManager->CreateBuffers<Grt::FMatrices>(MatricesCreateInfo, &AllocationCreateInfo);
+    ShaderBufferManager->CreateBuffers<Grt::FMvpMatrices>(MvpMatricesCreateInfo, &AllocationCreateInfo);
     ShaderBufferManager->CreateBuffers<Grt::FLightMaterial>(LightMaterialCreateInfo, &AllocationCreateInfo);
     ShaderBufferManager->CreateBuffers<Grt::FLightArgs>(LightArgsCreateInfo, &AllocationCreateInfo);
     ShaderBufferManager->CreateBuffers<Grt::FPbrArgs>(PbrArgsCreateInfo, &AllocationCreateInfo);
 }
 
-void FApplication::BindDescriptorSets(Art::FAssetManager* AssetManager)
+void FApplication::BindDescriptorSets()
 {
+    auto* AssetManager = Art::FAssetManager::GetInstance();
+
     auto* SceneShader     = AssetManager->GetAsset<Art::FShader>("SceneShader");
     auto* PbrSceneShader  = AssetManager->GetAsset<Art::FShader>("PbrSceneShader");
     auto* LampShader      = AssetManager->GetAsset<Art::FShader>("LampShader");
     auto* ShadowMapShader = AssetManager->GetAsset<Art::FShader>("ShadowMapShader");
+    auto* TerrainShader   = AssetManager->GetAsset<Art::FShader>("TerrainShader");
     auto* SkyboxShader    = AssetManager->GetAsset<Art::FShader>("SkyboxShader");
     auto* PostShader      = AssetManager->GetAsset<Art::FShader>("PostShader");
 
@@ -699,6 +735,7 @@ void FApplication::BindDescriptorSets(Art::FAssetManager* AssetManager)
     auto* PbrDiffuse      = AssetManager->GetAsset<Art::FTexture2D>("PbrDiffuse");
     auto* PbrNormal       = AssetManager->GetAsset<Art::FTexture2D>("PbrNormal");
     auto* PbrArm          = AssetManager->GetAsset<Art::FTexture2D>("PbrArm");
+    auto* IceLand         = AssetManager->GetAsset<Art::FTexture2D>("IceLand");
     auto* Skybox          = AssetManager->GetAsset<Art::FTextureCube>("Skybox");
 
     vk::SamplerCreateInfo SamplerCreateInfo = Art::FTextureBase::CreateDefaultSamplerCreateInfo();
@@ -717,14 +754,14 @@ void FApplication::BindDescriptorSets(Art::FAssetManager* AssetManager)
     //auto CliffSideDisplacementImageInfo = CliffSideDisplacement->CreateDescriptorImageInfo(nullptr);
     //SceneShader->WriteSharedDescriptors(1, 3, vk::DescriptorType::eSampledImage, CliffSideDisplacementImageInfo);
 
-    auto PbrDiffuseImageInfo = PbrDiffuse->CreateDescriptorImageInfo(nullptr);
-    PbrSceneShader->WriteSharedDescriptors(1, 1, vk::DescriptorType::eSampledImage, PbrDiffuseImageInfo);
+    //auto PbrDiffuseImageInfo = PbrDiffuse->CreateDescriptorImageInfo(nullptr);
+    //PbrSceneShader->WriteSharedDescriptors(1, 1, vk::DescriptorType::eSampledImage, PbrDiffuseImageInfo);
 
-    auto PbrNormalImageInfo = PbrNormal->CreateDescriptorImageInfo(nullptr);
-    PbrSceneShader->WriteSharedDescriptors(1, 2, vk::DescriptorType::eSampledImage, PbrNormalImageInfo);
+    //auto PbrNormalImageInfo = PbrNormal->CreateDescriptorImageInfo(nullptr);
+    //PbrSceneShader->WriteSharedDescriptors(1, 2, vk::DescriptorType::eSampledImage, PbrNormalImageInfo);
 
-    auto PbrArmImageInfo = PbrArm->CreateDescriptorImageInfo(nullptr);
-    PbrSceneShader->WriteSharedDescriptors(1, 3, vk::DescriptorType::eSampledImage, PbrArmImageInfo);
+    //auto PbrArmImageInfo = PbrArm->CreateDescriptorImageInfo(nullptr);
+    //PbrSceneShader->WriteSharedDescriptors(1, 3, vk::DescriptorType::eSampledImage, PbrArmImageInfo);
 
     SamplerCreateInfo
         .setMipmapMode(vk::SamplerMipmapMode::eNearest)
@@ -733,6 +770,9 @@ void FApplication::BindDescriptorSets(Art::FAssetManager* AssetManager)
         .setAddressModeW(vk::SamplerAddressMode::eClampToEdge);
 
     static Grt::FVulkanSampler kSkyboxSampler(SamplerCreateInfo);
+
+    auto HeightMapImageInfo = IceLand->CreateDescriptorImageInfo(kSampler);
+    TerrainShader->WriteSharedDescriptors(1, 0, vk::DescriptorType::eCombinedImageSampler, HeightMapImageInfo);
 
     auto SkyboxImageInfo = Skybox->CreateDescriptorImageInfo(kSkyboxSampler);
     SkyboxShader->WriteSharedDescriptors(1, 0, vk::DescriptorType::eCombinedImageSampler, SkyboxImageInfo);
@@ -779,9 +819,10 @@ void FApplication::BindDescriptorSets(Art::FAssetManager* AssetManager)
     ShaderBufferManager->BindShadersToBuffers("LightMaterial", "SceneShader", "LampShader");
     ShaderBufferManager->BindShaderToBuffers("LightArgs", "PbrSceneShader");
     // ShaderBufferManager->BindShaderToBuffers("PbrArgs", "PbrSceneShader");
+    ShaderBufferManager->BindShaderToBuffers("MvpMatrices", "TerrainShader");
 }
 
-void FApplication::InitInstanceData()
+void FApplication::InitializeInstanceData()
 {
     glm::mat4x4 Model(1.0f);
     // plane
@@ -813,7 +854,7 @@ void FApplication::InitInstanceData()
     _InstanceData.emplace_back(Model);
 }
 
-void FApplication::InitVerticesData()
+void FApplication::InitializeVerticesData()
 {
 #include "Vertices.inc"
 
@@ -931,52 +972,47 @@ void FApplication::InitVerticesData()
 
     // Create height map vertices
     // --------------------------
-    int ImageWidth    = 0;
-    int ImageHeight   = 0;
-    int ImageChannels = 0;
+    auto* AssetManager = Art::FAssetManager::GetInstance();
+    auto* IceLand      = AssetManager->GetAsset<Art::FTexture2D>("IceLand");
 
-    std::byte* ImageData = reinterpret_cast<std::byte*>(
-        stbi_load(Art::GetAssetFullPath(Art::EAssetType::kTexture, "IceLandHeightMapLowRes.png").c_str(),
-                  &ImageWidth, &ImageHeight, &ImageChannels, 0));
+    int   ImageWidth  = static_cast<int>(IceLand->GetImageExtent().width);
+    int   ImageHeight = static_cast<int>(IceLand->GetImageExtent().height);
+    int   StartX      = -ImageWidth  / 2;
+    int   StartZ      = -ImageHeight / 2;
+    float TessWidth   =  ImageWidth  / static_cast<float>(_TessResolution);
+    float TessHeight  =  ImageHeight / static_cast<float>(_TessResolution);
 
-    std::vector<Grt::FSkyboxVertex> TerrainVertices;
-    float Scale = 64.0f / 256.0f;
-    float Shift = 16.0f;
-    for (int i = 0; i != ImageHeight; ++i)
+    std::vector<Grt::FTempVertex> TerrainVertices;
+    TerrainVertices.reserve(_TessResolution* _TessResolution * 4);
+    for (int z = 0; z != _TessResolution; ++z)
     {
-        for (int j = 0; j != ImageWidth; ++j)
+        for (int x = 0; x != _TessResolution; ++x)
         {
-            std::byte* Texel = ImageData + (i * ImageWidth + j) * ImageChannels;
-            int y = static_cast<int>(Texel[0]);
+            float AxisX0 = StartX + TessWidth  *  x;
+            float AxisX1 = StartX + TessWidth  * (x + 1);
+            float AxisZ0 = StartZ + TessHeight *  z;
+            float AxisZ1 = StartZ + TessHeight * (z + 1);
 
-            glm::vec3 Vertex(-ImageHeight / 2.0f + i, y * Scale - Shift, -ImageWidth / 2.0f + j);
-            TerrainVertices.emplace_back(Vertex);
+            float AxisU0 =  x      / static_cast<float>(_TessResolution);
+            float AxisV0 =  z      / static_cast<float>(_TessResolution);
+            float AxisU1 = (x + 1) / static_cast<float>(_TessResolution);
+            float AxisV1 = (z + 1) / static_cast<float>(_TessResolution);
+
+            Grt::FTempVertex Vertex00{ glm::vec3(AxisX0, 0.0f, AxisZ0), glm::vec2(AxisU0, AxisV0) };
+            Grt::FTempVertex Vertex01{ glm::vec3(AxisX0, 0.0f, AxisZ1), glm::vec2(AxisU0, AxisV1) };
+            Grt::FTempVertex Vertex10{ glm::vec3(AxisX1, 0.0f, AxisZ0), glm::vec2(AxisU1, AxisV0) };
+            Grt::FTempVertex Vertex11{ glm::vec3(AxisX1, 0.0f, AxisZ1), glm::vec2(AxisU1, AxisV1) };
+
+            TerrainVertices.push_back(Vertex00);
+            TerrainVertices.push_back(Vertex01);
+            TerrainVertices.push_back(Vertex10);
+            TerrainVertices.push_back(Vertex11);
         }
     }
 
-    stbi_image_free(ImageData);
-
-    std::vector<std::uint32_t> TerrainIndices;
-    for (int i = 0; i != ImageHeight - 1; ++i)
-    {
-        for (int j = 0; j != ImageWidth; ++j)
-        {
-            for (int k = 0; k != 2; ++k)
-            {
-                TerrainIndices.push_back(j + ImageWidth * (i + k));
-            }
-        }
-    }
-
-    VertexBufferCreateInfo.setSize(TerrainVertices.size() * sizeof(Grt::FSkyboxVertex));
+    VertexBufferCreateInfo.setSize(TerrainVertices.size() * sizeof(Grt::FTempVertex));
     _TerrainVertexBuffer = std::make_unique<Grt::FDeviceLocalBuffer>(AllocationCreateInfo, VertexBufferCreateInfo);
     _TerrainVertexBuffer->CopyData(TerrainVertices);
-    IndexBufferCreateInfo.setSize(TerrainIndices.size() * sizeof(std::uint32_t));
-    _TerrainIndexBuffer = std::make_unique<Grt::FDeviceLocalBuffer>(AllocationCreateInfo, IndexBufferCreateInfo);
-    _TerrainIndexBuffer->CopyData(TerrainIndices);
-    _TerrainIndicesCount = static_cast<std::uint32_t>(TerrainIndices.size());
-    _NumStrips = ImageHeight - 1;
-    _NumVertsPerStrip = ImageWidth * 2;
 }
 
 void FApplication::CreatePipelines()
@@ -1021,8 +1057,11 @@ void FApplication::CreatePipelines()
     PipelineManager->CreateGraphicsPipeline("LampPipeline", "LampShader", ScenePipelineCreateInfoPack);
 
     Grt::FGraphicsPipelineCreateInfoPack TerrainPipelineCreateInfoPack = ScenePipelineCreateInfoPack;
-    TerrainPipelineCreateInfoPack.InputAssemblyStateCreateInfo.setTopology(vk::PrimitiveTopology::eTriangleStrip);
-    TerrainPipelineCreateInfoPack.RasterizationStateCreateInfo = vk::PipelineRasterizationStateCreateInfo();
+    TerrainPipelineCreateInfoPack.InputAssemblyStateCreateInfo.setTopology(vk::PrimitiveTopology::ePatchList);
+    TerrainPipelineCreateInfoPack.TessellationStateCreateInfo.setPatchControlPoints(4);
+    TerrainPipelineCreateInfoPack.RasterizationStateCreateInfo
+        .setCullMode(vk::CullModeFlagBits::eNone)
+        .setPolygonMode(vk::PolygonMode::eLine);
 
     PipelineManager->CreateGraphicsPipeline("TerrainPipeline", "TerrainShader", TerrainPipelineCreateInfoPack);
 

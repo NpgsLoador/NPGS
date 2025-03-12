@@ -516,7 +516,7 @@ void FOrbitalGenerator::GeneratePlanets(std::size_t StarIndex, Astro::FOrbit::FO
                                                                      std::pow(StarInitialMassSol, 2.0f) - 0.2274f * std::log(StarInitialMassSol));
         float DustMassSol     = DiskMassSol * 0.0142f * 0.4f * std::pow(10.0f, Star->GetFeH());
         float OuterRadiusAu   = StarInitialMassSol >= 1 ? 45.0f * StarInitialMassSol : 45.0f * std::pow(StarInitialMassSol, 2.0f);
-        float InterRadiusAu   = 0.0f;
+        float InnerRadiusAu   = 0.0f;
         float DiskCoefficient = 0.0f;
         if (StarInitialMassSol < 0.6f)
         {
@@ -535,23 +535,23 @@ void FOrbitalGenerator::GeneratePlanets(std::size_t StarIndex, Astro::FOrbit::FO
             (std::pow(10.0f, 2.0f - StarInitialMassSol) + 1.0f) *
             (static_cast<float>(kSolarLuminosity) / (4 * Math::kPi * kStefanBoltzmann * std::pow(DiskCoefficient, 4.0f)));
 
-        float InterRadiusAuSquared = 0.0f;
+        float InnerRadiusAuSquared = 0.0f;
         if (StarInitialMassSol >= 0.075f && StarInitialMassSol < 0.43f)
         {
-            InterRadiusAuSquared = CommonCoefficient * (0.23f * std::pow(StarInitialMassSol, 2.3f));
+            InnerRadiusAuSquared = CommonCoefficient * (0.23f * std::pow(StarInitialMassSol, 2.3f));
         }
         else if (StarInitialMassSol >= 0.43f && StarInitialMassSol < 2.0f)
         {
-            InterRadiusAuSquared = CommonCoefficient * std::pow(StarInitialMassSol, 4.0f);
+            InnerRadiusAuSquared = CommonCoefficient * std::pow(StarInitialMassSol, 4.0f);
         }
         else if (StarInitialMassSol >= 2.0f && StarInitialMassSol <= 12.0f)
         {
-            InterRadiusAuSquared = CommonCoefficient * (1.5f * std::pow(StarInitialMassSol, 3.5f));
+            InnerRadiusAuSquared = CommonCoefficient * (1.5f * std::pow(StarInitialMassSol, 3.5f));
         }
 
-        InterRadiusAu = std::sqrt(InterRadiusAuSquared) / kAuToMeter; // 转化为 AU
+        InnerRadiusAu = std::sqrt(InnerRadiusAuSquared) / kAuToMeter; // 转化为 AU
 
-        PlanetaryDisk.InterRadiusAu = InterRadiusAu;
+        PlanetaryDisk.InnerRadiusAu = InnerRadiusAu;
         PlanetaryDisk.OuterRadiusAu = OuterRadiusAu;
         PlanetaryDisk.DiskMassSol = DiskMassSol;
         PlanetaryDisk.DustMassSol = DustMassSol;
@@ -561,7 +561,7 @@ void FOrbitalGenerator::GeneratePlanets(std::size_t StarIndex, Astro::FOrbit::FO
         DiskBase = std::pow(10.0f, -1.0f) + _CommonGenerator(_RandomEngine) * (1.0f - std::pow(10.0f, -1.0f));
         float StarMassSol = static_cast<float>(Star->GetMass() / kSolarMass);
         float DiskMassSol = DiskBase * 1e-5f * StarMassSol;
-        PlanetaryDisk.InterRadiusAu = 0.02f; // 高于洛希极限
+        PlanetaryDisk.InnerRadiusAu = 0.02f; // 高于洛希极限
         PlanetaryDisk.OuterRadiusAu = 1.0f;
         PlanetaryDisk.DiskMassSol = DiskMassSol;
         PlanetaryDisk.DustMassSol = DiskMassSol;
@@ -572,7 +572,7 @@ void FOrbitalGenerator::GeneratePlanets(std::size_t StarIndex, Astro::FOrbit::FO
     }
 
 #ifdef DEBUG_OUTPUT
-    std::println("Planetary disk inter radius: {} AU", PlanetaryDisk.InterRadiusAu);
+    std::println("Planetary disk inner radius: {} AU", PlanetaryDisk.InnerRadiusAu);
     std::println("Planetary disk outer radius: {} AU", PlanetaryDisk.OuterRadiusAu);
     std::println("Planetary disk mass: {} solar",      PlanetaryDisk.DiskMassSol);
     std::println("Planetary disk dust mass: {} solar", PlanetaryDisk.DustMassSol);
@@ -658,7 +658,7 @@ void FOrbitalGenerator::GeneratePlanets(std::size_t StarIndex, Astro::FOrbit::FO
 
     // 生成初始轨道半长轴
     std::vector<float> DiskBoundariesAu(PlanetCount + 1);
-    DiskBoundariesAu[0] = PlanetaryDisk.InterRadiusAu;
+    DiskBoundariesAu[0] = PlanetaryDisk.InnerRadiusAu;
 
     float CoreMassSum = 0.0f;
     for (float Num : CoreMassesSol)
@@ -675,7 +675,7 @@ void FOrbitalGenerator::GeneratePlanets(std::size_t StarIndex, Astro::FOrbit::FO
     for (std::size_t i = 0; i < PlanetCount; ++i)
     {
         DiskBoundariesAu[i + 1] =
-            PlanetaryDisk.InterRadiusAu * std::pow(PlanetaryDisk.OuterRadiusAu / PlanetaryDisk.InterRadiusAu,
+            PlanetaryDisk.InnerRadiusAu * std::pow(PlanetaryDisk.OuterRadiusAu / PlanetaryDisk.InnerRadiusAu,
                                                    PartCoreMassSums[i + 1] / CoreMassSum);
 
         float SemiMajorAxis = kAuToMeter * (DiskBoundariesAu[i] + DiskBoundariesAu[i + 1]) / 2.0f;
@@ -871,8 +871,8 @@ void FOrbitalGenerator::GeneratePlanets(std::size_t StarIndex, Astro::FOrbit::FO
                         {
                             Coefficient = 7.0f;
                         }
-                        float Lower    = std::log10(PlanetaryDisk.InterRadiusAu / Coefficient);
-                        float Upper    = std::log10(PlanetaryDisk.InterRadiusAu * 0.67f);
+                        float Lower    = std::log10(PlanetaryDisk.InnerRadiusAu / Coefficient);
+                        float Upper    = std::log10(PlanetaryDisk.InnerRadiusAu * 0.67f);
                         float Exponent = Lower + _CommonGenerator(_RandomEngine) * (Upper - Lower);
                         Orbits[0]->SetSemiMajorAxis(std::pow(10.0f, Exponent) * kAuToMeter);
                     }
@@ -1350,7 +1350,7 @@ void FOrbitalGenerator::GenerateOrbitElements(Astro::FOrbit& Orbit)
 }
 
 std::size_t FOrbitalGenerator::JudgeLargePlanets(std::size_t StarIndex, const std::vector<std::unique_ptr<Astro::AStar>>& StarData,
-                                                 float BinarySemiMajorAxis, float InterHabitableZoneRadiusAu, float FrostLineAu,
+                                                 float BinarySemiMajorAxis, float InnerHabitableZoneRadiusAu, float FrostLineAu,
                                                  std::vector<float>& CoreMassesSol, std::vector<float>& NewCoreMassesSol,
                                                  std::vector<std::unique_ptr<Astro::FOrbit>>& Orbits,
                                                  std::vector<std::unique_ptr<Astro::APlanet>>& Planets)
@@ -1475,7 +1475,7 @@ std::size_t FOrbitalGenerator::JudgeLargePlanets(std::size_t StarIndex, const st
                 else
                 {
                     if ((CoreMassesSol[i] * kSolarMass / Planets[i]->GetRadius()) > (CommonCoefficient / 18.0f) &&
-                        Orbits[i]->GetSemiMajorAxis() / kAuToMeter > InterHabitableZoneRadiusAu &&
+                        Orbits[i]->GetSemiMajorAxis() / kAuToMeter > InnerHabitableZoneRadiusAu &&
                         Orbits[i]->GetSemiMajorAxis() / kAuToMeter < FrostLineAu &&
                         std::to_underlying(Star->GetEvolutionPhase()) < 1)
                     {
@@ -1617,8 +1617,8 @@ float FOrbitalGenerator::CalculatePlanetMass(float CoreMass, float NewCoreMass, 
         Random2 = 0.9f + _CommonGenerator(_RandomEngine) * 0.2f;
         Random3 = 0.9f + _CommonGenerator(_RandomEngine) * 0.2f;
 
-        float CommonCoefficient = (0.5f + 0.5f * (SemiMajorAxisAu - PlanetaryDisk.InterRadiusAu) /
-                                   (PlanetaryDisk.OuterRadiusAu - PlanetaryDisk.InterRadiusAu)) * Random1;
+        float CommonCoefficient = (0.5f + 0.5f * (SemiMajorAxisAu - PlanetaryDisk.InnerRadiusAu) /
+                                   (PlanetaryDisk.OuterRadiusAu - PlanetaryDisk.InnerRadiusAu)) * Random1;
 
         AtmosphereMassVolatiles        = (NewCoreMass - CoreMass) / 9.0f + CoreMass * CommonCoefficient / 6.0f;
         AtmosphereMassEnergeticNuclide = 5e-5f * AtmosphereMassVolatiles;
@@ -1653,8 +1653,8 @@ float FOrbitalGenerator::CalculatePlanetMass(float CoreMass, float NewCoreMass, 
         Random2 = 0.9f + _CommonGenerator(_RandomEngine) * 0.2f;
         Random3 = 0.9f + _CommonGenerator(_RandomEngine) * 0.2f;
 
-        float CommonCoefficient = (0.5f + 0.5f * (SemiMajorAxisAu - PlanetaryDisk.InterRadiusAu) /
-                                   (PlanetaryDisk.OuterRadiusAu - PlanetaryDisk.InterRadiusAu)) * Random1;
+        float CommonCoefficient = (0.5f + 0.5f * (SemiMajorAxisAu - PlanetaryDisk.InnerRadiusAu) /
+                                   (PlanetaryDisk.OuterRadiusAu - PlanetaryDisk.InnerRadiusAu)) * Random1;
 
         AtmosphereMassZ                = (0.0142f * std::pow(10.0f, Star->GetFeH())) * CoreMass *
                                          CommonCoefficient + (1.0f - (1.0f + 5e-5f) / 9.0f) * (NewCoreMass - CoreMass);

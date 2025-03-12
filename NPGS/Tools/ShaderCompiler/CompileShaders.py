@@ -63,20 +63,20 @@ def load_shader_hash(target_file: Path) -> str:
 
 # 着色器类型及其文件扩展名
 SHADER_TYPES = {
-    '.comp.glsl': 'compute',
-    '.frag.glsl': 'fragment',
-    '.geom.glsl': 'geometry',
-    '.mesh.glsl': 'mesh',
-    '.rahit.glsl': 'ray any hit',
-    '.rcall.glsl': 'ray callable',
-    '.rchit.glsl': 'ray closest hit',
-    '.rgen.glsl': 'ray generation',
-    '.rint.glsl': 'ray intersection',
-    '.rmiss.glsl': 'ray miss',
-    '.task.glsl': 'task',
-    '.tesc.glsl': 'tessellation control',
-    '.tese.glsl': 'tessellation evaluation',
-    '.vert.glsl': 'vertex',
+    '.comp': 'compute',
+    '.frag': 'fragment',
+    '.geom': 'geometry',
+    '.mesh': 'mesh',
+    '.rahit': 'ray any hit',
+    '.rcall': 'ray callable',
+    '.rchit': 'ray closest hit',
+    '.rgen': 'ray generation',
+    '.rint': 'ray intersection',
+    '.rmiss': 'ray miss',
+    '.task': 'task',
+    '.tesc': 'tessellation control',
+    '.tese': 'tessellation evaluation',
+    '.vert': 'vertex',
 }
 
 # 配置
@@ -248,7 +248,7 @@ def main() -> tuple:
                 continue
                 
             rel_path = source_file.relative_to(SOURCE_DIR)
-            base_name = source_file.name.replace('.glsl', '')
+            base_name = source_file.name.replace('', '')
             target_file = TARGET_DIR / rel_path.parent / f"{base_name}.spv"
             
             if needs_recompile(source_file, target_file):

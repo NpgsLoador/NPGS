@@ -37,7 +37,7 @@ public:
 private:
     struct FPlanetaryDisk
     {
-        float InterRadiusAu{};
+        float InnerRadiusAu{};
         float OuterRadiusAu{};
         float DiskMassSol{};
         float DustMassSol{};
@@ -68,7 +68,7 @@ private:
     void GenerateOrbitElements(Astro::FOrbit& Orbit);
 
     std::size_t JudgeLargePlanets(std::size_t StarIndex, const std::vector<std::unique_ptr<Astro::AStar>>& StarData,
-                                  float BinarySemiMajorAxis, float InterHabitableZoneRadiusAu, float FrostLineAu,
+                                  float BinarySemiMajorAxis, float InnerHabitableZoneRadiusAu, float FrostLineAu,
                                   std::vector<float>& CoreMassesSol, std::vector<float>& NewCoreMassesSol,
                                   std::vector<std::unique_ptr<Astro::FOrbit>>& Orbits,
                                   std::vector<std::unique_ptr<Astro::APlanet>>& Planets);

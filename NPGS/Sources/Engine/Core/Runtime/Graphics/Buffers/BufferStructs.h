@@ -14,6 +14,12 @@ _GRAPHICS_BEGIN
 
 // Vertex structs
 // --------------
+struct FTempVertex
+{
+    glm::vec3 Position;
+    glm::vec2 TexCoord;
+};
+
 struct FVertex
 {
     glm::vec3 Position;
@@ -64,7 +70,7 @@ struct FBlackHoleArgs
     float             Spin;
     float             Mu;
     float             AccretionRate;
-    float             InterRadiusLy;
+    float             InnerRadiusLy;
     float             OuterRadiusLy;
 };
 
@@ -73,6 +79,13 @@ struct FMatrices
     glm::aligned_mat4x4 View{ glm::mat4x4(1.0f) };
     glm::aligned_mat4x4 Projection{ glm::mat4x4(1.0f) };
     glm::aligned_mat4x4 LightSpaceMatrix{ glm::mat4x4(1.0f) };
+};
+
+struct FMvpMatrices
+{
+    glm::aligned_mat4x4 Model{ glm::mat4x4(1.0f) };
+    glm::aligned_mat4x4 View{ glm::mat4x4(1.0f) };
+    glm::aligned_mat4x4 Projection{ glm::mat4x4(1.0f) };
 };
 
 struct FMaterial
