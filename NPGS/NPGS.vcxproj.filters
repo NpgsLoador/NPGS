@@ -314,7 +314,6 @@
     <None Include="Sources\Engine\Shaders\ScreenQuad.vert" />
     <None Include="Sources\Engine\Shaders\PostProcess.vert" />
     <None Include="Sources\Engine\Shaders\PostProcess.frag" />
-    <None Include="Sources\Engine\Shaders\PbrScene.vert" />
     <None Include="Sources\Engine\Shaders\PbrScene.frag" />
     <None Include="Sources\Engine\Shaders\ColorBlend.frag" />
     <None Include="Sources\Engine\Shaders\Bloom.frag" />

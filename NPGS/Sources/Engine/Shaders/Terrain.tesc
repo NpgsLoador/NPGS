@@ -55,13 +55,13 @@ void main()
 
 		float Distance00 = Distances[0];
 		float Distance01 = Distances[1];
-		float Distance10 = Distances[2];
-		float Distance11 = Distances[3];
+		float Distance11 = Distances[2];
+		float Distance10 = Distances[3];
 
-		float TessLevel0 = MultiLevelTessellation(min(Distance00, Distance10));
-		float TessLevel1 = MultiLevelTessellation(min(Distance00, Distance01));
-		float TessLevel2 = MultiLevelTessellation(min(Distance01, Distance11));
-		float TessLevel3 = MultiLevelTessellation(min(Distance10, Distance11));
+		float TessLevel0 = MultiLevelTessellation(min(Distance01, Distance00));
+		float TessLevel1 = MultiLevelTessellation(min(Distance00, Distance10));
+		float TessLevel2 = MultiLevelTessellation(min(Distance10, Distance11));
+		float TessLevel3 = MultiLevelTessellation(min(Distance11, Distance01));
 
 		gl_TessLevelOuter[0] = TessLevel0;
 		gl_TessLevelOuter[1] = TessLevel1;
