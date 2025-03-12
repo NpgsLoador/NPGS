@@ -372,8 +372,6 @@ spirv-cross-cpp.lib
     <None Include="Sources\Engine\Shaders\PbrScene.vert" />
     <None Include="Sources\Engine\Shaders\PostProcess.frag" />
     <None Include="Sources\Engine\Shaders\PostProcess.vert" />
-    <None Include="Sources\Engine\Shaders\Scene.frag" />
-    <None Include="Sources\Engine\Shaders\Scene.vert" />
     <None Include="Sources\Engine\Shaders\ScreenQuad.vert" />
     <None Include="Sources\Engine\Shaders\ShadowMap.frag" />
     <None Include="Sources\Engine\Shaders\ShadowMap.vert" />

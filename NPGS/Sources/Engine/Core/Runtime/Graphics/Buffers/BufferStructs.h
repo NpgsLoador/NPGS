@@ -88,34 +88,6 @@ struct FMvpMatrices
     glm::aligned_mat4x4 Projection{ glm::mat4x4(1.0f) };
 };
 
-struct FMaterial
-{
-    alignas(16) float Shininess;
-};
-
-struct FLight
-{
-    glm::aligned_vec3 Position;
-    glm::aligned_vec3 Ambient;
-    glm::aligned_vec3 Diffuse;
-    glm::aligned_vec3 Specular;
-};
-
-struct FLightMaterial
-{
-    FMaterial         Material;
-    FLight            Light;
-    glm::aligned_vec3 ViewPos;
-};
-
-struct FPbrArgs
-{
-    glm::vec3 Albedo;
-    float     Metallic;
-    float     Roughness;
-    float     AmbientOcclusion;
-};
-
 struct FLightArgs
 {
     glm::aligned_vec3 LightPos;

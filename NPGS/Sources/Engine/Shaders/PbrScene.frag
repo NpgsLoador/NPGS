@@ -89,6 +89,9 @@ float CalcShadow(vec4 FragPosLightSpace, float Bias)
 
 void main()
 {
+#ifdef LAMP_BOX
+	FragColor = vec4(iLightArgs.LightColor, 1.0);
+#else
 	vec3  TexAlbedo    = texture(sampler2D(iDiffuseTex, iSampler), FragInput.TexCoord).rgb;
 	vec3  TexNormal    = texture(sampler2D(iNormalTex,  iSampler), FragInput.TexCoord).rgb;
 	float TexAo        = texture(sampler2D(iArmTex,     iSampler), FragInput.TexCoord).r;
@@ -134,4 +137,5 @@ void main()
 	vec3 Color   = Ambient + (1.1 - Shadow) * RadianceSum;
 
 	FragColor = vec4(Color, 1.0);
+#endif // LAMP_BOX
 }

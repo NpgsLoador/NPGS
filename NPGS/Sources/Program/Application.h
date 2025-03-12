@@ -88,7 +88,7 @@ private:
     std::unique_ptr<Runtime::Graphics::FDeviceLocalBuffer> _TerrainVertexBuffer;
 
     std::uint32_t _SphereIndicesCount{};
-    std::uint32_t _TessResolution{ 40 };
+    std::uint32_t _TessResolution{ 128 };
 };
 
 _NPGS_END
