@@ -966,20 +966,16 @@ void FApplication::CreatePipelines()
 {
     auto* PipelineManager = Grt::FPipelineManager::GetInstance();
 
-    vk::PipelineColorBlendAttachmentState ColorBlendAttachmentState = vk::PipelineColorBlendAttachmentState()
-        .setColorWriteMask(vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG |
-                           vk::ColorComponentFlagBits::eB | vk::ColorComponentFlagBits::eA);
+    Grt::FGraphicsPipelineCreateInfoPack ScenePipelineCreateInfoPack;
+    ScenePipelineCreateInfoPack.DynamicStates.push_back(vk::DynamicState::eViewport);
+    ScenePipelineCreateInfoPack.DynamicStates.push_back(vk::DynamicState::eScissor);
 
     vk::Format AttachmentFormat = vk::Format::eR16G16B16A16Sfloat;
-
     vk::PipelineRenderingCreateInfo SceneRenderingCreateInfo = vk::PipelineRenderingCreateInfo()
         .setColorAttachmentCount(1)
         .setColorAttachmentFormats(AttachmentFormat)
         .setDepthAttachmentFormat(vk::Format::eD32Sfloat);
 
-    Grt::FGraphicsPipelineCreateInfoPack ScenePipelineCreateInfoPack;
-    ScenePipelineCreateInfoPack.DynamicStates.push_back(vk::DynamicState::eViewport);
-    ScenePipelineCreateInfoPack.DynamicStates.push_back(vk::DynamicState::eScissor);
     ScenePipelineCreateInfoPack.GraphicsPipelineCreateInfo.setPNext(&SceneRenderingCreateInfo);
     ScenePipelineCreateInfoPack.InputAssemblyStateCreateInfo.setTopology(vk::PrimitiveTopology::eTriangleList);
     ScenePipelineCreateInfoPack.RasterizationStateCreateInfo
@@ -998,19 +994,27 @@ void FApplication::CreatePipelines()
         .setDepthBoundsTestEnable(vk::False)
         .setStencilTestEnable(vk::False);
 
+    vk::PipelineColorBlendAttachmentState ColorBlendAttachmentState = vk::PipelineColorBlendAttachmentState()
+        .setColorWriteMask(vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG |
+                           vk::ColorComponentFlagBits::eB | vk::ColorComponentFlagBits::eA);
+
     ScenePipelineCreateInfoPack.ColorBlendAttachmentStates.emplace_back(ColorBlendAttachmentState);
 
     PipelineManager->CreateGraphicsPipeline("PbrScenePipeline", "PbrSceneShader", ScenePipelineCreateInfoPack);
     PipelineManager->CreateGraphicsPipeline("LampPipeline", "LampShader", ScenePipelineCreateInfoPack);
 
     Grt::FGraphicsPipelineCreateInfoPack TerrainPipelineCreateInfoPack = ScenePipelineCreateInfoPack;
-    vk::PipelineTessellationDomainOriginStateCreateInfo TessellationDomainOriginStateCreateInfo(
-        vk::TessellationDomainOrigin::eUpperLeft);
     TerrainPipelineCreateInfoPack.InputAssemblyStateCreateInfo.setTopology(vk::PrimitiveTopology::ePatchList);
+
+    vk::PipelineTessellationDomainOriginStateCreateInfo TessellationDomainOriginStateCreateInfo(vk::TessellationDomainOrigin::eUpperLeft);
     TerrainPipelineCreateInfoPack.TessellationStateCreateInfo
         .setPNext(&TessellationDomainOriginStateCreateInfo)
         .setPatchControlPoints(4);
-    TerrainPipelineCreateInfoPack.RasterizationStateCreateInfo.setPolygonMode(vk::PolygonMode::eLine);
+
+    TerrainPipelineCreateInfoPack.RasterizationStateCreateInfo
+        .setCullMode(vk::CullModeFlagBits::eBack)
+        .setFrontFace(vk::FrontFace::eCounterClockwise)
+        .setPolygonMode(vk::PolygonMode::eLine);
 
     PipelineManager->CreateGraphicsPipeline("TerrainPipeline", "TerrainShader", TerrainPipelineCreateInfoPack);
 
@@ -1018,13 +1022,15 @@ void FApplication::CreatePipelines()
     SkyboxPipelineCreateInfoPack.InputAssemblyStateCreateInfo.setTopology(vk::PrimitiveTopology::eTriangleList);
     SkyboxPipelineCreateInfoPack.RasterizationStateCreateInfo = vk::PipelineRasterizationStateCreateInfo();
     SkyboxPipelineCreateInfoPack.DepthStencilStateCreateInfo.setDepthCompareOp(vk::CompareOp::eLessOrEqual);
+
     PipelineManager->CreateGraphicsPipeline("SkyboxPipeline", "SkyboxShader", SkyboxPipelineCreateInfoPack);
+
+    Grt::FGraphicsPipelineCreateInfoPack PostPipelineCreateInfoPack = ScenePipelineCreateInfoPack;
 
     vk::PipelineRenderingCreateInfo PostRenderingCreateInfo = vk::PipelineRenderingCreateInfo()
         .setColorAttachmentCount(1)
         .setColorAttachmentFormats(_VulkanContext->GetSwapchainCreateInfo().imageFormat);
 
-    Grt::FGraphicsPipelineCreateInfoPack PostPipelineCreateInfoPack = ScenePipelineCreateInfoPack;
     PostPipelineCreateInfoPack.GraphicsPipelineCreateInfo.setPNext(&PostRenderingCreateInfo);
     PostPipelineCreateInfoPack.DepthStencilStateCreateInfo = vk::PipelineDepthStencilStateCreateInfo();
     PostPipelineCreateInfoPack.RasterizationStateCreateInfo = vk::PipelineRasterizationStateCreateInfo();
@@ -1032,10 +1038,11 @@ void FApplication::CreatePipelines()
 
     PipelineManager->CreateGraphicsPipeline("PostPipeline", "PostShader", PostPipelineCreateInfoPack);
 
+    Grt::FGraphicsPipelineCreateInfoPack ShadowMapPipelineCreateInfoPack = ScenePipelineCreateInfoPack;
+
     vk::PipelineRenderingCreateInfo ShadowMapRenderingCreateInfo = vk::PipelineRenderingCreateInfo()
         .setDepthAttachmentFormat(vk::Format::eD32Sfloat);
 
-    Grt::FGraphicsPipelineCreateInfoPack ShadowMapPipelineCreateInfoPack = ScenePipelineCreateInfoPack;
     ShadowMapPipelineCreateInfoPack.GraphicsPipelineCreateInfo.setPNext(&ShadowMapRenderingCreateInfo);
     ShadowMapPipelineCreateInfoPack.RasterizationStateCreateInfo = vk::PipelineRasterizationStateCreateInfo();
     ShadowMapPipelineCreateInfoPack.MultisampleStateCreateInfo = vk::PipelineMultisampleStateCreateInfo();
