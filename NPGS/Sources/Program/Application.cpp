@@ -157,6 +157,8 @@ void FApplication::ExecuteMainRender()
 
     ShaderBufferManager->UpdateEntrieBuffers("LightArgs", LightArgs);
 
+    _FreeCamera->SetOrbitTarget(glm::vec3(0.0f));
+
     while (!glfwWindowShouldClose(_Window))
     {
         while (glfwGetWindowAttrib(_Window, GLFW_ICONIFIED))
@@ -193,7 +195,7 @@ void FApplication::ExecuteMainRender()
         // ShaderBufferManager->UpdateEntrieBuffer(CurrentFrame, "Matrices", Matrices);
         ShaderBufferManager->UpdateEntrieBuffer(CurrentFrame, "MvpMatrices", MvpMatrices);
 
-        CameraPosUpdater[CurrentFrame] << _FreeCamera->GetCameraVector(SysSpa::FCamera::EVectorType::kPosition);
+        CameraPosUpdater[CurrentFrame] << _FreeCamera->GetVector(SysSpa::FCamera::EVector::kPosition);
 
         _VulkanContext->SwapImage(*Semaphores_ImageAvailable[CurrentFrame]);
         std::uint32_t ImageIndex = _VulkanContext->GetCurrentImageIndex();
@@ -1160,11 +1162,6 @@ void FApplication::ShowTitleFps()
 
 void FApplication::ProcessInput()
 {
-    if (glfwGetKey(_Window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
-    {
-        glfwSetWindowShouldClose(_Window, GLFW_TRUE);
-    }
-
     if (glfwGetMouseButton(_Window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS)
     {
         glfwSetCursorPosCallback(_Window, &FApplication::CursorPosCallback);
@@ -1178,6 +1175,18 @@ void FApplication::ProcessInput()
         _bFirstMouse = true;
     }
 
+    if (glfwGetMouseButton(_Window, GLFW_MOUSE_BUTTON_RIGHT) == GLFW_PRESS)
+    {
+        _FreeCamera->SetMode(SysSpa::FCamera::EMode::kArcBall);
+    }
+
+    if (glfwGetMouseButton(_Window, GLFW_MOUSE_BUTTON_RIGHT) == GLFW_RELEASE)
+    {
+        _FreeCamera->SetMode(SysSpa::FCamera::EMode::kFree);
+    }
+
+    if (glfwGetKey(_Window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
+        glfwSetWindowShouldClose(_Window, GLFW_TRUE);
     if (glfwGetKey(_Window, GLFW_KEY_W) == GLFW_PRESS)
         _FreeCamera->ProcessKeyboard(SysSpa::FCamera::EMovement::kForward, _DeltaTime);
     if (glfwGetKey(_Window, GLFW_KEY_S) == GLFW_PRESS)

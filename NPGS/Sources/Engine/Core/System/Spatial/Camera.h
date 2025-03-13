@@ -10,53 +10,48 @@ _NPGS_BEGIN
 _SYSTEM_BEGIN
 _SPATIAL_BEGIN
 
-constexpr glm::vec3 kPosition    = glm::vec3(0.0f);
-constexpr float     kSensitivity = 0.05f;
-constexpr float     kSpeed       = 2.5f;
-constexpr float     kRotateSpeed = 2.5f;
-constexpr float     kZoom        = 60.0f;
-
 class FCamera
 {
 public:
-    enum class EMovement
+    enum class EMode
     {
-        kForward,
-        kBack,
-        kLeft,
-        kRight,
-        kUp,
-        kDown,
-        kRollLeft,
-        kRollRight
+        kFree, kArcBall, kAxisOrbit
     };
 
-    enum class EVectorType
+    enum class EMovement
     {
-        kPosition,
-        kFront,
-        kUp,
-        kRight
+        kForward, kBack, kLeft, kRight, kUp, kDown, kRollLeft, kRollRight
+    };
+
+    enum class EVector
+    {
+        kPosition, kFront, kUp, kRight
     };
 
 public:
     FCamera() = delete;
-    FCamera(const glm::vec3& Position = kPosition, float Sensitivity = kSensitivity, float Speed = kSpeed, float Zoom = kZoom);
-
+    FCamera(const glm::vec3& Position = glm::vec3(0.0f), float Sensitivity = 0.05f, float Speed = 2.5f, float Zoom = 60.0f);
     ~FCamera() = default;
 
     void ProcessKeyboard(EMovement Direction, double DeltaTime);
     void ProcessMouseMovement(double OffsetX, double OffsetY);
     void ProcessMouseScroll(double OffsetY);
     void ProcessOrbital(double OffsetX, double OffsetY);
+    void ProcessTimeEvolution(double DeltaTime);
+
     void SetOrientation(const glm::quat& Orientation);
-    void SetCameraVector(EVectorType Type, const glm::vec3& NewVector);
-    void SetOrbitTarget(const glm::vec3& Target, float Radius);
+    void SetVector(EVector Vector, const glm::vec3& NewVector);
+    void SetOrbitTarget(const glm::vec3& Target);
+    void SetOrbitAxis(const glm::vec3& Axis);
+    void SetZoom(float Zoom);
+    void SetMode(EMode Mode);
+    
     const glm::quat& GetOrientation() const;
-    const glm::vec3& GetCameraVector(EVectorType Type) const;
+    const glm::vec3& GetVector(EVector Vector) const;
     glm::mat4x4 GetViewMatrix() const;
     glm::mat4x4 GetProjectionMatrix(float WindowAspect, float Near) const;
-    float GetCameraZoom() const;
+    float GetZoom() const;
+    EMode GetMode() const;
 
 private:
     void ProcessRotation(float Yaw, float Pitch, float Roll);
@@ -69,14 +64,18 @@ private:
     glm::vec3 _Up;
     glm::vec3 _Right;
     glm::vec3 _WorldUp;
+
     glm::vec3 _OrbitTarget;
-    float     _Sensitivity;
-    float     _Speed;
-    float     _Zoom;
-    float     _OrbitRadius{};
-    float     _PrevOffsetX{};
-    float     _PrevOffsetY{};
-    bool      _bIsOrbiting{ false };
+    glm::vec3 _OrbitAxis;
+
+    EMode _Mode;
+
+    float _Sensitivity;
+    float _Speed;
+    float _Zoom;
+    float _OrbitRadius{};
+    float _PrevOffsetX{};
+    float _PrevOffsetY{};
 };
 
 _SPATIAL_END

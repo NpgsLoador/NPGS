@@ -42,10 +42,10 @@ void FCamera::ProcessKeyboard(EMovement Direction, double DeltaTime)
         _Position -= _Up * Velocity;
         break;
     case EMovement::kRollLeft:
-        ProcessRotation(0.0f, 0.0f, -10.0f * kRotateSpeed * static_cast<float>(DeltaTime));
+        ProcessRotation(0.0f, 0.0f, -10.0f * 2.5f * static_cast<float>(DeltaTime));
         break;
     case EMovement::kRollRight:
-        ProcessRotation(0.0f, 0.0f,  10.0f * kRotateSpeed * static_cast<float>(DeltaTime));
+        ProcessRotation(0.0f, 0.0f,  10.0f * 2.5f * static_cast<float>(DeltaTime));
         break;
     }
 
@@ -54,7 +54,7 @@ void FCamera::ProcessKeyboard(EMovement Direction, double DeltaTime)
 
 void FCamera::ProcessMouseMovement(double OffsetX, double OffsetY)
 {
-    if (_bIsOrbiting)
+    if (_Mode == EMode::kArcBall)
     {
         ProcessOrbital(OffsetX, OffsetY);
     }
@@ -75,7 +75,7 @@ void FCamera::ProcessMouseMovement(double OffsetX, double OffsetY)
 
 void FCamera::ProcessOrbital(double OffsetX, double OffsetY)
 {
-    if (!_bIsOrbiting)
+    if (_Mode == EMode::kFree)
     {
         return;
     }
@@ -86,7 +86,7 @@ void FCamera::ProcessOrbital(double OffsetX, double OffsetY)
     _PrevOffsetX = SmoothedX;
     _PrevOffsetY = SmoothedY;
 
-    glm::vec3 OrbitAxis         = _Up;
+    glm::vec3 OrbitAxis         = _Mode == EMode::kArcBall ? _Up : _OrbitAxis;
     glm::vec3 PrevRight         = _Right;
     glm::vec3 DirectionToCamera = _Position - _OrbitTarget;
 
@@ -111,20 +111,24 @@ void FCamera::ProcessOrbital(double OffsetX, double OffsetY)
     UpdateVectors();
 }
 
-void FCamera::SetCameraVector(EVectorType Type, const glm::vec3& NewVector)
+void FCamera::ProcessTimeEvolution(double DeltaTime)
 {
-    switch (Type)
+}
+
+void FCamera::SetVector(EVector Vector, const glm::vec3& NewVector)
+{
+    switch (Vector)
     {
-    case EVectorType::kPosition:
+    case EVector::kPosition:
         _Position = NewVector;
         break;
-    case EVectorType::kFront:
+    case EVector::kFront:
         _Front = NewVector;
         break;
-    case EVectorType::kUp:
+    case EVector::kUp:
         _Up = NewVector;
         break;
-    case EVectorType::kRight:
+    case EVector::kRight:
         _Right = NewVector;
         break;
     default:
@@ -132,11 +136,11 @@ void FCamera::SetCameraVector(EVectorType Type, const glm::vec3& NewVector)
     }
 }
 
-void FCamera::SetOrbitTarget(const glm::vec3& Target, float Radius)
+void FCamera::SetOrbitTarget(const glm::vec3& Target)
 {
     _OrbitTarget = Target;
-    _OrbitRadius = Radius;
-    _bIsOrbiting = true;
+    _OrbitRadius = glm::length(Target - _Position);
+    _Mode        = EMode::kArcBall;
 
     _Position = _OrbitTarget - glm::vec3(0.0f, 0.0f, _OrbitRadius);
 
@@ -150,23 +154,25 @@ void FCamera::SetOrbitTarget(const glm::vec3& Target, float Radius)
     UpdateVectors();
 }
 
-const glm::vec3& FCamera::GetCameraVector(EVectorType Type) const
+#pragma warning(push)
+#pragma warning(disable: 4715)
+const glm::vec3& FCamera::GetVector(EVector Vector) const
 {
-    switch (Type)
+    switch (Vector)
     {
-    case EVectorType::kPosition:
+    case EVector::kPosition:
         return _Position;
-    case EVectorType::kFront:
+    case EVector::kFront:
         return _Front;
-    case EVectorType::kUp:
+    case EVector::kUp:
         return _Up;
-    case EVectorType::kRight:
+    case EVector::kRight:
         return _Right;
     default:
         NpgsAssert(false, "Invalid vector type");
-        return _Position;
     }
 }
+#pragma warning(pop)
 
 void FCamera::ProcessRotation(float Yaw, float Pitch, float Roll)
 {

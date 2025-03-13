@@ -2,8 +2,12 @@
 #pragma shader_stage(tesscontrol)
 
 layout(vertices = 4) out;
-layout(location = 0) in  vec2 TexCoordFromVert[];
-layout(location = 0) out vec2 TexCoordToTese[];
+layout(location = 0) in vec2 TexCoord[];
+layout(location = 0) out _TescOutput
+{
+	vec2  TexCoord;
+	float HeightFactor;
+} TescOutput[];
 
 layout(std140, set = 0, binding = 0) uniform MvpMatrices
 {
@@ -12,6 +16,8 @@ layout(std140, set = 0, binding = 0) uniform MvpMatrices
 	mat4x4 Projection;
 } iMvpMatrices;
 
+layout(set = 1, binding = 0) uniform sampler2D iHeightMap;
+
 layout(push_constant) uniform TessArgs
 {
 	float MinDistance;
@@ -19,6 +25,13 @@ layout(push_constant) uniform TessArgs
 	float MinTessLevel;
 	float MaxTessLevel;
 } iTessArgs;
+
+float EstimateHeight(vec2 TexCoord)
+{
+	float HeightFactor = 512.0;
+	TescOutput[gl_InvocationID].HeightFactor = HeightFactor;
+	return texture(iHeightMap, TexCoord).r * HeightFactor;
+}
 
 float MultiLevelTessellation(float NormalizedDistance)
 {
@@ -39,16 +52,23 @@ float MultiLevelTessellation(float NormalizedDistance)
 
 void main()
 {
-	gl_out[gl_InvocationID].gl_Position = gl_in[gl_InvocationID].gl_Position;
-	TexCoordToTese[gl_InvocationID]     = TexCoordFromVert[gl_InvocationID];
+	gl_out[gl_InvocationID].gl_Position  = gl_in[gl_InvocationID].gl_Position;
+	TescOutput[gl_InvocationID].TexCoord = TexCoord[gl_InvocationID];
 
 	if (gl_InvocationID == 0)
 	{
+		TescOutput[gl_InvocationID].HeightFactor = 512.0;
 		vec4  VertexViewSpace[4];
 		float Distances[4];
 		for (int i = 0; i != 4; ++i)
 		{
-			VertexViewSpace[i] = iMvpMatrices.View * iMvpMatrices.Model * gl_in[i].gl_Position;
+			float EstimatedHeight = 1.0;
+
+			vec4 AdjustedVertex = gl_in[i].gl_Position;
+			AdjustedVertex.y += EstimatedHeight;
+
+			VertexViewSpace[i] = iMvpMatrices.View * iMvpMatrices.Model * AdjustedVertex;
+
 			float NormalizedDistance = smoothstep(iTessArgs.MinDistance, iTessArgs.MaxDistance, abs(VertexViewSpace[i].z));
 			Distances[i] = NormalizedDistance;	
 		}

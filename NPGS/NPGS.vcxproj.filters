@@ -326,5 +326,6 @@
     <None Include="Sources\Engine\Shaders\Common\Random\Hash.glsl" />
     <None Include="Sources\Engine\Shaders\Terrain.tesc" />
     <None Include="Sources\Engine\Shaders\Terrain.tese" />
+    <None Include="Sources\Engine\Shaders\PbrScene.vert" />
   </ItemGroup>
 </Project>
