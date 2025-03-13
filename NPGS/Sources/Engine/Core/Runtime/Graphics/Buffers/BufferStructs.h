@@ -14,12 +14,6 @@ _GRAPHICS_BEGIN
 
 // Vertex structs
 // --------------
-struct FTempVertex
-{
-    glm::vec3 Position;
-    glm::vec2 TexCoord;
-};
-
 struct FVertex
 {
     glm::vec3 Position;
@@ -29,9 +23,10 @@ struct FVertex
     glm::vec3 Bitangent;
 };
 
-struct FInstanceData
+struct FPatchVertex
 {
-    glm::mat4x4 Model{ glm::mat4x4(1.0f) };
+    glm::vec3 Position;
+    glm::vec2 TexCoord;
 };
 
 struct FSkyboxVertex
@@ -48,6 +43,11 @@ struct FQuadVertex
 struct FQuadOnlyVertex
 {
     glm::vec2 Position;
+};
+
+struct FInstanceData
+{
+    glm::mat4x4 Model{ glm::mat4x4(1.0f) };
 };
 
 // Uniform buffer structs

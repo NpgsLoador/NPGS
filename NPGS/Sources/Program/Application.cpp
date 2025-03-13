@@ -531,10 +531,10 @@ void FApplication::LoadAssets()
 
     Art::FShader::FResourceInfo TerrainResourceInfo
     {
-        { { 0, sizeof(Grt::FTempVertex), false } },
+        { { 0, sizeof(Grt::FPatchVertex), false } },
         {
-            { 0, 0, offsetof(Grt::FTempVertex, Position) },
-            { 0, 1, offsetof(Grt::FTempVertex, TexCoord) }
+            { 0, 0, offsetof(Grt::FPatchVertex, Position) },
+            { 0, 1, offsetof(Grt::FPatchVertex, TexCoord) }
         },
         { { 0, 0, false } },
         { { vk::ShaderStageFlagBits::eTessellationControl, { "MinDistance", "MaxDistance", "MinTessLevel", "MaxTessLevel" } } }
@@ -929,7 +929,7 @@ void FApplication::InitializeVerticesData()
     float TessWidth   =  ImageWidth  / static_cast<float>(_TessResolution);
     float TessHeight  =  ImageHeight / static_cast<float>(_TessResolution);
 
-    std::vector<Grt::FTempVertex> TerrainVertices;
+    std::vector<Grt::FPatchVertex> TerrainVertices;
     TerrainVertices.reserve(_TessResolution* _TessResolution * 4);
     for (int z = 0; z != _TessResolution; ++z)
     {
@@ -945,19 +945,19 @@ void FApplication::InitializeVerticesData()
             float AxisU1 = (x + 1) / static_cast<float>(_TessResolution);
             float AxisV1 = (z + 1) / static_cast<float>(_TessResolution);
 
-            Grt::FTempVertex Vertex00{ glm::vec3(AxisX0, 0.0f, AxisZ0), glm::vec2(AxisU0, AxisV0) };
-            Grt::FTempVertex Vertex01{ glm::vec3(AxisX0, 0.0f, AxisZ1), glm::vec2(AxisU0, AxisV1) };
-            Grt::FTempVertex Vertex11{ glm::vec3(AxisX1, 0.0f, AxisZ1), glm::vec2(AxisU1, AxisV1) };
-            Grt::FTempVertex Vertex10{ glm::vec3(AxisX1, 0.0f, AxisZ0), glm::vec2(AxisU1, AxisV0) };
+            Grt::FPatchVertex PatchVertex00{ glm::vec3(AxisX0, 0.0f, AxisZ0), glm::vec2(AxisU0, AxisV0) };
+            Grt::FPatchVertex PatchVertex01{ glm::vec3(AxisX0, 0.0f, AxisZ1), glm::vec2(AxisU0, AxisV1) };
+            Grt::FPatchVertex PatchVertex11{ glm::vec3(AxisX1, 0.0f, AxisZ1), glm::vec2(AxisU1, AxisV1) };
+            Grt::FPatchVertex PatchVertex10{ glm::vec3(AxisX1, 0.0f, AxisZ0), glm::vec2(AxisU1, AxisV0) };
 
-            TerrainVertices.push_back(Vertex00);
-            TerrainVertices.push_back(Vertex01);
-            TerrainVertices.push_back(Vertex11);
-            TerrainVertices.push_back(Vertex10);
+            TerrainVertices.push_back(PatchVertex00);
+            TerrainVertices.push_back(PatchVertex01);
+            TerrainVertices.push_back(PatchVertex11);
+            TerrainVertices.push_back(PatchVertex10);
         }
     }
 
-    VertexBufferCreateInfo.setSize(TerrainVertices.size() * sizeof(Grt::FTempVertex));
+    VertexBufferCreateInfo.setSize(TerrainVertices.size() * sizeof(Grt::FPatchVertex));
     _TerrainVertexBuffer = std::make_unique<Grt::FDeviceLocalBuffer>(AllocationCreateInfo, VertexBufferCreateInfo);
     _TerrainVertexBuffer->CopyData(TerrainVertices);
 }
@@ -1004,11 +1004,13 @@ void FApplication::CreatePipelines()
     PipelineManager->CreateGraphicsPipeline("LampPipeline", "LampShader", ScenePipelineCreateInfoPack);
 
     Grt::FGraphicsPipelineCreateInfoPack TerrainPipelineCreateInfoPack = ScenePipelineCreateInfoPack;
+    vk::PipelineTessellationDomainOriginStateCreateInfo TessellationDomainOriginStateCreateInfo(
+        vk::TessellationDomainOrigin::eUpperLeft);
     TerrainPipelineCreateInfoPack.InputAssemblyStateCreateInfo.setTopology(vk::PrimitiveTopology::ePatchList);
-    TerrainPipelineCreateInfoPack.TessellationStateCreateInfo.setPatchControlPoints(4);
-    TerrainPipelineCreateInfoPack.RasterizationStateCreateInfo
-        .setCullMode(vk::CullModeFlagBits::eNone)
-        .setPolygonMode(vk::PolygonMode::eLine);
+    TerrainPipelineCreateInfoPack.TessellationStateCreateInfo
+        .setPNext(&TessellationDomainOriginStateCreateInfo)
+        .setPatchControlPoints(4);
+    TerrainPipelineCreateInfoPack.RasterizationStateCreateInfo.setPolygonMode(vk::PolygonMode::eLine);
 
     PipelineManager->CreateGraphicsPipeline("TerrainPipeline", "TerrainShader", TerrainPipelineCreateInfoPack);
 
