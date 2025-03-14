@@ -167,7 +167,7 @@ void FCamera::PointToTarget(double DeltaTime)
         glm::vec3 Direction = DesiredDirection;
         glm::vec3 Right     = glm::normalize(glm::cross(Direction, _Up));
 
-        glm::mat3 RotationMatrix(Right, _Up, -Direction);
+        glm::mat3x3 RotationMatrix(Right, _Up, -Direction);
         TargetOrient = glm::conjugate(glm::quat_cast(RotationMatrix));
     }
     else
@@ -177,13 +177,12 @@ void FCamera::PointToTarget(double DeltaTime)
 
         if (glm::length(Right) < 0.001f)
         {
-            // 如果 Direction 和 _OrbitAxis 几乎平行，选择一个垂直于 Direction 的任意向量
             Right = glm::normalize(glm::cross(Direction, glm::abs(Direction.y) < 0.9f ? glm::vec3(0.0f, 1.0f, 0.0f) : glm::vec3(1.0f, 0.0f, 0.0f)));
         }
 
         glm::vec3 Up = glm::normalize(glm::cross(Right, Direction));
 
-        glm::mat3 RotationMatrix(Right, Up, -Direction);
+        glm::mat3x3 RotationMatrix(Right, Up, -Direction);
         TargetOrient = glm::conjugate(glm::quat_cast(RotationMatrix));
     }
 
@@ -193,7 +192,6 @@ void FCamera::PointToTarget(double DeltaTime)
     _Orientation = glm::normalize(glm::slerp(_Orientation, TargetOrient, RotationAmount));
     UpdateVectors();
 }
-
 
 void FCamera::ProcessOrient()
 {
@@ -264,7 +262,7 @@ void FCamera::ProcessOrbital(double DeltaTime)
     Right = glm::dot(Right, PrevRight) < 0.0f ? -Right : Right;
 
     glm::vec3 Up = glm::normalize(glm::cross(Right, Direction));
-    glm::mat3 RotationMatrix(Right, Up, -Direction);
+    glm::mat3x3 RotationMatrix(Right, Up, -Direction);
     glm::quat TargetOrient = glm::normalize(glm::conjugate(glm::quat_cast(RotationMatrix)));
     glm::quat OrientOffset = glm::normalize(glm::inverse(TargetOrient) * _Orientation);
 
