@@ -65,13 +65,13 @@ NPGS_INLINE FStellarGenerator& FStellarGenerator::SetdEpdM(float dEpdM)
     return *this;
 }
 
-NPGS_INLINE FStellarGenerator& FStellarGenerator::SetAgePdf(const std::function<float(const glm::vec3&, float, float)>& AgePdf)
+NPGS_INLINE FStellarGenerator& FStellarGenerator::SetAgePdf(const std::function<float(glm::vec3, float, float)>& AgePdf)
 {
     _AgePdf = AgePdf;
     return *this;
 }
 
-NPGS_INLINE FStellarGenerator& FStellarGenerator::SetAgeMaxPdf(const glm::vec2& MaxPdf)
+NPGS_INLINE FStellarGenerator& FStellarGenerator::SetAgeMaxPdf(glm::vec2 MaxPdf)
 {
     _AgeMaxPdf = MaxPdf;
     return *this;
@@ -83,7 +83,7 @@ NPGS_INLINE FStellarGenerator& FStellarGenerator::SetMassPdfs(const std::array<s
     return *this;
 }
 
-NPGS_INLINE FStellarGenerator& FStellarGenerator::SetMassMaxPdfs(const std::array<glm::vec2, 2>& MaxPdfs)
+NPGS_INLINE FStellarGenerator& FStellarGenerator::SetMassMaxPdfs(std::array<glm::vec2, 2> MaxPdfs)
 {
     _MassMaxPdfs = MaxPdfs;
     return *this;

@@ -12,7 +12,7 @@
 #include <spirv_cross/spirv_reflect.hpp>
 
 #include "Engine/Core/Base/Config/EngineConfig.h"
-#include "Engine/Core/Runtime/AssetLoaders/GetAssetFullPath.h"
+#include "Engine/Core/Runtime/AssetLoaders/AssetManager.h"
 #include "Engine/Utils/Logger.h"
 
 _NPGS_BEGIN

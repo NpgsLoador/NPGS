@@ -69,9 +69,6 @@
     <ClCompile Include="Sources\Engine\Core\Runtime\AssetLoaders\AssetManager.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="Sources\Engine\Core\Runtime\AssetLoaders\GetAssetFullPath.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
     <ClCompile Include="Sources\Engine\Core\Runtime\AssetLoaders\Texture.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
@@ -186,9 +183,6 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="Sources\Engine\Core\Runtime\AssetLoaders\CommaSeparatedValues.hpp">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="Sources\Engine\Core\Runtime\AssetLoaders\GetAssetFullPath.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="Sources\Engine\Core\Runtime\AssetLoaders\Texture.h">

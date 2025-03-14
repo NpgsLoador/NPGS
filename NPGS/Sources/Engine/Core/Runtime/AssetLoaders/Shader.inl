@@ -9,13 +9,8 @@ requires std::is_class_v<DescriptorInfoType>
 inline void FShader::WriteSharedDescriptors(std::uint32_t Set, std::uint32_t Binding, vk::DescriptorType Type,
                                             const DescriptorInfoType& DescriptorInfo)
 {
-    auto SetIt = _DescriptorSetsMap.find(Set);
-    if (SetIt == _DescriptorSetsMap.end())
-    {
-        return;
-    }
-
-    for (const auto& DescriptorSet : SetIt->second)
+    const auto& DescriptorSets = _DescriptorSetsMap.at(Set);
+    for (const auto& DescriptorSet : DescriptorSets)
     {
         DescriptorSet.Write(DescriptorInfo, Type, Binding);
     }
@@ -28,13 +23,8 @@ requires std::is_class_v<DescriptorInfoType>
 inline void FShader::WriteSharedDescriptors(std::uint32_t Set, std::uint32_t Binding, vk::DescriptorType Type,
                                             const std::vector<DescriptorInfoType>& DescriptorInfos)
 {
-    auto SetIt = _DescriptorSetsMap.find(Set);
-    if (SetIt == _DescriptorSetsMap.end())
-    {
-        return;
-    }
-
-    for (const auto& DescriptorSet : SetIt->second)
+    const auto& DescriptorSets = _DescriptorSetsMap.at(Set);
+    for (const auto& DescriptorSet : DescriptorSets)
     {
         DescriptorSet.Write(DescriptorInfos, Type, Binding);
     }
@@ -47,13 +37,7 @@ requires std::is_class_v<DescriptorInfoType>
 inline void FShader::WriteDynamicDescriptors(std::uint32_t Set, std::uint32_t Binding, std::uint32_t FrameIndex,
                                              vk::DescriptorType Type, const DescriptorInfoType& DescriptorInfo)
 {
-    auto SetIt = _DescriptorSetsMap.find(Set);
-    if (SetIt == _DescriptorSetsMap.end())
-    {
-        return;
-    }
-
-    const auto& DescriptorSet = SetIt->second[FrameIndex];
+    const auto& DescriptorSet = _DescriptorSetsMap.at(Set)[FrameIndex];
     DescriptorSet.Write(DescriptorInfo, Type, Binding);
 
     MarkAllFramesForUpdate();
@@ -64,13 +48,7 @@ requires std::is_class_v<DescriptorInfoType>
 inline void FShader::WriteDynamicDescriptors(std::uint32_t Set, std::uint32_t Binding, std::uint32_t FrameIndex,
                                              vk::DescriptorType Type, const std::vector<DescriptorInfoType>& DescriptorInfos)
 {
-    auto SetIt = _DescriptorSetsMap.find(Set);
-    if (SetIt == _DescriptorSetsMap.end())
-    {
-        return;
-    }
-
-    const auto& DescriptorSet = SetIt->second[FrameIndex];
+    const auto& DescriptorSet = _DescriptorSetsMap.at(Set)[FrameIndex];
     DescriptorSet.Write(DescriptorInfos, Type, Binding);
 
     MarkAllFramesForUpdate();

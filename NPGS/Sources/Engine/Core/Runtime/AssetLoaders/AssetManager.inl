@@ -28,8 +28,7 @@ template <typename AssetType>
 requires CAssetCompatible<AssetType>
 inline AssetType* FAssetManager::GetAsset(const std::string& Name)
 {
-    auto it = _Assets.find(Name);
-    if (it != _Assets.end())
+    if (auto it = _Assets.find(Name); it != _Assets.end())
     {
         return static_cast<AssetType*>(it->second.get());
     }

@@ -12,15 +12,15 @@ void CalculateTangentBitangent(std::vector<Runtime::Graphics::FVertex>& Vertices
     const auto& Vertex1 = Vertices[Index + 1];
     const auto& Vertex2 = Vertices[Index + 2];
 
-    const glm::vec3 Edge1 = Vertex1.Position - Vertex0.Position;
-    const glm::vec3 Edge2 = Vertex2.Position - Vertex0.Position;
+    glm::vec3 Edge1 = Vertex1.Position - Vertex0.Position;
+    glm::vec3 Edge2 = Vertex2.Position - Vertex0.Position;
 
-    const glm::vec2 DeltaUv1 = Vertex1.TexCoord - Vertex0.TexCoord;
-    const glm::vec2 DeltaUv2 = Vertex2.TexCoord - Vertex0.TexCoord;
+    glm::vec2 DeltaUv1 = Vertex1.TexCoord - Vertex0.TexCoord;
+    glm::vec2 DeltaUv2 = Vertex2.TexCoord - Vertex0.TexCoord;
 
-    const float Factor = 1.0f / (DeltaUv1.x * DeltaUv2.y - DeltaUv2.x * DeltaUv1.y);
-    const glm::vec3 Tangent   = glm::normalize(Factor * ( DeltaUv2.y * Edge1 - DeltaUv1.y * Edge2));
-    const glm::vec3 Bitangent = glm::normalize(Factor * (-DeltaUv2.x * Edge1 + DeltaUv1.x * Edge2));
+    float Factor = 1.0f / (DeltaUv1.x * DeltaUv2.y - DeltaUv2.x * DeltaUv1.y);
+    glm::vec3 Tangent   = glm::normalize(Factor * ( DeltaUv2.y * Edge1 - DeltaUv1.y * Edge2));
+    glm::vec3 Bitangent = glm::normalize(Factor * (-DeltaUv2.x * Edge1 + DeltaUv1.x * Edge2));
 
     Vertices[Index + 0].Tangent += Tangent;
     Vertices[Index + 1].Tangent += Tangent;
@@ -31,8 +31,7 @@ void CalculateTangentBitangent(std::vector<Runtime::Graphics::FVertex>& Vertices
     Vertices[Index + 2].Bitangent += Bitangent;
 }
 
-void CalculateTangentBitangentWithIndices(std::vector<Runtime::Graphics::FVertex>& Vertices,
-                                          const std::vector<std::uint32_t> Indices)
+void CalculateTangentBitangent(std::vector<Runtime::Graphics::FVertex>& Vertices, const std::vector<std::uint32_t> Indices)
 {
     for (std::size_t i = 0; i < Indices.size(); i += 3)
     {
@@ -40,15 +39,15 @@ void CalculateTangentBitangentWithIndices(std::vector<Runtime::Graphics::FVertex
         const auto& Vertex1 = Vertices[Indices[i + 1]];
         const auto& Vertex2 = Vertices[Indices[i + 2]];
 
-        const glm::vec3 Edge1 = Vertex1.Position - Vertex0.Position;
-        const glm::vec3 Edge2 = Vertex2.Position - Vertex0.Position;
+        glm::vec3 Edge1 = Vertex1.Position - Vertex0.Position;
+        glm::vec3 Edge2 = Vertex2.Position - Vertex0.Position;
 
-        const glm::vec2 DeltaUv1 = Vertex1.TexCoord - Vertex0.TexCoord;
-        const glm::vec2 DeltaUv2 = Vertex2.TexCoord - Vertex0.TexCoord;
+        glm::vec2 DeltaUv1 = Vertex1.TexCoord - Vertex0.TexCoord;
+        glm::vec2 DeltaUv2 = Vertex2.TexCoord - Vertex0.TexCoord;
 
-        const float Factor = 1.0f / (DeltaUv1.x * DeltaUv2.y - DeltaUv2.x * DeltaUv1.y);
-        const glm::vec3 Tangent   = glm::normalize(Factor * ( DeltaUv2.y * Edge1 - DeltaUv1.y * Edge2));
-        const glm::vec3 Bitangent = glm::normalize(Factor * (-DeltaUv2.x * Edge1 + DeltaUv1.x * Edge2));
+        float Factor = 1.0f / (DeltaUv1.x * DeltaUv2.y - DeltaUv2.x * DeltaUv1.y);
+        glm::vec3 Tangent   = glm::normalize(Factor * ( DeltaUv2.y * Edge1 - DeltaUv1.y * Edge2));
+        glm::vec3 Bitangent = glm::normalize(Factor * (-DeltaUv2.x * Edge1 + DeltaUv1.x * Edge2));
 
         Vertices[Indices[i + 0]].Tangent += Tangent;
         Vertices[Indices[i + 1]].Tangent += Tangent;
@@ -66,8 +65,7 @@ void CalculateTangentBitangentWithIndices(std::vector<Runtime::Graphics::FVertex
     }
 }
 
-void CalculateTangentBitangentSphere(std::vector<Runtime::Graphics::FVertex>& Vertices,
-                                     std::uint32_t SegmentsX, std::uint32_t SegmentsY)
+void CalculateTangentBitangent(std::vector<Runtime::Graphics::FVertex>& Vertices, std::uint32_t SegmentsX, std::uint32_t SegmentsY)
 {
     // 初始化切线和副切线向量为零
     for (auto& Vertex : Vertices)
@@ -87,17 +85,17 @@ void CalculateTangentBitangentSphere(std::vector<Runtime::Graphics::FVertex>& Ve
         const glm::vec2& TexCoord2 = Vertices[Indices[2]].TexCoord;
 
         // 计算边和纹理坐标差值
-        const glm::vec3 Edge1    = Vertex1 - Vertex0;
-        const glm::vec3 Edge2    = Vertex2 - Vertex0;
-        const glm::vec2 DeltaUv1 = TexCoord1 - TexCoord0;
-        const glm::vec2 DeltaUv2 = TexCoord2 - TexCoord0;
+        glm::vec3 Edge1    = Vertex1 - Vertex0;
+        glm::vec3 Edge2    = Vertex2 - Vertex0;
+        glm::vec2 DeltaUv1 = TexCoord1 - TexCoord0;
+        glm::vec2 DeltaUv2 = TexCoord2 - TexCoord0;
 
         // 计算切线和副切线
         float Factor = 1.0f / (DeltaUv1.x * DeltaUv2.y - DeltaUv2.x * DeltaUv1.y);
         if (std::isfinite(Factor))
         {
-            const glm::vec3 Tangent   = glm::normalize(Factor * ( DeltaUv2.y * Edge1 - DeltaUv1.y * Edge2));
-            const glm::vec3 Bitangent = glm::normalize(Factor * (-DeltaUv2.x * Edge1 + DeltaUv1.x * Edge2));
+            glm::vec3 Tangent   = glm::normalize(Factor * ( DeltaUv2.y * Edge1 - DeltaUv1.y * Edge2));
+            glm::vec3 Bitangent = glm::normalize(Factor * (-DeltaUv2.x * Edge1 + DeltaUv1.x * Edge2));
 
             // 累加到顶点上
             Vertices[Indices[0]].Tangent   += Tangent;

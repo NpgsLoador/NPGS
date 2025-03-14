@@ -56,11 +56,11 @@ void FCamera::ProcessKeyboard(EMovement Direction, double DeltaTime)
     UpdateVectors();
 }
 
-void FCamera::ProcessTimeEvolution(double DeltaTime)
+void FCamera::ProcessEvent(double DeltaTime)
 {
     if (!_bCameraAligned)
     {
-        PointToTarget(DeltaTime);
+        ProcessAlign(DeltaTime);
     }
 
     if (Util::Equal(_TargetOffset.x, 0.0f) && Util::Equal(_TargetOffset.y, 0.0f))
@@ -124,7 +124,7 @@ const glm::vec3& FCamera::GetVector(EVector Vector) const
 }
 #pragma warning(pop)
 
-void FCamera::PointToTarget(double DeltaTime)
+void FCamera::ProcessAlign(double DeltaTime)
 {
     glm::vec3 DesiredDirection = glm::normalize(_OrbitTarget - _Position);
 

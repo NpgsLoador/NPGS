@@ -20,11 +20,11 @@ _NPGS_BEGIN
 _RUNTIME_BEGIN
 _ASSET_BEGIN
 
-template <std::size_t ColSize>
-concept CValidFormat = ColSize > 1;
+template <typename BaseType, std::size_t ColSize>
+concept CValidFormat = std::is_nothrow_move_constructible_v<BaseType> && ColSize > 1;
 
 template <typename BaseType, std::size_t ColSize>
-requires CValidFormat<ColSize>
+requires CValidFormat<BaseType, ColSize>
 class TCommaSeparatedValues
 {
 public:
@@ -121,6 +121,11 @@ public:
         return { *LowerRow, *UpperRow };
     }
 
+    std::vector<FRowArray>* Data()
+    {
+        return &_Data;
+    }
+
     const std::vector<FRowArray>* Data() const
     {
         return &_Data;
@@ -160,7 +165,7 @@ private:
     {
         io::CSVReader<ColSize> Reader(_Filename);
         ReadHeader(Reader, IgnoreColumn);
-        std::vector<BaseType> Row(_ColNames.size());
+        FRowArray Row(_ColNames.size());
         while (ReadRow(Reader, Row))
         {
             _Data.push_back(Row);
@@ -169,14 +174,14 @@ private:
 
     template <typename ReaderType>
     requires std::is_class_v<ReaderType>
-    bool ReadRow(ReaderType& Reader, std::vector<BaseType>& Row)
+    bool ReadRow(ReaderType& Reader, FRowArray& Row)
     {
         return ReadRowImpl(Reader, Row, std::make_index_sequence<ColSize>{});
     }
 
     template <typename ReaderType, std::size_t... Indices>
     requires std::is_class_v<ReaderType>
-    bool ReadRowImpl(ReaderType& Reader, std::vector<BaseType>& Row, std::index_sequence<Indices...>)
+    bool ReadRowImpl(ReaderType& Reader, FRowArray& Row, std::index_sequence<Indices...>)
     {
         return Reader.read_row(Row[Indices]...);
     }

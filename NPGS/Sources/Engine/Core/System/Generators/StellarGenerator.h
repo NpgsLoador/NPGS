@@ -31,6 +31,10 @@ public:
     using FWdMistData = Runtime::Asset::TCommaSeparatedValues<double, 5>;
     using FHrDiagram  = Runtime::Asset::TCommaSeparatedValues<double, 7>;
 
+    using FMistDataRowArray   = FMistData::FRowArray;
+    using FWdMistDataRowArray = FWdMistData::FRowArray;
+    using FHrDiagramRowArray  = FHrDiagram::FRowArray;
+
     enum class EGenerationDistribution
     {
         kFromPdf,
@@ -78,25 +82,25 @@ public:
 
     struct FStellarGenerationInfo
     {
-        const std::seed_seq*          SeedSequence{ nullptr };
+        const std::seed_seq* SeedSequence{ nullptr };
         EStellarTypeGenerationOption  StellarTypeOption{ EStellarTypeGenerationOption::kRandom };
         EMultiplicityGenerationOption MultiplicityOption{ EMultiplicityGenerationOption::kSingleStar };
-        float                         UniverseAge{ 1.38e10f };
-        float                         MassLowerLimit{ 0.1f };
-        float                         MassUpperLimit{ 300.0f };
-        EGenerationDistribution       MassDistribution{ EGenerationDistribution::kFromPdf };
-        float                         AgeLowerLimit{ 0.0f };
-        float                         AgeUpperLimit{ 1.26e10f };
-        EGenerationDistribution       AgeDistribution{ EGenerationDistribution::kFromPdf };
-        float                         FeHLowerLimit{ -4.0f };
-        float                         FeHUpperLimit{ 0.5f };
-        EGenerationDistribution       FeHDistribution{ EGenerationDistribution::kFromPdf };
-        float                         CoilTemperatureLimit{ 1514.114f };
-        float                         dEpdM{ 2e6f };
-        const                         std::function<float(const glm::vec3&, float, float)>& AgePdf{ nullptr };
-        const                         glm::vec2& AgeMaxPdf{ glm::vec2() };
-        const                         std::array<std::function<float(float)>, 2>& MassPdfs{ nullptr, nullptr };
-        const                         std::array<glm::vec2, 2>& MassMaxPdfs{ glm::vec2(), glm::vec2() };
+        float UniverseAge{ 1.38e10f };
+        float MassLowerLimit{ 0.1f };
+        float MassUpperLimit{ 300.0f };
+        EGenerationDistribution MassDistribution{ EGenerationDistribution::kFromPdf };
+        float AgeLowerLimit{ 0.0f };
+        float AgeUpperLimit{ 1.26e10f };
+        EGenerationDistribution AgeDistribution{ EGenerationDistribution::kFromPdf };
+        float FeHLowerLimit{ -4.0f };
+        float FeHUpperLimit{ 0.5f };
+        EGenerationDistribution FeHDistribution{ EGenerationDistribution::kFromPdf };
+        float CoilTemperatureLimit{ 1514.114f };
+        float dEpdM{ 2e6f };
+        const std::function<float(glm::vec3, float, float)>& AgePdf{ nullptr };
+        glm::vec2 AgeMaxPdf{ glm::vec2() };
+        const std::array<std::function<float(float)>, 2>& MassPdfs{ nullptr, nullptr };
+        std::array<glm::vec2, 2> MassMaxPdfs{ glm::vec2(), glm::vec2() };
     };
 
 public:
@@ -114,10 +118,10 @@ public:
                       float FeHLowerLimit = -4.0f, float FeHUpperLimit = 0.5f,
                       EGenerationDistribution FeHDistribution = EGenerationDistribution::kFromPdf,
                       float CoilTemperatureLimit = 1514.114f, float dEpdM = 2e6f,
-                      const std::function<float(const glm::vec3&, float, float)>& AgePdf = nullptr,
-                      const glm::vec2& AgeMaxPdf = glm::vec2(),
+                      const std::function<float(glm::vec3, float, float)>& AgePdf = nullptr,
+                      glm::vec2 AgeMaxPdf = glm::vec2(),
                       const std::array<std::function<float(float)>, 2>& MassPdfs = { nullptr, nullptr },
-                      const std::array<glm::vec2, 2>& MassMaxPdfs = { glm::vec2(), glm::vec2() });
+                      std::array<glm::vec2, 2> MassMaxPdfs = { glm::vec2(), glm::vec2() });
 
     FStellarGenerator(const FStellarGenerator& Other);
     FStellarGenerator(FStellarGenerator&& Other) noexcept;
@@ -142,10 +146,10 @@ public:
     FStellarGenerator& SetMassUpperLimit(float Limit);
     FStellarGenerator& SetCoilTempLimit(float Limit);
     FStellarGenerator& SetdEpdM(float dEpdM);
-    FStellarGenerator& SetAgePdf(const std::function<float(const glm::vec3&, float, float)>& AgePdf);
-    FStellarGenerator& SetAgeMaxPdf(const glm::vec2& MaxPdf);
+    FStellarGenerator& SetAgePdf(const std::function<float(glm::vec3, float, float)>& AgePdf);
+    FStellarGenerator& SetAgeMaxPdf(glm::vec2 MaxPdf);
     FStellarGenerator& SetMassPdfs(const std::array<std::function<float(float)>, 2>& MassPdfs);
-    FStellarGenerator& SetMassMaxPdfs(const std::array<glm::vec2, 2>& MaxPdfs);
+    FStellarGenerator& SetMassMaxPdfs(std::array<glm::vec2, 2> MaxPdfs);
     FStellarGenerator& SetAgeDistribution(EGenerationDistribution Distribution);
     FStellarGenerator& SetFeHDistribution(EGenerationDistribution Distribution);
     FStellarGenerator& SetMassDistribution(EGenerationDistribution Distribution);

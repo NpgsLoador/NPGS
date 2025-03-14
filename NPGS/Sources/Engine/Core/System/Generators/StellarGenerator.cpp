@@ -18,7 +18,6 @@
 #include "Engine/Core/Math/NumericConstants.h"
 #include "Engine/Core/Runtime/AssetLoaders/AssetManager.h"
 #include "Engine/Core/Runtime/AssetLoaders/CommaSeparatedValues.hpp"
-#include "Engine/Core/Runtime/AssetLoaders/GetAssetFullPath.h"
 #include "Engine/Utils/Logger.h"
 #include "Engine/Utils/Utils.h"
 
@@ -168,10 +167,10 @@ FStellarGenerator::FStellarGenerator(const std::seed_seq&          SeedSequence,
                                      float AgeLowerLimit,  float AgeUpperLimit,  EGenerationDistribution AgeDistribution,
                                      float FeHLowerLimit,  float FeHUpperLimit,  EGenerationDistribution FeHDistribution,
                                      float CoilTemperatureLimit, float dEpdM,
-                                     const std::function<float(const glm::vec3&, float, float)>& AgePdf,
-                                     const glm::vec2&                                            AgeMaxPdf,
-                                     const std::array<std::function<float(float)>, 2>&           MassPdfs,
-                                     const std::array<glm::vec2, 2>&                             MassMaxPdfs)
+                                     const std::function<float(glm::vec3, float, float)>& AgePdf,
+                                     glm::vec2                                            AgeMaxPdf,
+                                     const std::array<std::function<float(float)>, 2>&    MassPdfs,
+                                     std::array<glm::vec2, 2>                             MassMaxPdfs)
     :
     FStellarGenerator(FStellarGenerationInfo{
           .SeedSequence         = &SeedSequence,

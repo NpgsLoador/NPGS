@@ -261,7 +261,6 @@ spirv-cross-cpp.lib
   <ItemGroup>
     <ClCompile Include="Sources\Engine\Core\Math\TangentSpaceTools.cpp" />
     <ClCompile Include="Sources\Engine\Core\Runtime\AssetLoaders\AssetManager.cpp" />
-    <ClCompile Include="Sources\Engine\Core\Runtime\AssetLoaders\GetAssetFullPath.cpp" />
     <ClCompile Include="Sources\Engine\Core\Runtime\AssetLoaders\Shader.cpp" />
     <ClCompile Include="Sources\Engine\Core\Runtime\AssetLoaders\Texture.cpp" />
     <ClCompile Include="Sources\Engine\Core\Runtime\Graphics\Renderers\PipelineManager.cpp" />
@@ -305,7 +304,6 @@ spirv-cross-cpp.lib
     <ClInclude Include="Sources\Engine\Core\Math\NumericConstants.h" />
     <ClInclude Include="Sources\Engine\Core\Runtime\AssetLoaders\AssetManager.h" />
     <ClInclude Include="Sources\Engine\Core\Runtime\AssetLoaders\CommaSeparatedValues.hpp" />
-    <ClInclude Include="Sources\Engine\Core\Runtime\AssetLoaders\GetAssetFullPath.h" />
     <ClInclude Include="Sources\Engine\Core\Runtime\AssetLoaders\Shader.h" />
     <ClInclude Include="Sources\Engine\Core\Runtime\AssetLoaders\Texture.h" />
     <ClInclude Include="Sources\Engine\Core\Runtime\Graphics\Renderers\PipelineManager.h" />

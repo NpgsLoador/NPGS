@@ -11,13 +11,8 @@ _NPGS_BEGIN
 _MATH_BEGIN
 
 void CalculateTangentBitangent(std::vector<Runtime::Graphics::FVertex>& Vertices, std::size_t Index);
-
-void CalculateTangentBitangentWithIndices(std::vector<Runtime::Graphics::FVertex>& Vertices,
-                                          const std::vector<std::uint32_t> Indices);
-
-void CalculateTangentBitangentSphere(std::vector<Runtime::Graphics::FVertex>& Vertices,
-                                     std::uint32_t SegmentsX, std::uint32_t SegmentsY);
-
+void CalculateTangentBitangent(std::vector<Runtime::Graphics::FVertex>& Vertices, const std::vector<std::uint32_t> Indices);
+void CalculateTangentBitangent(std::vector<Runtime::Graphics::FVertex>& Vertices, std::uint32_t SegmentsX, std::uint32_t SegmentsY);
 void CalculateAllTangents(std::vector<Runtime::Graphics::FVertex>& Vertices);
 
 _MATH_END

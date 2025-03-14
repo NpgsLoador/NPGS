@@ -13,7 +13,7 @@
 #include <gli/gli.hpp>
 #include <stb_image.h>
 
-#include "Engine/Core/Runtime/AssetLoaders/GetAssetFullPath.h"
+#include "Engine/Core/Runtime/AssetLoaders/AssetManager.h"
 #include "Engine/Core/Runtime/Graphics/Vulkan/Context.h"
 #include "Engine/Utils/Logger.h"
 

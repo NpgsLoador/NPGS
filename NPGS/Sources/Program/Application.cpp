@@ -21,7 +21,6 @@
 #include "Engine/Core/Base/Config/EngineConfig.h"
 #include "Engine/Core/Math/NumericConstants.h"
 #include "Engine/Core/Math/TangentSpaceTools.h"
-#include "Engine/Core/Runtime/AssetLoaders/GetAssetFullPath.h"
 #include "Engine/Core/Runtime/AssetLoaders/Shader.h"
 #include "Engine/Core/Runtime/AssetLoaders/Texture.h"
 #include "Engine/Core/Runtime/Graphics/Renderers/PipelineManager.h"
@@ -414,7 +413,7 @@ void FApplication::ExecuteMainRender()
 
         CurrentFrame = (CurrentFrame + 1) % Config::Graphics::kMaxFrameInFlight;
 
-        _FreeCamera->ProcessTimeEvolution(_DeltaTime);
+        _FreeCamera->ProcessEvent(_DeltaTime);
 
         ProcessInput();
         glfwPollEvents();
@@ -885,7 +884,7 @@ void FApplication::InitializeVerticesData()
 
     Math::CalculateAllTangents(CubeVertices);
     Math::CalculateAllTangents(PlaneVertices);
-    Math::CalculateTangentBitangentSphere(SphereVertices, kSegmentsX, kSegmentsY);
+    Math::CalculateTangentBitangent(SphereVertices, kSegmentsX, kSegmentsY);
 
     vk::BufferCreateInfo VertexBufferCreateInfo = vk::BufferCreateInfo()
         .setSize(SphereVertices.size() * sizeof(Grt::FVertex))

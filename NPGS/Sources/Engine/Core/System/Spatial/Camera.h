@@ -32,12 +32,13 @@ public:
     FCamera() = delete;
     FCamera(const glm::vec3& Position = glm::vec3(0.0f), float Sensitivity = 0.05f, float Speed = 2.5f,
             float Zoom = 60.0f, float InertiaDecay = 0.5, float SmoothCoefficient = 0.2);
+
     ~FCamera() = default;
 
     void AlignCamera();
     void ProcessKeyboard(EMovement Direction, double DeltaTime);
     void ProcessMouseScroll(double OffsetY);
-    void ProcessTimeEvolution(double DeltaTime);
+    void ProcessEvent(double DeltaTime);
 
     void SetOrientation(const glm::quat& Orientation);
     void SetVector(EVector Vector, const glm::vec3& NewVector);
@@ -55,7 +56,7 @@ public:
     EMode GetMode() const;
 
 private:
-    void PointToTarget(double DeltaTime);
+    void ProcessAlign(double DeltaTime);
     void ProcessOrient();
     void ProcessRotation(float Yaw, float Pitch, float Roll);
     void ProcessOrbital(double DeltaTime);
