@@ -28,7 +28,7 @@ layout(push_constant) uniform TessArgs
 
 float EstimateHeight(vec2 TexCoord)
 {
-	float HeightFactor = 512.0;
+	float HeightFactor = 128.0;
 	TescOutput[gl_InvocationID].HeightFactor = HeightFactor;
 	return texture(iHeightMap, TexCoord).r * HeightFactor;
 }

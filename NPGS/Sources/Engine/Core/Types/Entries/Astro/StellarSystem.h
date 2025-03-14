@@ -140,7 +140,7 @@ private:
     std::vector<FOrbitalDetails> _Objects;  // 每条轨道信息，上有存储的天体
     FKeplerElements              _OrbitElements;
     FOrbitalObject               _Parent;   // 上级天体
-    glm::vec2                    _Normal;   // 轨道法向量 (theta, phi)
+    glm::vec2                    _Normal{}; // 轨道法向量 (theta, phi)
     float                        _Period{}; // 轨道周期，单位 s
 };
 

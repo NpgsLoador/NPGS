@@ -158,6 +158,7 @@ void FApplication::ExecuteMainRender()
     ShaderBufferManager->UpdateEntrieBuffers("LightArgs", LightArgs);
 
     _FreeCamera->SetOrbitTarget(glm::vec3(0.0f));
+    _FreeCamera->SetOrbitAxis(glm::vec3(0.0f, 1.0f, 0.0f));
 
     while (!glfwWindowShouldClose(_Window))
     {
@@ -413,6 +414,8 @@ void FApplication::ExecuteMainRender()
 
         CurrentFrame = (CurrentFrame + 1) % Config::Graphics::kMaxFrameInFlight;
 
+        _FreeCamera->ProcessTimeEvolution(_DeltaTime);
+
         ProcessInput();
         glfwPollEvents();
         ShowTitleFps();    
@@ -620,7 +623,7 @@ void FApplication::LoadAssets()
         vk::Format::eR8G8B8A8Srgb, vk::ImageCreateFlags(), true, false);
 
     AssetManager->AddAsset<Art::FTexture2D>(
-        "IceLand", TextureAllocationCreateInfo, "IceLandHeightMapHighRes.png",
+        "IceLand", TextureAllocationCreateInfo, "IceLandHeightMapLowRes.png",
         vk::Format::eR8G8B8A8Unorm, vk::Format::eR8G8B8A8Unorm, vk::ImageCreateFlags(), false, false);
 
     // std::vector<std::future<void>> Futures;
@@ -943,8 +946,8 @@ void FApplication::InitializeVerticesData()
             float AxisZ1 = StartZ + TessHeight * (z + 1);
 
             float AxisU0 =  x      / static_cast<float>(_TessResolution);
-            float AxisV0 =  z      / static_cast<float>(_TessResolution);
             float AxisU1 = (x + 1) / static_cast<float>(_TessResolution);
+            float AxisV0 =  z      / static_cast<float>(_TessResolution);
             float AxisV1 = (z + 1) / static_cast<float>(_TessResolution);
 
             Grt::FPatchVertex PatchVertex00{ glm::vec3(AxisX0, 0.0f, AxisZ0), glm::vec2(AxisU0, AxisV0) };
@@ -1203,6 +1206,8 @@ void FApplication::ProcessInput()
         _FreeCamera->ProcessKeyboard(SysSpa::FCamera::EMovement::kRollLeft, _DeltaTime);
     if (glfwGetKey(_Window, GLFW_KEY_E) == GLFW_PRESS)
         _FreeCamera->ProcessKeyboard(SysSpa::FCamera::EMovement::kRollRight, _DeltaTime);
+    if (glfwGetKey(_Window, GLFW_KEY_C) == GLFW_PRESS)
+        _FreeCamera->AlignCamera();
 }
 
 vk::HdrMetadataEXT FApplication::GetHdrMetadata()
@@ -1301,27 +1306,26 @@ void FApplication::FramebufferSizeCallback(GLFWwindow* Window, int Width, int He
 
 void FApplication::CursorPosCallback(GLFWwindow* Window, double PosX, double PosY)
 {
-    auto* App = static_cast<FApplication*>(glfwGetWindowUserPointer(Window));
+    auto* Application = static_cast<FApplication*>(glfwGetWindowUserPointer(Window));
 
-    if (App->_bFirstMouse)
+    if (Application->_bFirstMouse)
     {
-        App->_LastX       = PosX;
-        App->_LastY       = PosY;
-        App->_bFirstMouse = false;
+        Application->_LastX = PosX;
+        Application->_LastY = PosY;
+        Application->_bFirstMouse = false;
     }
 
-    double OffsetX = PosX - App->_LastX;
-    double OffsetY = App->_LastY - PosY;
-    App->_LastX = PosX;
-    App->_LastY = PosY;
+    glm::vec2 Offset(PosX - Application->_LastX, Application->_LastY - PosY);
 
-    App->_FreeCamera->ProcessMouseMovement(OffsetX, OffsetY);
+    Application->_LastX = PosX;
+    Application->_LastY = PosY;
+    Application->_FreeCamera->SetTargetOffset(Offset);
 }
 
 void FApplication::ScrollCallback(GLFWwindow* Window, double OffsetX, double OffsetY)
 {
-    auto* App = static_cast<FApplication*>(glfwGetWindowUserPointer(Window));
-    App->_FreeCamera->ProcessMouseScroll(OffsetY);
+    auto* Application = static_cast<FApplication*>(glfwGetWindowUserPointer(Window));
+    Application->_FreeCamera->ProcessMouseScroll(OffsetY);
 }
 
 _NPGS_END

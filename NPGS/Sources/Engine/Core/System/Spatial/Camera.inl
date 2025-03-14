@@ -7,6 +7,11 @@ _NPGS_BEGIN
 _SYSTEM_BEGIN
 _SPATIAL_BEGIN
 
+NPGS_INLINE void FCamera::AlignCamera()
+{
+    _bCameraAligned = false;
+}
+
 NPGS_INLINE void FCamera::ProcessMouseScroll(double OffsetY)
 {
     float SpeedFactor = 0.1f * _Speed;
@@ -38,6 +43,11 @@ NPGS_INLINE glm::mat4x4 FCamera::GetProjectionMatrix(float WindowAspect, float N
 NPGS_INLINE void FCamera::SetOrbitAxis(const glm::vec3& Axis)
 {
     _OrbitAxis = Axis;
+}
+
+NPGS_INLINE void FCamera::SetTargetOffset(const glm::vec2& Offset)
+{
+    _TargetOffset = Offset;
 }
 
 NPGS_INLINE void FCamera::SetZoom(float Zoom)
