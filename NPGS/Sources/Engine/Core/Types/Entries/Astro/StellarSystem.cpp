@@ -3,7 +3,7 @@
 _NPGS_BEGIN
 _ASTRO_BEGIN
 
-FBaryCenter::FBaryCenter(const glm::vec3& Position, const glm::vec2& Normal, std::size_t DistanceRank, const std::string& Name)
+FBaryCenter::FBaryCenter(glm::vec3 Position, glm::vec2 Normal, std::size_t DistanceRank, const std::string& Name)
     : Name(Name), Position(Position), Normal(Normal), DistanceRank(DistanceRank)
 {
 }

@@ -26,7 +26,7 @@ struct FBaryCenter : public INpgsObject
     std::size_t DistanceRank{}; // 距离 (0, 0, 0) 的排名
 
     FBaryCenter() = default;
-    FBaryCenter(const glm::vec3& Position, const glm::vec2& Normal, std::size_t DistanceRank, const std::string& Name);
+    FBaryCenter(glm::vec3 Position, glm::vec2 Normal, std::size_t DistanceRank, const std::string& Name);
 };
 
 class FOrbit
@@ -121,7 +121,7 @@ public:
     FOrbit& SetArgumentOfPeriapsis(float ArgumentOfPeriapsis);
     FOrbit& SetTrueAnomaly(float TrueAnomaly);
     FOrbit& SetParent(INpgsObject* Object, EObjectType Type);
-    FOrbit& SetNormal(const glm::vec2& Normal);
+    FOrbit& SetNormal(glm::vec2 Normal);
     FOrbit& SetPeriod(float Period);
 
     float GetSemiMajorAxis() const;
@@ -131,7 +131,7 @@ public:
     float GetArgumentOfPeriapsis() const;
     float GetTrueAnomaly() const;
     const FOrbitalObject& GetParent() const;
-    const glm::vec2& GetNormal() const;
+    glm::vec2 GetNormal() const;
     float GetPeriod() const;
 
     std::vector<FOrbitalDetails>& ObjectsData();
@@ -159,13 +159,13 @@ public:
     FStellarSystem& operator=(const FStellarSystem& Other);
     FStellarSystem& operator=(FStellarSystem&&) noexcept = default;
 
-    FStellarSystem& SetBaryPosition(const glm::vec3& Poisition);
-    FStellarSystem& SetBaryNormal(const glm::vec2& Normal);
+    FStellarSystem& SetBaryPosition(glm::vec3 Poisition);
+    FStellarSystem& SetBaryNormal(glm::vec2 Normal);
     FStellarSystem& SetBaryDistanceRank(std::size_t DistanceRank);
     FStellarSystem& SetBaryName(const std::string& Name);
 
-    const glm::vec3& GetBaryPosition() const;
-    const glm::vec2& GetBaryNormal() const;
+    glm::vec3 GetBaryPosition() const;
+    glm::vec2 GetBaryNormal() const;
     std::size_t GetBaryDistanceRank() const;
     const std::string& GetBaryName() const;
 

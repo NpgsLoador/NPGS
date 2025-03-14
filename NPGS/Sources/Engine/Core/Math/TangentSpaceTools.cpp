@@ -76,13 +76,13 @@ void CalculateTangentBitangent(std::vector<Runtime::Graphics::FVertex>& Vertices
 
     auto ProcessTriangle = [&](const std::vector<std::size_t>& Indices) -> void
     {
-        const glm::vec3& Vertex0 = Vertices[Indices[0]].Position;
-        const glm::vec3& Vertex1 = Vertices[Indices[1]].Position;
-        const glm::vec3& Vertex2 = Vertices[Indices[2]].Position;
+        glm::vec3 Vertex0 = Vertices[Indices[0]].Position;
+        glm::vec3 Vertex1 = Vertices[Indices[1]].Position;
+        glm::vec3 Vertex2 = Vertices[Indices[2]].Position;
 
-        const glm::vec2& TexCoord0 = Vertices[Indices[0]].TexCoord;
-        const glm::vec2& TexCoord1 = Vertices[Indices[1]].TexCoord;
-        const glm::vec2& TexCoord2 = Vertices[Indices[2]].TexCoord;
+        glm::vec2 TexCoord0 = Vertices[Indices[0]].TexCoord;
+        glm::vec2 TexCoord1 = Vertices[Indices[1]].TexCoord;
+        glm::vec2 TexCoord2 = Vertices[Indices[2]].TexCoord;
 
         // 计算边和纹理坐标差值
         glm::vec3 Edge1    = Vertex1 - Vertex0;

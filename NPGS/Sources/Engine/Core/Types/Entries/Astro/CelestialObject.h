@@ -51,8 +51,8 @@ public:
     // Setters
     // Setters for BasicProperties
     // ---------------------------
-    FCelestialBody& SetNormal(const glm::vec2& Normal);
     FCelestialBody& SetName(const std::string& Name);
+    FCelestialBody& SetNormal(glm::vec2 Normal);
     FCelestialBody& SetAge(double Age);
     FCelestialBody& SetRadius(float Radius);
     FCelestialBody& SetSpin(float Spin);
@@ -63,8 +63,8 @@ public:
     // Getters
     // Getters for BasicProperties
     // ---------------------------
-    const glm::vec2& GetNormal() const;
     const std::string& GetName() const;
+    glm::vec2 GetNormal() const;
     double GetAge() const;
     float  GetRadius() const;
     float  GetSpin() const;

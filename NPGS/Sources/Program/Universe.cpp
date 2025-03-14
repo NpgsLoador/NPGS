@@ -712,7 +712,7 @@ void FUniverse::GenerateStars(int MaxThread)
     GenerateBinaryStars(MaxThread);
 
     NpgsCoreInfo("Sorting...");
-    std::sort(Slots.begin(), Slots.end(), [](const glm::vec3& Point1, const glm::vec3& Point2)
+    std::sort(Slots.begin(), Slots.end(), [](glm::vec3 Point1, glm::vec3 Point2)
     {
         return glm::length(Point1) < glm::length(Point2);
     });
@@ -723,8 +723,7 @@ void FUniverse::GenerateStars(int MaxThread)
     for (auto& System : _StellarSystems)
     {
         glm::vec3 Position = System.GetBaryPosition();
-        auto it = std::lower_bound(Slots.begin(), Slots.end(), Position,
-        [](const glm::vec3& Point1, const glm::vec3& Point2) -> bool
+        auto it = std::lower_bound(Slots.begin(), Slots.end(), Position, [](glm::vec3 Point1, glm::vec3 Point2) -> bool
         {
             return glm::length(Point1) < glm::length(Point2);
         });
@@ -764,7 +763,8 @@ void FUniverse::GenerateStars(int MaxThread)
         if (Node.IsLeafNode())
         {
             auto& Points = Node.GetPoints();
-            return std::find(Points.begin(), Points.end(), glm::vec3(0.0f)) != Points.end();
+            return Node.GetLink([](void*) -> bool { return true; }) != nullptr &&
+                   std::find(Points.begin(), Points.end(), glm::vec3(0.0f)) != Points.end();
         }
         else
         {
@@ -772,6 +772,7 @@ void FUniverse::GenerateStars(int MaxThread)
         }
     });
 
+    // TODO: Fix when home star not at home grid
     auto* HomeSystem = HomeNode->GetLink([](Astro::FStellarSystem* System) -> bool
     {
         return System->GetBaryPosition() == glm::vec3(0.0f);

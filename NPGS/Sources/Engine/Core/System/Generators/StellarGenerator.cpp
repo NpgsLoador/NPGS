@@ -48,7 +48,7 @@ throw DeathStar;
 // --------------
 namespace
 {
-    float DefaultAgePdf(const glm::vec3&, float Age, float UniverseAge)
+    float DefaultAgePdf(glm::vec3, float Age, float UniverseAge)
     {
         float Probability = 0.0f;
         if (Age - (UniverseAge - 13.8f) < 8.0f)

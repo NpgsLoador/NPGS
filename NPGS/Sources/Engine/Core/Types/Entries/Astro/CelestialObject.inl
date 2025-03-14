@@ -14,15 +14,15 @@ NPGS_INLINE const FCelestialBody::FBasicProperties& FCelestialBody::GetBasicProp
     return _Properties;
 }
 
-NPGS_INLINE FCelestialBody& FCelestialBody::SetNormal(const glm::vec2& Normal)
-{
-    _Properties.Normal = Normal;
-    return *this;
-}
-
 NPGS_INLINE FCelestialBody& FCelestialBody::SetName(const std::string& Name)
 {
     _Properties.Name = Name;
+    return *this;
+}
+
+NPGS_INLINE FCelestialBody& FCelestialBody::SetNormal(glm::vec2 Normal)
+{
+    _Properties.Normal = Normal;
     return *this;
 }
 
@@ -62,14 +62,14 @@ NPGS_INLINE FCelestialBody& FCelestialBody::SetMagneticField(float MagneticField
     return *this;
 }
 
-NPGS_INLINE const glm::vec2& FCelestialBody::GetNormal() const
-{
-    return _Properties.Normal;
-}
-
 NPGS_INLINE const std::string& FCelestialBody::GetName() const
 {
     return _Properties.Name;
+}
+
+NPGS_INLINE glm::vec2 FCelestialBody::GetNormal() const
+{
+    return _Properties.Normal;
 }
 
 NPGS_INLINE double FCelestialBody::GetAge() const

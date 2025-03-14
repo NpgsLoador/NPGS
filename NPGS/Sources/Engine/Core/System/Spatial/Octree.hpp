@@ -21,19 +21,19 @@ template <typename LinkTargetType>
 class TOctreeNode
 {
 public:
-    TOctreeNode(const glm::vec3& Center, float Radius, TOctreeNode* Previous)
+    TOctreeNode(glm::vec3 Center, float Radius, TOctreeNode* Previous)
         : _Center(Center), _Previous(Previous), _Radius(Radius)
     {
     }
 
-    bool Contains(const glm::vec3& Point) const
+    bool Contains(glm::vec3 Point) const
     {
         return (Point.x >= _Center.x - _Radius && Point.x <= _Center.x + _Radius &&
                 Point.y >= _Center.y - _Radius && Point.y <= _Center.y + _Radius &&
                 Point.z >= _Center.z - _Radius && Point.z <= _Center.z + _Radius);
     }
 
-    int CalculateOctant(const glm::vec3& Point) const
+    int CalculateOctant(glm::vec3 Point) const
     {
         int Octant = 0;
 
@@ -44,7 +44,7 @@ public:
         return Octant;
     }
 
-    bool IntersectSphere(const glm::vec3& Point, float Radius) const
+    bool IntersectSphere(glm::vec3 Point, float Radius) const
     {
         glm::vec3 MinBound = _Center - glm::vec3(_Radius);
         glm::vec3 MaxBound = _Center + glm::vec3(_Radius);
@@ -60,7 +60,7 @@ public:
         return _bIsValid;
     }
 
-    const glm::vec3& GetCenter() const
+    glm::vec3 GetCenter() const
     {
         return _Center;
     }
@@ -90,12 +90,12 @@ public:
         return _Next[Index];
     }
 
-    void AddPoint(const glm::vec3& Point)
+    void AddPoint(glm::vec3 Point)
     {
         _Points.push_back(Point);
     }
 
-    void DeletePoint(const glm::vec3& Point)
+    void DeletePoint(glm::vec3 Point)
     {
         auto it = std::find(_Points.begin(), _Points.end(), Point);
         if (it != _Points.end())
@@ -179,7 +179,7 @@ public:
     using FNodeType = TOctreeNode<LinkTargetType>;
 
 public:
-    TOctree(const glm::vec3& Center, float Radius, int MaxDepth = 8)
+    TOctree(glm::vec3 Center, float Radius, int MaxDepth = 8)
         :
         _Root(std::make_unique<FNodeType>(Center, Radius, nullptr)),
         _ThreadPool(Runtime::Thread::FThreadPool::GetInstance()),
@@ -193,23 +193,23 @@ public:
         BuildEmptyTreeImpl(_Root.get(), LeafRadius, Depth);
     }
 
-    void Insert(const glm::vec3& Point)
+    void Insert(glm::vec3 Point)
     {
         InsertImpl(_Root.get(), Point, 0);
     }
 
-    void Delete(const glm::vec3& Point)
+    void Delete(glm::vec3 Point)
     {
         DeleteImpl(_Root.get(), Point);
     }
 
-    void Query(const glm::vec3& Point, float Radius, std::vector<glm::vec3>& Results) const
+    void Query(glm::vec3 Point, float Radius, std::vector<glm::vec3>& Results) const
     {
         QueryImpl(_Root.get(), Point, Radius, Results);
     }
 
     template <typename Func = std::function<bool(const FNodeType&)>>
-    FNodeType* Find(const glm::vec3& Point, Func&& Pred = [](const FNodeType&) -> bool { return true; }) const
+    FNodeType* Find(glm::vec3 Point, Func&& Pred = [](const FNodeType&) -> bool { return true; }) const
     {
         return FindImpl(_Root.get(), Point, std::forward<Func>(Pred));
     }
@@ -268,7 +268,7 @@ private:
         }
     }
 
-    void InsertImpl(FNodeType* Node, const glm::vec3& Point, int Depth)
+    void InsertImpl(FNodeType* Node, glm::vec3 Point, int Depth)
     {
         if (!Node->Contains(Point) || Depth > _MaxDepth)
         {
@@ -299,7 +299,7 @@ private:
         }
     }
 
-    void DeleteImpl(FNodeType* Node, const glm::vec3& Point)
+    void DeleteImpl(FNodeType* Node, glm::vec3 Point)
     {
         if (Node == nullptr)
         {
@@ -334,7 +334,7 @@ private:
         }
     }
 
-    void QueryImpl(FNodeType* Node, const glm::vec3& Point, float Radius, std::vector<glm::vec3>& Results) const
+    void QueryImpl(FNodeType* Node, glm::vec3 Point, float Radius, std::vector<glm::vec3>& Results) const
     {
         if (Node == nullptr || Node->GetNext(0) == nullptr)
         {
@@ -360,7 +360,7 @@ private:
     }
 
     template <typename Func>
-    FNodeType* FindImpl(FNodeType* Node, const glm::vec3& Point, Func&& Pred) const
+    FNodeType* FindImpl(FNodeType* Node, glm::vec3 Point, Func&& Pred) const
     {
         if (Node == nullptr)
         {

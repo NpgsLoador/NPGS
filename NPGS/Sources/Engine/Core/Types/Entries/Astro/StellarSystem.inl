@@ -139,7 +139,7 @@ NPGS_INLINE FOrbit& FOrbit::SetTrueAnomaly(float TrueAnomaly)
     return *this;
 }
 
-NPGS_INLINE FOrbit& FOrbit::SetNormal(const glm::vec2& Normal)
+NPGS_INLINE FOrbit& FOrbit::SetNormal(glm::vec2 Normal)
 {
     _Normal = Normal;
     return *this;
@@ -186,7 +186,7 @@ NPGS_INLINE const FOrbit::FOrbitalObject& FOrbit::GetParent() const
     return _Parent;
 }
 
-NPGS_INLINE const glm::vec2& FOrbit::GetNormal() const
+NPGS_INLINE glm::vec2 FOrbit::GetNormal() const
 {
     return _Normal;
 }
@@ -201,13 +201,13 @@ NPGS_INLINE std::vector<FOrbit::FOrbitalDetails>& FOrbit::ObjectsData()
     return _Objects;
 }
 
-NPGS_INLINE FStellarSystem& FStellarSystem::SetBaryPosition(const glm::vec3& Position)
+NPGS_INLINE FStellarSystem& FStellarSystem::SetBaryPosition(glm::vec3 Position)
 {
     _SystemBary.Position = Position;
     return *this;
 }
 
-NPGS_INLINE FStellarSystem& FStellarSystem::SetBaryNormal(const glm::vec2& Normal)
+NPGS_INLINE FStellarSystem& FStellarSystem::SetBaryNormal(glm::vec2 Normal)
 {
     _SystemBary.Normal = Normal;
     return *this;
@@ -225,12 +225,12 @@ NPGS_INLINE FStellarSystem& FStellarSystem::SetBaryName(const std::string& Name)
     return *this;
 }
 
-NPGS_INLINE const glm::vec3& FStellarSystem::GetBaryPosition() const
+NPGS_INLINE glm::vec3 FStellarSystem::GetBaryPosition() const
 {
     return _SystemBary.Position;
 }
 
-NPGS_INLINE const glm::vec2& FStellarSystem::GetBaryNormal() const
+NPGS_INLINE glm::vec2 FStellarSystem::GetBaryNormal() const
 {
     return _SystemBary.Normal;
 }
