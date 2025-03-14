@@ -40,6 +40,14 @@ NPGS_INLINE glm::mat4x4 FCamera::GetProjectionMatrix(float WindowAspect, float N
     return Matrix;
 }
 
+NPGS_INLINE void FCamera::SetOrbitTarget(const glm::vec3& Target)
+{
+    _OrbitTarget = Target;
+    _OrbitRadius = glm::length(Target - _Position);
+
+    UpdateVectors();
+}
+
 NPGS_INLINE void FCamera::SetOrbitAxis(const glm::vec3& Axis)
 {
     _OrbitAxis = Axis;

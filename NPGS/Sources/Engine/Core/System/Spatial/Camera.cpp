@@ -104,22 +104,6 @@ void FCamera::SetVector(EVector Vector, const glm::vec3& NewVector)
     }
 }
 
-void FCamera::SetOrbitTarget(const glm::vec3& Target)
-{
-    _OrbitTarget = Target;
-    _OrbitRadius = glm::length(Target - _Position);
-    _Mode        = EMode::kArcBall;
-
-    glm::vec3 Direction = glm::normalize(_OrbitTarget - _Position);
-    glm::vec3 Right     = glm::normalize(glm::cross(Direction, glm::vec3(0.0f, 1.0f, 0.0f)));
-    glm::vec3 Up        = glm::normalize(glm::cross(Right, Direction));
-    
-    glm::mat3x3 RotationMatrix(Right, Up, -Direction);
-    _Orientation = glm::conjugate(glm::quat_cast(RotationMatrix));
-
-    UpdateVectors();
-}
-
 #pragma warning(push)
 #pragma warning(disable: 4715)
 const glm::vec3& FCamera::GetVector(EVector Vector) const
