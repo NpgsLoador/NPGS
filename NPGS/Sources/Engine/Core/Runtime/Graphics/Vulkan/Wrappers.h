@@ -542,8 +542,8 @@ public:
     vk::Result AllocateBuffers(vk::CommandBufferLevel Level, std::vector<FVulkanCommandBuffer>& Buffers) const;
     vk::Result FreeBuffer(vk::CommandBuffer& Buffer) const;
     vk::Result FreeBuffer(FVulkanCommandBuffer& Buffer) const;
-    vk::Result FreeBuffers(std::vector<vk::CommandBuffer>& Buffers) const;
-    vk::Result FreeBuffers(std::vector<FVulkanCommandBuffer>& Buffers) const;
+    vk::Result FreeBuffers(const vk::ArrayProxy<vk::CommandBuffer>& Buffers) const;
+    vk::Result FreeBuffers(const vk::ArrayProxy<FVulkanCommandBuffer>& Buffers) const;
 
 private:
     vk::Result CreateCommandPool(vk::CommandPoolCreateInfo& CreateInfo);
@@ -692,33 +692,20 @@ public:
     using Base = TVulkanHandleNoDestroy<vk::DescriptorSet>;
     using Base::Base;
 
-    void Write(const vk::DescriptorImageInfo& ImageInfo, vk::DescriptorType Type,
-               std::uint32_t BindingPoint, std::uint32_t ArrayElements = 0) const;
-
-    void Write(const std::vector<vk::DescriptorImageInfo>& ImageInfos, vk::DescriptorType Type,
+    void Write(const vk::ArrayProxy<vk::DescriptorImageInfo>& ImageInfos, vk::DescriptorType Type,
                std::uint32_t BindingPoint, std::uint32_t ArrayElement = 0) const;
 
-    void Write(const vk::DescriptorBufferInfo& BufferInfo, vk::DescriptorType Type,
+    void Write(const vk::ArrayProxy<vk::DescriptorBufferInfo>& BufferInfos, vk::DescriptorType Type,
                std::uint32_t BindingPoint, std::uint32_t ArrayElement = 0) const;
 
-    void Write(const std::vector<vk::DescriptorBufferInfo>& BufferInfos, vk::DescriptorType Type,
+    void Write(const vk::ArrayProxy<vk::BufferView>& BufferViews, vk::DescriptorType Type,
                std::uint32_t BindingPoint, std::uint32_t ArrayElement = 0) const;
 
-    void Write(const vk::BufferView& BufferView, vk::DescriptorType Type,
+    void Write(const vk::ArrayProxy<FVulkanBufferView>& BufferViews, vk::DescriptorType Type,
                std::uint32_t BindingPoint, std::uint32_t ArrayElement = 0) const;
 
-    void Write(const std::vector<vk::BufferView>& BufferViews, vk::DescriptorType Type,
-               std::uint32_t BindingPoint, std::uint32_t ArrayElement = 0) const;
-
-    void Write(const FVulkanBufferView& BufferView, vk::DescriptorType Type,
-               std::uint32_t BindingPoint, std::uint32_t ArrayElement = 0) const;
-
-    void Write(const std::vector<FVulkanBufferView>& BufferViews, vk::DescriptorType Type,
-               std::uint32_t BindingPoint, std::uint32_t ArrayElement = 0) const;
-
-    static void Update(const vk::WriteDescriptorSet& Write);
-    static void Update(const vk::WriteDescriptorSet& Write, const vk::CopyDescriptorSet& Copy);
-    static void Update(const std::vector<vk::WriteDescriptorSet>& Writes, const std::vector<vk::CopyDescriptorSet>& Copies = {});
+    static void Update(const vk::ArrayProxy<vk::WriteDescriptorSet>& Writes,
+                       const vk::ArrayProxy<vk::CopyDescriptorSet>& Copies = {});
 };
 
 // Wrapper for vk::DescriptorSetLayout
@@ -732,7 +719,7 @@ public:
     FVulkanDescriptorSetLayout(const vk::DescriptorSetLayoutCreateInfo& CreateInfo);
     FVulkanDescriptorSetLayout(vk::Device Device, const vk::DescriptorSetLayoutCreateInfo& CreateInfo);
 
-    static std::vector<vk::DescriptorSetLayout> GetNativeTypeArray(const std::vector<FVulkanDescriptorSetLayout>& Vector);
+    static std::vector<vk::DescriptorSetLayout> GetNativeTypeArray(const vk::ArrayProxy<FVulkanDescriptorSetLayout>& WrappedTypeArray);
 
 private:
     vk::Result CreateDescriptorSetLayout(const vk::DescriptorSetLayoutCreateInfo& CreateInfo);
@@ -748,22 +735,22 @@ public:
 
     FVulkanDescriptorPool(const vk::DescriptorPoolCreateInfo& CreateInfo);
     FVulkanDescriptorPool(vk::Device Device, const vk::DescriptorPoolCreateInfo& CreateInfo);
-    FVulkanDescriptorPool(std::uint32_t MaxSets, const std::vector<vk::DescriptorPoolSize>& PoolSizes,
+    FVulkanDescriptorPool(std::uint32_t MaxSets, const vk::ArrayProxy<vk::DescriptorPoolSize>& PoolSizes,
                           vk::DescriptorPoolCreateFlags Flags = {});
 
-    FVulkanDescriptorPool(vk::Device Device, std::uint32_t MaxSets, const std::vector<vk::DescriptorPoolSize>& PoolSizes,
+    FVulkanDescriptorPool(vk::Device Device, std::uint32_t MaxSets, const vk::ArrayProxy<vk::DescriptorPoolSize>& PoolSizes,
                           vk::DescriptorPoolCreateFlags Flags = {});
 
-    vk::Result AllocateSets(const std::vector<vk::DescriptorSetLayout>& Layouts, std::vector<vk::DescriptorSet>& Sets) const;
-    vk::Result AllocateSets(const std::vector<vk::DescriptorSetLayout>& Layouts, std::vector<FVulkanDescriptorSet>& Sets) const;
-    vk::Result AllocateSets(const std::vector<FVulkanDescriptorSetLayout>& Layouts, std::vector<vk::DescriptorSet>& Sets) const;
-    vk::Result AllocateSets(const std::vector<FVulkanDescriptorSetLayout>& Layouts, std::vector<FVulkanDescriptorSet>& Sets) const;
-    vk::Result FreeSets(std::vector<vk::DescriptorSet>& Sets) const;
-    vk::Result FreeSets(std::vector<FVulkanDescriptorSet>& Sets) const;
+    vk::Result AllocateSets(const vk::ArrayProxy<vk::DescriptorSetLayout>& Layouts, std::vector<vk::DescriptorSet>& Sets) const;
+    vk::Result AllocateSets(const vk::ArrayProxy<vk::DescriptorSetLayout>& Layouts, std::vector<FVulkanDescriptorSet>& Sets) const;
+    vk::Result AllocateSets(const vk::ArrayProxy<FVulkanDescriptorSetLayout>& Layouts, std::vector<vk::DescriptorSet>& Sets) const;
+    vk::Result AllocateSets(const vk::ArrayProxy<FVulkanDescriptorSetLayout>& Layouts, std::vector<FVulkanDescriptorSet>& Sets) const;
+    vk::Result FreeSets(const vk::ArrayProxy<vk::DescriptorSet>& Sets) const;
+    vk::Result FreeSets(const vk::ArrayProxy<FVulkanDescriptorSet>& Sets) const;
 
 private:
     vk::Result CreateDescriptorPool(const vk::DescriptorPoolCreateInfo& CreateInfo);
-    vk::Result CreateDescriptorPool(std::uint32_t MaxSets, const std::vector<vk::DescriptorPoolSize>& PoolSizes,
+    vk::Result CreateDescriptorPool(std::uint32_t MaxSets, const vk::ArrayProxy<vk::DescriptorPoolSize>& PoolSizes,
                                     vk::DescriptorPoolCreateFlags Flags);
 };
 
@@ -876,14 +863,14 @@ public:
 
     FVulkanPipelineCache(vk::PipelineCacheCreateFlags Flags);
     FVulkanPipelineCache(vk::Device Device, vk::PipelineCacheCreateFlags Flags);
-    FVulkanPipelineCache(vk::PipelineCacheCreateFlags Flags, const std::vector<std::byte>& InitialData);
-    FVulkanPipelineCache(vk::Device Device, vk::PipelineCacheCreateFlags Flags, const std::vector<std::byte>& InitialData);
+    FVulkanPipelineCache(vk::PipelineCacheCreateFlags Flags, const vk::ArrayProxy<std::byte>& InitialData);
+    FVulkanPipelineCache(vk::Device Device, vk::PipelineCacheCreateFlags Flags, const vk::ArrayProxy<std::byte>& InitialData);
     FVulkanPipelineCache(const vk::PipelineCacheCreateInfo& CreateInfo);
     FVulkanPipelineCache(vk::Device Device, const vk::PipelineCacheCreateInfo& CreateInfo);
 
 private:
     vk::Result CreatePipelineCache(vk::PipelineCacheCreateFlags Flags);
-    vk::Result CreatePipelineCache(vk::PipelineCacheCreateFlags Flags, const std::vector<std::byte>& InitialData);
+    vk::Result CreatePipelineCache(vk::PipelineCacheCreateFlags Flags, const vk::ArrayProxy<std::byte>& InitialData);
     vk::Result CreatePipelineCache(const vk::PipelineCacheCreateInfo& CreateInfo);
 };
 
@@ -935,7 +922,7 @@ public:
                       const vk::SubpassContents& SubpassContents = vk::SubpassContents::eInline) const;
 
     void CommandBegin(const FVulkanCommandBuffer& CommandBuffer, const FVulkanFramebuffer& Framebuffer,
-                      const vk::Rect2D& RenderArea, const std::vector<vk::ClearValue>& ClearValues,
+                      const vk::Rect2D& RenderArea, const vk::ArrayProxy<vk::ClearValue>& ClearValues,
                       const vk::SubpassContents& SubpassContents = vk::SubpassContents::eInline) const;
 
     void CommandNext(const FVulkanCommandBuffer& CommandBuffer,

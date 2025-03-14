@@ -81,22 +81,12 @@ public:
     template <typename DescriptorInfoType>
     requires std::is_class_v<DescriptorInfoType>
     void WriteSharedDescriptors(std::uint32_t Set, std::uint32_t Binding, vk::DescriptorType Type,
-                                const DescriptorInfoType& DescriptorInfo);
-
-    template <typename DescriptorInfoType>
-    requires std::is_class_v<DescriptorInfoType>
-    void WriteSharedDescriptors(std::uint32_t Set, std::uint32_t Binding, vk::DescriptorType Type,
-                                const std::vector<DescriptorInfoType>& DescriptorInfos);
+                                const vk::ArrayProxy<DescriptorInfoType>& DescriptorInfos);
 
     template <typename DescriptorInfoType>
     requires std::is_class_v<DescriptorInfoType>
     void WriteDynamicDescriptors(std::uint32_t Set, std::uint32_t Binding, std::uint32_t FrameIndex,
-                                 vk::DescriptorType Type, const DescriptorInfoType& DescriptorInfo);
-
-    template <typename DescriptorInfoType>
-    requires std::is_class_v<DescriptorInfoType>
-    void WriteDynamicDescriptors(std::uint32_t Set, std::uint32_t Binding, std::uint32_t FrameIndex,
-                                 vk::DescriptorType Type, const std::vector<DescriptorInfoType>& DescriptorInfos);
+                                 vk::DescriptorType Type, const vk::ArrayProxy<DescriptorInfoType>& DescriptorInfos);
 
     std::vector<vk::PipelineShaderStageCreateInfo> CreateShaderStageCreateInfo() const;
     std::vector<vk::DescriptorSetLayout> GetDescriptorSetLayouts() const;

@@ -342,6 +342,7 @@ vk::Result FVulkanCommandPool::AllocateBuffers(vk::CommandBufferLevel Level, std
 {
     vk::CommandBufferAllocateInfo CommandBufferAllocateInfo(_Handle, Level, static_cast<std::uint32_t>(Buffers.size()));
     std::vector<vk::CommandBuffer> CommandBuffers;
+    CommandBuffers.reserve(Buffers.size());
     try
     {
         CommandBuffers = _Device.allocateCommandBuffers(CommandBufferAllocateInfo);
@@ -375,15 +376,14 @@ vk::Result FVulkanCommandPool::FreeBuffer(FVulkanCommandBuffer& Buffer) const
     return FreeBuffer(*Buffer);
 }
 
-vk::Result FVulkanCommandPool::FreeBuffers(std::vector<vk::CommandBuffer>& Buffers) const
+vk::Result FVulkanCommandPool::FreeBuffers(const vk::ArrayProxy<vk::CommandBuffer>& Buffers) const
 {
     _Device.freeCommandBuffers(_Handle, Buffers);
-    Buffers.clear();
     NpgsCoreTrace("Command buffers freed successfully.");
     return vk::Result::eSuccess;
 }
 
-vk::Result FVulkanCommandPool::FreeBuffers(std::vector<FVulkanCommandBuffer>& Buffers) const
+vk::Result FVulkanCommandPool::FreeBuffers(const vk::ArrayProxy<FVulkanCommandBuffer>& Buffers) const
 {
     std::vector<vk::CommandBuffer> CommandBuffers;
     CommandBuffers.reserve(Buffers.size());
@@ -1041,13 +1041,14 @@ FVulkanDescriptorSetLayout::FVulkanDescriptorSetLayout(vk::Device Device, const 
 }
 
 std::vector<vk::DescriptorSetLayout>
-FVulkanDescriptorSetLayout::GetNativeTypeArray(const std::vector<FVulkanDescriptorSetLayout>& Vector)
+FVulkanDescriptorSetLayout::GetNativeTypeArray(const vk::ArrayProxy<FVulkanDescriptorSetLayout>& WrappedTypeArray)
 {
-    std::vector<vk::DescriptorSetLayout> NativeArray(Vector.size());
-    for (std::size_t i = 0; i != Vector.size(); ++i)
+    std::vector<vk::DescriptorSetLayout> NativeArray(WrappedTypeArray.size());
+    for (std::size_t i = 0; i != WrappedTypeArray.size(); ++i)
     {
-        NativeArray[i] = *Vector[i];
+        NativeArray[i] = **(WrappedTypeArray.data() + i);
     }
+
     return NativeArray;
 }
 
@@ -1081,13 +1082,13 @@ FVulkanDescriptorPool::FVulkanDescriptorPool(vk::Device Device, const vk::Descri
     _Status      = CreateDescriptorPool(CreateInfo);
 }
 
-FVulkanDescriptorPool::FVulkanDescriptorPool(std::uint32_t MaxSets, const std::vector<vk::DescriptorPoolSize>& PoolSizes,
+FVulkanDescriptorPool::FVulkanDescriptorPool(std::uint32_t MaxSets, const vk::ArrayProxy<vk::DescriptorPoolSize>& PoolSizes,
                                              vk::DescriptorPoolCreateFlags Flags)
     : FVulkanDescriptorPool(FVulkanCore::GetClassInstance()->GetDevice(), MaxSets, PoolSizes, Flags)
 {
 }
 
-FVulkanDescriptorPool::FVulkanDescriptorPool(vk::Device Device, std::uint32_t MaxSets, const std::vector<vk::DescriptorPoolSize>& PoolSizes,
+FVulkanDescriptorPool::FVulkanDescriptorPool(vk::Device Device, std::uint32_t MaxSets, const vk::ArrayProxy<vk::DescriptorPoolSize>& PoolSizes,
                                              vk::DescriptorPoolCreateFlags Flags)
     : Base(Device)
 {
@@ -1095,7 +1096,7 @@ FVulkanDescriptorPool::FVulkanDescriptorPool(vk::Device Device, std::uint32_t Ma
     _Status      = CreateDescriptorPool(MaxSets, PoolSizes, Flags);
 }
 
-vk::Result FVulkanDescriptorPool::AllocateSets(const std::vector<vk::DescriptorSetLayout>& Layouts,
+vk::Result FVulkanDescriptorPool::AllocateSets(const vk::ArrayProxy<vk::DescriptorSetLayout>& Layouts,
                                                std::vector<vk::DescriptorSet>& Sets) const
 {
     if (Layouts.size() > Sets.size())
@@ -1119,7 +1120,7 @@ vk::Result FVulkanDescriptorPool::AllocateSets(const std::vector<vk::DescriptorS
     return vk::Result::eSuccess;
 }
 
-vk::Result FVulkanDescriptorPool::AllocateSets(const std::vector<vk::DescriptorSetLayout>& Layouts,
+vk::Result FVulkanDescriptorPool::AllocateSets(const vk::ArrayProxy<vk::DescriptorSetLayout>& Layouts,
                                                std::vector<FVulkanDescriptorSet>& Sets) const
 {
     std::vector<vk::DescriptorSet> DescriptorSets(Layouts.size());
@@ -1134,7 +1135,7 @@ vk::Result FVulkanDescriptorPool::AllocateSets(const std::vector<vk::DescriptorS
     return vk::Result::eSuccess;
 }
 
-vk::Result FVulkanDescriptorPool::AllocateSets(const std::vector<FVulkanDescriptorSetLayout>& Layouts,
+vk::Result FVulkanDescriptorPool::AllocateSets(const vk::ArrayProxy<FVulkanDescriptorSetLayout>& Layouts,
                                                std::vector<vk::DescriptorSet>& Sets) const
 {
     std::vector<vk::DescriptorSetLayout> DescriptorSetLayouts;
@@ -1147,7 +1148,7 @@ vk::Result FVulkanDescriptorPool::AllocateSets(const std::vector<FVulkanDescript
     return AllocateSets(DescriptorSetLayouts, Sets);
 }
 
-vk::Result FVulkanDescriptorPool::AllocateSets(const std::vector<FVulkanDescriptorSetLayout>& Layouts,
+vk::Result FVulkanDescriptorPool::AllocateSets(const vk::ArrayProxy<FVulkanDescriptorSetLayout>& Layouts,
                                                std::vector<FVulkanDescriptorSet>& Sets) const
 {
     std::vector<vk::DescriptorSetLayout> DescriptorSetLayouts;
@@ -1169,18 +1170,17 @@ vk::Result FVulkanDescriptorPool::AllocateSets(const std::vector<FVulkanDescript
     return vk::Result::eSuccess;
 }
 
-vk::Result FVulkanDescriptorPool::FreeSets(std::vector<vk::DescriptorSet>& Sets) const
+vk::Result FVulkanDescriptorPool::FreeSets(const vk::ArrayProxy<vk::DescriptorSet>& Sets) const
 {
     if (!Sets.empty())
     {
         _Device.freeDescriptorSets(_Handle, Sets);
-        Sets.clear();
     }
 
     return vk::Result::eSuccess;
 }
 
-vk::Result FVulkanDescriptorPool::FreeSets(std::vector<FVulkanDescriptorSet>& Sets) const
+vk::Result FVulkanDescriptorPool::FreeSets(const vk::ArrayProxy<FVulkanDescriptorSet>& Sets) const
 {
     if (!Sets.empty())
     {
@@ -1190,7 +1190,7 @@ vk::Result FVulkanDescriptorPool::FreeSets(std::vector<FVulkanDescriptorSet>& Se
         {
             DescriptorSets.push_back(*Set);
         }
-        Sets.clear();
+
         return FreeSets(DescriptorSets);
     }
 
@@ -1213,7 +1213,7 @@ vk::Result FVulkanDescriptorPool::CreateDescriptorPool(const vk::DescriptorPoolC
     return vk::Result::eSuccess;
 }
 
-vk::Result FVulkanDescriptorPool::CreateDescriptorPool(std::uint32_t MaxSets, const std::vector<vk::DescriptorPoolSize>& PoolSizes,
+vk::Result FVulkanDescriptorPool::CreateDescriptorPool(std::uint32_t MaxSets, const vk::ArrayProxy<vk::DescriptorPoolSize>& PoolSizes,
                                                        vk::DescriptorPoolCreateFlags Flags)
 {
     vk::DescriptorPoolCreateInfo CreateInfo(Flags, MaxSets, PoolSizes);
@@ -1514,12 +1514,13 @@ FVulkanPipelineCache::FVulkanPipelineCache(vk::Device Device, vk::PipelineCacheC
     _Status      = CreatePipelineCache(Flags);
 }
 
-FVulkanPipelineCache::FVulkanPipelineCache(vk::PipelineCacheCreateFlags Flags, const std::vector<std::byte>& InitialData)
+FVulkanPipelineCache::FVulkanPipelineCache(vk::PipelineCacheCreateFlags Flags, const vk::ArrayProxy<std::byte>& InitialData)
     : FVulkanPipelineCache(FVulkanCore::GetClassInstance()->GetDevice(), Flags, InitialData)
 {
 }
 
-FVulkanPipelineCache::FVulkanPipelineCache(vk::Device Device, vk::PipelineCacheCreateFlags Flags, const std::vector<std::byte>& InitialData)
+FVulkanPipelineCache::FVulkanPipelineCache(vk::Device Device, vk::PipelineCacheCreateFlags Flags,
+                                           const vk::ArrayProxy<std::byte>& InitialData)
     : Base(Device)
 {
     _ReleaseInfo = "Pipeline cache destroyed successfully.";
@@ -1544,7 +1545,7 @@ vk::Result FVulkanPipelineCache::CreatePipelineCache(vk::PipelineCacheCreateFlag
     return CreatePipelineCache(CreateInfo);
 }
 
-vk::Result FVulkanPipelineCache::CreatePipelineCache(vk::PipelineCacheCreateFlags Flags, const std::vector<std::byte>& InitialData)
+vk::Result FVulkanPipelineCache::CreatePipelineCache(vk::PipelineCacheCreateFlags Flags, const vk::ArrayProxy<std::byte>& InitialData)
 {
     vk::PipelineCacheCreateInfo CreateInfo = vk::PipelineCacheCreateInfo()
         .setFlags(Flags)
@@ -1679,7 +1680,7 @@ FVulkanRenderPass::FVulkanRenderPass(vk::Device Device, const vk::RenderPassCrea
 }
 
 void FVulkanRenderPass::CommandBegin(const FVulkanCommandBuffer& CommandBuffer, const FVulkanFramebuffer& Framebuffer,
-                                     const vk::Rect2D& RenderArea, const std::vector<vk::ClearValue>& ClearValues,
+                                     const vk::Rect2D& RenderArea, const vk::ArrayProxy<vk::ClearValue>& ClearValues,
                                      const vk::SubpassContents& SubpassContents) const
 {
     vk::RenderPassBeginInfo RenderPassBeginInfo(_Handle, *Framebuffer, RenderArea, ClearValues);

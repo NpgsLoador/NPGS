@@ -726,10 +726,10 @@ void FApplication::BindDescriptorSets()
     static Grt::FVulkanSampler kSkyboxSampler(SamplerCreateInfo);
 
     auto HeightMapImageInfo = IceLand->CreateDescriptorImageInfo(kSampler);
-    TerrainShader->WriteSharedDescriptors(1, 0, vk::DescriptorType::eCombinedImageSampler, HeightMapImageInfo);
+    TerrainShader->WriteSharedDescriptors<vk::DescriptorImageInfo>(1, 0, vk::DescriptorType::eCombinedImageSampler, HeightMapImageInfo);
 
     auto SkyboxImageInfo = Skybox->CreateDescriptorImageInfo(kSkyboxSampler);
-    SkyboxShader->WriteSharedDescriptors(1, 0, vk::DescriptorType::eCombinedImageSampler, SkyboxImageInfo);
+    SkyboxShader->WriteSharedDescriptors<vk::DescriptorImageInfo>(1, 0, vk::DescriptorType::eCombinedImageSampler, SkyboxImageInfo);
 
     vk::SamplerCustomBorderColorCreateInfoEXT BorderColorCreateInfo(
         vk::ClearColorValue(1.0f, 1.0f, 1.0f, 1.0f), vk::Format::eR32G32B32A32Sfloat);
@@ -756,8 +756,8 @@ void FApplication::BindDescriptorSets()
         vk::DescriptorImageInfo ShadowMapImageInfo(
             *kFramebufferSampler, *_ShadowMapAttachment->GetImageView(), vk::ImageLayout::eShaderReadOnlyOptimal);
 
-        PostShader->WriteSharedDescriptors(0, 0, vk::DescriptorType::eCombinedImageSampler, ColorImageInfo);
-        PbrSceneShader->WriteSharedDescriptors(1, 4, vk::DescriptorType::eCombinedImageSampler, ShadowMapImageInfo);
+        PostShader->WriteSharedDescriptors<vk::DescriptorImageInfo>(0, 0, vk::DescriptorType::eCombinedImageSampler, ColorImageInfo);
+        PbrSceneShader->WriteSharedDescriptors<vk::DescriptorImageInfo>(1, 4, vk::DescriptorType::eCombinedImageSampler, ShadowMapImageInfo);
     };
 
     CreatePostDescriptors();

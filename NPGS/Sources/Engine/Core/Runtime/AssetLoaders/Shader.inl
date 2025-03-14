@@ -7,21 +7,7 @@ _ASSET_BEGIN
 template <typename DescriptorInfoType>
 requires std::is_class_v<DescriptorInfoType>
 inline void FShader::WriteSharedDescriptors(std::uint32_t Set, std::uint32_t Binding, vk::DescriptorType Type,
-                                            const DescriptorInfoType& DescriptorInfo)
-{
-    const auto& DescriptorSets = _DescriptorSetsMap.at(Set);
-    for (const auto& DescriptorSet : DescriptorSets)
-    {
-        DescriptorSet.Write(DescriptorInfo, Type, Binding);
-    }
-
-    MarkAllFramesForUpdate();
-}
-
-template <typename DescriptorInfoType>
-requires std::is_class_v<DescriptorInfoType>
-inline void FShader::WriteSharedDescriptors(std::uint32_t Set, std::uint32_t Binding, vk::DescriptorType Type,
-                                            const std::vector<DescriptorInfoType>& DescriptorInfos)
+                                            const vk::ArrayProxy<DescriptorInfoType>& DescriptorInfos)
 {
     const auto& DescriptorSets = _DescriptorSetsMap.at(Set);
     for (const auto& DescriptorSet : DescriptorSets)
@@ -32,21 +18,10 @@ inline void FShader::WriteSharedDescriptors(std::uint32_t Set, std::uint32_t Bin
     MarkAllFramesForUpdate();
 }
 
-template<typename DescriptorInfoType>
-requires std::is_class_v<DescriptorInfoType>
-inline void FShader::WriteDynamicDescriptors(std::uint32_t Set, std::uint32_t Binding, std::uint32_t FrameIndex,
-                                             vk::DescriptorType Type, const DescriptorInfoType& DescriptorInfo)
-{
-    const auto& DescriptorSet = _DescriptorSetsMap.at(Set)[FrameIndex];
-    DescriptorSet.Write(DescriptorInfo, Type, Binding);
-
-    MarkAllFramesForUpdate();
-}
-
 template <typename DescriptorInfoType>
 requires std::is_class_v<DescriptorInfoType>
 inline void FShader::WriteDynamicDescriptors(std::uint32_t Set, std::uint32_t Binding, std::uint32_t FrameIndex,
-                                             vk::DescriptorType Type, const std::vector<DescriptorInfoType>& DescriptorInfos)
+                                             vk::DescriptorType Type, const vk::ArrayProxy<DescriptorInfoType>& DescriptorInfos)
 {
     const auto& DescriptorSet = _DescriptorSetsMap.at(Set)[FrameIndex];
     DescriptorSet.Write(DescriptorInfos, Type, Binding);
