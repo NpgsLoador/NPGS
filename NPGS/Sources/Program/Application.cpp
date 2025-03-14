@@ -23,8 +23,8 @@
 #include "Engine/Core/Math/TangentSpaceTools.h"
 #include "Engine/Core/Runtime/AssetLoaders/Shader.h"
 #include "Engine/Core/Runtime/AssetLoaders/Texture.h"
+#include "Engine/Core/Runtime/Graphics/Renderers/ShaderBufferManager.h"
 #include "Engine/Core/Runtime/Graphics/Renderers/PipelineManager.h"
-#include "Engine/Core/Runtime/Graphics/Vulkan/ShaderBufferManager.h"
 #include "Engine/Utils/Logger.h"
 
 _NPGS_BEGIN
@@ -644,7 +644,7 @@ void FApplication::LoadAssets()
 
 void FApplication::CreateUniformBuffers()
 {
-    Grt::FShaderBufferManager::FUniformBufferCreateInfo MatricesCreateInfo
+    Grt::FShaderBufferManager::FBufferCreateInfo MatricesCreateInfo
     {
         .Name    = "Matrices",
         .Fields  = { "View", "Projection", "LightSpaceMatrix" },
@@ -653,7 +653,7 @@ void FApplication::CreateUniformBuffers()
         .Usage   = vk::DescriptorType::eUniformBuffer
     };
 
-    Grt::FShaderBufferManager::FUniformBufferCreateInfo MvpMatricesCreateInfo
+    Grt::FShaderBufferManager::FBufferCreateInfo MvpMatricesCreateInfo
     {
         .Name    = "MvpMatrices",
         .Fields  = { "Model", "View", "Projection" },
@@ -662,7 +662,7 @@ void FApplication::CreateUniformBuffers()
         .Usage   = vk::DescriptorType::eUniformBuffer
     };
 
-    Grt::FShaderBufferManager::FUniformBufferCreateInfo LightArgsCreateInfo
+    Grt::FShaderBufferManager::FBufferCreateInfo LightArgsCreateInfo
     {
         .Name    = "LightArgs",
         .Fields  = { "LightPos", "LightColor", "CameraPos" },

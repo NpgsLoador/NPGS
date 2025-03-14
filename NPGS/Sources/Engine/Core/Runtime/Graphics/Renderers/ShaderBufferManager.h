@@ -48,7 +48,7 @@ public:
         vk::DeviceSize                      _Size;
     };
 
-    struct FUniformBufferCreateInfo
+    struct FBufferCreateInfo
     {
         std::string              Name;
         std::vector<std::string> Fields;
@@ -65,18 +65,18 @@ private:
         vk::DeviceSize Alignment{};
     };
 
-    struct FUniformBufferInfo
+    struct FBufferInfo
     {
         std::unordered_map<std::string, FBufferFieldInfo> Fields;
-        std::vector<FDeviceLocalBuffer>                   Buffers;
-        FUniformBufferCreateInfo                          CreateInfo;
-        vk::DeviceSize                                    Size{};
+        std::vector<FDeviceLocalBuffer> Buffers;
+        FBufferCreateInfo               CreateInfo;
+        vk::DeviceSize                  Size{};
     };
 
 public:
     template <typename StructType>
     requires std::is_class_v<StructType>
-    void CreateBuffers(const FUniformBufferCreateInfo& BufferCreateInfo,
+    void CreateBuffers(const FBufferCreateInfo& BufferCreateInfo,
                        const VmaAllocationCreateInfo* AllocationCreateInfo = nullptr,
                        std::uint32_t BufferCount = 0);
 
@@ -121,8 +121,8 @@ private:
     FShaderBufferManager& operator=(FShaderBufferManager&&)      = delete;
 
 private:
-    std::unordered_map<std::string, FUniformBufferInfo> _UniformBuffers;
-    VmaAllocator                                        _Allocator;
+    std::unordered_map<std::string, FBufferInfo> _Buffers;
+    VmaAllocator                                 _Allocator;
 };
 
 _GRAPHICS_END

@@ -268,7 +268,7 @@ spirv-cross-cpp.lib
     <ClCompile Include="Sources\Engine\Core\Runtime\Graphics\Vulkan\Core.cpp" />
     <ClCompile Include="Sources\Engine\Core\Runtime\Graphics\Vulkan\ExtFunctionsImpl.cpp" />
     <ClCompile Include="Sources\Engine\Core\Runtime\Graphics\Vulkan\Resources.cpp" />
-    <ClCompile Include="Sources\Engine\Core\Runtime\Graphics\Vulkan\ShaderBufferManager.cpp" />
+    <ClCompile Include="Sources\Engine\Core\Runtime\Graphics\Renderers\ShaderBufferManager.cpp" />
     <ClCompile Include="Sources\Engine\Core\Runtime\Graphics\Vulkan\Wrappers.cpp" />
     <ClCompile Include="Sources\Engine\Core\Runtime\Threads\ThreadPool.cpp" />
     <ClCompile Include="Sources\Engine\Core\System\Generators\CivilizationGenerator.cpp" />
@@ -311,7 +311,7 @@ spirv-cross-cpp.lib
     <ClInclude Include="Sources\Engine\Core\Runtime\Graphics\Vulkan\Core.h" />
     <ClInclude Include="Sources\Engine\Core\Runtime\Graphics\Vulkan\ExtFunctionsImpl.h" />
     <ClInclude Include="Sources\Engine\Core\Runtime\Graphics\Vulkan\Resources.h" />
-    <ClInclude Include="Sources\Engine\Core\Runtime\Graphics\Vulkan\ShaderBufferManager.h" />
+    <ClInclude Include="Sources\Engine\Core\Runtime\Graphics\Renderers\ShaderBufferManager.h" />
     <ClInclude Include="Sources\Engine\Core\Runtime\Graphics\Vulkan\Wrappers.h" />
     <ClInclude Include="Sources\Engine\Core\Runtime\Threads\ThreadPool.h" />
     <ClInclude Include="Sources\Engine\Core\System\Generators\CivilizationGenerator.h" />
@@ -346,7 +346,7 @@ spirv-cross-cpp.lib
     <None Include="Sources\Engine\Core\Runtime\Graphics\Vulkan\Resources.inl" />
     <None Include="Sources\Engine\Core\Runtime\Graphics\Vulkan\Context.inl" />
     <None Include="Sources\Engine\Core\Runtime\Graphics\Vulkan\Core.inl" />
-    <None Include="Sources\Engine\Core\Runtime\Graphics\Vulkan\ShaderBufferManager.inl" />
+    <None Include="Sources\Engine\Core\Runtime\Graphics\Renderers\ShaderBufferManager.inl" />
     <None Include="Sources\Engine\Core\Runtime\Graphics\Vulkan\Wrappers.inl" />
     <None Include="Sources\Engine\Core\Runtime\Threads\ThreadPool.inl" />
     <None Include="Sources\Engine\Core\System\Generators\StellarGenerator.inl" />

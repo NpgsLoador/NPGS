@@ -20,18 +20,11 @@ FShaderBufferManager::FShaderBufferManager()
 
 void FShaderBufferManager::BindShaderToBuffers(const std::string& BufferName, const std::string& ShaderName, vk::DeviceSize Range)
 {
-    auto it = _UniformBuffers.find(BufferName);
-    if (it == _UniformBuffers.end())
-    {
-        NpgsCoreError("Failed to find buffer \"{}\".", BufferName);
-        return;
-    }
-
-    auto& StoredBufferInfo = it->second;
-    vk::DescriptorType Usage   = StoredBufferInfo.CreateInfo.Usage;
-    std::uint32_t      Set     = StoredBufferInfo.CreateInfo.Set;
-    std::uint32_t      Binding = StoredBufferInfo.CreateInfo.Binding;
-    vk::DeviceSize     Size    = StoredBufferInfo.Size;
+    auto& BufferInfo           = _Buffers.at(BufferName);
+    vk::DescriptorType Usage   = BufferInfo.CreateInfo.Usage;
+    std::uint32_t      Set     = BufferInfo.CreateInfo.Set;
+    std::uint32_t      Binding = BufferInfo.CreateInfo.Binding;
+    vk::DeviceSize     Size    = BufferInfo.Size;
 
     auto* Shader = Asset::FAssetManager::GetInstance()->GetAsset<Asset::FShader>(ShaderName);
     if (Shader == nullptr)
@@ -42,7 +35,7 @@ void FShaderBufferManager::BindShaderToBuffers(const std::string& BufferName, co
 
     for (std::uint32_t i = 0; i != Config::Graphics::kMaxFrameInFlight; ++i)
     {
-        vk::DescriptorBufferInfo WriteBufferInfo(*StoredBufferInfo.Buffers[i].GetBuffer(), 0, Range ? Range : Size);
+        vk::DescriptorBufferInfo WriteBufferInfo(*BufferInfo.Buffers[i].GetBuffer(), 0, Range ? Range : Size);
         Shader->WriteDynamicDescriptors<vk::DescriptorBufferInfo>(Set, Binding, i, Usage, { WriteBufferInfo });
     }
 }
@@ -50,18 +43,11 @@ void FShaderBufferManager::BindShaderToBuffers(const std::string& BufferName, co
 void FShaderBufferManager::BindShaderToBuffer(std::uint32_t FrameIndex, const std::string& BufferName,
                                               const std::string& ShaderName, vk::DeviceSize Range)
 {
-    auto it = _UniformBuffers.find(BufferName);
-    if (it == _UniformBuffers.end())
-    {
-        NpgsCoreError("Failed to find buffer \"{}\".", BufferName);
-        return;
-    }
-
-    auto& StoredBufferInfo = it->second;
-    vk::DescriptorType Usage   = StoredBufferInfo.CreateInfo.Usage;
-    std::uint32_t      Set     = StoredBufferInfo.CreateInfo.Set;
-    std::uint32_t      Binding = StoredBufferInfo.CreateInfo.Binding;
-    vk::DeviceSize     Size    = StoredBufferInfo.Size;
+    auto& BufferInfo           = _Buffers.at(BufferName);
+    vk::DescriptorType Usage   = BufferInfo.CreateInfo.Usage;
+    std::uint32_t      Set     = BufferInfo.CreateInfo.Set;
+    std::uint32_t      Binding = BufferInfo.CreateInfo.Binding;
+    vk::DeviceSize     Size    = BufferInfo.Size;
 
     auto* Shader = Asset::FAssetManager::GetInstance()->GetAsset<Asset::FShader>(ShaderName);
     if (Shader == nullptr)
@@ -70,24 +56,17 @@ void FShaderBufferManager::BindShaderToBuffer(std::uint32_t FrameIndex, const st
         return;
     }
 
-    vk::DescriptorBufferInfo WriteBufferInfo(*StoredBufferInfo.Buffers[FrameIndex].GetBuffer(), 0, Range ? Range : Size);
+    vk::DescriptorBufferInfo WriteBufferInfo(*BufferInfo.Buffers[FrameIndex].GetBuffer(), 0, Range ? Range : Size);
     Shader->WriteDynamicDescriptors<vk::DescriptorBufferInfo>(Set, Binding, FrameIndex, Usage, { WriteBufferInfo });
 }
 
 void FShaderBufferManager::BindShaderListToBuffers(const std::string& BufferName, const std::vector<std::string>& ShaderNameList)
 {
-    auto it = _UniformBuffers.find(BufferName);
-    if (it == _UniformBuffers.end())
-    {
-        NpgsCoreError("Failed to find buffer \"{}\".", BufferName);
-        return;
-    }
-
-    auto& StoredBufferInfo = it->second;
-    vk::DescriptorType Usage   = StoredBufferInfo.CreateInfo.Usage;
-    std::uint32_t      Set     = StoredBufferInfo.CreateInfo.Set;
-    std::uint32_t      Binding = StoredBufferInfo.CreateInfo.Binding;
-    vk::DeviceSize     Size    = StoredBufferInfo.Size;
+    auto& BufferInfo           = _Buffers.at(BufferName);
+    vk::DescriptorType Usage   = BufferInfo.CreateInfo.Usage;
+    std::uint32_t      Set     = BufferInfo.CreateInfo.Set;
+    std::uint32_t      Binding = BufferInfo.CreateInfo.Binding;
+    vk::DeviceSize     Size    = BufferInfo.Size;
 
     for (const auto& ShaderName : ShaderNameList)
     {
@@ -100,7 +79,7 @@ void FShaderBufferManager::BindShaderListToBuffers(const std::string& BufferName
 
         for (std::uint32_t i = 0; i != Config::Graphics::kMaxFrameInFlight; ++i)
         {
-            vk::DescriptorBufferInfo WriteBufferInfo(*StoredBufferInfo.Buffers[i].GetBuffer(), 0, Size);
+            vk::DescriptorBufferInfo WriteBufferInfo(*BufferInfo.Buffers[i].GetBuffer(), 0, Size);
             Shader->WriteDynamicDescriptors<vk::DescriptorBufferInfo>(Set, Binding, i, Usage, { WriteBufferInfo });
         }
     }
@@ -108,8 +87,8 @@ void FShaderBufferManager::BindShaderListToBuffers(const std::string& BufferName
 
 void FShaderBufferManager::BindShaderListToBuffer(std::uint32_t FrameIndex, const std::string& BufferName, const std::vector<std::string>& ShaderNameList)
 {
-    auto it = _UniformBuffers.find(BufferName);
-    if (it == _UniformBuffers.end())
+    auto it = _Buffers.find(BufferName);
+    if (it == _Buffers.end())
     {
         NpgsCoreError("Failed to find buffer \"{}\".", BufferName);
         return;
