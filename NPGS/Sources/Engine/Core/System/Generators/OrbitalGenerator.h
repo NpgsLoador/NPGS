@@ -20,7 +20,7 @@ _GENERATOR_BEGIN
 class FOrbitalGenerator
 {
 public:
-    struct FOrbitalGenerationInfo
+    struct FGenerationInfo
     {
         const std::seed_seq* SeedSequence{ nullptr };
         float UniverseAge{ 1.38e10f };
@@ -45,14 +45,7 @@ private:
 
 public:
     FOrbitalGenerator() = delete;
-    FOrbitalGenerator(const FOrbitalGenerationInfo& GenerationInfo);
-
-    FOrbitalGenerator(const std::seed_seq& SeedSequence,                 float UniverseAge               = 1.38e10f,
-                      float BinaryPeriodMean                = 5.03f,     float BinaryPeriodSigma         = 2.28f,
-                      float CoilTemperatureLimit            = 1514.114f, float AsteroidUpperLimit        = 1e21f,
-                      float RingsParentLowerLimit           = 1e23f,     float LifeOccurrenceProbability = 0.0114514f,
-                      bool bContainUltravioletHabitableZone = false,     bool  bEnableAsiFilter          = true);
-
+    FOrbitalGenerator(const FGenerationInfo& GenerationInfo);
     FOrbitalGenerator(const FOrbitalGenerator& Other);
     FOrbitalGenerator(FOrbitalGenerator&& Other) noexcept;
     ~FOrbitalGenerator() = default;

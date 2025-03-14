@@ -30,10 +30,7 @@ public:
     using FMistData   = Runtime::Asset::TCommaSeparatedValues<double, 12>;
     using FWdMistData = Runtime::Asset::TCommaSeparatedValues<double, 5>;
     using FHrDiagram  = Runtime::Asset::TCommaSeparatedValues<double, 7>;
-
-    using FMistDataRowArray   = FMistData::FRowArray;
-    using FWdMistDataRowArray = FWdMistData::FRowArray;
-    using FHrDiagramRowArray  = FHrDiagram::FRowArray;
+    using FDataArray  = std::vector<double>;
 
     enum class EGenerationDistribution
     {
@@ -80,7 +77,7 @@ public:
         }
     };
 
-    struct FStellarGenerationInfo
+    struct FGenerationInfo
     {
         const std::seed_seq* SeedSequence{ nullptr };
         EStellarTypeGenerationOption  StellarTypeOption{ EStellarTypeGenerationOption::kRandom };
@@ -105,24 +102,7 @@ public:
 
 public:
     FStellarGenerator() = delete;
-    FStellarGenerator(const FStellarGenerationInfo& GenerationInfo);
-
-    FStellarGenerator(const std::seed_seq& SeedSequence,
-                      EStellarTypeGenerationOption  StellarTypeOption  = EStellarTypeGenerationOption::kRandom,
-                      EMultiplicityGenerationOption MultiplicityOption = EMultiplicityGenerationOption::kSingleStar,
-                      float UniverseAge = 1.38e10f,
-                      float MassLowerLimit = 0.1f, float MassUpperLimit = 300.0f,
-                      EGenerationDistribution MassDistribution = EGenerationDistribution::kFromPdf,
-                      float AgeLowerLimit = 0.0f, float AgeUpperLimit = 1.26e10f,
-                      EGenerationDistribution AgeDistribution = EGenerationDistribution::kFromPdf,
-                      float FeHLowerLimit = -4.0f, float FeHUpperLimit = 0.5f,
-                      EGenerationDistribution FeHDistribution = EGenerationDistribution::kFromPdf,
-                      float CoilTemperatureLimit = 1514.114f, float dEpdM = 2e6f,
-                      const std::function<float(glm::vec3, float, float)>& AgePdf = nullptr,
-                      glm::vec2 AgeMaxPdf = glm::vec2(),
-                      const std::array<std::function<float(float)>, 2>& MassPdfs = { nullptr, nullptr },
-                      std::array<glm::vec2, 2> MassMaxPdfs = { glm::vec2(), glm::vec2() });
-
+    FStellarGenerator(const FGenerationInfo& GenerationInfo);
     FStellarGenerator(const FStellarGenerator& Other);
     FStellarGenerator(FStellarGenerator&& Other) noexcept;
     ~FStellarGenerator() = default;
@@ -164,45 +144,33 @@ private:
     void InitializePdfs();
     float GenerateAge(float MaxPdf);
     float GenerateMass(float MaxPdf, auto& LogMassPdf);
-    std::vector<double> GetFullMistData(const FBasicProperties& Properties, bool bIsWhiteDwarf, bool bIsSingleWhiteDwarf);
+    FDataArray GetFullMistData(const FBasicProperties& Properties, bool bIsWhiteDwarf, bool bIsSingleWhiteDwarf);
+    FDataArray InterpolateMistData(const std::pair<std::string, std::string>& Files, double TargetAge, double TargetMass, double MassCoefficient);
+    std::vector<FDataArray> FindPhaseChanges(const FMistData* DataSheet);
 
-    std::vector<double> InterpolateMistData(const std::pair<std::string, std::string>& Files, double TargetAge,
-                                            double TargetMass, double MassCoefficient);
-
-    std::vector<std::vector<double>> FindPhaseChanges(const FMistData* DataCsv);
-
-    double CalculateEvolutionProgress(std::pair<std::vector<std::vector<double>>,
-                                                std::vector<std::vector<double>>>& PhaseChanges,
+    double CalculateEvolutionProgress(std::pair<std::vector<FDataArray>, std::vector<FDataArray>>& PhaseChanges,
                                       double TargetAge, double MassCoefficient);
 
     std::pair<double, std::pair<double, double>>
-    FindSurroundingTimePoints(const std::vector<std::vector<double>>& PhaseChanges, double TargetAge);
+        FindSurroundingTimePoints(const std::vector<FDataArray>& PhaseChanges, double TargetAge);
 
     std::pair<double, std::size_t>
-    FindSurroundingTimePoints(const std::pair<std::vector<std::vector<double>>,
-                                              std::vector<std::vector<double>>>& PhaseChanges,
-                              double TargetAge, double MassCoefficient);
+        FindSurroundingTimePoints(const std::pair<std::vector<FDataArray>, std::vector<FDataArray>>& PhaseChanges, double TargetAge, double MassCoefficient);
 
-    void AlignArrays(std::pair<std::vector<std::vector<double>>, std::vector<std::vector<double>>>& Arrays);
-    std::vector<double> InterpolateHrDiagram(FHrDiagram* Data, double BvColorIndex);
-    std::vector<double> InterpolateStarData(FMistData* Data, double EvolutionProgress);
-    std::vector<double> InterpolateStarData(FWdMistData* Data, double TargetAge);
-    std::vector<double> InterpolateStarData(auto* Data, double Target, const std::string& Header, int Index, bool bIsWhiteDwarf);
-    
-    std::vector<double> InterpolateArray(const std::pair<std::vector<double>,
-                                                         std::vector<double>>& DataArrays,
-                                         double Coefficient);
-
-    std::vector<double> InterpolateFinalData(const std::pair<std::vector<double>,
-                                                             std::vector<double>>& DataArrays,
-                                             double Coefficient, bool bIsWhiteDwarf);
+    void AlignArrays(std::pair<std::vector<FDataArray>, std::vector<FDataArray>>& Arrays);
+    FDataArray InterpolateHrDiagram(FHrDiagram* Data, double BvColorIndex);
+    FDataArray InterpolateStarData(FMistData* Data, double EvolutionProgress);
+    FDataArray InterpolateStarData(FWdMistData* Data, double TargetAge);
+    FDataArray InterpolateStarData(auto* Data, double Target, const std::string& Header, int Index, bool bIsWhiteDwarf);
+    FDataArray InterpolateArray(const std::pair<FDataArray, FDataArray>& DataArrays, double Coefficient);
+    FDataArray InterpolateFinalData(const std::pair<FDataArray, FDataArray>& DataArrays, double Coefficient, bool bIsWhiteDwarf);
 
     void CalculateSpectralType(float FeH, Astro::AStar& StarData);
     Astro::FStellarClass::ELuminosityClass CalculateLuminosityClass(const Astro::AStar& StarData);
     void ProcessDeathStar(EStellarTypeGenerationOption DeathStarTypeOption, Astro::AStar& DeathStar);
     void GenerateMagnetic(Astro::AStar& StarData);
     void GenerateSpin(Astro::AStar& StarData);
-    void ExpandMistData(double TargetMass, std::vector<double>& StarData);
+    void ExpandMistData(double TargetMass, FDataArray& StarData);
 
 public:
     static const int _kStarAgeIndex;
@@ -255,13 +223,13 @@ private:
     EStellarTypeGenerationOption  _StellarTypeOption;
     EMultiplicityGenerationOption _MultiplicityOption;
 
-    static const std::vector<std::string>                                         _kMistHeaders;
-    static const std::vector<std::string>                                         _kWdMistHeaders;
-    static const std::vector<std::string>                                         _kHrDiagramHeaders;
-    static std::unordered_map<std::string, std::vector<float>>                    _kMassFilesCache;
-    static std::unordered_map<const FMistData*, std::vector<std::vector<double>>> _kPhaseChangesCache;
-    static std::shared_mutex                                                      _kCacheMutex;
-    static bool                                                                   _kbMistDataInitiated;
+    static const std::vector<std::string>                                _kMistHeaders;
+    static const std::vector<std::string>                                _kWdMistHeaders;
+    static const std::vector<std::string>                                _kHrDiagramHeaders;
+    static std::unordered_map<std::string, std::vector<float>>           _kMassFilesCache;
+    static std::unordered_map<const FMistData*, std::vector<FDataArray>> _kPhaseChangesCache;
+    static std::shared_mutex                                             _kCacheMutex;
+    static bool                                                          _kbMistDataInitiated;
 };
 
 _GENERATOR_END

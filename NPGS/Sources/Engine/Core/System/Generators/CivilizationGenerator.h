@@ -16,7 +16,7 @@ _GENERATOR_BEGIN
 class FCivilizationGenerator
 {
 public:
-    struct FCivilizationGenerationInfo
+    struct FGenerationInfo
     {
         const std::seed_seq* SeedSequence{ nullptr };
         float                LifeOccurrenceProbability{ 0.0f };
@@ -26,11 +26,7 @@ public:
 
 public:
     FCivilizationGenerator() = delete;
-    FCivilizationGenerator(const FCivilizationGenerationInfo& GenerationInfo);
-
-    FCivilizationGenerator(const std::seed_seq& SeedSequence, float LifeOccurrenceProbability,
-                           bool bEnableAsiFilter = false, float DestroyedByDisasterProbability = 0.001f);
-
+    FCivilizationGenerator(const FGenerationInfo& GenerationInfo);
     FCivilizationGenerator(const FCivilizationGenerator& Other);
     FCivilizationGenerator(FCivilizationGenerator&& Other) noexcept;
     ~FCivilizationGenerator() = default;

@@ -13,25 +13,13 @@ _NPGS_BEGIN
 _SYSTEM_BEGIN
 _GENERATOR_BEGIN
 
-FCivilizationGenerator::FCivilizationGenerator(const FCivilizationGenerationInfo& GenerationInfo)
+FCivilizationGenerator::FCivilizationGenerator(const FGenerationInfo& GenerationInfo)
     :
     _RandomEngine(*GenerationInfo.SeedSequence),
     _CommonGenerator(0.0f, 1.0f),
     _AsiFiltedProbability(static_cast<double>(GenerationInfo.bEnableAsiFilter) * 0.2),
     _DestroyedByDisasterProbability(GenerationInfo.DestroyedByDisasterProbability),
     _LifeOccurrenceProbability(GenerationInfo.LifeOccurrenceProbability)
-{
-}
-
-FCivilizationGenerator::FCivilizationGenerator(const std::seed_seq& SeedSequence, float LifeOccurrenceProbability,
-                                               bool bEnableAsiFilter, float DestroyedByDisasterProbability)
-    :
-    FCivilizationGenerator(FCivilizationGenerationInfo{
-        .SeedSequence                   = &SeedSequence,
-        .LifeOccurrenceProbability      = LifeOccurrenceProbability,
-        .bEnableAsiFilter               = bEnableAsiFilter,
-        .DestroyedByDisasterProbability = DestroyedByDisasterProbability
-    })
 {
 }
 

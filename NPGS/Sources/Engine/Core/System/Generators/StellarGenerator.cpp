@@ -98,7 +98,7 @@ namespace
 
 // FStellarGenerator implementations
 // ---------------------------------
-FStellarGenerator::FStellarGenerator(const FStellarGenerationInfo& GenerationInfo)
+FStellarGenerator::FStellarGenerator(const FGenerationInfo& GenerationInfo)
     :
     _RandomEngine(*GenerationInfo.SeedSequence),
     _MagneticGenerators
@@ -133,7 +133,7 @@ FStellarGenerator::FStellarGenerator(const FStellarGenerationInfo& GenerationInf
     _LogMassGenerator(GenerationInfo.StellarTypeOption == FStellarGenerator::EStellarTypeGenerationOption::kMergeStar
                       ? std::make_unique<Util::TUniformRealDistribution<>>(0.0f, 1.0f)
                       : std::make_unique<Util::TUniformRealDistribution<>>(
-                            std::log10(GenerationInfo.MassLowerLimit), std::log10(GenerationInfo.MassUpperLimit))),
+                          std::log10(GenerationInfo.MassLowerLimit), std::log10(GenerationInfo.MassUpperLimit))),
 
     _MassPdfs(GenerationInfo.MassPdfs),
     _MassMaxPdfs(GenerationInfo.MassMaxPdfs),
@@ -157,43 +157,6 @@ FStellarGenerator::FStellarGenerator(const FStellarGenerationInfo& GenerationInf
 {
     InitializeMistData();
     InitializePdfs();
-}
-
-FStellarGenerator::FStellarGenerator(const std::seed_seq&          SeedSequence,
-                                     EStellarTypeGenerationOption  StellarTypeOption,
-                                     EMultiplicityGenerationOption MultiplicityOption,
-                                     float UniverseAge,
-                                     float MassLowerLimit, float MassUpperLimit, EGenerationDistribution MassDistribution,
-                                     float AgeLowerLimit,  float AgeUpperLimit,  EGenerationDistribution AgeDistribution,
-                                     float FeHLowerLimit,  float FeHUpperLimit,  EGenerationDistribution FeHDistribution,
-                                     float CoilTemperatureLimit, float dEpdM,
-                                     const std::function<float(glm::vec3, float, float)>& AgePdf,
-                                     glm::vec2                                            AgeMaxPdf,
-                                     const std::array<std::function<float(float)>, 2>&    MassPdfs,
-                                     std::array<glm::vec2, 2>                             MassMaxPdfs)
-    :
-    FStellarGenerator(FStellarGenerationInfo{
-          .SeedSequence         = &SeedSequence,
-          .StellarTypeOption    = StellarTypeOption,
-          .MultiplicityOption   = MultiplicityOption,
-          .UniverseAge          = UniverseAge,
-          .MassLowerLimit       = MassLowerLimit,
-          .MassUpperLimit       = MassUpperLimit,
-          .MassDistribution     = MassDistribution,
-          .AgeLowerLimit        = AgeLowerLimit,
-          .AgeUpperLimit        = AgeUpperLimit,
-          .AgeDistribution      = AgeDistribution,
-          .FeHLowerLimit        = FeHLowerLimit,
-          .FeHUpperLimit        = FeHUpperLimit,
-          .FeHDistribution      = FeHDistribution,
-          .CoilTemperatureLimit = CoilTemperatureLimit,
-          .dEpdM                = dEpdM,
-          .AgePdf               = AgePdf,
-          .AgeMaxPdf            = AgeMaxPdf,
-          .MassPdfs             = MassPdfs,
-          .MassMaxPdfs          = MassMaxPdfs
-    })
-{
 }
 
 FStellarGenerator::FStellarGenerator(const FStellarGenerator& Other)
@@ -358,20 +321,20 @@ FStellarGenerator& FStellarGenerator::operator=(FStellarGenerator&& Other) noexc
         _MassMaxPdfs          = std::move(Other._MassMaxPdfs);
         _AgeMaxPdf            = std::move(Other._AgeMaxPdf);
         _AgePdf               = std::move(Other._AgePdf);
-        _UniverseAge          = std::exchange(Other._UniverseAge,          0.0f);
-        _AgeLowerLimit        = std::exchange(Other._AgeLowerLimit,        0.0f);
-        _AgeUpperLimit        = std::exchange(Other._AgeUpperLimit,        0.0f);
-        _FeHLowerLimit        = std::exchange(Other._FeHLowerLimit,        0.0f);
-        _FeHUpperLimit        = std::exchange(Other._FeHUpperLimit,        0.0f);
-        _MassLowerLimit       = std::exchange(Other._MassLowerLimit,       0.0f);
-        _MassUpperLimit       = std::exchange(Other._MassUpperLimit,       0.0f);
+        _UniverseAge          = std::exchange(Other._UniverseAge, 0.0f);
+        _AgeLowerLimit        = std::exchange(Other._AgeLowerLimit, 0.0f);
+        _AgeUpperLimit        = std::exchange(Other._AgeUpperLimit, 0.0f);
+        _FeHLowerLimit        = std::exchange(Other._FeHLowerLimit, 0.0f);
+        _FeHUpperLimit        = std::exchange(Other._FeHUpperLimit, 0.0f);
+        _MassLowerLimit       = std::exchange(Other._MassLowerLimit, 0.0f);
+        _MassUpperLimit       = std::exchange(Other._MassUpperLimit, 0.0f);
         _CoilTemperatureLimit = std::exchange(Other._CoilTemperatureLimit, 0.0f);
-        _dEpdM                = std::exchange(Other._dEpdM,                0.0f);
-        _AgeDistribution      = std::exchange(Other._AgeDistribution,      {});
-        _FeHDistribution      = std::exchange(Other._FeHDistribution,      {});
-        _MassDistribution     = std::exchange(Other._MassDistribution,     {});
-        _StellarTypeOption    = std::exchange(Other._StellarTypeOption,    {});
-        _MultiplicityOption   = std::exchange(Other._MultiplicityOption,   {});
+        _dEpdM                = std::exchange(Other._dEpdM, 0.0f);
+        _AgeDistribution      = std::exchange(Other._AgeDistribution, {});
+        _FeHDistribution      = std::exchange(Other._FeHDistribution, {});
+        _MassDistribution     = std::exchange(Other._MassDistribution, {});
+        _StellarTypeOption    = std::exchange(Other._StellarTypeOption, {});
+        _MultiplicityOption   = std::exchange(Other._MultiplicityOption, {});
     }
 
     return *this;
@@ -556,7 +519,7 @@ Astro::AStar FStellarGenerator::GenerateStar(FBasicProperties& Properties)
     }
 
     Astro::AStar Star(Properties);
-    std::vector<double> StarData;
+    FDataArray StarData;
 
     switch (Properties.StellarTypeOption)
     {
@@ -815,7 +778,7 @@ float FStellarGenerator::GenerateMass(float MaxPdf, auto& LogMassPdf)
     return std::pow(10.0f, LogMass);
 }
 
-std::vector<double>
+FStellarGenerator::FDataArray
 FStellarGenerator::GetFullMistData(const FBasicProperties& Properties, bool bIsWhiteDwarf, bool bIsSingleWhiteDwarf)
 {
     float TargetAge  = Properties.Age;
@@ -917,16 +880,16 @@ FStellarGenerator::GetFullMistData(const FBasicProperties& Properties, bool bIsW
 
     Files = std::make_pair(LowerMassFile, UpperMassFile);
 
-    std::vector<double> Result = InterpolateMistData(Files, TargetAge, TargetMass, MassCoefficient);
+    FDataArray Result = InterpolateMistData(Files, TargetAge, TargetMass, MassCoefficient);
     Result.push_back(TargetFeH); // 加入插值使用的金属丰度，用于计算光谱类型
 
     return Result;
 }
 
-std::vector<double> FStellarGenerator::InterpolateMistData(const std::pair<std::string, std::string>& Files,
-                                                           double TargetAge, double TargetMass, double MassCoefficient)
+FStellarGenerator::FDataArray
+FStellarGenerator::InterpolateMistData(const std::pair<std::string, std::string>& Files, double TargetAge, double TargetMass, double MassCoefficient)
 {
-    std::vector<double> Result;
+    FDataArray Result;
 
     if (Files.first.find("WhiteDwarfs") == std::string::npos)
     {
@@ -946,7 +909,7 @@ std::vector<double> FStellarGenerator::InterpolateMistData(const std::pair<std::
                 TargetAge = Lifetime - 500000;
             }
 
-            std::pair<std::vector<std::vector<double>>, std::vector<std::vector<double>>> PhaseChangePair
+            std::pair<std::vector<FDataArray>, std::vector<FDataArray>> PhaseChangePair
             {
                 LowerPhaseChanges,
                 UpperPhaseChanges
@@ -957,8 +920,8 @@ std::vector<double> FStellarGenerator::InterpolateMistData(const std::pair<std::
             double LowerLifetime = PhaseChangePair.first.back()[_kStarAgeIndex];
             double UpperLifetime = PhaseChangePair.second.back()[_kStarAgeIndex];
 
-            std::vector<double> LowerRows = InterpolateStarData(LowerData, EvolutionProgress);
-            std::vector<double> UpperRows = InterpolateStarData(UpperData, EvolutionProgress);
+            FDataArray LowerRows = InterpolateStarData(LowerData, EvolutionProgress);
+            FDataArray UpperRows = InterpolateStarData(UpperData, EvolutionProgress);
 
             LowerRows.push_back(LowerLifetime);
             UpperRows.push_back(UpperLifetime);
@@ -980,7 +943,7 @@ std::vector<double> FStellarGenerator::InterpolateMistData(const std::pair<std::
             double Lifetime = 0.0;
             if (TargetMass >= 0.1)
             {
-                std::pair<std::vector<std::vector<double>>, std::vector<std::vector<double>>> PhaseChangePair{ PhaseChanges, {} };
+                std::pair<std::vector<FDataArray>, std::vector<FDataArray>> PhaseChangePair{ PhaseChanges, {} };
                 EvolutionProgress = CalculateEvolutionProgress(PhaseChangePair, TargetAge, MassCoefficient);
                 Lifetime          = PhaseChanges.back()[_kStarAgeIndex];
                 Result            = InterpolateStarData(StarData, EvolutionProgress);
@@ -1020,8 +983,8 @@ std::vector<double> FStellarGenerator::InterpolateMistData(const std::pair<std::
             FWdMistData* LowerData = LoadCsvAsset<FWdMistData>(Files.first,  _kWdMistHeaders);
             FWdMistData* UpperData = LoadCsvAsset<FWdMistData>(Files.second, _kWdMistHeaders);
 
-            std::vector<double> LowerRows = InterpolateStarData(LowerData, TargetAge);
-            std::vector<double> UpperRows = InterpolateStarData(UpperData, TargetAge);
+            FDataArray LowerRows = InterpolateStarData(LowerData, TargetAge);
+            FDataArray UpperRows = InterpolateStarData(UpperData, TargetAge);
 
             Result = InterpolateFinalData(std::make_pair(LowerRows, UpperRows), MassCoefficient, true);
         }
@@ -1035,21 +998,20 @@ std::vector<double> FStellarGenerator::InterpolateMistData(const std::pair<std::
     return Result;
 }
 
-std::vector<std::vector<double>> FStellarGenerator::FindPhaseChanges(const FMistData* DataCsv)
+std::vector<FStellarGenerator::FDataArray> FStellarGenerator::FindPhaseChanges(const FMistData* DataSheet)
 {
-    std::vector<std::vector<double>> Result;
-
+    std::vector<FDataArray> Result;
     {
         std::shared_lock Lock(_kCacheMutex);
-        if (_kPhaseChangesCache.contains(DataCsv))
+        if (_kPhaseChangesCache.contains(DataSheet))
         {
-            return _kPhaseChangesCache[DataCsv];
+            return _kPhaseChangesCache[DataSheet];
         }
     }
 
-    const auto* const DataArray = DataCsv->Data();
+    const auto* const CsvData = DataSheet->Data();
     int CurrentPhase = -2;
-    for (const auto& Row : *DataArray)
+    for (const auto& Row : *CsvData)
     {
         if (Row[_kPhaseIndex] != CurrentPhase || Row[_kXIndex] == 10.0)
         {
@@ -1060,21 +1022,20 @@ std::vector<std::vector<double>> FStellarGenerator::FindPhaseChanges(const FMist
 
     {
         std::unique_lock Lock(_kCacheMutex);
-        if (!_kPhaseChangesCache.contains(DataCsv))
+        if (!_kPhaseChangesCache.contains(DataSheet))
         {
-            _kPhaseChangesCache.emplace(DataCsv, Result);
+            _kPhaseChangesCache.emplace(DataSheet, Result);
         }
         else
         {
-            Result = _kPhaseChangesCache[DataCsv];
+            Result = _kPhaseChangesCache[DataSheet];
         }
     }
 
     return Result;
 }
 
-double FStellarGenerator::CalculateEvolutionProgress(std::pair<std::vector<std::vector<double>>,
-                                                               std::vector<std::vector<double>>>& PhaseChanges,
+double FStellarGenerator::CalculateEvolutionProgress(std::pair<std::vector<FDataArray>, std::vector<FDataArray>>& PhaseChanges,
                                                      double TargetAge, double MassCoefficient)
 {
     double Result = 0.0;
@@ -1139,7 +1100,7 @@ double FStellarGenerator::CalculateEvolutionProgress(std::pair<std::vector<std::
             if (PhaseChanges.first.back()[_kPhaseIndex] == PhaseChanges.second.back()[_kPhaseIndex])
             {
                 double FirstDiscardTimePoint = 0.0;
-                double FirstCommonTimePoint = (*std::prev(PhaseChanges.first.end(), 2))[_kStarAgeIndex];
+                double FirstCommonTimePoint  = (*std::prev(PhaseChanges.first.end(), 2))[_kStarAgeIndex];
 
                 std::size_t MinSize = std::min(PhaseChanges.first.size(), PhaseChanges.second.size());
                 for (std::size_t i = 0; i != MinSize - 1; ++i)
@@ -1173,21 +1134,21 @@ double FStellarGenerator::CalculateEvolutionProgress(std::pair<std::vector<std::
 }
 
 std::pair<double, std::pair<double, double>>
-FStellarGenerator::FindSurroundingTimePoints(const std::vector<std::vector<double>>& PhaseChanges, double TargetAge)
+FStellarGenerator::FindSurroundingTimePoints(const std::vector<FDataArray>& PhaseChanges, double TargetAge)
 {
-    std::vector<std::vector<double>>::const_iterator LowerTimePoint;
-    std::vector<std::vector<double>>::const_iterator UpperTimePoint;
+    std::vector<FDataArray>::const_iterator LowerTimePoint;
+    std::vector<FDataArray>::const_iterator UpperTimePoint;
 
     if (PhaseChanges.size() != 2 || PhaseChanges.front()[_kPhaseIndex] != PhaseChanges.back()[_kPhaseIndex])
     {
         LowerTimePoint = std::lower_bound(PhaseChanges.begin(), PhaseChanges.end(), TargetAge,
-        [](const std::vector<double>& Lhs, double Rhs) -> bool
+        [](const FDataArray& Lhs, double Rhs) -> bool
         {
             return Lhs[0] < Rhs;
         });
 
         UpperTimePoint = std::upper_bound(PhaseChanges.begin(), PhaseChanges.end(), TargetAge,
-        [](double Lhs, const std::vector<double>& Rhs) -> bool
+        [](double Lhs, const FDataArray& Rhs) -> bool
         {
             return Lhs < Rhs[0];
         });
@@ -1217,19 +1178,18 @@ FStellarGenerator::FindSurroundingTimePoints(const std::vector<std::vector<doubl
 }
 
 std::pair<double, std::size_t>
-FStellarGenerator::FindSurroundingTimePoints(const std::pair<std::vector<std::vector<double>>,
-                                                             std::vector<std::vector<double>>>& PhaseChanges,
+FStellarGenerator::FindSurroundingTimePoints(const std::pair<std::vector<FDataArray>, std::vector<FDataArray>>& PhaseChanges,
                                              double TargetAge, double MassCoefficient)
 {
-    std::vector<double> LowerPhaseChangeTimePoints;
-    std::vector<double> UpperPhaseChangeTimePoints;
+    FDataArray LowerPhaseChangeTimePoints;
+    FDataArray UpperPhaseChangeTimePoints;
     for (std::size_t i = 0; i != PhaseChanges.first.size(); ++i)
     {
         LowerPhaseChangeTimePoints.push_back(PhaseChanges.first[i][_kStarAgeIndex]);
         UpperPhaseChangeTimePoints.push_back(PhaseChanges.second[i][_kStarAgeIndex]);
     }
 
-    std::vector<double> PhaseChangeTimePoints =
+    FDataArray PhaseChangeTimePoints =
         InterpolateArray({ LowerPhaseChangeTimePoints, UpperPhaseChangeTimePoints }, MassCoefficient);
 
     if (TargetAge > PhaseChangeTimePoints.back())
@@ -1259,7 +1219,7 @@ FStellarGenerator::FindSurroundingTimePoints(const std::pair<std::vector<std::ve
     return Result;
 }
 
-void FStellarGenerator::AlignArrays(std::pair<std::vector<std::vector<double>>, std::vector<std::vector<double>>>& Arrays)
+void FStellarGenerator::AlignArrays(std::pair<std::vector<FDataArray>, std::vector<FDataArray>>& Arrays)
 {
     if (Arrays.first.back()[_kPhaseIndex] != 9 && Arrays.second.back()[_kPhaseIndex] != 9)
     {
@@ -1286,10 +1246,10 @@ void FStellarGenerator::AlignArrays(std::pair<std::vector<std::vector<double>>, 
     }
     else if (Arrays.first.back()[_kPhaseIndex] == 9 && Arrays.second.back()[_kPhaseIndex] == 9)
     {
-        std::vector<double> LastArray1 = Arrays.first.back();
-        std::vector<double> LastArray2 = Arrays.second.back();
-        std::vector<double> SubLastArray1 = *std::prev(Arrays.first.end(), 2);
-        std::vector<double> SubLastArray2 = *std::prev(Arrays.second.end(), 2);
+        FDataArray LastArray1 = Arrays.first.back();
+        FDataArray LastArray2 = Arrays.second.back();
+        FDataArray SubLastArray1 = *std::prev(Arrays.first.end(), 2);
+        FDataArray SubLastArray2 = *std::prev(Arrays.second.end(), 2);
 
         std::size_t MinSize = std::min(Arrays.first.size(), Arrays.second.size());
 
@@ -1302,8 +1262,8 @@ void FStellarGenerator::AlignArrays(std::pair<std::vector<std::vector<double>>, 
     }
     else
     {
-        std::vector<double> LastArray1 = Arrays.first.back();
-        std::vector<double> LastArray2 = Arrays.second.back();
+        FDataArray LastArray1 = Arrays.first.back();
+        FDataArray LastArray2 = Arrays.second.back();
         std::size_t MinSize = std::min(Arrays.first.size(), Arrays.second.size());
         Arrays.first.resize(MinSize - 1);
         Arrays.second.resize(MinSize - 1);
@@ -1312,11 +1272,11 @@ void FStellarGenerator::AlignArrays(std::pair<std::vector<std::vector<double>>, 
     }
 }
 
-std::vector<double> FStellarGenerator::InterpolateHrDiagram(FStellarGenerator::FHrDiagram* Data, double BvColorIndex)
+FStellarGenerator::FDataArray FStellarGenerator::InterpolateHrDiagram(FStellarGenerator::FHrDiagram* Data, double BvColorIndex)
 {
-    std::vector<double> Result;
+    FDataArray Result;
 
-    std::pair<std::vector<double>, std::vector<double>> SurroundingRows;
+    std::pair<FDataArray, FDataArray> SurroundingRows;
     try
     {
         SurroundingRows = Data->FindSurroundingValues("B-V", BvColorIndex);
@@ -1342,22 +1302,23 @@ std::vector<double> FStellarGenerator::InterpolateHrDiagram(FStellarGenerator::F
     return Result;
 }
 
-std::vector<double> FStellarGenerator::InterpolateStarData(FStellarGenerator::FMistData* Data, double EvolutionProgress)
+FStellarGenerator::FDataArray
+FStellarGenerator::InterpolateStarData(FStellarGenerator::FMistData* Data, double EvolutionProgress)
 {
     return InterpolateStarData(Data, EvolutionProgress, "x", FStellarGenerator::_kXIndex, false);
 }
 
-std::vector<double> FStellarGenerator::InterpolateStarData(FStellarGenerator::FWdMistData* Data, double TargetAge)
+FStellarGenerator::FDataArray FStellarGenerator::InterpolateStarData(FStellarGenerator::FWdMistData* Data, double TargetAge)
 {
     return InterpolateStarData(Data, TargetAge, "star_age", FStellarGenerator::_kWdStarAgeIndex, true);
 }
 
-std::vector<double> FStellarGenerator::InterpolateStarData(auto* Data, double Target, const std::string& Header,
-                                                           int Index, bool bIsWhiteDwarf)
+FStellarGenerator::FDataArray
+FStellarGenerator::InterpolateStarData(auto* Data, double Target, const std::string& Header, int Index, bool bIsWhiteDwarf)
 {
-    std::vector<double> Result;
+    FDataArray Result;
 
-    std::pair<std::vector<double>, std::vector<double>> SurroundingRows;
+    std::pair<FDataArray, FDataArray> SurroundingRows;
     try
     {
         SurroundingRows = Data->FindSurroundingValues(Header, Target);
@@ -1400,8 +1361,8 @@ std::vector<double> FStellarGenerator::InterpolateStarData(auto* Data, double Ta
     return Result;
 }
 
-std::vector<double>
-FStellarGenerator::InterpolateArray(const std::pair<std::vector<double>, std::vector<double>>& DataArrays, double Coefficient)
+FStellarGenerator::FDataArray
+FStellarGenerator::InterpolateArray(const std::pair<FDataArray, FDataArray>& DataArrays, double Coefficient)
 {
     if (DataArrays.first.size() != DataArrays.second.size())
     {
@@ -1409,7 +1370,7 @@ FStellarGenerator::InterpolateArray(const std::pair<std::vector<double>, std::ve
     }
 
     std::size_t Size = DataArrays.first.size();
-    std::vector<double> Result(Size);
+    FDataArray Result(Size);
     for (std::size_t i = 0; i != Size; ++i)
     {
         Result[i] = DataArrays.first[i] + (DataArrays.second[i] - DataArrays.first[i]) * Coefficient;
@@ -1418,16 +1379,15 @@ FStellarGenerator::InterpolateArray(const std::pair<std::vector<double>, std::ve
     return Result;
 }
 
-std::vector<double> FStellarGenerator::InterpolateFinalData(const std::pair<std::vector<double>,
-                                                                            std::vector<double>>& DataArrays,
-                                                            double Coefficient, bool bIsWhiteDwarf)
+FStellarGenerator::FDataArray
+FStellarGenerator::InterpolateFinalData(const std::pair<FDataArray, FDataArray>& DataArrays, double Coefficient, bool bIsWhiteDwarf)
 {
     if (DataArrays.first.size() != DataArrays.second.size())
     {
         throw std::runtime_error("Data arrays size mismatch.");
     }
 
-    std::vector<double> Result = InterpolateArray(DataArrays, Coefficient);
+    FDataArray Result = InterpolateArray(DataArrays, Coefficient);
 
     if (!bIsWhiteDwarf)
     {
@@ -1760,7 +1720,7 @@ Astro::FStellarClass::ELuminosityClass FStellarGenerator::CalculateLuminosityCla
         }
     }
 
-    std::vector<double> LuminosityData = InterpolateHrDiagram(HrDiagramData, BvColorIndex);
+    FDataArray LuminosityData = InterpolateHrDiagram(HrDiagramData, BvColorIndex);
     if (LuminositySol > LuminosityData[1])
     {
         return Astro::FStellarClass::ELuminosityClass::kLuminosity_Ia;
@@ -2104,7 +2064,7 @@ void FStellarGenerator::ProcessDeathStar(EStellarTypeGenerationOption DeathStarT
             .InitialMassSol = DeathStarMassSol
         };
 
-        std::vector<double> WhiteDwarfData = GetFullMistData(WhiteDwarfBasicProperties, true, true);
+        FDataArray WhiteDwarfData = GetFullMistData(WhiteDwarfBasicProperties, true, true);
 
         StarAge      = static_cast<float>(WhiteDwarfData[_kWdStarAgeIndex]);
         LogR         = static_cast<float>(WhiteDwarfData[_kWdLogRIndex]);
@@ -2380,7 +2340,7 @@ void FStellarGenerator::GenerateSpin(Astro::AStar& StarData)
     StarData.SetSpin(Spin);
 }
 
-void FStellarGenerator::ExpandMistData(double TargetMass, std::vector<double>& StarData)
+void FStellarGenerator::ExpandMistData(double TargetMass, FDataArray& StarData)
 {
     double RadiusSol     = std::pow(10.0, StarData[_kLogRIndex]);
     double Teff          = std::pow(10.0, StarData[_kLogTeffIndex]);
@@ -2438,7 +2398,7 @@ const std::vector<std::string> FStellarGenerator::_kWdMistHeaders
 
 const std::vector<std::string> FStellarGenerator::_kHrDiagramHeaders{ "B-V", "Ia", "Ib", "II", "III", "IV", "V" };
 std::unordered_map<std::string, std::vector<float>> FStellarGenerator::_kMassFilesCache;
-std::unordered_map<const FStellarGenerator::FMistData*, std::vector<std::vector<double>>> FStellarGenerator::_kPhaseChangesCache;
+std::unordered_map<const FStellarGenerator::FMistData*, std::vector<FStellarGenerator::FDataArray>> FStellarGenerator::_kPhaseChangesCache;
 std::shared_mutex FStellarGenerator::_kCacheMutex;
 bool FStellarGenerator::_kbMistDataInitiated = false;
 

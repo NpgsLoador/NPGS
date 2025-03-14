@@ -184,16 +184,16 @@ void FApplication::ExecuteMainRender()
         // --------------
         float WindowAspect = static_cast<float>(_WindowSize.width) / static_cast<float>(_WindowSize.height);
 
-        // Matrices.View             = _FreeCamera->GetViewMatrix();
-        // Matrices.Projection       = _FreeCamera->GetProjectionMatrix(WindowAspect, 0.001f);
-        // Matrices.LightSpaceMatrix = LightSpaceMatrix;
+        Matrices.View             = _FreeCamera->GetViewMatrix();
+        Matrices.Projection       = _FreeCamera->GetProjectionMatrix(WindowAspect, 0.001f);
+        Matrices.LightSpaceMatrix = LightSpaceMatrix;
 
-        MvpMatrices.Model      = glm::mat4x4(1.0f);
-        MvpMatrices.View       = _FreeCamera->GetViewMatrix();
-        MvpMatrices.Projection = _FreeCamera->GetProjectionMatrix(WindowAspect, 0.001f);
+        // MvpMatrices.Model      = glm::mat4x4(1.0f);
+        // MvpMatrices.View       = _FreeCamera->GetViewMatrix();
+        // MvpMatrices.Projection = _FreeCamera->GetProjectionMatrix(WindowAspect, 0.001f);
 
-        // ShaderBufferManager->UpdateEntrieBuffer(CurrentFrame, "Matrices", Matrices);
-        ShaderBufferManager->UpdateEntrieBuffer(CurrentFrame, "MvpMatrices", MvpMatrices);
+        ShaderBufferManager->UpdateEntrieBuffer(CurrentFrame, "Matrices", Matrices);
+        // ShaderBufferManager->UpdateEntrieBuffer(CurrentFrame, "MvpMatrices", MvpMatrices);
 
         CameraPosUpdater[CurrentFrame] << _FreeCamera->GetVector(SysSpa::FCamera::EVector::kPosition);
 
@@ -231,20 +231,20 @@ void FApplication::ExecuteMainRender()
             ColorSubresourceRange
         );
 
-        //vk::ImageMemoryBarrier2 InitDepthAttachmentBarrier(
-        //    vk::PipelineStageFlagBits2::eTopOfPipe,
-        //    vk::AccessFlagBits2::eNone,
-        //    vk::PipelineStageFlagBits2::eLateFragmentTests,
-        //    vk::AccessFlagBits2::eDepthStencilAttachmentWrite,
-        //    vk::ImageLayout::eUndefined,
-        //    vk::ImageLayout::eDepthAttachmentOptimal,
-        //    vk::QueueFamilyIgnored,
-        //    vk::QueueFamilyIgnored,
-        //    *_ShadowMapAttachment->GetImage(),
-        //    DepthSubresourceRange
-        //);
+        vk::ImageMemoryBarrier2 InitDepthAttachmentBarrier(
+            vk::PipelineStageFlagBits2::eTopOfPipe,
+            vk::AccessFlagBits2::eNone,
+            vk::PipelineStageFlagBits2::eLateFragmentTests,
+            vk::AccessFlagBits2::eDepthStencilAttachmentWrite,
+            vk::ImageLayout::eUndefined,
+            vk::ImageLayout::eDepthAttachmentOptimal,
+            vk::QueueFamilyIgnored,
+            vk::QueueFamilyIgnored,
+            *_ShadowMapAttachment->GetImage(),
+            DepthSubresourceRange
+        );
 
-        std::array InitBarriers{ InitSwapchainBarrier, InitColorAttachmentBarrier/*, InitDepthAttachmentBarrier*/ };
+        std::array InitBarriers{ InitSwapchainBarrier, InitColorAttachmentBarrier, InitDepthAttachmentBarrier };
 
         vk::DependencyInfo InitialDependencyInfo = vk::DependencyInfo()
             .setDependencyFlags(vk::DependencyFlagBits::eByRegion)
@@ -252,44 +252,44 @@ void FApplication::ExecuteMainRender()
 
         CurrentBuffer->pipelineBarrier2(InitialDependencyInfo);
 
-        //// Set shadow map viewport
-        //CurrentBuffer->setViewport(0, ShadowMapViewport);
-        //CurrentBuffer->setScissor(0, ShadowMapScissor);
+        // Set shadow map viewport
+        CurrentBuffer->setViewport(0, ShadowMapViewport);
+        CurrentBuffer->setScissor(0, ShadowMapScissor);
 
-        //vk::RenderingInfo ShadowMapRenderingInfo = vk::RenderingInfo()
-        //    .setRenderArea(ShadowMapScissor)
-        //    .setLayerCount(1)
-        //    .setPDepthAttachment(&_ShadowMapAttachmentInfo);
+        vk::RenderingInfo ShadowMapRenderingInfo = vk::RenderingInfo()
+            .setRenderArea(ShadowMapScissor)
+            .setLayerCount(1)
+            .setPDepthAttachment(&_ShadowMapAttachmentInfo);
 
-        //CurrentBuffer->beginRendering(ShadowMapRenderingInfo);
-        //// Draw scene for depth mapping
-        //CurrentBuffer->bindPipeline(vk::PipelineBindPoint::eGraphics, ShadowMapPipeline);
-        //CurrentBuffer->bindDescriptorSets(vk::PipelineBindPoint::eGraphics, ShadowMapPipelineLayout, 0,
-        //                                  ShadowMapShader->GetDescriptorSets(CurrentFrame), {});
-        //CurrentBuffer->bindVertexBuffers(0, PlaneVertexBuffers, PlaneOffsets);
-        //CurrentBuffer->draw(6, 1, 0, 0);
-        //CurrentBuffer->bindVertexBuffers(0, CubeVertexBuffers, CubeOffsets);
-        //CurrentBuffer->draw(36, 3, 0, 0);
-        //CurrentBuffer->endRendering();
+        CurrentBuffer->beginRendering(ShadowMapRenderingInfo);
+        // Draw scene for depth mapping
+        CurrentBuffer->bindPipeline(vk::PipelineBindPoint::eGraphics, ShadowMapPipeline);
+        CurrentBuffer->bindDescriptorSets(vk::PipelineBindPoint::eGraphics, ShadowMapPipelineLayout, 0,
+                                          ShadowMapShader->GetDescriptorSets(CurrentFrame), {});
+        CurrentBuffer->bindVertexBuffers(0, PlaneVertexBuffers, PlaneOffsets);
+        CurrentBuffer->draw(6, 1, 0, 0);
+        CurrentBuffer->bindVertexBuffers(0, CubeVertexBuffers, CubeOffsets);
+        CurrentBuffer->draw(36, 3, 0, 0);
+        CurrentBuffer->endRendering();
 
-        //vk::ImageMemoryBarrier2 DepthRenderEndBarrier(
-        //    vk::PipelineStageFlagBits2::eLateFragmentTests,
-        //    vk::AccessFlagBits2::eDepthStencilAttachmentWrite,
-        //    vk::PipelineStageFlagBits2::eFragmentShader,
-        //    vk::AccessFlagBits2::eShaderRead,
-        //    vk::ImageLayout::eDepthAttachmentOptimal,
-        //    vk::ImageLayout::eShaderReadOnlyOptimal,
-        //    vk::QueueFamilyIgnored,
-        //    vk::QueueFamilyIgnored,
-        //    *_ShadowMapAttachment->GetImage(),
-        //    DepthSubresourceRange
-        //);
+        vk::ImageMemoryBarrier2 DepthRenderEndBarrier(
+            vk::PipelineStageFlagBits2::eLateFragmentTests,
+            vk::AccessFlagBits2::eDepthStencilAttachmentWrite,
+            vk::PipelineStageFlagBits2::eFragmentShader,
+            vk::AccessFlagBits2::eShaderRead,
+            vk::ImageLayout::eDepthAttachmentOptimal,
+            vk::ImageLayout::eShaderReadOnlyOptimal,
+            vk::QueueFamilyIgnored,
+            vk::QueueFamilyIgnored,
+            *_ShadowMapAttachment->GetImage(),
+            DepthSubresourceRange
+        );
 
-        //vk::DependencyInfo DepthRenderEndDependencyInfo = vk::DependencyInfo()
-        //    .setDependencyFlags(vk::DependencyFlagBits::eByRegion)
-        //    .setImageMemoryBarriers(DepthRenderEndBarrier);
+        vk::DependencyInfo DepthRenderEndDependencyInfo = vk::DependencyInfo()
+            .setDependencyFlags(vk::DependencyFlagBits::eByRegion)
+            .setImageMemoryBarriers(DepthRenderEndBarrier);
 
-        //CurrentBuffer->pipelineBarrier2(DepthRenderEndDependencyInfo);
+        CurrentBuffer->pipelineBarrier2(DepthRenderEndDependencyInfo);
 
         // Set scene viewport
         CurrentBuffer->setViewport(0, FlippedViewport);
@@ -303,49 +303,49 @@ void FApplication::ExecuteMainRender()
 
         CurrentBuffer->beginRendering(SceneRenderingInfo);
 
-        CurrentBuffer->bindPipeline(vk::PipelineBindPoint::eGraphics, TerrainPipeline);
-        CurrentBuffer->bindDescriptorSets(vk::PipelineBindPoint::eGraphics, TerrainPipelineLayout, 0,
-                                          TerrainShader->GetDescriptorSets(CurrentFrame), {});
-        CurrentBuffer->pushConstants(TerrainPipelineLayout, vk::ShaderStageFlagBits::eTessellationControl, 0,
-                                     static_cast<std::uint32_t>(TessArgs.size()) * sizeof(float), TessArgs.data());
-        CurrentBuffer->bindVertexBuffers(0, *_TerrainVertexBuffer->GetBuffer(), Offset);
-        CurrentBuffer->draw(_TessResolution* _TessResolution * 4, 1, 0, 0);
+        //CurrentBuffer->bindPipeline(vk::PipelineBindPoint::eGraphics, TerrainPipeline);
+        //CurrentBuffer->bindDescriptorSets(vk::PipelineBindPoint::eGraphics, TerrainPipelineLayout, 0,
+        //                                  TerrainShader->GetDescriptorSets(CurrentFrame), {});
+        //CurrentBuffer->pushConstants(TerrainPipelineLayout, vk::ShaderStageFlagBits::eTessellationControl, 0,
+        //                             static_cast<std::uint32_t>(TessArgs.size()) * sizeof(float), TessArgs.data());
+        //CurrentBuffer->bindVertexBuffers(0, *_TerrainVertexBuffer->GetBuffer(), Offset);
+        //CurrentBuffer->draw(_TessResolution* _TessResolution * 4, 1, 0, 0);
 
+        //CurrentBuffer->endRendering();
+
+        // Draw plane
+        CurrentBuffer->bindPipeline(vk::PipelineBindPoint::eGraphics, PbrScenePipeline);
+        CurrentBuffer->bindVertexBuffers(0, PlaneVertexBuffers, PlaneOffsets);
+        CurrentBuffer->bindDescriptorSets(vk::PipelineBindPoint::eGraphics, PbrScenePipelineLayout, 0,
+                                          PbrSceneShader->GetDescriptorSets(CurrentFrame), {});
+        CurrentBuffer->draw(6, 1, 0, 0);
+
+        // Draw cube
+        CurrentBuffer->bindVertexBuffers(0, CubeVertexBuffers, CubeOffsets);
+        CurrentBuffer->draw(36, 3, 0, 0);
+
+        // Draw lamp
+        CurrentBuffer->bindPipeline(vk::PipelineBindPoint::eGraphics, LampPipeline);
+        CurrentBuffer->bindVertexBuffers(0, CubeVertexBuffers, LampOffsets);
+        CurrentBuffer->bindDescriptorSets(vk::PipelineBindPoint::eGraphics, LampPipelineLayout, 0,
+                                          LampShader->GetDescriptorSets(CurrentFrame), {});
+        CurrentBuffer->draw(36, 3, 0, 0);
         CurrentBuffer->endRendering();
 
-        //// Draw plane
-        //CurrentBuffer->bindPipeline(vk::PipelineBindPoint::eGraphics, PbrScenePipeline);
-        //CurrentBuffer->bindVertexBuffers(0, PlaneVertexBuffers, PlaneOffsets);
-        //CurrentBuffer->bindDescriptorSets(vk::PipelineBindPoint::eGraphics, PbrScenePipelineLayout, 0,
-        //                                  PbrSceneShader->GetDescriptorSets(CurrentFrame), {});
-        //CurrentBuffer->draw(6, 1, 0, 0);
+        // Draw skybox
+        _ColorAttachmentInfo.setLoadOp(vk::AttachmentLoadOp::eLoad);
+        _DepthStencilAttachmentInfo.setLoadOp(vk::AttachmentLoadOp::eLoad);
 
-        //// Draw cube
-        //CurrentBuffer->bindVertexBuffers(0, CubeVertexBuffers, CubeOffsets);
-        //CurrentBuffer->draw(36, 3, 0, 0);
+        CurrentBuffer->beginRendering(SceneRenderingInfo);
+        CurrentBuffer->bindPipeline(vk::PipelineBindPoint::eGraphics, SkyboxPipeline);
+        CurrentBuffer->bindVertexBuffers(0, *_SkyboxVertexBuffer->GetBuffer(), Offset);
+        CurrentBuffer->bindDescriptorSets(vk::PipelineBindPoint::eGraphics, SkyboxPipelineLayout, 0,
+                                          SkyboxShader->GetDescriptorSets(CurrentFrame), {});
+        CurrentBuffer->draw(36, 3, 0, 0);
+        CurrentBuffer->endRendering();
 
-        //// Draw lamp
-        //CurrentBuffer->bindPipeline(vk::PipelineBindPoint::eGraphics, LampPipeline);
-        //CurrentBuffer->bindVertexBuffers(0, CubeVertexBuffers, LampOffsets);
-        //CurrentBuffer->bindDescriptorSets(vk::PipelineBindPoint::eGraphics, LampPipelineLayout, 0,
-        //                                  LampShader->GetDescriptorSets(CurrentFrame), {});
-        //CurrentBuffer->draw(36, 3, 0, 0);
-        //CurrentBuffer->endRendering();
-
-        //// Draw skybox
-        //_ColorAttachmentInfo.setLoadOp(vk::AttachmentLoadOp::eLoad);
-        //_DepthStencilAttachmentInfo.setLoadOp(vk::AttachmentLoadOp::eLoad);
-
-        //CurrentBuffer->beginRendering(SceneRenderingInfo);
-        //CurrentBuffer->bindPipeline(vk::PipelineBindPoint::eGraphics, SkyboxPipeline);
-        //CurrentBuffer->bindVertexBuffers(0, *_SkyboxVertexBuffer->GetBuffer(), Offset);
-        //CurrentBuffer->bindDescriptorSets(vk::PipelineBindPoint::eGraphics, SkyboxPipelineLayout, 0,
-        //                                  SkyboxShader->GetDescriptorSets(CurrentFrame), {});
-        //CurrentBuffer->draw(36, 3, 0, 0);
-        //CurrentBuffer->endRendering();
-
-        //_ColorAttachmentInfo.setLoadOp(vk::AttachmentLoadOp::eClear);
-        //_DepthStencilAttachmentInfo.setLoadOp(vk::AttachmentLoadOp::eClear);
+        _ColorAttachmentInfo.setLoadOp(vk::AttachmentLoadOp::eClear);
+        _DepthStencilAttachmentInfo.setLoadOp(vk::AttachmentLoadOp::eClear);
 
         vk::ImageMemoryBarrier2 ColorRenderEndBarrier(
             vk::PipelineStageFlagBits2::eColorAttachmentOutput,
@@ -631,8 +631,8 @@ void FApplication::LoadAssets()
     {
         // Futures.push_back(_ThreadPool->Submit([&, i]() -> void
         // {
-        //     AssetManager->AddAsset<Art::FTexture2D>(TextureNames[i], TextureAllocationCreateInfo, TextureFiles[i],
-        //                                             TextureFormats[i], TextureFormats[i], vk::ImageCreateFlags(), true, false);
+            AssetManager->AddAsset<Art::FTexture2D>(TextureNames[i], TextureAllocationCreateInfo, TextureFiles[i],
+                                                    TextureFormats[i], TextureFormats[i], vk::ImageCreateFlags(), true, false);
         // }));
     }
 
@@ -705,17 +705,17 @@ void FApplication::BindDescriptorSets()
     vk::SamplerCreateInfo SamplerCreateInfo = Art::FTextureBase::CreateDefaultSamplerCreateInfo();
     static Grt::FVulkanSampler kSampler(SamplerCreateInfo);
 
-    //vk::DescriptorImageInfo SamplerInfo(*kSampler);
-    //PbrSceneShader->WriteSharedDescriptors(1, 0, vk::DescriptorType::eSampler, SamplerInfo);
+    vk::DescriptorImageInfo SamplerInfo(*kSampler);
+    PbrSceneShader->WriteSharedDescriptors<vk::DescriptorImageInfo>(1, 0, vk::DescriptorType::eSampler, SamplerInfo);
 
-    //auto PbrDiffuseImageInfo = PbrDiffuse->CreateDescriptorImageInfo(nullptr);
-    //PbrSceneShader->WriteSharedDescriptors(1, 1, vk::DescriptorType::eSampledImage, PbrDiffuseImageInfo);
+    auto PbrDiffuseImageInfo = PbrDiffuse->CreateDescriptorImageInfo(nullptr);
+    PbrSceneShader->WriteSharedDescriptors<vk::DescriptorImageInfo>(1, 1, vk::DescriptorType::eSampledImage, PbrDiffuseImageInfo);
 
-    //auto PbrNormalImageInfo = PbrNormal->CreateDescriptorImageInfo(nullptr);
-    //PbrSceneShader->WriteSharedDescriptors(1, 2, vk::DescriptorType::eSampledImage, PbrNormalImageInfo);
+    auto PbrNormalImageInfo = PbrNormal->CreateDescriptorImageInfo(nullptr);
+    PbrSceneShader->WriteSharedDescriptors<vk::DescriptorImageInfo>(1, 2, vk::DescriptorType::eSampledImage, PbrNormalImageInfo);
 
-    //auto PbrArmImageInfo = PbrArm->CreateDescriptorImageInfo(nullptr);
-    //PbrSceneShader->WriteSharedDescriptors(1, 3, vk::DescriptorType::eSampledImage, PbrArmImageInfo);
+    auto PbrArmImageInfo = PbrArm->CreateDescriptorImageInfo(nullptr);
+    PbrSceneShader->WriteSharedDescriptors<vk::DescriptorImageInfo>(1, 3, vk::DescriptorType::eSampledImage, PbrArmImageInfo);
 
     SamplerCreateInfo
         .setMipmapMode(vk::SamplerMipmapMode::eNearest)

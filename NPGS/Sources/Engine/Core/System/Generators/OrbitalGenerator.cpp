@@ -75,7 +75,7 @@ namespace
 
 // OrbitalGenerator implementations
 // --------------------------------
-FOrbitalGenerator::FOrbitalGenerator(const FOrbitalGenerationInfo& GenerationInfo)
+FOrbitalGenerator::FOrbitalGenerator(const FGenerationInfo& GenerationInfo)
     :
     _RandomEngine(*GenerationInfo.SeedSequence),
     _RingsProbabilities{ Util::TBernoulliDistribution<>(0.5), Util::TBernoulliDistribution<>(0.2) },
@@ -99,28 +99,14 @@ FOrbitalGenerator::FOrbitalGenerator(const FOrbitalGenerationInfo& GenerationInf
     std::shuffle(Seeds.begin(), Seeds.end(), _RandomEngine);
     std::seed_seq ShuffledSeeds(Seeds.begin(), Seeds.end());
 
-    _CivilizationGenerator = std::make_unique<FCivilizationGenerator>(
-        ShuffledSeeds, GenerationInfo.LifeOccurrenceProbability, GenerationInfo.bEnableAsiFilter);
-}
+    FCivilizationGenerator::FGenerationInfo CivilizationGenerationInfo
+    {
+        .SeedSequence              = &ShuffledSeeds,
+        .LifeOccurrenceProbability = GenerationInfo.LifeOccurrenceProbability,
+        .bEnableAsiFilter          = GenerationInfo.bEnableAsiFilter
+    };
 
-FOrbitalGenerator::FOrbitalGenerator(const std::seed_seq& SeedSequence, float UniverseAge, float BinaryPeriodMean,
-                                     float BinaryPeriodSigma, float CoilTemperatureLimit, float AsteroidUpperLimit,
-                                     float RingsParentLowerLimit, float LifeOccurrenceProbability,
-                                     bool bContainUltravioletHabitableZone, bool bEnableAsiFilter)
-    :
-    FOrbitalGenerator(FOrbitalGenerationInfo{
-        .SeedSequence                     = &SeedSequence,
-        .UniverseAge                      = UniverseAge,
-        .BinaryPeriodMean                 = BinaryPeriodMean,
-        .BinaryPeriodSigma                = BinaryPeriodSigma,
-        .CoilTemperatureLimit             = CoilTemperatureLimit,
-        .AsteroidUpperLimit               = AsteroidUpperLimit,
-        .RingsParentLowerLimit            = RingsParentLowerLimit,
-        .LifeOccurrenceProbability        = LifeOccurrenceProbability,
-        .bContainUltravioletHabitableZone = bContainUltravioletHabitableZone,
-        .bEnableAsiFilter                 = bEnableAsiFilter
-    })
-{
+    _CivilizationGenerator = std::make_unique<FCivilizationGenerator>(CivilizationGenerationInfo);
 }
 
 FOrbitalGenerator::FOrbitalGenerator(const FOrbitalGenerator& Other)
@@ -206,10 +192,10 @@ FOrbitalGenerator& FOrbitalGenerator::operator=(FOrbitalGenerator&& Other) noexc
         _ScatteringProbability            = std::move(Other._ScatteringProbability);
         _WalkInProbability                = std::move(Other._WalkInProbability);
         _CivilizationGenerator            = std::move(Other._CivilizationGenerator);
-        _AsteroidUpperLimit               = std::exchange(Other._AsteroidUpperLimit,    0.0f);
-        _CoilTemperatureLimit             = std::exchange(Other._CoilTemperatureLimit,  0.0f);
+        _AsteroidUpperLimit               = std::exchange(Other._AsteroidUpperLimit, 0.0f);
+        _CoilTemperatureLimit             = std::exchange(Other._CoilTemperatureLimit, 0.0f);
         _RingsParentLowerLimit            = std::exchange(Other._RingsParentLowerLimit, 0.0f);
-        _UniverseAge                      = std::exchange(Other._UniverseAge,           0.0f);
+        _UniverseAge                      = std::exchange(Other._UniverseAge, 0.0f);
         _bContainUltravioletHabitableZone = std::exchange(Other._bContainUltravioletHabitableZone, false);
     }
 

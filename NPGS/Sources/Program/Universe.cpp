@@ -612,7 +612,7 @@ void FUniverse::GenerateStars(int MaxThread)
             std::shuffle(Seeds.begin(), Seeds.end(), _RandomEngine);
             std::seed_seq SeedSequence(Seeds.begin(), Seeds.end());
 
-            SysGen::FStellarGenerator::FStellarGenerationInfo GenerationInfo
+            SysGen::FStellarGenerator::FGenerationInfo GenerationInfo
             {
                 .SeedSequence       = &SeedSequence,
                 .StellarTypeOption  = StellarTypeOption,
@@ -805,7 +805,9 @@ void FUniverse::FillStellarSystem(int MaxThread)
         std::shuffle(Seeds.begin(), Seeds.end(), _RandomEngine);
         std::seed_seq SeedSequence(Seeds.begin(), Seeds.end());
 
-        Generators.push_back(SeedSequence);
+        SysGen::FOrbitalGenerator::FGenerationInfo GenerationInfo;
+        GenerationInfo.SeedSequence = &SeedSequence;
+        Generators.emplace_back(GenerationInfo);
     }
 }
 
@@ -983,7 +985,7 @@ void FUniverse::GenerateBinaryStars(int MaxThread)
         std::shuffle(Seeds.begin(), Seeds.end(), _RandomEngine);
         std::seed_seq SeedSequence(Seeds.begin(), Seeds.end());
 
-        SysGen::FStellarGenerator::FStellarGenerationInfo GenerationInfo
+        SysGen::FStellarGenerator::FGenerationInfo GenerationInfo
         {
             .SeedSequence       = &SeedSequence,
             .StellarTypeOption  = SysGen::FStellarGenerator::EStellarTypeGenerationOption::kRandom,
