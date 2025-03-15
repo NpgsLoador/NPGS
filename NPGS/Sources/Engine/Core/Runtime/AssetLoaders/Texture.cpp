@@ -430,8 +430,8 @@ FTextureBase::FImageData FTextureBase::LoadImage(const auto* Source, std::size_t
     }
 
     FImageData ImageData;
-    ImageData.Size = static_cast<std::uint32_t>(ImageWidth) * static_cast<std::uint32_t>(ImageHeight) *
-                     static_cast<std::uint32_t>(ImageDepth) * static_cast<std::uint32_t>(FormatInfo.PixelSize);
+    ImageData.Size = static_cast<vk::DeviceSize>(ImageWidth) * static_cast<vk::DeviceSize>(ImageHeight) *
+                     static_cast<vk::DeviceSize>(ImageDepth) * static_cast<vk::DeviceSize>(FormatInfo.PixelSize);
 
     ImageData.Extent = vk::Extent3D(ImageWidth, ImageHeight, ImageDepth);
     ImageData.Data.resize(ImageData.Size);

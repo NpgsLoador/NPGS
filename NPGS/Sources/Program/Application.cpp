@@ -884,20 +884,12 @@ void FApplication::LoadAssets()
     };
 #endif
 
-    //int w, h, c;
-    //float* test = stbi_loadf("Assets/Textures/HDRI/kloppenheim_02_puresky_16k.hdr", &w, &h, &c, STBI_default);
-
-    //std::vector<float> tv;
-    //tv.resize(w * h * c);
-    //std::copy(test, test + w * h * c, tv.data());
-
     AssetManager->AddAsset<Art::FTextureCube>(
-        "Skybox", TextureAllocationCreateInfo, "Skybox", vk::Format::eR8G8B8A8Srgb,
-        vk::Format::eR8G8B8A8Srgb, vk::ImageCreateFlags(), true, false);
+        "Skybox", TextureAllocationCreateInfo, "Skybox", vk::Format::eR16G16B16A16Sfloat, vk::Format::eR16G16B16A16Sfloat, vk::ImageCreateFlags(), true, false);
 
-    //AssetManager->AddAsset<Art::FTexture2D>(
-    //    "PureSky", TextureAllocationCreateInfo, "HDRI/kloppenheim_02_puresky_16k.hdr",
-    //    vk::Format::eR32G32B32A32Sfloat, vk::Format::eR32G32B32A32Sfloat, vk::ImageCreateFlags(), false, false);
+    // AssetManager->AddAsset<Art::FTexture2D>(
+    //     "PureSky", TextureAllocationCreateInfo, "HDRI/kloppenheim_02_puresky_16k.hdr",
+    //     vk::Format::eR32G32B32A32Sfloat, vk::Format::eR32G32B32A32Sfloat, vk::ImageCreateFlags(), false, false);
 
     // AssetManager->AddAsset<Art::FTexture2D>(
     //     "IceLand", TextureAllocationCreateInfo, "IceLandHeightMapLowRes.png",
