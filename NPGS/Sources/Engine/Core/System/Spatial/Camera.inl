@@ -19,12 +19,12 @@ NPGS_INLINE void FCamera::ProcessMouseScroll(double OffsetY)
     _Speed = std::max(0.0f, _Speed);
 }
 
-NPGS_INLINE void FCamera::SetOrientation(const glm::quat& Orientation)
+NPGS_INLINE void FCamera::SetOrientation(glm::quat Orientation)
 {
     _Orientation = Orientation;
 }
 
-NPGS_INLINE const glm::quat& FCamera::GetOrientation() const
+NPGS_INLINE glm::quat FCamera::GetOrientation() const
 {
     return _Orientation;
 }
@@ -37,10 +37,11 @@ NPGS_INLINE glm::mat4x4 FCamera::GetViewMatrix() const
 NPGS_INLINE glm::mat4x4 FCamera::GetProjectionMatrix(float WindowAspect, float Near) const
 {
     glm::mat4x4 Matrix = glm::infinitePerspective(glm::radians(_Zoom), WindowAspect, Near);
+    Matrix[1][1] *= -1;
     return Matrix;
 }
 
-NPGS_INLINE void FCamera::SetOrbitTarget(const glm::vec3& Target)
+NPGS_INLINE void FCamera::SetOrbitTarget(glm::vec3 Target)
 {
     _OrbitTarget = Target;
     _OrbitRadius = glm::length(Target - _Position);
@@ -48,12 +49,12 @@ NPGS_INLINE void FCamera::SetOrbitTarget(const glm::vec3& Target)
     UpdateVectors();
 }
 
-NPGS_INLINE void FCamera::SetOrbitAxis(const glm::vec3& Axis)
+NPGS_INLINE void FCamera::SetOrbitAxis(glm::vec3 Axis)
 {
     _OrbitAxis = Axis;
 }
 
-NPGS_INLINE void FCamera::SetTargetOffset(const glm::vec2& Offset)
+NPGS_INLINE void FCamera::SetTargetOffset(glm::vec2 Offset)
 {
     _TargetOffset = Offset;
 }

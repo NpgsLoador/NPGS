@@ -24,7 +24,7 @@ layout(set = 1, binding = 0) uniform sampler   iSampler;
 layout(set = 1, binding = 1) uniform texture2D iDiffuseTex;
 layout(set = 1, binding = 2) uniform texture2D iNormalTex;
 layout(set = 1, binding = 3) uniform texture2D iArmTex;
-layout(set = 1, binding = 4) uniform sampler2D iShadowMap;
+layout(set = 1, binding = 4) uniform sampler2D iDepthMap;
 
 float TrowbridgeReitzGGX(vec3 Normal, vec3 HalfDir, float Roughness)
 {
@@ -70,13 +70,13 @@ float CalcShadow(vec4 FragPosLightSpace, float Bias)
     }
 
     float Shadow = 0.0;
-    vec2 TexelSize = 1.0 / textureSize(iShadowMap, 0);
+    vec2 TexelSize = 1.0 / textureSize(iDepthMap, 0);
     
     for(int x = -1; x <= 1; ++x)
     {
         for(int y = -1; y <= 1; ++y)
         {
-            float ClosestDepth = texture(iShadowMap, ProjectiveCoord.xy + vec2(x, y) * TexelSize).r;
+            float ClosestDepth = texture(iDepthMap, ProjectiveCoord.xy + vec2(x, y) * TexelSize).r;
             float CurrentDepth = ProjectiveCoord.z;
             Shadow += CurrentDepth - Bias > ClosestDepth ? 1.0 : 0.0;
         }
@@ -117,10 +117,10 @@ void main()
 	vec3  Radiance    = iLightArgs.LightColor * Attenuation;
 
 	float NormalDistFunc  = TrowbridgeReitzGGX(Normal, HalfDir, AdjustedRoughness);
-	float GemoertyFunc    = GeometrySmith(Normal, ViewDir, LightDir, AdjustedRoughness);
+	float GeometryFunc    = GeometrySmith(Normal, ViewDir, LightDir, AdjustedRoughness);
 	vec3  FresnelEquation = FresnelSchlick(clamp(dot(HalfDir, ViewDir), 0.0, 1.0), Fx);
 
-	vec3  Numerator        = NormalDistFunc * GemoertyFunc * FresnelEquation;
+	vec3  Numerator        = NormalDistFunc * GeometryFunc * FresnelEquation;
 	float Denominator      = 4.0 * max(dot(ViewDir, Normal), 0.01) * max(dot(LightDir, Normal), 0.01);
 	vec3  CookTorranceSpec = Numerator / (Denominator + 1e-3);
 

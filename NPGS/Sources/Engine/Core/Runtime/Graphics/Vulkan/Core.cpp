@@ -395,8 +395,9 @@ vk::Result FVulkanCore::CreateSwapchain(vk::Extent2D Extent, bool bLimitFps, boo
     std::vector<vk::SurfaceFormatKHR> SurfaceFormats;
     if (bEnableHdr)
     {
-        SurfaceFormats.emplace_back(vk::Format::eA2R10G10B10UnormPack32, vk::ColorSpaceKHR::eHdr10St2084EXT);
+        SurfaceFormats.emplace_back(vk::Format::eR16G16B16A16Sfloat, vk::ColorSpaceKHR::eExtendedSrgbLinearEXT);
         SurfaceFormats.emplace_back(vk::Format::eA2B10G10R10UnormPack32, vk::ColorSpaceKHR::eHdr10St2084EXT);
+        SurfaceFormats.emplace_back(vk::Format::eA2R10G10B10UnormPack32, vk::ColorSpaceKHR::eHdr10St2084EXT);
         
         kVkSetHdrMetadataExt = reinterpret_cast<PFN_vkSetHdrMetadataEXT>(_Instance.getProcAddr("vkSetHdrMetadataEXT"));
         if (kVkSetHdrMetadataExt == nullptr)

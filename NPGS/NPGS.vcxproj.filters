@@ -18,9 +18,6 @@
     <ClCompile Include="Sources\stdafx.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="Sources\Program\main.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
     <ClCompile Include="Sources\Engine\Utils\Logger.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
@@ -109,6 +106,9 @@
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="Sources\Engine\Core\Math\TangentSpaceTools.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="Sources\Program\main.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>
@@ -303,8 +303,8 @@
     <None Include="Sources\Engine\Shaders\Terrain.frag" />
     <None Include="Sources\Engine\Shaders\Skybox.vert" />
     <None Include="Sources\Engine\Shaders\Skybox.frag" />
-    <None Include="Sources\Engine\Shaders\ShadowMap.vert" />
-    <None Include="Sources\Engine\Shaders\ShadowMap.frag" />
+    <None Include="Sources\Engine\Shaders\DepthMap.vert" />
+    <None Include="Sources\Engine\Shaders\DepthMap.frag" />
     <None Include="Sources\Engine\Shaders\ScreenQuad.vert" />
     <None Include="Sources\Engine\Shaders\PostProcess.vert" />
     <None Include="Sources\Engine\Shaders\PostProcess.frag" />
@@ -321,5 +321,7 @@
     <None Include="Sources\Engine\Shaders\Terrain.tesc" />
     <None Include="Sources\Engine\Shaders\Terrain.tese" />
     <None Include="Sources\Engine\Shaders\PbrScene.vert" />
+    <None Include="Sources\Engine\Shaders\PbrSceneGBuffer.frag" />
+    <None Include="Sources\Engine\Shaders\PbrSceneMerge.comp" />
   </ItemGroup>
 </Project>

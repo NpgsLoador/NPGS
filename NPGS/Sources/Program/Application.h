@@ -59,22 +59,30 @@ private:
     bool         _bEnableFullscreen;
     bool         _bEnableHdr;
 
-    std::unique_ptr<System::Spatial::FCamera> _FreeCamera;
+    std::unique_ptr<System::Spatial::FCamera> _Camera;
     double  _DeltaTime{};
     double  _LastX{};
     double  _LastY{};
     bool    _bFirstMouse{ true };
 
+    vk::RenderingAttachmentInfo _PositionAoAttachmentInfo;
+    vk::RenderingAttachmentInfo _NormalRoughAttachmentInfo;
+    vk::RenderingAttachmentInfo _AlbedoMetalAttachmentInfo;
+    vk::RenderingAttachmentInfo _ShadowAttachmentInfo;
     vk::RenderingAttachmentInfo _ColorAttachmentInfo;
     vk::RenderingAttachmentInfo _ResolveAttachmentInfo;
     vk::RenderingAttachmentInfo _DepthStencilAttachmentInfo;
-    vk::RenderingAttachmentInfo _ShadowMapAttachmentInfo;
+    vk::RenderingAttachmentInfo _DepthMapAttachmentInfo;
     vk::RenderingAttachmentInfo _PostProcessAttachmentInfo;
 
+    std::unique_ptr<Runtime::Graphics::FColorAttachment>        _PositionAoAttachment;
+    std::unique_ptr<Runtime::Graphics::FColorAttachment>        _NormalRoughAttachment;
+    std::unique_ptr<Runtime::Graphics::FColorAttachment>        _AlbedoMetalAttachment;
+    std::unique_ptr<Runtime::Graphics::FColorAttachment>        _ShadowAttachment;
     std::unique_ptr<Runtime::Graphics::FColorAttachment>        _ColorAttachment;
     std::unique_ptr<Runtime::Graphics::FColorAttachment>        _ResolveAttachment;
     std::unique_ptr<Runtime::Graphics::FDepthStencilAttachment> _DepthStencilAttachment;
-    std::unique_ptr<Runtime::Graphics::FDepthStencilAttachment> _ShadowMapAttachment;
+    std::unique_ptr<Runtime::Graphics::FDepthStencilAttachment> _DepthMapAttachment;
 
     std::vector<Runtime::Graphics::FInstanceData> _InstanceData;
     std::unique_ptr<Runtime::Graphics::FDeviceLocalBuffer> _InstanceBuffer;

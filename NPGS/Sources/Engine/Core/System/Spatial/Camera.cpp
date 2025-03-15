@@ -9,7 +9,7 @@ _NPGS_BEGIN
 _SYSTEM_BEGIN
 _SPATIAL_BEGIN
 
-FCamera::FCamera(const glm::vec3& Position, float Sensitivity, float Speed, float Zoom, float InertiaDecay, float SmoothCoefficient)
+FCamera::FCamera(glm::vec3 Position, float Sensitivity, float Speed, float Zoom, float InertiaDecay, float SmoothCoefficient)
     :
     _Position(Position),
     _Sensitivity(Sensitivity),
@@ -83,7 +83,7 @@ void FCamera::ProcessEvent(double DeltaTime)
     }
 }
 
-void FCamera::SetVector(EVector Vector, const glm::vec3& NewVector)
+void FCamera::SetVector(EVector Vector, glm::vec3 NewVector)
 {
     switch (Vector)
     {
@@ -106,7 +106,7 @@ void FCamera::SetVector(EVector Vector, const glm::vec3& NewVector)
 
 #pragma warning(push)
 #pragma warning(disable: 4715)
-const glm::vec3& FCamera::GetVector(EVector Vector) const
+glm::vec3 FCamera::GetVector(EVector Vector) const
 {
     switch (Vector)
     {
@@ -248,9 +248,8 @@ void FCamera::ProcessOrbital(double DeltaTime)
     glm::vec3 Up = glm::normalize(glm::cross(Right, Direction));
     glm::mat3x3 RotationMatrix(Right, Up, -Direction);
     glm::quat TargetOrient = glm::normalize(glm::conjugate(glm::quat_cast(RotationMatrix)));
-    glm::quat OrientOffset = glm::normalize(glm::inverse(TargetOrient) * _Orientation);
 
-    _Orientation = glm::normalize(TargetOrient * glm::conjugate(OrientOffset));
+    _Orientation = TargetOrient;
 
     UpdateVectors();
 }

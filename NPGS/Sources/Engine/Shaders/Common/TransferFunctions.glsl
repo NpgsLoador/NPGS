@@ -1,7 +1,7 @@
 #ifndef TRANSFERFUNCTIONS_GLSL_
 #define TRANSFERFUNCTIONS_GLSL_
 
-const mat3 kSrgbToBt2020 = mat3x3(
+const mat3x3 kSrgbToBt2020 = mat3x3(
     0.6274, 0.0691, 0.0164,
     0.3293, 0.9195, 0.0880,
     0.0433, 0.0113, 0.8956

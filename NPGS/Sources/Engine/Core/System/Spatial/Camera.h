@@ -30,7 +30,7 @@ public:
 
 public:
     FCamera() = delete;
-    FCamera(const glm::vec3& Position = glm::vec3(0.0f), float Sensitivity = 0.05f, float Speed = 2.5f,
+    FCamera(glm::vec3 Position = glm::vec3(0.0f), float Sensitivity = 0.05f, float Speed = 2.5f,
             float Zoom = 60.0f, float InertiaDecay = 0.5, float SmoothCoefficient = 0.2);
 
     ~FCamera() = default;
@@ -40,16 +40,16 @@ public:
     void ProcessMouseScroll(double OffsetY);
     void ProcessEvent(double DeltaTime);
 
-    void SetOrientation(const glm::quat& Orientation);
-    void SetVector(EVector Vector, const glm::vec3& NewVector);
-    void SetOrbitTarget(const glm::vec3& Target);
-    void SetOrbitAxis(const glm::vec3& Axis);
-    void SetTargetOffset(const glm::vec2& Offset);
+    void SetOrientation(glm::quat Orientation);
+    void SetVector(EVector Vector, glm::vec3 NewVector);
+    void SetOrbitTarget(glm::vec3 Target);
+    void SetOrbitAxis(glm::vec3 Axis);
+    void SetTargetOffset(glm::vec2 Offset);
     void SetZoom(float Zoom);
     void SetMode(EMode Mode);
 
-    const glm::quat& GetOrientation() const;
-    const glm::vec3& GetVector(EVector Vector) const;
+    glm::quat GetOrientation() const;
+    glm::vec3 GetVector(EVector Vector) const;
     glm::mat4x4 GetViewMatrix() const;
     glm::mat4x4 GetProjectionMatrix(float WindowAspect, float Near) const;
     float GetZoom() const;
@@ -63,6 +63,9 @@ private:
     void UpdateVectors();
 
 private:
+    EMode _Mode{ EMode::kFree };
+
+    // Camera status parameters
     glm::quat _Orientation{ 1.0f, 0.0f, 0.0f, 0.0f };
     glm::vec3 _Position;
     glm::vec3 _Front;
@@ -75,8 +78,6 @@ private:
     glm::vec2 _PrevOffset{};
     glm::vec2 _TargetOffset{};
     glm::vec2 _OrbitalVelocity{};
-
-    EMode _Mode{ EMode::kFree };
 
     float _InertiaDecay{ 0.5f };
     float _VelocityThreshold{ 0.001f };

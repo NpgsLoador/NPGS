@@ -3,4 +3,5 @@
 
 void main()
 {
+	// do nothing, depth value will been auto written
 }
