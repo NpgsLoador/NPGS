@@ -860,10 +860,10 @@ void FApplication::LoadAssets()
 
     std::vector<std::string> TextureFiles
     {
-        "CliffSide/cliff_side_disp_1k.jpg",
-        "CliffSide/cliff_side_diff_1k.jpg",
-        "CliffSide/cliff_side_nor_dx_1k.jpg",
-        "CliffSide/cliff_side_arm_1k.jpg"
+        "CliffSide/cliff_side_disp_4k.jpg",
+        "CliffSide/cliff_side_diff_4k.jpg",
+        "CliffSide/cliff_side_nor_dx_4k.jpg",
+        "CliffSide/cliff_side_arm_4k.jpg"
     };
 
     std::vector<vk::Format> TextureFormats
@@ -877,20 +877,31 @@ void FApplication::LoadAssets()
 #if !defined(_DEBUG)
     TextureFiles =
     {
-        "CliffSide/cliff_side_disp_16k.jpg",
-        "CliffSide/cliff_side_diff_16k.jpg",
-        "CliffSide/cliff_side_nor_dx_16k.jpg",
-        "CliffSide/cliff_side_arm_16k.jpg"
+        "CliffSide/cliff_side_disp_4k.jpg",
+        "CliffSide/cliff_side_diff_4k.jpg",
+        "CliffSide/cliff_side_nor_dx_4k.jpg",
+        "CliffSide/cliff_side_arm_4k.jpg"
     };
 #endif
+
+    //int w, h, c;
+    //float* test = stbi_loadf("Assets/Textures/HDRI/kloppenheim_02_puresky_16k.hdr", &w, &h, &c, STBI_default);
+
+    //std::vector<float> tv;
+    //tv.resize(w * h * c);
+    //std::copy(test, test + w * h * c, tv.data());
 
     AssetManager->AddAsset<Art::FTextureCube>(
         "Skybox", TextureAllocationCreateInfo, "Skybox", vk::Format::eR8G8B8A8Srgb,
         vk::Format::eR8G8B8A8Srgb, vk::ImageCreateFlags(), true, false);
 
-    AssetManager->AddAsset<Art::FTexture2D>(
-        "IceLand", TextureAllocationCreateInfo, "IceLandHeightMapLowRes.png",
-        vk::Format::eR8G8B8A8Unorm, vk::Format::eR8G8B8A8Unorm, vk::ImageCreateFlags(), false, false);
+    //AssetManager->AddAsset<Art::FTexture2D>(
+    //    "PureSky", TextureAllocationCreateInfo, "HDRI/kloppenheim_02_puresky_16k.hdr",
+    //    vk::Format::eR32G32B32A32Sfloat, vk::Format::eR32G32B32A32Sfloat, vk::ImageCreateFlags(), false, false);
+
+    // AssetManager->AddAsset<Art::FTexture2D>(
+    //     "IceLand", TextureAllocationCreateInfo, "IceLandHeightMapLowRes.png",
+    //     vk::Format::eR8G8B8A8Unorm, vk::Format::eR8G8B8A8Unorm, vk::ImageCreateFlags(), false, false);
 
     // std::vector<std::future<void>> Futures;
 
@@ -1008,8 +1019,8 @@ void FApplication::BindDescriptorSets()
 
     static Grt::FVulkanSampler kSkyboxSampler(SamplerCreateInfo);
 
-    auto HeightMapImageInfo = IceLand->CreateDescriptorImageInfo(kSampler);
-    TerrainShader->WriteSharedDescriptors<vk::DescriptorImageInfo>(1, 0, vk::DescriptorType::eCombinedImageSampler, HeightMapImageInfo);
+    // auto HeightMapImageInfo = IceLand->CreateDescriptorImageInfo(kSampler);
+    // TerrainShader->WriteSharedDescriptors<vk::DescriptorImageInfo>(1, 0, vk::DescriptorType::eCombinedImageSampler, HeightMapImageInfo);
 
     auto SkyboxImageInfo = Skybox->CreateDescriptorImageInfo(kSkyboxSampler);
     SkyboxShader->WriteSharedDescriptors<vk::DescriptorImageInfo>(1, 0, vk::DescriptorType::eCombinedImageSampler, SkyboxImageInfo);
@@ -1221,6 +1232,7 @@ void FApplication::InitializeVerticesData()
     _SphereIndexBuffer->CopyData(SphereIndices);
     _SphereIndicesCount = static_cast<std::uint32_t>(SphereIndices.size());
 
+#if 0
     // Create height map vertices
     // --------------------------
     auto* AssetManager = Art::FAssetManager::GetInstance();
@@ -1264,6 +1276,7 @@ void FApplication::InitializeVerticesData()
     VertexBufferCreateInfo.setSize(TerrainVertices.size() * sizeof(Grt::FPatchVertex));
     _TerrainVertexBuffer = std::make_unique<Grt::FDeviceLocalBuffer>(AllocationCreateInfo, VertexBufferCreateInfo);
     _TerrainVertexBuffer->CopyData(TerrainVertices);
+#endif
 }
 
 void FApplication::CreatePipelines()

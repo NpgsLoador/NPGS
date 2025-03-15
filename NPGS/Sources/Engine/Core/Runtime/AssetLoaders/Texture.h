@@ -7,6 +7,7 @@
 #include <string>
 #include <vector>
 
+#include <stb_image.h>
 #include <vma/vk_mem_alloc.h>
 #include <vulkan/vulkan_handles.hpp>
 
@@ -24,6 +25,7 @@ protected:
     {
         std::vector<std::byte> Data;
         vk::Extent3D           Extent{};
+        vk::DeviceSize         Size{};
     };
 
 public:
@@ -47,6 +49,10 @@ protected:
     FTextureBase& operator=(FTextureBase&&) noexcept = default;
 
     FImageData LoadImage(const auto* Source, std::size_t Size, vk::Format ImageFormat, bool bFlipVertically);
+
+    void CreateTexture(const FImageData& ImageData, vk::Format InitialFormat, vk::Format FinalFormat,
+                       vk::ImageCreateFlags Flags, vk::ImageType ImageType, vk::ImageViewType ImageViewType,
+                       std::uint32_t ArrayLayers, bool bGenerateMipmaps);
 
     void CreateTextureInternal(Graphics::FStagingBuffer* StagingBuffer, vk::Format InitialFormat, vk::Format FinalFormat,
                                vk::ImageType ImageType, vk::ImageViewType ImageViewType, vk::Extent3D Extent,
@@ -80,8 +86,8 @@ public:
     FTexture2D(const std::string& Filename, vk::Format InitialFormat, vk::Format FinalFormat,
                vk::ImageCreateFlags Flags = {}, bool bGenerateMipmaps = true, bool bFlipVertically = false);
 
-    FTexture2D(const std::byte* Source, vk::Extent2D Extent, vk::Format InitialFormat, vk::Format FinalFormat,
-               vk::ImageCreateFlags Flags = {}, bool bGenerateMipmaps = true);
+    FTexture2D(const std::byte* Source, vk::Format InitialFormat, vk::Format FinalFormat,
+               vk::ImageCreateFlags Flags = {}, bool bGenerateMipmaps = true, bool bFlipVertically = false);
 
     FTexture2D(const VmaAllocationCreateInfo& AllocationCreateInfo, const std::string& Filename, vk::Format InitialFormat,
                vk::Format FinalFormat, vk::ImageCreateFlags Flags = {}, bool bGenerateMipmaps = true, bool bFlipVertically = false);
@@ -89,11 +95,11 @@ public:
     FTexture2D(VmaAllocator Allocator, const VmaAllocationCreateInfo& AllocationCreateInfo, const std::string& Filename, vk::Format InitialFormat,
                vk::Format FinalFormat, vk::ImageCreateFlags Flags = {}, bool bGenerateMipmaps = true, bool bFlipVertically = false);
 
-    FTexture2D(const VmaAllocationCreateInfo& AllocationCreateInfo, const std::byte* Source, vk::Extent2D Extent,
-               vk::Format InitialFormat, vk::Format FinalFormat, vk::ImageCreateFlags Flags = {}, bool bGenerateMipmaps = true);
+    FTexture2D(const VmaAllocationCreateInfo& AllocationCreateInfo, const std::byte* Source, vk::Format InitialFormat,
+               vk::Format FinalFormat, vk::ImageCreateFlags Flags = {}, bool bGenerateMipmaps = true, bool bFlipVertically = false);
 
-    FTexture2D(VmaAllocator Allocator, const VmaAllocationCreateInfo& AllocationCreateInfo, const std::byte* Source, vk::Extent2D Extent,
-               vk::Format InitialFormat, vk::Format FinalFormat, vk::ImageCreateFlags Flags = {}, bool bGenerateMipmaps = true);
+    FTexture2D(VmaAllocator Allocator, const VmaAllocationCreateInfo& AllocationCreateInfo, const std::byte* Source, vk::Format InitialFormat,
+               vk::Format FinalFormat, vk::ImageCreateFlags Flags = {}, bool bGenerateMipmaps = true, bool bFlipVertically = false);
 
     FTexture2D(const FTexture2D&) = delete;
     FTexture2D(FTexture2D&& Other) noexcept;
@@ -109,8 +115,11 @@ private:
     void CreateTexture(const std::string& Filename, vk::Format  InitialFormat, vk::Format FinalFormat,
                        vk::ImageCreateFlags Flags, bool bGenreteMipmaps, bool bFlipVertically);
 
-    void CreateTexture(const std::byte* Source, vk::Extent2D Extent, vk::Format InitialFormat,
-                       vk::Format FinalFormat, vk::ImageCreateFlags Flags, bool bGenerateMipmaps);
+    void CreateTexture(const std::byte* Source, vk::Format  InitialFormat, vk::Format FinalFormat,
+                       vk::ImageCreateFlags Flags, bool bGenreteMipmaps, bool bFlipVertically);
+
+    void CreateTexture(const FImageData& ImageData, vk::Format InitialFormat, vk::Format FinalFormat,
+                       vk::ImageCreateFlags Flags, bool bGenerateMipmaps);
 
 private:
     vk::Extent2D _ImageExtent;
@@ -125,11 +134,8 @@ public:
     FTextureCube(const std::string& Filename, vk::Format InitialFormat, vk::Format FinalFormat,
                  vk::ImageCreateFlags Flags = {}, bool bGenerateMipmaps = true, bool bFlipVertically = false);
 
-    FTextureCube(const std::byte* Sources, vk::Extent2D Extent, vk::Format InitialFormat,
-                 vk::Format FinalFormat, vk::ImageCreateFlags Flags = {}, bool bGenerateMipmaps = true);
-
-    FTextureCube(vk::Extent2D Extent, vk::Format Format, vk::ImageCreateFlags Flags = {},
-                 vk::ImageUsageFlags Usage = vk::ImageUsageFlagBits::eColorAttachment | vk::ImageUsageFlagBits::eSampled);
+    FTextureCube(const std::byte* Sources, vk::Format InitialFormat, vk::Format FinalFormat,
+                 vk::ImageCreateFlags Flags = {}, bool bGenerateMipmaps = true, bool bFlipVertically = false);
 
     FTextureCube(const VmaAllocationCreateInfo& AllocationCreateInfo, const std::string& Filename, vk::Format InitialFormat,
                  vk::Format FinalFormat, vk::ImageCreateFlags Flags = {}, bool bGenerateMipmaps = true, bool bFlipVertically = false);
@@ -155,8 +161,11 @@ private:
     void CreateCubemap(const std::array<std::string, 6>& Filenames, vk::Format InitialFormat, vk::Format FinalFormat,
                        vk::ImageCreateFlags Flags, bool bGenerateMipmaps, bool bFlipVertically);
 
-    void CreateCubemap(const std::byte* Sources, vk::Extent2D Extent, vk::Format InitialFormat,
-                       vk::Format FinalFormat, vk::ImageCreateFlags Flags, bool bGenerateMipmaps);
+    void CreateCubemap(const std::byte* Sources, vk::Format InitialFormat, vk::Format FinalFormat,
+                       vk::ImageCreateFlags Flags, bool bGenerateMipmaps, bool bFlipVertically);
+
+    void CreateCubemap(const FImageData& ImageData, vk::Format InitialFormat, vk::Format FinalFormat,
+                       vk::ImageCreateFlags Flags, bool bGenerateMipmaps);
 
 private:
     vk::Extent2D _ImageExtent;
