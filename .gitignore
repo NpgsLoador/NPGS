@@ -376,3 +376,4 @@ NPGS/vcpkg_installed/
 # Vcpkg manifest mode
 vcpkg-manifest-install.log
 /NPGS/Assets/Textures/CliffSide
+/NPGS/Assets/Textures/HDRI
