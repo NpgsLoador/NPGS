@@ -5,6 +5,7 @@
 #include <utility>
 
 #include <vulkan/vulkan.hpp>
+#include <vulkan/vulkan_format_traits.hpp>
 
 #include "Engine/Core/Base/Assert.h"
 #include "Engine/Core/Runtime/Graphics/Vulkan/Core.h"

@@ -9,7 +9,6 @@
 #include <vector>
 
 #include <vma/vk_mem_alloc.h>
-#include <vulkan/vulkan_format_traits.hpp>
 #include <vulkan/vulkan_handles.hpp>
 
 #include "Engine/Core/Base/Base.h"

@@ -100,17 +100,17 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <IncludePath>$(ProjectDir)Sources;$(IncludePath)</IncludePath>
-    <ExternalIncludePath>$(VULKAN_SDK)\Include;$(ExternalIncludePath)</ExternalIncludePath>
+    <ExternalIncludePath>$(VULKAN_SDK)\Include;$(ProjectDir)vcpkg_installed\x64-windows\x64-windows\include\Imath;$(ExternalIncludePath)</ExternalIncludePath>
     <LibraryPath>$(VULKAN_SDK)\Lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <IncludePath>$(ProjectDir)Sources;$(IncludePath)</IncludePath>
-    <ExternalIncludePath>$(VULKAN_SDK)\Include;$(ExternalIncludePath)</ExternalIncludePath>
+    <ExternalIncludePath>$(VULKAN_SDK)\Include;$(ProjectDir)vcpkg_installed\x64-windows\x64-windows\include\Imath;$(ExternalIncludePath)</ExternalIncludePath>
     <LibraryPath>$(VULKAN_SDK)\Lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Package|x64'">
     <IncludePath>$(ProjectDir)Sources;$(IncludePath)</IncludePath>
-    <ExternalIncludePath>$(VULKAN_SDK)\Include;$(ExternalIncludePath)</ExternalIncludePath>
+    <ExternalIncludePath>$(VULKAN_SDK)\Include;$(ProjectDir)vcpkg_installed\x64-windows\x64-windows\include\Imath;$(ExternalIncludePath)</ExternalIncludePath>
     <LibraryPath>$(VULKAN_SDK)\Lib;$(LibraryPath)</LibraryPath>
     <OutDir>$(ProjectDir)Win64\</OutDir>
   </PropertyGroup>
@@ -176,9 +176,7 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>dxgi.lib;vulkan-1.lib;spirv-cross-cored.lib;
-spirv-cross-cppd.lib;spirv-cross-glsld.lib;
-spirv-cross-reflectd.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>dxgi.lib;spirv-cross-cored.lib;spirv-cross-cppd.lib;spirv-cross-glsld.lib;spirv-cross-reflectd.lib;vulkan-1.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PreBuildEvent>
       <Command>
@@ -210,9 +208,7 @@ spirv-cross-reflectd.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <Profile>true</Profile>
-      <AdditionalDependencies>dxgi.lib;vulkan-1.lib;spirv-cross-core.lib;
-spirv-cross-cpp.lib
-;spirv-cross-glsl.lib;spirv-cross-reflect.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>dxgi.lib;spirv-cross-core.lib;spirv-cross-cpp.lib;spirv-cross-glsl.lib;spirv-cross-reflect.lib;vulkan-1.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PreBuildEvent>
       <Command>
@@ -244,9 +240,7 @@ spirv-cross-cpp.lib
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <Profile>true</Profile>
-      <AdditionalDependencies>dxgi.lib;vulkan-1.lib;spirv-cross-core.lib;
-spirv-cross-cpp.lib
-;spirv-cross-glsl.lib;spirv-cross-reflect.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>dxgi.lib;spirv-cross-core.lib;spirv-cross-cpp.lib;spirv-cross-glsl.lib;spirv-cross-reflect.lib;vulkan-1.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <EntryPointSymbol>mainCRTStartup</EntryPointSymbol>
     </Link>
     <PreBuildEvent>

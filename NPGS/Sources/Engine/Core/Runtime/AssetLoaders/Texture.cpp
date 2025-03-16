@@ -6,12 +6,17 @@
 #include <filesystem>
 #include <format>
 #include <ranges>
-#include <string_view>
 #include <type_traits>
 #include <utility>
 
 #include <gli/gli.hpp>
+#include <Imath/ImathBox.h>
+#include <ktx.h>
+#include <OpenEXR/ImfRgbaFile.h>
+#include <stb_image.h>
+#include <vulkan/vulkan.hpp>
 
+#include "Engine/Core/Base/Assert.h"
 #include "Engine/Core/Runtime/AssetLoaders/AssetManager.h"
 #include "Engine/Core/Runtime/Graphics/Vulkan/Context.h"
 #include "Engine/Utils/Logger.h"
@@ -307,137 +312,279 @@ namespace
     }
 }
 
-FTextureBase::FTextureBase(VmaAllocator Allocator, const VmaAllocationCreateInfo* AllocationCreateInfo)
-    : _Allocator(Allocator), _AllocationCreateInfo(AllocationCreateInfo)
+FImageLoader::FImageData FImageLoader::LoadImage(std::string_view Filename, vk::Format ImageFormat)
 {
-}
-
-FTextureBase::FImageData FTextureBase::LoadImage(const auto* Source, std::size_t Size, vk::Format ImageFormat, bool bFlipVertically)
-{
-    int   ImageWidth    = 0;
-    int   ImageHeight   = 0;
-    int   ImageDepth    = 1;
-    int   ImageChannels = 0;
-    void* ImageDataPtr  = 0;
-    std::string ErrorMessage;
+    bool bIsDds  = Filename.ends_with(".dds");
+    bool bIsExr  = Filename.ends_with(".exr");
+    bool bIsHdr  = Filename.ends_with(".hdr");
+    bool bIsKmg  = Filename.ends_with(".kmg");
+    bool bIsKtx  = Filename.ends_with(".ktx");
+    bool bIsKtx2 = Filename.ends_with(".ktx2");
 
     Graphics::FFormatInfo FormatInfo = Graphics::GetFormatInfo(ImageFormat);
-
-    stbi_set_flip_vertically_on_load(bFlipVertically);
-
-    if constexpr (std::is_same_v<decltype(Source), const char*>)
+    FImageData ImageData;
+    if (bIsDds)
     {
-        if (!std::filesystem::exists(Source))
-        {
-            NpgsCoreError("Failed to load image: \"{}\": No such file or directory.", Source);
-            return {};
-        }
-
-        std::string_view Filename(Source);
-        bool bIsDds = Filename.ends_with(".dds") || Filename.ends_with(".DDS");
-        bool bIsKmg = Filename.ends_with(".kmg") || Filename.ends_with(".KMG");
-        bool bIsKtx = Filename.ends_with(".ktx") || Filename.ends_with(".KTX");
-
-        if (bIsDds || bIsKmg || bIsKtx)
-        {
-            gli::texture Texture(gli::load(Source));
-            if (Texture.empty())
-            {
-                NpgsCoreError("Failed to load compressed texture: \"{}\".", Source);
-                return {};
-            }
-
-            gli::extent3d Extent = Texture.extent();
-            std::size_t   Size   = Texture.size();
-
-            FImageData ImageData;
-            ImageData.Extent = vk::Extent3D(Extent.x, Extent.y, Extent.z);
-            ImageData.Size   = Size;
-            ImageData.Data.resize(Size);
-            std::copy(static_cast<const std::byte*>(Texture.data()), // auto optimized to memmove
-                      static_cast<const std::byte*>(Texture.data()) + Size,
-                      ImageData.Data.data());
-
-            return ImageData;
-        }
-
-        ErrorMessage = std::format("Failed to load image: \"{}\".", Source);
-        if (FormatInfo.RawDataType == Graphics::FFormatInfo::ERawDataType::kInteger)
-        {
-            if (FormatInfo.ComponentSize == 1)
-            {
-                ImageDataPtr = stbi_load(Source, &ImageWidth, &ImageHeight, &ImageChannels, FormatInfo.ComponentCount);
-            }
-            else
-            {
-                ImageDataPtr = stbi_load_16(Source, &ImageWidth, &ImageHeight, &ImageChannels, FormatInfo.ComponentCount);
-            }
-        }
-        else
-        {
-            ImageDataPtr = stbi_loadf(Source, &ImageWidth, &ImageHeight, &ImageChannels, FormatInfo.ComponentCount);
-        }
+        ImageData = LoadDdsFormat(Filename, FormatInfo);
     }
-    else if constexpr (std::is_same_v<decltype(Source), const std::byte*>)
+    else if (bIsExr)
     {
-        gli::texture Texture(gli::load(reinterpret_cast<const char*>(Source), Size));
-        
-        if (!Texture.empty())
+        ImageData = LoadExrFormat(Filename, FormatInfo);
+    }
+    else if (bIsHdr)
+    {
+        ImageData = LoadHdrFormat(Filename, FormatInfo);
+    }
+    else if (bIsKmg || bIsKtx || bIsKtx2)
+    {
+        ImageData = LoadKtxFormat(Filename, FormatInfo);
+    }
+    else
+    {
+        ImageData = LoadCommonFormat(Filename, FormatInfo);
+    }
+
+    return ImageData;
+}
+
+FImageLoader::FImageData FImageLoader::LoadCommonFormat(std::string_view Filename, Graphics::FFormatInfo FormatInfo)
+{
+    int   Width     = 0;
+    int   Height    = 0;
+    int   Channels  = 0;
+    void* PixelData = nullptr;
+
+    if (FormatInfo.RawDataType == Graphics::FFormatInfo::ERawDataType::kInteger)
+    {
+        if (FormatInfo.ComponentSize == 1)
         {
-            gli::extent3d Extent = Texture.extent();
-            std::size_t   Size   = Texture.size();
-
-            FImageData ImageData;
-            ImageData.Extent = vk::Extent3D(Extent.x, Extent.y, Extent.z);
-            ImageData.Size   = Size;
-            ImageData.Data.resize(Size);
-            std::copy(static_cast<const std::byte*>(Texture.data()), // auto optimized to memmove
-                      static_cast<const std::byte*>(Texture.data()) + Size,
-                      ImageData.Data.data());
-
-            return ImageData;
-        }
-
-        ErrorMessage = "Failed to load image from memory.";
-        if (FormatInfo.RawDataType == Graphics::FFormatInfo::ERawDataType::kInteger)
-        {
-            if (FormatInfo.ComponentSize == 1)
-            {
-                ImageDataPtr = stbi_load_from_memory(reinterpret_cast<const stbi_uc*>(Source), static_cast<int>(Size),
-                                                     &ImageWidth, &ImageHeight, &ImageChannels, FormatInfo.ComponentCount);
-            }
-            else
-            {
-                ImageDataPtr = stbi_load_16_from_memory(reinterpret_cast<const stbi_uc*>(Source), static_cast<int>(Size),
-                                                        &ImageWidth, &ImageHeight, &ImageChannels, FormatInfo.ComponentCount);
-            }
+            PixelData = stbi_load(Filename.data(), &Width, &Height, &Channels, FormatInfo.ComponentCount);
         }
         else
         {
-            ImageDataPtr = stbi_loadf_from_memory(reinterpret_cast<const stbi_uc*>(Source), static_cast<int>(Size),
-                                                  &ImageWidth, &ImageHeight, &ImageChannels, FormatInfo.ComponentCount);
+            PixelData = stbi_load_16(Filename.data(), &Width, &Height, &Channels, FormatInfo.ComponentCount);
         }
     }
     else
     {
-        ErrorMessage = "Failed to determine image source.";
+        PixelData = stbi_loadf(Filename.data(), &Width, &Height, &Channels, FormatInfo.ComponentCount);
     }
 
-    if (ImageDataPtr == nullptr)
+    if (PixelData == nullptr)
     {
-        NpgsCoreError(ErrorMessage);
+        NpgsCoreError("Failed to load image: \"{}\".", Filename.data());
         return {};
     }
 
     FImageData ImageData;
-    ImageData.Size = static_cast<vk::DeviceSize>(ImageWidth) * static_cast<vk::DeviceSize>(ImageHeight) *
-                     static_cast<vk::DeviceSize>(ImageDepth) * static_cast<vk::DeviceSize>(FormatInfo.PixelSize);
-
-    ImageData.Extent = vk::Extent3D(ImageWidth, ImageHeight, ImageDepth);
+    ImageData.Size   = static_cast<vk::DeviceSize>(Width) * Height * FormatInfo.PixelSize;
+    ImageData.Extent = vk::Extent3D(Width, Height, 1);
     ImageData.Data.resize(ImageData.Size);
-    std::copy(static_cast<std::byte*>(ImageDataPtr), static_cast<std::byte*>(ImageDataPtr) + ImageData.Size, ImageData.Data.data());
+    std::copy(static_cast<std::byte*>(PixelData), static_cast<std::byte*>(PixelData) + ImageData.Size, ImageData.Data.data());
 
     return ImageData;
+}
+
+FImageLoader::FImageData FImageLoader::LoadDdsFormat(std::string_view Filename, Graphics::FFormatInfo FormatInfo)
+{
+    gli::texture Texture(gli::load(Filename.data()));
+    if (Texture.empty())
+    {
+        NpgsCoreError("Failed to load DirectDraw Surface image: \"{}\".", Filename.data());
+        return {};
+    }
+
+    if (FormatInfo.ComponentCount != gli::component_count(Texture.format()))
+    {
+        NpgsCoreWarn("Component count mismatch: Expected {}, got {}.", FormatInfo.ComponentCount, gli::component_count(Texture.format()));
+    }
+
+    gli::extent3d Extent    = Texture.extent();
+    std::size_t   Size      = Texture.size();
+    void*         PixelData = Texture.data();
+
+    FImageData ImageData;
+    ImageData.Extent = vk::Extent3D(Extent.x, Extent.y, Extent.z);
+    ImageData.Size   = Size;
+    ImageData.Data.resize(Size);
+    std::copy(static_cast<const std::byte*>(PixelData), static_cast<const std::byte*>(PixelData) + Size, ImageData.Data.data());
+
+    return ImageData;
+}
+
+FImageLoader::FImageData FImageLoader::LoadExrFormat(std::string_view Filename, Graphics::FFormatInfo FormatInfo)
+{
+    try
+    {
+        Imf::RgbaInputFile InputFile(Filename.data());
+        Imath::Box2i DataWindow(InputFile.dataWindow());
+        int Width  = DataWindow.max.x - DataWindow.min.x + 1;
+        int Height = DataWindow.max.y - DataWindow.min.y + 1;
+
+        std::vector<Imf::Rgba> Pixels(Width * Height);
+        InputFile.setFrameBuffer(Pixels.data() - (DataWindow.min.x + DataWindow.min.y * Width), 1, Width);
+        InputFile.readPixels(DataWindow.min.y, DataWindow.max.y);
+
+        FImageData ImageData;
+        ImageData.Extent = vk::Extent3D(Width, Height, 1);
+        ImageData.Size   = static_cast<vk::DeviceSize>(Width) * Height * FormatInfo.PixelSize;
+        ImageData.Data.resize(ImageData.Size);
+
+        if (FormatInfo.ComponentSize == 2)
+        {
+            std::copy(reinterpret_cast<const std::byte*>(Pixels.data()),
+                      reinterpret_cast<const std::byte*>(Pixels.data()) + ImageData.Size,
+                      ImageData.Data.data());
+        }
+        else if (FormatInfo.ComponentSize == 4)
+        {
+            float* FloatData = reinterpret_cast<float*>(ImageData.Data.data());
+            for (std::size_t i = 0; i != static_cast<std::size_t>(Width) * Height; ++i)
+            {
+                *FloatData++ = Pixels[i].r;
+                *FloatData++ = Pixels[i].g;
+                *FloatData++ = Pixels[i].b;
+                *FloatData++ = Pixels[i].a;
+            }
+        }
+
+        return ImageData;
+    }
+    catch (const Iex::BaseExc& e)
+    {
+        NpgsCoreError("Failed to load OpenEXR image: \"{}\": \"{}\".", Filename.data(), e.what());
+        return {};
+    }
+}
+
+FImageLoader::FImageData FImageLoader::LoadHdrFormat(std::string_view Filename, Graphics::FFormatInfo FormatInfo)
+{
+    int Width    = 0;
+    int Height   = 0;
+    int Channels = 0;
+
+    float* PixelData = stbi_loadf(Filename.data(), &Width, &Height, &Channels, STBI_default);
+    if (PixelData == nullptr)
+    {
+        NpgsCoreError("Failed to load Radiance HDR image: \"{}\".", Filename.data());
+        return {};
+    }
+
+    FImageData ImageData;
+    ImageData.Extent = vk::Extent3D(Width, Height, 1);
+    ImageData.Size   = static_cast<vk::DeviceSize>(Width) * Height * FormatInfo.PixelSize;
+    ImageData.Data.resize(ImageData.Size);
+    if (Channels == 4)
+    {
+        std::copy(reinterpret_cast<std::byte*>(PixelData),
+                  reinterpret_cast<std::byte*>(PixelData) + ImageData.Size,
+                  ImageData.Data.data());
+    }
+    else
+    {
+        std::size_t PixelCount = ImageData.Size / FormatInfo.PixelSize;
+        float* DstData = reinterpret_cast<float*>(ImageData.Data.data());
+        for (std::size_t i = 0; i != PixelCount; ++i)
+        {
+            DstData[i * 4 + 0] = PixelData[i * 3 + 0];
+            DstData[i * 4 + 1] = PixelData[i * 3 + 1];
+            DstData[i * 4 + 2] = PixelData[i * 3 + 2];
+            DstData[i * 4 + 3] = 1.0f;
+        }
+    }
+
+    stbi_image_free(PixelData);
+
+    if (FormatInfo.ComponentSize == 2)
+    {
+        ImageData.Size /= 2;
+        std::vector<std::byte> HalfData(ImageData.Size);
+        std::uint16_t* HalfDataPtr  = reinterpret_cast<std::uint16_t*>(HalfData.data());
+        float*         FloatDataPtr = reinterpret_cast<float*>(ImageData.Data.data());
+
+        for (std::size_t i = 0; i != ImageData.Size; ++i)
+        {
+            HalfDataPtr[i] = Imath::half(FloatDataPtr[i]).bits();
+        }
+
+        ImageData.Data = std::move(HalfData);
+    }
+
+    return ImageData;
+}
+
+FImageLoader::FImageData FImageLoader::LoadKtxFormat(std::string_view Filename, Graphics::FFormatInfo FormatInfo)
+{
+    bool bIsKtx2 = Filename.ends_with("ktx2");
+    if (!bIsKtx2)
+    {
+        gli::texture Texture(gli::load(Filename.data()));
+        if (Texture.empty())
+        {
+            NpgsCoreError("Failed to load Khronos Texture image: \"{}\".", Filename.data());
+            return {};
+        }
+
+        gli::extent3d Extent    = Texture.extent();
+        std::size_t   Size      = Texture.size();
+        void*         PixelData = Texture.data();
+
+        FImageData ImageData;
+        ImageData.Extent = vk::Extent3D(Extent.x, Extent.y, Extent.z);
+        ImageData.Size   = Size;
+        ImageData.Data.resize(Size);
+        std::copy(static_cast<std::byte*>(PixelData), static_cast<std::byte*>(PixelData) + Size, ImageData.Data.data());
+
+        return ImageData;
+    }
+
+    ktxTexture2* Texture = nullptr;
+    if (KTX_error_code Result = ktxTexture2_CreateFromNamedFile(Filename.data(), KTX_TEXTURE_CREATE_LOAD_IMAGE_DATA_BIT, &Texture);
+        Result != KTX_SUCCESS)
+    {
+        NpgsCoreError("Failed to load Khronos Texture image: \"{}\": \"{}\".", Filename.data(), ktxErrorString(Result));
+        return {};
+    }
+
+    if (ktxTexture2_NeedsTranscoding(Texture))
+    {
+        ktx_transcode_fmt_e TranscodeFormat;
+        if (FormatInfo.ComponentSize == 1) // 8-bit
+        {
+            TranscodeFormat = KTX_TTF_BC7_RGBA;
+        }
+        else
+        {
+            TranscodeFormat = KTX_TTF_RGBA32;
+        }
+
+        if (KTX_error_code Result = ktxTexture2_TranscodeBasis(Texture, TranscodeFormat, KTX_TF_HIGH_QUALITY); Result != KTX_SUCCESS)
+        {
+            NpgsCoreError("Failed to transcode basis: \"{}\".", ktxErrorString(Result));
+            ktxTexture_Destroy(ktxTexture(Texture));
+            return {};
+        }
+    }
+
+    FImageData ImageData;
+
+    ktx_uint32_t Width     = Texture->baseWidth;
+    ktx_uint32_t Height    = Texture->baseHeight;
+    ktx_uint32_t Depth     = Texture->baseDepth;
+    ktx_size_t   Size      = ktxTexture_GetDataSize(ktxTexture(Texture));
+    ktx_uint8_t* PixelData = ktxTexture_GetData(ktxTexture(Texture));
+
+    ImageData.Extent = vk::Extent3D(Width, Height, Depth ? Depth : 1);
+    ImageData.Size   = Size;
+    ImageData.Data.resize(Size);
+    std::copy(reinterpret_cast<std::byte*>(PixelData), reinterpret_cast<std::byte*>(PixelData) + Size, ImageData.Data.data());
+
+    return ImageData;
+}
+
+FTextureBase::FTextureBase(VmaAllocator Allocator, const VmaAllocationCreateInfo* AllocationCreateInfo)
+    : _Allocator(Allocator), _AllocationCreateInfo(AllocationCreateInfo)
+{
 }
 
 void FTextureBase::CreateTexture(const FImageData& ImageData, vk::Format InitialFormat, vk::Format FinalFormat,
@@ -794,48 +941,26 @@ void FTextureBase::BlitGenerateTexture(vk::Image SrcImage, vk::Extent3D Extent, 
     }
 }
 
-FTexture2D::FTexture2D(const std::string& Filename, vk::Format InitialFormat, vk::Format FinalFormat,
-                       vk::ImageCreateFlags Flags, bool bGenerateMipmaps, bool bFlipVertically)
+FTexture2D::FTexture2D(std::string_view Filename, vk::Format InitialFormat, vk::Format FinalFormat,
+                       vk::ImageCreateFlags Flags, bool bGenerateMipmaps)
     : Base(nullptr, nullptr)
 {
-    CreateTexture(GetAssetFullPath(EAssetType::kTexture, Filename),
-                  InitialFormat, FinalFormat, Flags, bGenerateMipmaps, bFlipVertically);
+    CreateTexture(GetAssetFullPath(EAssetType::kTexture, Filename.data()),
+                  InitialFormat, FinalFormat, Flags, bGenerateMipmaps);
 }
 
-FTexture2D::FTexture2D(const std::byte* Source, vk::Format InitialFormat, vk::Format FinalFormat,
-                       vk::ImageCreateFlags Flags, bool bGenerateMipmaps, bool bFlipVertically)
-    : Base(nullptr, nullptr)
-{
-    CreateTexture(Source, InitialFormat, FinalFormat, Flags, bGenerateMipmaps, bFlipVertically);
-}
-
-FTexture2D::FTexture2D(const VmaAllocationCreateInfo& AllocationCreateInfo, const std::string& Filename, vk::Format InitialFormat,
-                       vk::Format FinalFormat, vk::ImageCreateFlags Flags, bool bGenerateMipmaps, bool bFlipVertically)
-    : FTexture2D(Graphics::FVulkanContext::GetClassInstance()->GetVmaAllocator(), AllocationCreateInfo, Filename, InitialFormat,
-                 FinalFormat, Flags, bGenerateMipmaps, bFlipVertically)
+FTexture2D::FTexture2D(const VmaAllocationCreateInfo& AllocationCreateInfo, std::string_view Filename,
+                       vk::Format InitialFormat, vk::Format FinalFormat, vk::ImageCreateFlags Flags, bool bGenerateMipmaps)
+    : FTexture2D(Graphics::FVulkanContext::GetClassInstance()->GetVmaAllocator(),
+                 AllocationCreateInfo, Filename, InitialFormat, FinalFormat, Flags, bGenerateMipmaps)
 {
 }
 
-FTexture2D::FTexture2D(VmaAllocator Allocator, const VmaAllocationCreateInfo& AllocationCreateInfo, const std::string& Filename,
-                       vk::Format InitialFormat, vk::Format FinalFormat, vk::ImageCreateFlags Flags, bool bGenerateMipmaps, bool bFlipVertically)
+FTexture2D::FTexture2D(VmaAllocator Allocator, const VmaAllocationCreateInfo& AllocationCreateInfo, std::string_view Filename,
+                       vk::Format InitialFormat, vk::Format FinalFormat, vk::ImageCreateFlags Flags, bool bGenerateMipmaps)
     : Base(Allocator, &AllocationCreateInfo)
 {
-    CreateTexture(GetAssetFullPath(EAssetType::kTexture, Filename),
-                  InitialFormat, FinalFormat, Flags, bGenerateMipmaps, bFlipVertically);
-}
-
-FTexture2D::FTexture2D(const VmaAllocationCreateInfo& AllocationCreateInfo, const std::byte* Source, vk::Format InitialFormat,
-                       vk::Format FinalFormat, vk::ImageCreateFlags Flags, bool bGenerateMipmaps, bool bFlipVertically)
-    : FTexture2D(Graphics::FVulkanContext::GetClassInstance()->GetVmaAllocator(), AllocationCreateInfo,
-                 Source, InitialFormat, FinalFormat, Flags, bGenerateMipmaps, bFlipVertically)
-{
-}
-
-FTexture2D::FTexture2D(VmaAllocator Allocator, const VmaAllocationCreateInfo& AllocationCreateInfo, const std::byte* Source,
-                       vk::Format InitialFormat, vk::Format FinalFormat, vk::ImageCreateFlags Flags, bool bGenerateMipmaps, bool bFlipVertically)
-    : Base(Allocator, &AllocationCreateInfo)
-{
-    CreateTexture(Source, InitialFormat, FinalFormat, Flags, bGenerateMipmaps, bFlipVertically);
+    CreateTexture(GetAssetFullPath(EAssetType::kTexture, Filename.data()), InitialFormat, FinalFormat, Flags, bGenerateMipmaps);
 }
 
 FTexture2D::FTexture2D(FTexture2D&& Other) noexcept
@@ -856,17 +981,10 @@ FTexture2D& FTexture2D::operator=(FTexture2D&& Other) noexcept
     return *this;
 }
 
-void FTexture2D::CreateTexture(const std::string& Filename, vk::Format InitialFormat, vk::Format FinalFormat,
-                               vk::ImageCreateFlags Flags, bool bGenreteMipmaps, bool bFlipVertically)
+void FTexture2D::CreateTexture(std::string_view Filename, vk::Format InitialFormat, vk::Format FinalFormat,
+                               vk::ImageCreateFlags Flags, bool bGenreteMipmaps)
 {
-    FImageData ImageData = LoadImage(Filename.c_str(), 0, InitialFormat, bFlipVertically);
-    CreateTexture(ImageData, InitialFormat, FinalFormat, Flags, bGenreteMipmaps);
-}
-
-void FTexture2D::CreateTexture(const std::byte* Source, vk::Format InitialFormat, vk::Format FinalFormat,
-                               vk::ImageCreateFlags Flags, bool bGenreteMipmaps, bool bFlipVertically)
-{
-    FImageData ImageData = LoadImage(Source, 0, InitialFormat, bFlipVertically);
+    FImageData ImageData = _ImageLoader->LoadImage(Filename, InitialFormat);
     CreateTexture(ImageData, InitialFormat, FinalFormat, Flags, bGenreteMipmaps);
 }
 
@@ -874,37 +992,28 @@ void FTexture2D::CreateTexture(const FImageData& ImageData, vk::Format InitialFo
                                vk::ImageCreateFlags Flags, bool bGenerateMipmaps)
 {
     _ImageExtent = vk::Extent2D(ImageData.Extent.width, ImageData.Extent.height);
-    Base::CreateTexture(ImageData, InitialFormat, FinalFormat, Flags,
-                        vk::ImageType::e2D, vk::ImageViewType::e2D, 1, bGenerateMipmaps);
+    Base::CreateTexture(ImageData, InitialFormat, FinalFormat, Flags, vk::ImageType::e2D,
+                        vk::ImageViewType::e2D, 1, bGenerateMipmaps);
 }
 
-FTextureCube::FTextureCube(const std::string& Filename, vk::Format InitialFormat, vk::Format FinalFormat,
-                           vk::ImageCreateFlags Flags, bool bGenerateMipmaps, bool bFlipVertically)
-    : FTextureCube(nullptr, {}, Filename, InitialFormat, FinalFormat, Flags, bGenerateMipmaps, bFlipVertically)
+FTextureCube::FTextureCube(std::string_view Filename, vk::Format InitialFormat, vk::Format FinalFormat,
+                           vk::ImageCreateFlags Flags, bool bGenerateMipmaps)
+    : FTextureCube(nullptr, {}, Filename, InitialFormat, FinalFormat, Flags, bGenerateMipmaps)
 {
 }
 
-FTextureCube::FTextureCube(const std::byte* Sources, vk::Format InitialFormat, vk::Format FinalFormat,
-                           vk::ImageCreateFlags Flags, bool bGenerateMipmaps, bool bFlipVertically)
-    : Base(nullptr, nullptr)
-{
-    CreateCubemap(Sources, InitialFormat, FinalFormat, Flags, bGenerateMipmaps, bFlipVertically);
-}
-
-FTextureCube::FTextureCube(const VmaAllocationCreateInfo& AllocationCreateInfo, const std::string& Filename,
-                           vk::Format InitialFormat, vk::Format FinalFormat, vk::ImageCreateFlags Flags,
-                           bool bGenerateMipmaps, bool bFlipVertically)
-    : FTextureCube(Graphics::FVulkanContext::GetClassInstance()->GetVmaAllocator(), AllocationCreateInfo,
-                   Filename, InitialFormat, FinalFormat, Flags, bGenerateMipmaps, bFlipVertically)
+FTextureCube::FTextureCube(const VmaAllocationCreateInfo& AllocationCreateInfo, std::string_view Filename,
+                           vk::Format InitialFormat, vk::Format FinalFormat, vk::ImageCreateFlags Flags, bool bGenerateMipmaps)
+    : FTextureCube(Graphics::FVulkanContext::GetClassInstance()->GetVmaAllocator(),
+                   AllocationCreateInfo, Filename, InitialFormat, FinalFormat, Flags, bGenerateMipmaps)
 {
 }
 
-FTextureCube::FTextureCube(VmaAllocator Allocator, const VmaAllocationCreateInfo& AllocationCreateInfo,
-                           const std::string& Filename, vk::Format InitialFormat, vk::Format FinalFormat,
-                           vk::ImageCreateFlags Flags, bool bGenerateMipmaps, bool bFlipVertically)
+FTextureCube::FTextureCube(VmaAllocator Allocator, const VmaAllocationCreateInfo& AllocationCreateInfo, std::string_view Filename,
+                           vk::Format InitialFormat, vk::Format FinalFormat, vk::ImageCreateFlags Flags, bool bGenerateMipmaps)
     : Base(Allocator, &AllocationCreateInfo)
 {
-    std::string FullPath = GetAssetFullPath(EAssetType::kTexture, Filename);
+    std::string FullPath = GetAssetFullPath(EAssetType::kTexture, Filename.data());
     if (std::filesystem::is_directory(FullPath))
     {
         std::array<std::string, 6> Filenames{ "PosX", "NegX", "PosY", "NegY", "PosZ", "NegZ" };
@@ -914,17 +1023,17 @@ FTextureCube::FTextureCube(VmaAllocator Allocator, const VmaAllocationCreateInfo
             if (Entry.is_regular_file())
             {
                 std::string Extension = Entry.path().extension().string();
-                Filenames[Index] = Filename + "/" + Filenames[Index] + Extension;
+                Filenames[Index] = std::string(Filename) + "/" + Filenames[Index] + Extension;
             }
             ++Index;
         }
 
-        CreateCubemap(Filenames, InitialFormat, FinalFormat, Flags, bGenerateMipmaps, bFlipVertically);
+        CreateCubemap(Filenames, InitialFormat, FinalFormat, Flags, bGenerateMipmaps);
     }
     else
     {
-        CreateCubemap(GetAssetFullPath(EAssetType::kTexture, Filename), InitialFormat,
-                      FinalFormat, Flags, bGenerateMipmaps, bFlipVertically);
+        CreateCubemap(GetAssetFullPath(EAssetType::kTexture, Filename.data()),
+                      InitialFormat, FinalFormat, Flags, bGenerateMipmaps);
     }
 }
 
@@ -946,21 +1055,21 @@ FTextureCube& FTextureCube::operator=(FTextureCube&& Other) noexcept
     return *this;
 }
 
-void FTextureCube::CreateCubemap(const std::string& Filename, vk::Format InitialFormat, vk::Format FinalFormat,
-                                 vk::ImageCreateFlags Flags, bool bGenerateMipmaps, bool bFlipVertically)
+void FTextureCube::CreateCubemap(std::string_view Filename, vk::Format InitialFormat, vk::Format FinalFormat,
+                                 vk::ImageCreateFlags Flags, bool bGenerateMipmaps)
 {
-    FImageData ImageData = LoadImage(Filename.c_str(), 0, InitialFormat, bFlipVertically);
+    FImageData ImageData = _ImageLoader->LoadImage(Filename, InitialFormat);
     CreateCubemap(ImageData, InitialFormat, FinalFormat, Flags, bGenerateMipmaps);
 }
 
 void FTextureCube::CreateCubemap(const std::array<std::string, 6>& Filenames, vk::Format InitialFormat,
-                                 vk::Format FinalFormat, vk::ImageCreateFlags Flags, bool bGenerateMipmaps, bool bFlipVertically)
+                                 vk::Format FinalFormat, vk::ImageCreateFlags Flags, bool bGenerateMipmaps)
 {
     std::array<FImageData, 6> FaceImages;
 
     for (int i = 0; i != 6; ++i)
     {
-        FaceImages[i] = LoadImage(GetAssetFullPath(EAssetType::kTexture, Filenames[i]).c_str(), 0, InitialFormat, bFlipVertically);
+        FaceImages[i] = _ImageLoader->LoadImage(GetAssetFullPath(EAssetType::kTexture, Filenames[i]).c_str(), InitialFormat);
 
         if (i == 0)
         {
@@ -988,13 +1097,6 @@ void FTextureCube::CreateCubemap(const std::array<std::string, 6>& Filenames, vk
     CubemapImageData.Data   = std::move(CubemapData);
 
     CreateCubemap(CubemapImageData, InitialFormat, FinalFormat, Flags, bGenerateMipmaps);
-}
-
-void FTextureCube::CreateCubemap(const std::byte* Sources, vk::Format InitialFormat, vk::Format FinalFormat,
-                                 vk::ImageCreateFlags Flags, bool bGenerateMipmaps, bool bFlipVertically)
-{
-    FImageData ImageData = LoadImage(Sources, 0, InitialFormat, bFlipVertically);
-    CreateCubemap(ImageData, InitialFormat, FinalFormat, Flags, bGenerateMipmaps);
 }
 
 void FTextureCube::CreateCubemap(const FImageData& ImageData, vk::Format InitialFormat, vk::Format FinalFormat,

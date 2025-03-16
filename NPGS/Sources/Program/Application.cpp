@@ -885,15 +885,15 @@ void FApplication::LoadAssets()
 #endif
 
     AssetManager->AddAsset<Art::FTextureCube>(
-        "Skybox", TextureAllocationCreateInfo, "Skybox", vk::Format::eR16G16B16A16Sfloat, vk::Format::eR16G16B16A16Sfloat, vk::ImageCreateFlags(), true, false);
+        "Skybox", TextureAllocationCreateInfo, "Skybox", vk::Format::eR8G8B8A8Srgb, vk::Format::eR8G8B8A8Srgb, vk::ImageCreateFlags(), true);
 
-    // AssetManager->AddAsset<Art::FTexture2D>(
-    //     "PureSky", TextureAllocationCreateInfo, "HDRI/kloppenheim_02_puresky_16k.hdr",
-    //     vk::Format::eR32G32B32A32Sfloat, vk::Format::eR32G32B32A32Sfloat, vk::ImageCreateFlags(), false, false);
+    AssetManager->AddAsset<Art::FTexture2D>(
+        "PureSky", TextureAllocationCreateInfo, "HDRI/kloppenheim_02_puresky_16k.hdr",
+        vk::Format::eR32G32B32A32Sfloat, vk::Format::eR32G32B32A32Sfloat, vk::ImageCreateFlags(), false);
 
     // AssetManager->AddAsset<Art::FTexture2D>(
     //     "IceLand", TextureAllocationCreateInfo, "IceLandHeightMapLowRes.png",
-    //     vk::Format::eR8G8B8A8Unorm, vk::Format::eR8G8B8A8Unorm, vk::ImageCreateFlags(), false, false);
+    //     vk::Format::eR8G8B8A8Unorm, vk::Format::eR8G8B8A8Unorm, vk::ImageCreateFlags(), false);
 
     // std::vector<std::future<void>> Futures;
 
@@ -902,7 +902,7 @@ void FApplication::LoadAssets()
         // Futures.push_back(_ThreadPool->Submit([&, i]() -> void
         // {
             AssetManager->AddAsset<Art::FTexture2D>(TextureNames[i], TextureAllocationCreateInfo, TextureFiles[i],
-                                                    TextureFormats[i], TextureFormats[i], vk::ImageCreateFlags(), true, false);
+                                                    TextureFormats[i], TextureFormats[i], vk::ImageCreateFlags(), true);
         // }));
     }
 

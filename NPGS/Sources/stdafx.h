@@ -1,5 +1,7 @@
 #pragma once
 
+#define _SILENCE_CXX23_DENORM_DEPRECATION_WARNING
+
 #include "xstdafx.h"
 
 #include <assimp/Importer.hpp>
@@ -12,6 +14,11 @@
 #define NOMINMAX
 #define VK_USE_PLATFORM_WIN32_KHR
 #include <GLFW/glfw3.h>
+
+#include <ktx.h>
+
+#define IMATH_DLL
+#include <OpenEXR/ImfRgbaFile.h>
 
 #include <spdlog/sinks/stdout_color_sinks.h>
 #include <spdlog/spdlog.h>

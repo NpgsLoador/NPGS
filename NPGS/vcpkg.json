@@ -10,9 +10,11 @@
     "glfw3",
     "gli",
     "glm",
+    "ktx",
     "magic-enum",
+    "openexr",
     "spdlog",
     "stb"
   ],
-  "builtin-baseline": "418da99d5a6baef99fe3f2fd69ba561f8bb1fd54"
+  "builtin-baseline": "782ccc18d8b819cdef6794a6c03eb3d9f7cd04aa"
 }
