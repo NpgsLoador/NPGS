@@ -407,7 +407,7 @@ FImageLoader::FImageData FImageLoader::LoadDdsFormat(std::string_view Filename, 
     ImageData.Extent = vk::Extent3D(Extent.x, Extent.y, Extent.z);
     ImageData.Size   = Size;
     ImageData.Data.resize(Size);
-    std::copy(static_cast<const std::byte*>(PixelData), static_cast<const std::byte*>(PixelData) + Size, ImageData.Data.data());
+    std::copy(static_cast<std::byte*>(PixelData), static_cast<std::byte*>(PixelData) + Size, ImageData.Data.data());
 
     return ImageData;
 }
@@ -432,8 +432,8 @@ FImageLoader::FImageData FImageLoader::LoadExrFormat(std::string_view Filename, 
 
         if (FormatInfo.ComponentSize == 2)
         {
-            std::copy(reinterpret_cast<const std::byte*>(Pixels.data()),
-                      reinterpret_cast<const std::byte*>(Pixels.data()) + ImageData.Size,
+            std::copy(reinterpret_cast<std::byte*>(Pixels.data()),
+                      reinterpret_cast<std::byte*>(Pixels.data()) + ImageData.Size,
                       ImageData.Data.data());
         }
         else if (FormatInfo.ComponentSize == 4)
