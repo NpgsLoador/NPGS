@@ -50,12 +50,11 @@ namespace
 
 FImageLoader::FImageData FImageLoader::LoadImage(std::string_view Filename, vk::Format ImageFormat)
 {
-    bool bIsDds  = Filename.ends_with(".dds");
-    bool bIsExr  = Filename.ends_with(".exr");
-    bool bIsHdr  = Filename.ends_with(".hdr");
-    bool bIsKmg  = Filename.ends_with(".kmg");
-    bool bIsKtx  = Filename.ends_with(".ktx");
-    bool bIsKtx2 = Filename.ends_with(".ktx2");
+    bool bIsDds = Filename.ends_with(".dds");
+    bool bIsExr = Filename.ends_with(".exr");
+    bool bIsHdr = Filename.ends_with(".hdr");
+    bool bIsKmg = Filename.ends_with(".kmg");
+    bool bIsKtx = Filename.ends_with(".ktx") || Filename.ends_with("ktx2");
 
     Graphics::FFormatInfo FormatInfo(ImageFormat);
     FImageData ImageData;
@@ -79,7 +78,7 @@ FImageLoader::FImageData FImageLoader::LoadImage(std::string_view Filename, vk::
     {
         ImageData = LoadHdrFormat(Filename, FormatInfo);
     }
-    else if (bIsKmg || bIsKtx || bIsKtx2)
+    else if (bIsKmg || bIsKtx)
     {
         ImageData = LoadKtxFormat(Filename, FormatInfo);
     }
@@ -278,7 +277,7 @@ FImageLoader::FImageData FImageLoader::LoadHdrFormat(std::string_view Filename, 
 
     FImageData ImageData;
     ImageData.Extent = vk::Extent3D(Width, Height, 1);
-    ImageData.Size   = static_cast<vk::DeviceSize>(Width) * Height * FormatInfo.PixelSize;
+    ImageData.Size   = static_cast<vk::DeviceSize>(Width) * Height * 16;
     ImageData.Data.resize(ImageData.Size);
     if (Channels == 4)
     {
@@ -288,7 +287,7 @@ FImageLoader::FImageData FImageLoader::LoadHdrFormat(std::string_view Filename, 
     }
     else
     {
-        std::size_t PixelCount = ImageData.Size / FormatInfo.PixelSize;
+        std::size_t PixelCount = ImageData.Size / 16;
         float* DstData = reinterpret_cast<float*>(ImageData.Data.data());
         for (std::size_t i = 0; i != PixelCount; ++i)
         {
@@ -303,16 +302,17 @@ FImageLoader::FImageData FImageLoader::LoadHdrFormat(std::string_view Filename, 
 
     if (FormatInfo.ComponentSize == 2)
     {
-        ImageData.Size /= 2;
-        std::vector<std::byte> HalfData(ImageData.Size);
+        std::vector<std::byte> HalfData(ImageData.Size / 2);
+        std::vector<std::byte> FloatData(std::move(ImageData.Data));
         std::uint16_t* HalfDataPtr  = reinterpret_cast<std::uint16_t*>(HalfData.data());
-        float*         FloatDataPtr = reinterpret_cast<float*>(ImageData.Data.data());
+        float*         FloatDataPtr = reinterpret_cast<float*>(FloatData.data());
 
-        for (std::size_t i = 0; i != ImageData.Size; ++i)
+        for (std::size_t i = 0; i != ImageData.Size / sizeof(float); ++i)
         {
             HalfDataPtr[i] = Imath::half(FloatDataPtr[i]).bits();
         }
 
+        ImageData.Size /= 2;
         ImageData.Data = std::move(HalfData);
     }
 
