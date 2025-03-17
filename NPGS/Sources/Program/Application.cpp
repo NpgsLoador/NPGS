@@ -860,36 +860,36 @@ void FApplication::LoadAssets()
 
     std::vector<std::string> TextureFiles
     {
-        "CliffSide/cliff_side_disp_4k.jpg",
-        "CliffSide/cliff_side_diff_4k.jpg",
-        "CliffSide/cliff_side_nor_dx_4k.jpg",
-        "CliffSide/cliff_side_arm_4k.jpg"
+        "CliffSide/cliff_side_disp_4k.exr",
+        "CliffSide/cliff_side_diff_4k_rgba32f.exr",
+        "CliffSide/cliff_side_nor_dx_4k.exr",
+        "CliffSide/cliff_side_arm_4k.exr"
     };
 
     std::vector<vk::Format> TextureFormats
     {
-        vk::Format::eR8G8B8A8Unorm,
-        vk::Format::eR8G8B8A8Srgb,
-        vk::Format::eR8G8B8A8Unorm,
-        vk::Format::eR8G8B8A8Unorm
+        vk::Format::eR16G16B16A16Sfloat,
+        vk::Format::eR32G32B32A32Sfloat,
+        vk::Format::eR16G16B16A16Sfloat,
+        vk::Format::eR16G16B16A16Sfloat
     };
 
 #if !defined(_DEBUG)
-    TextureFiles =
-    {
-        "CliffSide/cliff_side_disp_4k.jpg",
-        "CliffSide/cliff_side_diff_4k.jpg",
-        "CliffSide/cliff_side_nor_dx_4k.jpg",
-        "CliffSide/cliff_side_arm_4k.jpg"
-    };
+    // TextureFiles =
+    // {
+    //     "CliffSide/cliff_side_disp_4k.exr",
+    //     "CliffSide/cliff_side_diff_4k.exr",
+    //     "CliffSide/cliff_side_nor_dx_4k.exr",
+    //     "CliffSide/cliff_side_arm_4k.exr"
+    // };
 #endif
 
     AssetManager->AddAsset<Art::FTextureCube>(
         "Skybox", TextureAllocationCreateInfo, "Skybox", vk::Format::eR8G8B8A8Srgb, vk::Format::eR8G8B8A8Srgb, vk::ImageCreateFlags(), true);
 
-    AssetManager->AddAsset<Art::FTexture2D>(
-        "PureSky", TextureAllocationCreateInfo, "HDRI/kloppenheim_02_puresky_16k.hdr",
-        vk::Format::eR32G32B32A32Sfloat, vk::Format::eR32G32B32A32Sfloat, vk::ImageCreateFlags(), false);
+    // AssetManager->AddAsset<Art::FTexture2D>(
+    //     "PureSky", TextureAllocationCreateInfo, "HDRI/kloppenheim_02_puresky_16k.hdr",
+    //     vk::Format::eR32G32B32A32Sfloat, vk::Format::eR32G32B32A32Sfloat, vk::ImageCreateFlags(), false);
 
     // AssetManager->AddAsset<Art::FTexture2D>(
     //     "IceLand", TextureAllocationCreateInfo, "IceLandHeightMapLowRes.png",
@@ -901,8 +901,8 @@ void FApplication::LoadAssets()
     {
         // Futures.push_back(_ThreadPool->Submit([&, i]() -> void
         // {
-            AssetManager->AddAsset<Art::FTexture2D>(TextureNames[i], TextureAllocationCreateInfo, TextureFiles[i],
-                                                    TextureFormats[i], TextureFormats[i], vk::ImageCreateFlags(), true);
+        AssetManager->AddAsset<Art::FTexture2D>(TextureNames[i], TextureAllocationCreateInfo, TextureFiles[i], TextureFormats[i],
+                                                vk::Format::eR8G8B8A8Unorm, vk::ImageCreateFlagBits::eMutableFormat, true);
         // }));
     }
 

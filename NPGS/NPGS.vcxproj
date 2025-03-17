@@ -100,17 +100,17 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <IncludePath>$(ProjectDir)Sources;$(IncludePath)</IncludePath>
-    <ExternalIncludePath>$(VULKAN_SDK)\Include;$(ProjectDir)vcpkg_installed\x64-windows\x64-windows\include\Imath;$(ExternalIncludePath)</ExternalIncludePath>
+    <ExternalIncludePath>$(VULKAN_SDK)\Include;$(ProjectDir)vcpkg_installed\x64-windows\x64-windows\include\Imath;$(ProjectDir)vcpkg_installed\x64-windows\x64-windows\include\OpenEXR;$(ExternalIncludePath)</ExternalIncludePath>
     <LibraryPath>$(VULKAN_SDK)\Lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <IncludePath>$(ProjectDir)Sources;$(IncludePath)</IncludePath>
-    <ExternalIncludePath>$(VULKAN_SDK)\Include;$(ProjectDir)vcpkg_installed\x64-windows\x64-windows\include\Imath;$(ExternalIncludePath)</ExternalIncludePath>
+    <ExternalIncludePath>$(VULKAN_SDK)\Include;$(ProjectDir)vcpkg_installed\x64-windows\x64-windows\include\Imath;$(ProjectDir)vcpkg_installed\x64-windows\x64-windows\include\OpenEXR;$(ExternalIncludePath)</ExternalIncludePath>
     <LibraryPath>$(VULKAN_SDK)\Lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Package|x64'">
     <IncludePath>$(ProjectDir)Sources;$(IncludePath)</IncludePath>
-    <ExternalIncludePath>$(VULKAN_SDK)\Include;$(ProjectDir)vcpkg_installed\x64-windows\x64-windows\include\Imath;$(ExternalIncludePath)</ExternalIncludePath>
+    <ExternalIncludePath>$(VULKAN_SDK)\Include;$(ProjectDir)vcpkg_installed\x64-windows\x64-windows\include\Imath;$(ProjectDir)vcpkg_installed\x64-windows\x64-windows\include\OpenEXR;$(ExternalIncludePath)</ExternalIncludePath>
     <LibraryPath>$(VULKAN_SDK)\Lib;$(LibraryPath)</LibraryPath>
     <OutDir>$(ProjectDir)Win64\</OutDir>
   </PropertyGroup>

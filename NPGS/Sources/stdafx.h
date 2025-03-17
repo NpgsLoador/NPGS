@@ -15,11 +15,14 @@
 #define VK_USE_PLATFORM_WIN32_KHR
 #include <GLFW/glfw3.h>
 
-#include <ktx.h>
-
 #define IMATH_DLL
-#include <OpenEXR/ImfRgbaFile.h>
+#include <Imath/ImathBox.h>
 
+#include <ktx.h>
+#include <OpenEXR/ImfInputFile.h>
+#include <OpenEXR/ImfRgba.h>
+#include <OpenEXR/ImfRgbaFile.h>
+#include <OpenEXR/ImfTiledRgbaFile.h>
 #include <spdlog/sinks/stdout_color_sinks.h>
 #include <spdlog/spdlog.h>
 #include <spirv_cross/spirv_reflect.hpp>

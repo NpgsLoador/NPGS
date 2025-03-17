@@ -8,6 +8,7 @@
 #include <string_view>
 #include <vector>
 
+#include <OpenEXR/ImfRgba.h>
 #include <vma/vk_mem_alloc.h>
 #include <vulkan/vulkan_handles.hpp>
 
@@ -23,9 +24,12 @@ class FImageLoader
 public:
     struct FImageData
     {
-        std::vector<std::byte> Data;
-        vk::Extent3D           Extent{};
-        vk::DeviceSize         Size{};
+        std::vector<std::byte>   Data;
+        std::vector<std::size_t> LevelOffsets;
+        vk::DeviceSize           Size{};
+        vk::Extent3D             Extent{};
+        std::uint32_t            MipLevels{};
+        Graphics::FFormatInfo    FormatInfo{ Graphics::kFormatInfos[0] };
     };
 
 public:
@@ -40,7 +44,6 @@ private:
     FImageData LoadExrFormat(std::string_view Filename, Graphics::FFormatInfo FormatInfo);
     FImageData LoadHdrFormat(std::string_view Filename, Graphics::FFormatInfo FormatInfo);
     FImageData LoadKtxFormat(std::string_view Filename, Graphics::FFormatInfo FormatInfo);
-
 private:
     FImageData _ImageData;
 };
@@ -89,6 +92,22 @@ protected:
 
     void BlitGenerateTexture(vk::Image SrcImage, vk::Extent3D Extent, std::uint32_t MipLevels,
                              std::uint32_t ArrayLayers, vk::Filter Filter, vk::Image DstImage);
+
+private:
+    void CopyBufferToImage(const Graphics::FVulkanCommandBuffer& CommandBuffer, vk::Buffer SrcBuffer,
+                           const Graphics::FImageMemoryBarrierParameterPack& SrcBarrier,
+                           const Graphics::FImageMemoryBarrierParameterPack& DstBarrier,
+                           const vk::BufferImageCopy& Region, vk::Image DstImage);
+
+    void BlitImage(const Graphics::FVulkanCommandBuffer& CommandBuffer, vk::Image SrcImage,
+                   const Graphics::FImageMemoryBarrierParameterPack& SrcBarrier,
+                   const Graphics::FImageMemoryBarrierParameterPack& DstBarrier,
+                   const vk::ImageBlit& Region, vk::Filter Filter, vk::Image DstImage);
+
+
+    void GenerateMipmaps(const Graphics::FVulkanCommandBuffer& CommandBuffer, vk::Image Image,
+                         vk::Extent3D Extent, std::uint32_t MipLevels, std::uint32_t ArrayLayers,
+                         vk::Filter Filter, const Graphics::FImageMemoryBarrierParameterPack& FinalBarrier);
 
 protected:
     std::unique_ptr<FImageLoader>                 _ImageLoader;

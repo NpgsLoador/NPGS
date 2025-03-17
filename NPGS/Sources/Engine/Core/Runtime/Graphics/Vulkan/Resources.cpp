@@ -126,8 +126,8 @@ namespace
             return false;
         }
 
-        FFormatInfo SrcFormatInfo = GetFormatInfo(SrcFormat);
-        FFormatInfo DstFormatInfo = GetFormatInfo(DstFormat);
+        FFormatInfo SrcFormatInfo(SrcFormat);
+        FFormatInfo DstFormatInfo(DstFormat);
 
         if (SrcDesc.bIsCompressed)
         {

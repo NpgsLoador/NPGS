@@ -153,26 +153,25 @@ void FGraphicsPipelineCreateInfoPack::UpdateAllInfoData()
     LinkToGraphicsPipelineCreateInfo();
 }
 
-FFormatInfo GetFormatInfo(vk::Format Format)
+FFormatInfo::FFormatInfo(vk::Format Format)
 {
-    FFormatInfo Info;
-
-    Info.ComponentCount = vk::componentCount(Format);
-    Info.ComponentSize  = vk::componentBits(Format, 0) / 8;
-    Info.PixelSize      = vk::blockSize(Format);
+    ComponentCount = vk::componentCount(Format);
+    ComponentSize  = vk::componentBits(Format, 0) / 8;
+    PixelSize      = vk::blockSize(Format);
+    bIsCompressed  = vk::componentsAreCompressed(Format);
 
     if (Format == vk::Format::eD16UnormS8Uint)
     {
-        Info.PixelSize = 4;
+        PixelSize = 4;
     }
     else if (Format == vk::Format::eD32SfloatS8Uint)
     {
-        Info.PixelSize = 8;
+        PixelSize = 8;
     }
 
     if (Format == vk::Format::eUndefined)
     {
-        Info.RawDataType = FFormatInfo::ERawDataType::kOther;
+        RawDataType = FFormatInfo::ERawDataType::kOther;
     }
     else
     {
@@ -181,19 +180,22 @@ FFormatInfo GetFormatInfo(vk::Format Format)
             Util::Equal(NumericFormat, "SNORM")   || Util::Equal(NumericFormat, "UNORM") ||
             Util::Equal(NumericFormat, "SSCALED") || Util::Equal(NumericFormat, "USCALED"))
         {
-            Info.RawDataType = FFormatInfo::ERawDataType::kInteger;
+            RawDataType = FFormatInfo::ERawDataType::kInteger;
         }
         else if (Util::Equal(NumericFormat, "SFLOAT") || Util::Equal(NumericFormat, "UFLOAT"))
         {
-            Info.RawDataType = FFormatInfo::ERawDataType::kFloatingPoint;
+            RawDataType = FFormatInfo::ERawDataType::kFloatingPoint;
         }
         else
         {
-            Info.RawDataType = FFormatInfo::ERawDataType::kInteger;
+            RawDataType = FFormatInfo::ERawDataType::kInteger;
         }
     }
+}
 
-    return Info;
+FFormatInfo GetFormatInfo(vk::Format Format)
+{
+    return FFormatInfo(Format);
 }
 
 vk::Format ConvertToFloat16(vk::Format Float32Format)

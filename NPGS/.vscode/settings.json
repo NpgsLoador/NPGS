@@ -1,0 +1,12 @@
+{
+    "files.associations": {
+        "*.cfg": "text",
+        "*.glh": "glsl",
+        "*.glsl": "glsl",
+        "*.glslh": "glsl",
+        "*.usf": "hlsl",
+        "*.ush": "hlsl",
+        "*.vk": "glsl",
+        "*.ipp": "cpp"
+    }
+}
