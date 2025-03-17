@@ -95,19 +95,19 @@ protected:
 
 private:
     void CopyBufferToImage(const Graphics::FVulkanCommandBuffer& CommandBuffer, vk::Buffer SrcBuffer,
-                           const Graphics::FImageMemoryBarrierParameterPack& SrcBarrier,
-                           const Graphics::FImageMemoryBarrierParameterPack& DstBarrier,
+                           const Graphics::FImageMemoryBarrierStagePack& PreTransferStages,
+                           const Graphics::FImageMemoryBarrierStagePack& PostTransferStages,
                            const vk::BufferImageCopy& Region, vk::Image DstImage);
 
     void BlitImage(const Graphics::FVulkanCommandBuffer& CommandBuffer, vk::Image SrcImage,
-                   const Graphics::FImageMemoryBarrierParameterPack& SrcBarrier,
-                   const Graphics::FImageMemoryBarrierParameterPack& DstBarrier,
+                   const Graphics::FImageMemoryBarrierStagePack& PreTransferStages,
+                   const Graphics::FImageMemoryBarrierStagePack& PostTransferStages,
                    const vk::ImageBlit& Region, vk::Filter Filter, vk::Image DstImage);
 
 
     void GenerateMipmaps(const Graphics::FVulkanCommandBuffer& CommandBuffer, vk::Image Image,
                          vk::Extent3D Extent, std::uint32_t MipLevels, std::uint32_t ArrayLayers,
-                         vk::Filter Filter, const Graphics::FImageMemoryBarrierParameterPack& FinalBarrier);
+                         vk::Filter Filter, const Graphics::FImageMemoryBarrierStagePack& FinalStages);
 
 protected:
     std::unique_ptr<FImageLoader>                 _ImageLoader;

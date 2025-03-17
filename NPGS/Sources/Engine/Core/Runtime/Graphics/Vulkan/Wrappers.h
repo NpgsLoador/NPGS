@@ -63,16 +63,16 @@ private:
     void UpdateAllInfoData();
 };
 
-struct FImageMemoryBarrierParameterPack
+struct FImageMemoryBarrierStagePack
 {
     const vk::PipelineStageFlags2 kPipelineStageFlags{ vk::PipelineStageFlagBits2::eNone };
     const vk::AccessFlags2        kAccessFlags{ vk::AccessFlagBits2::eNone };
     const vk::ImageLayout         kImageLayout{ vk::ImageLayout::eUndefined };
     const bool                    kbEnable{ false };
 
-    constexpr FImageMemoryBarrierParameterPack() noexcept = default;
-    constexpr FImageMemoryBarrierParameterPack(vk::PipelineStageFlags2 PipelineStageFlags,
-                                               vk::AccessFlags2 AccessFlags, vk::ImageLayout ImageLayout) noexcept
+    constexpr FImageMemoryBarrierStagePack() noexcept = default;
+    constexpr FImageMemoryBarrierStagePack(vk::PipelineStageFlags2 PipelineStageFlags,
+                                           vk::AccessFlags2 AccessFlags, vk::ImageLayout ImageLayout) noexcept
         :
         kPipelineStageFlags(PipelineStageFlags),
         kAccessFlags(AccessFlags),
@@ -81,8 +81,8 @@ struct FImageMemoryBarrierParameterPack
     {
     }
 
-    constexpr FImageMemoryBarrierParameterPack(vk::PipelineStageFlagBits2 PipelineStageFlagBits,
-                                               vk::AccessFlagBits2 AccessFlagBits, vk::ImageLayout ImageLayout) noexcept
+    constexpr FImageMemoryBarrierStagePack(vk::PipelineStageFlagBits2 PipelineStageFlagBits,
+                                           vk::AccessFlagBits2 AccessFlagBits, vk::ImageLayout ImageLayout) noexcept
         :
         kPipelineStageFlags(PipelineStageFlagBits),
         kAccessFlags(AccessFlagBits),

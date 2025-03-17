@@ -66,7 +66,7 @@ void main()
 
 	RgbPositionAAo  = vec4(FragInput.FragPos, TexAo);
 	RgbNormalARough = vec4(Normal, TexRoughness);
-	RgbAlbedoAMetal = vec4(pow(TexAlbedo, vec3(2.2)), TexMetallic);
+	RgbAlbedoAMetal = vec4(TexAlbedo, TexMetallic);
     Shadow          = CalcShadow(FragInput.LightSpaceFragPos, 0.005);
 #endif // LAMP_BOX
 }

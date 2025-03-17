@@ -860,18 +860,26 @@ void FApplication::LoadAssets()
 
     std::vector<std::string> TextureFiles
     {
-        "CliffSide/cliff_side_disp_4k.exr",
-        "CliffSide/cliff_side_diff_4k_rgba32f.exr",
-        "CliffSide/cliff_side_nor_dx_4k.exr",
-        "CliffSide/cliff_side_arm_4k.exr"
+        "CliffSide/cliff_side_disp_4k.jpg",
+        "CliffSide/cliff_side_diff_4k.jpg",
+        "CliffSide/cliff_side_nor_dx_4k.jpg",
+        "CliffSide/cliff_side_arm_4k.jpg"
     };
 
-    std::vector<vk::Format> TextureFormats
+    std::vector<vk::Format> InitialTextureFormats
     {
-        vk::Format::eR16G16B16A16Sfloat,
-        vk::Format::eR32G32B32A32Sfloat,
-        vk::Format::eR16G16B16A16Sfloat,
-        vk::Format::eR16G16B16A16Sfloat
+        vk::Format::eR8G8B8A8Unorm,
+        vk::Format::eR8G8B8A8Srgb,
+        vk::Format::eR8G8B8A8Unorm,
+        vk::Format::eR8G8B8A8Unorm
+    };
+
+    std::vector<vk::Format> FinalTextureFormats
+    {
+        vk::Format::eR8G8B8A8Unorm,
+        vk::Format::eR8G8B8A8Srgb,
+        vk::Format::eR8G8B8A8Unorm,
+        vk::Format::eR8G8B8A8Unorm
     };
 
 #if !defined(_DEBUG)
@@ -901,8 +909,8 @@ void FApplication::LoadAssets()
     {
         // Futures.push_back(_ThreadPool->Submit([&, i]() -> void
         // {
-        AssetManager->AddAsset<Art::FTexture2D>(TextureNames[i], TextureAllocationCreateInfo, TextureFiles[i], TextureFormats[i],
-                                                vk::Format::eR8G8B8A8Unorm, vk::ImageCreateFlagBits::eMutableFormat, true);
+        AssetManager->AddAsset<Art::FTexture2D>(
+            TextureNames[i], TextureAllocationCreateInfo, TextureFiles[i], InitialTextureFormats[i], FinalTextureFormats[i], vk::ImageCreateFlagBits::eMutableFormat, true);
         // }));
     }
 
