@@ -257,6 +257,7 @@
     <ClCompile Include="Sources\Engine\Core\Runtime\AssetLoaders\AssetManager.cpp" />
     <ClCompile Include="Sources\Engine\Core\Runtime\AssetLoaders\Shader.cpp" />
     <ClCompile Include="Sources\Engine\Core\Runtime\AssetLoaders\Texture.cpp" />
+    <ClCompile Include="Sources\Engine\Core\Runtime\Graphics\Renderers\ImageTracker.cpp" />
     <ClCompile Include="Sources\Engine\Core\Runtime\Graphics\Renderers\PipelineManager.cpp" />
     <ClCompile Include="Sources\Engine\Core\Runtime\Graphics\Vulkan\Context.cpp" />
     <ClCompile Include="Sources\Engine\Core\Runtime\Graphics\Vulkan\Core.cpp" />
@@ -300,6 +301,7 @@
     <ClInclude Include="Sources\Engine\Core\Runtime\AssetLoaders\CommaSeparatedValues.hpp" />
     <ClInclude Include="Sources\Engine\Core\Runtime\AssetLoaders\Shader.h" />
     <ClInclude Include="Sources\Engine\Core\Runtime\AssetLoaders\Texture.h" />
+    <ClInclude Include="Sources\Engine\Core\Runtime\Graphics\Renderers\ImageTracker.h" />
     <ClInclude Include="Sources\Engine\Core\Runtime\Graphics\Renderers\PipelineManager.h" />
     <ClInclude Include="Sources\Engine\Core\Runtime\Graphics\Vulkan\Context.h" />
     <ClInclude Include="Sources\Engine\Core\Runtime\Graphics\Vulkan\Core.h" />
@@ -336,6 +338,7 @@
     <None Include="Sources\Engine\Core\Runtime\AssetLoaders\AssetManager.inl" />
     <None Include="Sources\Engine\Core\Runtime\AssetLoaders\Shader.inl" />
     <None Include="Sources\Engine\Core\Runtime\AssetLoaders\Texture.inl" />
+    <None Include="Sources\Engine\Core\Runtime\Graphics\Renderers\ImageTracker.inl" />
     <None Include="Sources\Engine\Core\Runtime\Graphics\Renderers\PipelineManager.inl" />
     <None Include="Sources\Engine\Core\Runtime\Graphics\Vulkan\Resources.inl" />
     <None Include="Sources\Engine\Core\Runtime\Graphics\Vulkan\Context.inl" />

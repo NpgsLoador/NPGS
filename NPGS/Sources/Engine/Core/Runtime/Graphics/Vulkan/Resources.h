@@ -120,7 +120,7 @@ public:
     void  Release();
     bool  IsUsingVma() const;
 
-    FVulkanImage* CreateAliasedImage(vk::Format OriginFormat, vk::Format NewFormat, vk::Extent3D Extent);
+    FVulkanImage* CreateAliasedImage(vk::Format OriginFormat, const vk::ImageCreateInfo& ImageCreateInfo);
 
     FVulkanBuffer& GetBuffer();
     const FVulkanBuffer& GetBuffer() const;

@@ -99,21 +99,18 @@ private:
                              vk::Filter Filter, vk::Image SrcImage, vk::Image DstImage);
 
     void CopyBufferToImage(const Graphics::FVulkanCommandBuffer& CommandBuffer,
-                           const Graphics::FImageMemoryBarrierStagePack& PreTransferStages,
-                           const Graphics::FImageMemoryBarrierStagePack& PostTransferStages,
+                           const Graphics::FImageMemoryMaskPack& PostTransferStatus,
                            const vk::BufferImageCopy& Region, vk::Buffer SrcBuffer, vk::Image DstImage);
 
     void BlitImage(const Graphics::FVulkanCommandBuffer& CommandBuffer, vk::Filter Filter,
-                   const Graphics::FImageMemoryBarrierStagePack& SrcPreTransferStages,
-                   const Graphics::FImageMemoryBarrierStagePack& DstPreTransferStages,
-                   const Graphics::FImageMemoryBarrierStagePack& SrcPostTransferStages,
-                   const Graphics::FImageMemoryBarrierStagePack& DstPostTransferStages,
+                   const Graphics::FImageMemoryMaskPack& SrcPostTransferStatus,
+                   const Graphics::FImageMemoryMaskPack& DstPostTransferStatus,
                    const vk::ImageBlit& Region, vk::Image SrcImage, vk::Image DstImage);
 
 
     void GenerateMipmaps(const Graphics::FVulkanCommandBuffer& CommandBuffer, vk::Extent3D Extent,
                          std::uint32_t MipLevels, std::uint32_t ArrayLayers, vk::Filter Filter,
-                         const Graphics::FImageMemoryBarrierStagePack& FinalStages, vk::Image Image);
+                         const Graphics::FImageMemoryMaskPack& FinalStatus, vk::Image Image);
 
 protected:
     std::unique_ptr<FImageLoader>                 _ImageLoader;

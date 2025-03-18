@@ -398,31 +398,32 @@ FStagingBuffer& FStagingBuffer::operator=(FStagingBuffer&& Other) noexcept
     return *this;
 }
 
-FVulkanImage* FStagingBuffer::CreateAliasedImage(vk::Format OriginFormat, vk::Format NewFormat, vk::Extent3D Extent)
+FVulkanImage* FStagingBuffer::CreateAliasedImage(vk::Format OriginFormat, const vk::ImageCreateInfo& ImageCreateInfo)
 {
-    if (!IsFormatAliasingCompatible(OriginFormat, NewFormat))
+    if (!IsFormatAliasingCompatible(OriginFormat, ImageCreateInfo.format))
     {
         return nullptr;
     }
 
     vk::PhysicalDevice   PhysicalDevice   = FVulkanCore::GetClassInstance()->GetPhysicalDevice();
-    vk::FormatProperties FormatProperties = PhysicalDevice.getFormatProperties(NewFormat);
+    vk::FormatProperties FormatProperties = PhysicalDevice.getFormatProperties(ImageCreateInfo.format);
 
     if (!(FormatProperties.linearTilingFeatures & vk::FormatFeatureFlagBits::eBlitSrc))
     {
         return nullptr;
     }
 
+    vk::Extent3D Extent = ImageCreateInfo.extent;
     vk::DeviceSize ImageDataSize =
-        static_cast<vk::DeviceSize>(Extent.width * Extent.height * Extent.depth * GetFormatInfo(NewFormat).PixelSize);
+        static_cast<vk::DeviceSize>(Extent.width * Extent.height * Extent.depth * GetFormatInfo(ImageCreateInfo.format).PixelSize);
     if (ImageDataSize > _BufferMemory->GetMemory().GetAllocationSize())
     {
         return nullptr;
     }
 
     vk::ImageFormatProperties ImageFormatProperties =
-        PhysicalDevice.getImageFormatProperties(NewFormat, vk::ImageType::e2D, vk::ImageTiling::eLinear,
-                                                vk::ImageUsageFlagBits::eTransferSrc);
+        PhysicalDevice.getImageFormatProperties(ImageCreateInfo.format, vk::ImageType::e2D,
+                                                vk::ImageTiling::eLinear, vk::ImageUsageFlagBits::eTransferSrc);
     if (Extent.width  > ImageFormatProperties.maxExtent.width  ||
         Extent.height > ImageFormatProperties.maxExtent.height ||
         Extent.depth  > ImageFormatProperties.maxExtent.depth  ||
@@ -431,13 +432,16 @@ FVulkanImage* FStagingBuffer::CreateAliasedImage(vk::Format OriginFormat, vk::Fo
         return nullptr;
     }
 
-    vk::ImageCreateInfo ImageCreateInfo({}, vk::ImageType::e2D, NewFormat, Extent, 1, 1, vk::SampleCountFlagBits::e1,
-                                        vk::ImageTiling::eLinear, vk::ImageUsageFlagBits::eTransferSrc,
-                                        vk::SharingMode::eExclusive, 0, nullptr, vk::ImageLayout::ePreinitialized);
+    if (_Allocator == nullptr)
+    {
+        _AliasedImage = std::make_unique<FVulkanImage>(_Device, *_PhysicalDeviceMemoryProperties, ImageCreateInfo);
+    }
+    else
+    {
+        _AliasedImage = std::make_unique<FVulkanImage>(_Allocator, _AllocationCreateInfo, ImageCreateInfo);
+    }
 
-    _AliasedImage = std::make_unique<FVulkanImage>(_Device, *_PhysicalDeviceMemoryProperties, ImageCreateInfo);
-
-    vk::ImageSubresource ImageSubresource(vk::ImageAspectFlagBits::eColor, 0, 0);
+    vk::ImageSubresource ImageSubresource(vk::ImageAspectFlagBits::eColor, ImageCreateInfo.mipLevels, ImageCreateInfo.arrayLayers);
     vk::SubresourceLayout SubresourceLayout = _Device.getImageSubresourceLayout(**_AliasedImage, ImageSubresource);
     if (SubresourceLayout.size != ImageDataSize)
     {
