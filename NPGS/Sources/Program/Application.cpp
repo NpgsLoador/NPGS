@@ -895,9 +895,9 @@ void FApplication::LoadAssets()
     AssetManager->AddAsset<Art::FTextureCube>(
         "Skybox", TextureAllocationCreateInfo, "Skybox", vk::Format::eR8G8B8A8Srgb, vk::Format::eR8G8B8A8Srgb, vk::ImageCreateFlags(), true);
 
-    AssetManager->AddAsset<Art::FTexture2D>(
-        "PureSky", TextureAllocationCreateInfo, "HDRI/autumn_field_puresky_16k.hdr",
-        vk::Format::eR16G16B16A16Sfloat, vk::Format::eR16G16B16A16Sfloat, vk::ImageCreateFlags(), false);
+    //AssetManager->AddAsset<Art::FTexture2D>(
+    //    "PureSky", TextureAllocationCreateInfo, "HDRI/autumn_field_puresky_16k.hdr",
+    //    vk::Format::eR16G16B16A16Sfloat, vk::Format::eR16G16B16A16Sfloat, vk::ImageCreateFlags(), false);
 
     // AssetManager->AddAsset<Art::FTexture2D>(
     //     "IceLand", TextureAllocationCreateInfo, "IceLandHeightMapLowRes.png",

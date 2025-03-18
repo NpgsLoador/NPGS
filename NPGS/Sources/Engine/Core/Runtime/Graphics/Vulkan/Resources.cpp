@@ -398,9 +398,9 @@ FStagingBuffer& FStagingBuffer::operator=(FStagingBuffer&& Other) noexcept
     return *this;
 }
 
-FVulkanImage* FStagingBuffer::CreateAliasedImage(vk::Format OriganFormat, vk::Format NewFormat, vk::Extent3D Extent)
+FVulkanImage* FStagingBuffer::CreateAliasedImage(vk::Format OriginFormat, vk::Format NewFormat, vk::Extent3D Extent)
 {
-    if (!IsFormatAliasingCompatible(OriganFormat, NewFormat))
+    if (!IsFormatAliasingCompatible(OriginFormat, NewFormat))
     {
         return nullptr;
     }
@@ -519,6 +519,12 @@ void FStagingBufferPool::ReleaseBuffer(FStagingBuffer* Buffer)
         _FreeBuffers.push_back(std::move(*it));
         _BusyBuffers.erase(it);
     }
+}
+
+void FStagingBufferPool::FreeSpace()
+{
+    _BusyBuffers.clear();
+    _FreeBuffers.clear();
 }
 
 FStagingBufferPool* FStagingBufferPool::GetInstance()

@@ -77,8 +77,9 @@ protected:
                        vk::ImageCreateFlags Flags, vk::ImageType ImageType, vk::ImageViewType ImageViewType,
                        std::uint32_t ArrayLayers, bool bGenerateMipmaps);
 
-    void CreateTextureInternal(Graphics::FStagingBuffer* StagingBuffer, vk::Format InitialFormat, vk::Format FinalFormat,
-                               vk::ImageType ImageType, vk::ImageViewType ImageViewType, vk::Extent3D Extent,
+private:
+    void CreateTextureInternal(const FImageData& ImageData, vk::Format InitialFormat, vk::Format FinalFormat,
+                               vk::ImageType ImageType, vk::ImageViewType ImageViewType,
                                vk::ImageCreateFlags Flags, std::uint32_t ArrayLayers, bool bGenerateMipmaps);
 
     void CreateImageMemory(vk::ImageType ImageType, vk::Format Format, vk::Extent3D Extent, std::uint32_t MipLevels,
@@ -87,27 +88,32 @@ protected:
     void CreateImageView(vk::ImageViewType ImageViewType, vk::Format Format, std::uint32_t MipLevels,
                          std::uint32_t ArrayLayers, vk::ImageViewCreateFlags Flags = {});
 
+    void ApplyMipmappedTexture(vk::Buffer SrcBuffer, vk::Extent3D Extent, std::uint32_t MipLevels,
+                               const std::vector<std::size_t>& LevelOffsets,
+                               std::uint32_t ArrayLayers, vk::Filter Filter, vk::Image DstImage);
+
     void CopyBlitGenerateTexture(vk::Buffer SrcBuffer, vk::Extent3D Extent, std::uint32_t MipLevels, std::uint32_t ArrayLayers,
                                  vk::Filter Filter, vk::Image DstImageSrcBlit, vk::Image DstImageDstBlit);
 
-    void BlitGenerateTexture(vk::Image SrcImage, vk::Extent3D Extent, std::uint32_t MipLevels,
-                             std::uint32_t ArrayLayers, vk::Filter Filter, vk::Image DstImage);
+    void BlitGenerateTexture(vk::Extent3D Extent, std::uint32_t MipLevels, std::uint32_t ArrayLayers,
+                             vk::Filter Filter, vk::Image SrcImage, vk::Image DstImage);
 
-private:
-    void CopyBufferToImage(const Graphics::FVulkanCommandBuffer& CommandBuffer, vk::Buffer SrcBuffer,
+    void CopyBufferToImage(const Graphics::FVulkanCommandBuffer& CommandBuffer,
                            const Graphics::FImageMemoryBarrierStagePack& PreTransferStages,
                            const Graphics::FImageMemoryBarrierStagePack& PostTransferStages,
-                           const vk::BufferImageCopy& Region, vk::Image DstImage);
+                           const vk::BufferImageCopy& Region, vk::Buffer SrcBuffer, vk::Image DstImage);
 
-    void BlitImage(const Graphics::FVulkanCommandBuffer& CommandBuffer, vk::Image SrcImage,
-                   const Graphics::FImageMemoryBarrierStagePack& PreTransferStages,
-                   const Graphics::FImageMemoryBarrierStagePack& PostTransferStages,
-                   const vk::ImageBlit& Region, vk::Filter Filter, vk::Image DstImage);
+    void BlitImage(const Graphics::FVulkanCommandBuffer& CommandBuffer, vk::Filter Filter,
+                   const Graphics::FImageMemoryBarrierStagePack& SrcPreTransferStages,
+                   const Graphics::FImageMemoryBarrierStagePack& DstPreTransferStages,
+                   const Graphics::FImageMemoryBarrierStagePack& SrcPostTransferStages,
+                   const Graphics::FImageMemoryBarrierStagePack& DstPostTransferStages,
+                   const vk::ImageBlit& Region, vk::Image SrcImage, vk::Image DstImage);
 
 
-    void GenerateMipmaps(const Graphics::FVulkanCommandBuffer& CommandBuffer, vk::Image Image,
-                         vk::Extent3D Extent, std::uint32_t MipLevels, std::uint32_t ArrayLayers,
-                         vk::Filter Filter, const Graphics::FImageMemoryBarrierStagePack& FinalStages);
+    void GenerateMipmaps(const Graphics::FVulkanCommandBuffer& CommandBuffer, vk::Extent3D Extent,
+                         std::uint32_t MipLevels, std::uint32_t ArrayLayers, vk::Filter Filter,
+                         const Graphics::FImageMemoryBarrierStagePack& FinalStages, vk::Image Image);
 
 protected:
     std::unique_ptr<FImageLoader>                 _ImageLoader;
