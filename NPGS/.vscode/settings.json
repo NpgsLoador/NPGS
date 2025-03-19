@@ -1,4 +1,11 @@
 {
+    "clangd.fallbackFlags": [
+        "-std=c++2b",
+        "-I${workspaceFolder}/Sources",
+        "-I${workspaceFolder}/",
+        "-I${workspaceFolder}/vcpkg_installed/x64-windows/x64-windows/include",
+        "-I${env:VULKAN_SDK}/Include"
+    ],
     "files.associations": {
         "*.cfg": "text",
         "*.glh": "glsl",

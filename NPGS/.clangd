@@ -1,0 +1,38 @@
+CompileFlags:
+  # 指定 compile_commands.json 路径
+  CompilationDatabase: ${workspaceFolder} # compile_commands.json 所在目录
+
+  # 添加编译器标志
+  Add: 
+    - -std=c++2b
+    - -D_DEBUG
+    - -DUNICODE
+    - -D_UNICODE 
+    - -D_WIN64
+    - -DWIN32_LEAN_AND_MEAN
+    - -DNOMINMAX
+
+
+  # 移除一些不需要的警告标志
+  Remove: 
+    - /W3
+    - /EHsc
+    - /nologo
+
+Index:
+  Background: Build
+  StandardLibrary: Yes
+
+InlayHints:
+  Enabled: false
+  
+Diagnostics:  
+  ClangTidy:
+    Add: 
+      - modernize*
+      - performance*
+      - readability*
+    Remove:
+      - modernize-use-trailing-return-type
+      
+  UnusedIncludes: Strict
