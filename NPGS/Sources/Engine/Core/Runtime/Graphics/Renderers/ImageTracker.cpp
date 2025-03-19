@@ -6,6 +6,16 @@ _NPGS_BEGIN
 _RUNTIME_BEGIN
 _GRAPHICS_BEGIN
 
+bool FImageTracker::FImageState::operator==(const FImageState& Other) const
+{
+    return StageMask == Other.StageMask && AccessMask == Other.AccessMask && ImageLayout == Other.ImageLayout;
+}
+
+bool FImageTracker::FImageState::operator!=(const FImageState& Other) const
+{
+    return !(*this == Other);
+}
+
 std::size_t FImageTracker::FImageHash::operator()(const FImageKey& Key) const
 {
     if (std::holds_alternative<vk::Image>(Key))
@@ -20,6 +30,48 @@ std::size_t FImageTracker::FImageHash::operator()(const FImageKey& Key) const
                                                     Range.levelCount ^ Range.baseArrayLayer ^ Range.layerCount);
         return Hx ^ (Ix << 1);
     }
+}
+
+void FImageTracker::FlushImageAllStates(vk::Image Image, const FImageState& ImageState)
+{
+    for (auto& [Key, State] : _ImageStateMap)
+    {
+        if (std::holds_alternative<vk::Image>(Key))
+        {
+            State = ImageState;
+            continue;
+        }
+
+        if (std::holds_alternative<std::pair<vk::Image, vk::ImageSubresourceRange>>(Key))
+        {
+            auto& [KeyImage, KeyRange] = std::get<std::pair<vk::Image, vk::ImageSubresourceRange>>(Key);
+            if (KeyImage == Image)
+            {
+                State = ImageState;
+            }
+        }
+    }
+}
+
+FImageTracker::FImageState FImageTracker::GetImageState(vk::Image Image, const vk::ImageSubresourceRange& Range)
+{
+    FImageKey ImageKey = std::make_pair(Image, Range);
+    auto it = _ImageStateMap.find(ImageKey);
+    if (it != _ImageStateMap.end())
+    {
+        return it->second;
+    }
+
+    auto ImageIt = _ImageStateMap.find(Image);
+    if (ImageIt != _ImageStateMap.end())
+    {
+        FImageState ImageState = ImageIt->second;
+        _ImageStateMap[ImageKey] = ImageState;
+        _ImageStateMap.erase(ImageIt);
+        return ImageState;
+    }
+
+    return {};
 }
 
 vk::ImageMemoryBarrier2 FImageTracker::CreateBarrier(vk::Image Image, const vk::ImageSubresourceRange& Range, FImageState DstState)

@@ -861,25 +861,25 @@ void FApplication::LoadAssets()
     std::vector<std::string> TextureFiles
     {
         "CliffSide/cliff_side_disp_4k.jpg",
-        "CliffSide/cliff_side_diff_4k.jpg",
-        "CliffSide/cliff_side_nor_dx_4k.jpg",
-        "CliffSide/cliff_side_arm_4k.jpg"
+        "CliffSide/cliff_side_diff_4k_mipmapped_bc6h_u.ktx2",
+        "CliffSide/cliff_side_nor_dx_4k_mipmapped_bc6h_u.ktx2",
+        "CliffSide/cliff_side_arm_4k_mipmapped_bc6h_u.ktx2"
     };
 
     std::vector<vk::Format> InitialTextureFormats
     {
         vk::Format::eR8G8B8A8Unorm,
-        vk::Format::eR8G8B8A8Srgb,
-        vk::Format::eR8G8B8A8Unorm,
-        vk::Format::eR8G8B8A8Unorm
+        vk::Format::eBc6HUfloatBlock,
+        vk::Format::eBc6HUfloatBlock,
+        vk::Format::eBc6HUfloatBlock
     };
 
     std::vector<vk::Format> FinalTextureFormats
     {
         vk::Format::eR8G8B8A8Unorm,
-        vk::Format::eR8G8B8A8Srgb,
-        vk::Format::eR8G8B8A8Unorm,
-        vk::Format::eR8G8B8A8Unorm
+        vk::Format::eBc6HUfloatBlock,
+        vk::Format::eBc6HUfloatBlock,
+        vk::Format::eBc6HUfloatBlock
     };
 
 #if !defined(_DEBUG)

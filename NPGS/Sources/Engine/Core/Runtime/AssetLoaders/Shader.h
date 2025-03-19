@@ -7,7 +7,7 @@
 #include <unordered_map>
 #include <vector>
 
-#include <vulkan/vulkan_handles.hpp>
+#include <vulkan/vulkan.hpp>
 
 #include "Engine/Core/Base/Base.h"
 #include "Engine/Core/Runtime/Graphics/Vulkan/Wrappers.h"

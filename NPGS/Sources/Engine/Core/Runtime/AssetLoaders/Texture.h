@@ -10,7 +10,7 @@
 
 #include <OpenEXR/ImfRgba.h>
 #include <vma/vk_mem_alloc.h>
-#include <vulkan/vulkan_handles.hpp>
+#include <vulkan/vulkan.hpp>
 
 #include "Engine/Core/Runtime/Graphics/Vulkan/Resources.h"
 #include "Engine/Core/Runtime/Graphics/Vulkan/Wrappers.h"
@@ -73,44 +73,48 @@ protected:
     FTextureBase& operator=(const FTextureBase&)     = delete;
     FTextureBase& operator=(FTextureBase&&) noexcept = default;
 
-    void CreateTexture(const FImageData& ImageData, vk::Format InitialFormat, vk::Format FinalFormat,
-                       vk::ImageCreateFlags Flags, vk::ImageType ImageType, vk::ImageViewType ImageViewType,
+    void CreateTexture(const FImageData& ImageData, vk::ImageCreateFlags Flags, vk::ImageType ImageType,
+                       vk::ImageViewType ImageViewType, vk::Format InitialFormat, vk::Format FinalFormat,
                        std::uint32_t ArrayLayers, bool bGenerateMipmaps);
 
 private:
-    void CreateTextureInternal(const FImageData& ImageData, vk::Format InitialFormat, vk::Format FinalFormat,
-                               vk::ImageType ImageType, vk::ImageViewType ImageViewType,
-                               vk::ImageCreateFlags Flags, std::uint32_t ArrayLayers, bool bGenerateMipmaps);
+    void CreateTextureInternal(const FImageData& ImageData, vk::ImageCreateFlags Flags, vk::ImageType ImageType,
+                               vk::ImageViewType ImageViewType, vk::Format InitialFormat, vk::Format FinalFormat,
+                               std::uint32_t ArrayLayers, bool bGenerateMipmaps);
 
-    void CreateImageMemory(vk::ImageType ImageType, vk::Format Format, vk::Extent3D Extent, std::uint32_t MipLevels,
-                           std::uint32_t ArrayLayers, vk::ImageCreateFlags Flags = {});
+    void CreateImageMemory(vk::ImageCreateFlags Flags, vk::ImageType ImageType, vk::Format Format,
+                           vk::Extent3D Extent, std::uint32_t MipLevels, std::uint32_t ArrayLayers);
 
-    void CreateImageView(vk::ImageViewType ImageViewType, vk::Format Format, std::uint32_t MipLevels,
-                         std::uint32_t ArrayLayers, vk::ImageViewCreateFlags Flags = {});
-
-    void ApplyMipmappedTexture(vk::Buffer SrcBuffer, vk::Extent3D Extent, std::uint32_t MipLevels,
-                               const std::vector<std::size_t>& LevelOffsets,
-                               std::uint32_t ArrayLayers, vk::Filter Filter, vk::Image DstImage);
+    void CreateImageView(vk::ImageViewCreateFlags Flags, vk::ImageViewType ImageViewType, vk::Format Format,
+                         std::uint32_t MipLevels, std::uint32_t ArrayLayers);
 
     void CopyBlitGenerateTexture(vk::Buffer SrcBuffer, vk::Extent3D Extent, std::uint32_t MipLevels, std::uint32_t ArrayLayers,
                                  vk::Filter Filter, vk::Image DstImageSrcBlit, vk::Image DstImageDstBlit);
 
+    void CopyBlitApplyTexture(vk::Buffer SrcBuffer, vk::Extent3D Extent, std::uint32_t MipLevels,
+                              const std::vector<std::size_t>& LevelOffsets,
+                              std::uint32_t ArrayLayers, vk::Filter Filter, vk::Image DstImage);
+
     void BlitGenerateTexture(vk::Extent3D Extent, std::uint32_t MipLevels, std::uint32_t ArrayLayers,
                              vk::Filter Filter, vk::Image SrcImage, vk::Image DstImage);
 
+    void BlitApplyTexture(vk::Extent3D Extent, std::uint32_t MipLevels, std::uint32_t ArrayLayers,
+                          vk::Filter Filter, vk::Image SrcImage, vk::Image DstImage);
+
     void CopyBufferToImage(const Graphics::FVulkanCommandBuffer& CommandBuffer,
-                           const Graphics::FImageMemoryMaskPack& PostTransferStatus,
-                           const vk::BufferImageCopy& Region, vk::Buffer SrcBuffer, vk::Image DstImage);
+                           vk::Buffer SrcBuffer, vk::Image DstImage,
+                           const Graphics::FImageMemoryMaskPack& PostTransferState,
+                           const vk::ArrayProxy<vk::BufferImageCopy>& Regions);
 
-    void BlitImage(const Graphics::FVulkanCommandBuffer& CommandBuffer, vk::Filter Filter,
-                   const Graphics::FImageMemoryMaskPack& SrcPostTransferStatus,
-                   const Graphics::FImageMemoryMaskPack& DstPostTransferStatus,
-                   const vk::ImageBlit& Region, vk::Image SrcImage, vk::Image DstImage);
+    void BlitImage(const Graphics::FVulkanCommandBuffer& CommandBuffer,
+                   vk::Image SrcImage, const Graphics::FImageMemoryMaskPack& SrcPostTransferState,
+                   vk::Image DstImage, const Graphics::FImageMemoryMaskPack& DstPostTransferState,
+                   const vk::ArrayProxy<vk::ImageBlit>& Regions, vk::Filter Filter);
 
 
-    void GenerateMipmaps(const Graphics::FVulkanCommandBuffer& CommandBuffer, vk::Extent3D Extent,
-                         std::uint32_t MipLevels, std::uint32_t ArrayLayers, vk::Filter Filter,
-                         const Graphics::FImageMemoryMaskPack& FinalStatus, vk::Image Image);
+    void GenerateMipmaps(const Graphics::FVulkanCommandBuffer& CommandBuffer,
+                         vk::Image Image, const Graphics::FImageMemoryMaskPack& FinalState,
+                         vk::Extent3D Extent, std::uint32_t MipLevels, std::uint32_t ArrayLayers, vk::Filter Filter);
 
 protected:
     std::unique_ptr<FImageLoader>                 _ImageLoader;

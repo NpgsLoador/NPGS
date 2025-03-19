@@ -16,7 +16,6 @@
 #include <OpenEXR/ImfRgbaFile.h>
 #include <OpenEXR/ImfTiledRgbaFile.h>
 #include <stb_image.h>
-#include <vulkan/vulkan.hpp>
 
 #include "Engine/Core/Base/Assert.h"
 #include "Engine/Core/Runtime/AssetLoaders/AssetManager.h"
@@ -417,16 +416,16 @@ FTextureBase::FTextureBase(VmaAllocator Allocator, const VmaAllocationCreateInfo
 {
 }
 
-void FTextureBase::CreateTexture(const FImageData& ImageData, vk::Format InitialFormat, vk::Format FinalFormat,
-                                 vk::ImageCreateFlags Flags, vk::ImageType ImageType, vk::ImageViewType ImageViewType,
+void FTextureBase::CreateTexture(const FImageData& ImageData, vk::ImageCreateFlags Flags, vk::ImageType ImageType,
+                                 vk::ImageViewType ImageViewType, vk::Format InitialFormat, vk::Format FinalFormat,
                                  std::uint32_t ArrayLayers, bool bGenerateMipmaps)
 {
-    CreateTextureInternal(ImageData, InitialFormat, FinalFormat, ImageType, ImageViewType, Flags, ArrayLayers, bGenerateMipmaps);
+    CreateTextureInternal(ImageData, Flags, ImageType, ImageViewType, InitialFormat, FinalFormat, ArrayLayers, bGenerateMipmaps);
 }
 
-void FTextureBase::CreateTextureInternal(const FImageData& ImageData, vk::Format InitialFormat, vk::Format FinalFormat,
-                                         vk::ImageType ImageType, vk::ImageViewType ImageViewType,
-                                         vk::ImageCreateFlags Flags, std::uint32_t ArrayLayers, bool bGenerateMipmaps)
+void FTextureBase::CreateTextureInternal(const FImageData& ImageData, vk::ImageCreateFlags Flags, vk::ImageType ImageType,
+                                         vk::ImageViewType ImageViewType, vk::Format InitialFormat, vk::Format FinalFormat,
+                                         std::uint32_t ArrayLayers, bool bGenerateMipmaps)
 {
     VmaAllocationCreateInfo StagingCreateInfo{ .usage = VMA_MEMORY_USAGE_CPU_TO_GPU };
     VmaAllocationCreateInfo* AllocationCreateInfo = _Allocator ? &StagingCreateInfo : nullptr;
@@ -447,8 +446,8 @@ void FTextureBase::CreateTextureInternal(const FImageData& ImageData, vk::Format
         MipLevels = 1;
     }
 
-    CreateImageMemory(ImageType, InitialFormat, Extent, MipLevels, ArrayLayers, Flags);
-    CreateImageView(ImageViewType, InitialFormat, MipLevels, ArrayLayers);
+    CreateImageMemory(Flags, ImageType, InitialFormat, Extent, MipLevels, ArrayLayers);
+    CreateImageView({}, ImageViewType, InitialFormat, MipLevels, ArrayLayers);
 
     if (InitialFormat == FinalFormat)
     {
@@ -459,8 +458,8 @@ void FTextureBase::CreateTextureInternal(const FImageData& ImageData, vk::Format
         }
         else
         {
-            ApplyMipmappedTexture(*StagingBuffer->GetBuffer(), Extent, MipLevels, ImageData.LevelOffsets,
-                                  ArrayLayers, vk::Filter::eLinear, *_ImageMemory->GetResource());
+            CopyBlitApplyTexture(*StagingBuffer->GetBuffer(), Extent, MipLevels, ImageData.LevelOffsets,
+                                 ArrayLayers, vk::Filter::eLinear, *_ImageMemory->GetResource());
         }
     }
     else
@@ -474,7 +473,7 @@ void FTextureBase::CreateTextureInternal(const FImageData& ImageData, vk::Format
             .setArrayLayers(ArrayLayers)
             .setSamples(vk::SampleCountFlagBits::e1)
             .setUsage(vk::ImageUsageFlagBits::eTransferSrc | vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eSampled)
-            .setInitialLayout(vk::ImageLayout::ePreinitialized);
+            .setInitialLayout(vk::ImageLayout::eUndefined);
 
         Graphics::FVulkanImage* ConvertedImage = StagingBuffer->CreateAliasedImage(InitialFormat, ImageCreateInfo);
 
@@ -486,6 +485,7 @@ void FTextureBase::CreateTextureInternal(const FImageData& ImageData, vk::Format
             }
             else
             {
+                BlitApplyTexture(Extent, MipLevels, ArrayLayers, vk::Filter::eLinear, **ConvertedImage, *_ImageMemory->GetResource());
             }
         }
         else
@@ -497,8 +497,8 @@ void FTextureBase::CreateTextureInternal(const FImageData& ImageData, vk::Format
             }
             else
             {
-                ApplyMipmappedTexture(*StagingBuffer->GetBuffer(), Extent, MipLevels, ImageData.LevelOffsets,
-                                      ArrayLayers, vk::Filter::eLinear, *_ImageMemory->GetResource());
+                CopyBlitApplyTexture(*StagingBuffer->GetBuffer(), Extent, MipLevels, ImageData.LevelOffsets,
+                                     ArrayLayers, vk::Filter::eLinear, *_ImageMemory->GetResource());
             }
 
             Graphics::FVulkanImageMemory VanillaImageMemory(std::move(*_ImageMemory));
@@ -507,19 +507,27 @@ void FTextureBase::CreateTextureInternal(const FImageData& ImageData, vk::Format
             _ImageMemory.release();
             _ImageView.release();
 
-            CreateImageMemory(ImageType, FinalFormat, Extent, MipLevels, ArrayLayers, Flags);
-            CreateImageView(ImageViewType, FinalFormat, MipLevels, ArrayLayers);
+            CreateImageMemory(Flags, ImageType, FinalFormat, Extent, MipLevels, ArrayLayers);
+            CreateImageView({}, ImageViewType, FinalFormat, MipLevels, ArrayLayers);
 
-            BlitGenerateTexture(Extent, MipLevels, ArrayLayers, vk::Filter::eLinear,
-                                *VanillaImageMemory.GetResource(), *_ImageMemory->GetResource());
+            if (!bImageMipmapped)
+            {
+                BlitGenerateTexture(Extent, MipLevels, ArrayLayers, vk::Filter::eLinear,
+                                    *VanillaImageMemory.GetResource(), *_ImageMemory->GetResource());
+            }
+            else
+            {
+                BlitApplyTexture(Extent, MipLevels, ArrayLayers, vk::Filter::eLinear,
+                                 *VanillaImageMemory.GetResource(), *_ImageMemory->GetResource());
+            }
         }
     }
 
     StagingBufferPool->ReleaseBuffer(StagingBuffer);
 }
 
-void FTextureBase::CreateImageMemory(vk::ImageType ImageType, vk::Format Format, vk::Extent3D Extent,
-                                     std::uint32_t MipLevels, std::uint32_t ArrayLayers, vk::ImageCreateFlags Flags)
+void FTextureBase::CreateImageMemory(vk::ImageCreateFlags Flags, vk::ImageType ImageType, vk::Format Format,
+                                     vk::Extent3D Extent, std::uint32_t MipLevels, std::uint32_t ArrayLayers)
 {
     vk::ImageCreateInfo ImageCreateInfo = vk::ImageCreateInfo()
         .setFlags(Flags)
@@ -530,7 +538,7 @@ void FTextureBase::CreateImageMemory(vk::ImageType ImageType, vk::Format Format,
         .setArrayLayers(ArrayLayers)
         .setSamples(vk::SampleCountFlagBits::e1)
         .setUsage(vk::ImageUsageFlagBits::eTransferSrc | vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eSampled)
-        .setInitialLayout(vk::ImageLayout::ePreinitialized);
+        .setInitialLayout(vk::ImageLayout::eUndefined);
 
     if (_Allocator != nullptr)
     {
@@ -542,46 +550,13 @@ void FTextureBase::CreateImageMemory(vk::ImageType ImageType, vk::Format Format,
     }
 }
 
-void FTextureBase::CreateImageView(vk::ImageViewType ImageViewType, vk::Format Format, std::uint32_t MipLevels,
-                                   std::uint32_t ArrayLayers, vk::ImageViewCreateFlags Flags)
+void FTextureBase::CreateImageView(vk::ImageViewCreateFlags Flags, vk::ImageViewType ImageViewType, vk::Format Format,
+                                   std::uint32_t MipLevels, std::uint32_t ArrayLayers)
 {
     vk::ImageSubresourceRange ImageSubresourceRange(vk::ImageAspectFlagBits::eColor, 0, MipLevels, 0, ArrayLayers);
 
-    _ImageView = std::make_unique<Graphics::FVulkanImageView>(_ImageMemory->GetResource(), ImageViewType, Format,
-                                                              vk::ComponentMapping(), ImageSubresourceRange, Flags);
-}
-
-void FTextureBase::ApplyMipmappedTexture(vk::Buffer SrcBuffer, vk::Extent3D Extent, std::uint32_t MipLevels,
-                                         const std::vector<std::size_t>& LevelOffsets,
-                                         std::uint32_t ArrayLayers, vk::Filter Filter, vk::Image DstImage)
-{
-    //auto* VulkanContext = Graphics::FVulkanContext::GetClassInstance();
-    //auto& CommandBuffer = VulkanContext->GetTransferCommandBuffer();
-    //CommandBuffer.Begin(vk::CommandBufferUsageFlagBits::eOneTimeSubmit);
-
-    //Graphics::FImageMemoryState PreTransferState(
-    //    vk::PipelineStageFlagBits2::eTransfer,
-    //    vk::AccessFlagBits2::eNone,
-    //    vk::ImageLayout::eUndefined
-    //);
-
-    //Graphics::FImageMemoryState PostTransferState;
-
-    //for (std::uint32_t MipLevel = 0; MipLevel != MipLevels; ++MipLevel)
-    //{
-    //    vk::ImageSubresourceLayers Subresource(vk::ImageAspectFlagBits::eColor, MipLevel, 0, ArrayLayers);
-
-    //    vk::Offset3D MipmapOffset = MipmapExtent(Extent, MipLevel);
-    //    vk::BufferImageCopy Region = vk::BufferImageCopy()
-    //        .setBufferOffset(LevelOffsets[MipLevel])
-    //        .setImageSubresource(Subresource)
-    //        .setImageExtent(vk::Extent3D(MipmapOffset.x, MipmapOffset.y, MipmapOffset.z));
-
-    //    // CopyBufferToImage(CommandBuffer, PreTransferStages, PostTransferStage, Region, SrcBuffer, DstImage);
-    //}
-
-    //CommandBuffer.End();
-    //VulkanContext->ExecuteGraphicsCommands(CommandBuffer);
+    _ImageView = std::make_unique<Graphics::FVulkanImageView>(
+        _ImageMemory->GetResource(), ImageViewType, Format, vk::ComponentMapping(), ImageSubresourceRange, Flags);
 }
 
 void FTextureBase::CopyBlitGenerateTexture(vk::Buffer SrcBuffer, vk::Extent3D Extent, std::uint32_t MipLevels, std::uint32_t ArrayLayers,
@@ -599,15 +574,8 @@ void FTextureBase::CopyBlitGenerateTexture(vk::Buffer SrcBuffer, vk::Extent3D Ex
     };
 
     auto* ImageTracker = Graphics::FImageTracker::GetInstance();
-    Graphics::FImageTracker::FImageState ImageState;
-    ImageState.StageMask   = vk::PipelineStageFlagBits2::eTopOfPipe;
-    ImageState.ImageLayout = vk::ImageLayout::ePreinitialized;
-    ImageTracker->TrackImage(DstImageSrcBlit, ImageState);
-    if (DstImageSrcBlit != DstImageDstBlit)
-    {
-        ImageState.ImageLayout = vk::ImageLayout::eUndefined;
-        ImageTracker->TrackImage(DstImageDstBlit, ImageState);
-    }
+    ImageTracker->TrackImage(DstImageSrcBlit, Graphics::FImageTracker::FImageState());
+    ImageTracker->TrackImage(DstImageDstBlit, Graphics::FImageTracker::FImageState());
 
     bool bGenerateMipmaps = MipLevels > 1;
     bool bNeedBlit        = DstImageSrcBlit != DstImageDstBlit;
@@ -622,7 +590,7 @@ void FTextureBase::CopyBlitGenerateTexture(vk::Buffer SrcBuffer, vk::Extent3D Ex
         .setImageSubresource(Subresource)
         .setImageExtent(Extent);
 
-    CopyBufferToImage(CommandBuffer, kPostTransferStates[bGenerateMipmaps || bNeedBlit], Region, SrcBuffer, DstImageSrcBlit);
+    CopyBufferToImage(CommandBuffer, SrcBuffer, DstImageSrcBlit, kPostTransferStates[bGenerateMipmaps || bNeedBlit], Region);
 
     if (bNeedBlit)
     {
@@ -632,13 +600,50 @@ void FTextureBase::CopyBlitGenerateTexture(vk::Buffer SrcBuffer, vk::Extent3D Ex
                                   static_cast<std::int32_t>(Extent.width));
 
         vk::ImageBlit Region(Subresource, Offsets, Subresource, Offsets);
-        BlitImage(CommandBuffer, Filter, kPostTransferStates[1], kPostTransferStates[bGenerateMipmaps], Region, DstImageSrcBlit, DstImageDstBlit);
+        BlitImage(CommandBuffer, DstImageSrcBlit, kPostTransferStates[1], DstImageDstBlit, kPostTransferStates[bGenerateMipmaps], Region, Filter);
     }
 
     if (bGenerateMipmaps)
     {
-        GenerateMipmaps(CommandBuffer, Extent, MipLevels, ArrayLayers, Filter, kPostTransferStates[0], DstImageDstBlit);
+        GenerateMipmaps(CommandBuffer, DstImageDstBlit, kPostTransferStates[0], Extent, MipLevels, ArrayLayers, Filter);
     }
+
+    CommandBuffer.End();
+    VulkanContext->ExecuteGraphicsCommands(CommandBuffer);
+}
+
+void FTextureBase::CopyBlitApplyTexture(vk::Buffer SrcBuffer, vk::Extent3D Extent, std::uint32_t MipLevels,
+                                        const std::vector<std::size_t>& LevelOffsets,
+                                        std::uint32_t ArrayLayers, vk::Filter Filter, vk::Image DstImage)
+{
+    auto* VulkanContext = Graphics::FVulkanContext::GetClassInstance();
+    auto& CommandBuffer = VulkanContext->GetTransferCommandBuffer();
+    CommandBuffer.Begin(vk::CommandBufferUsageFlagBits::eOneTimeSubmit);
+
+    Graphics::FImageMemoryMaskPack PostTransferState(
+        vk::PipelineStageFlagBits2::eFragmentShader,
+        vk::AccessFlagBits2::eShaderRead,
+        vk::ImageLayout::eShaderReadOnlyOptimal
+    );
+
+    auto* ImageTracker = Graphics::FImageTracker::GetInstance();
+
+    std::vector<vk::BufferImageCopy> Regions;
+    for (std::uint32_t MipLevel = 0; MipLevel != MipLevels; ++MipLevel)
+    {
+        vk::ImageSubresourceLayers Subresource(vk::ImageAspectFlagBits::eColor, MipLevel, 0, ArrayLayers);
+
+        vk::Offset3D MipmapOffset = MipmapExtent(Extent, MipLevel);
+        vk::BufferImageCopy Region = vk::BufferImageCopy()
+            .setBufferOffset(LevelOffsets[MipLevel])
+            .setImageSubresource(Subresource)
+            .setImageExtent(vk::Extent3D(MipmapOffset.x, MipmapOffset.y, MipmapOffset.z));
+
+        Regions.push_back(Region);
+    }
+
+    ImageTracker->TrackImage(DstImage, Graphics::FImageTracker::FImageState());
+    CopyBufferToImage(CommandBuffer, SrcBuffer, DstImage, PostTransferState, Regions);
 
     CommandBuffer.End();
     VulkanContext->ExecuteGraphicsCommands(CommandBuffer);
@@ -658,52 +663,102 @@ void FTextureBase::BlitGenerateTexture(vk::Extent3D Extent, std::uint32_t MipLev
         Graphics::FImageMemoryMaskPack()
     };
 
+    auto* ImageTracker = Graphics::FImageTracker::GetInstance();
+    if (!ImageTracker->IsExisting(SrcImage))
+    {
+        ImageTracker->TrackImage(SrcImage, Graphics::FImageTracker::FImageState());
+    }
+    if (!ImageTracker->IsExisting(DstImage))
+    {
+        ImageTracker->TrackImage(DstImage, Graphics::FImageTracker::FImageState());
+    }
+
     bool bGenerateMipmaps = MipLevels > 1;
     bool bNeedBlit        = SrcImage != DstImage;
-    if (bGenerateMipmaps || bNeedBlit)
+
+    auto* VulkanContext = Graphics::FVulkanContext::GetClassInstance();
+    auto& CommandBuffer = VulkanContext->GetTransferCommandBuffer();
+    CommandBuffer.Begin(vk::CommandBufferUsageFlagBits::eOneTimeSubmit);
+
+    if (bNeedBlit)
     {
-        auto* VulkanContext = Graphics::FVulkanContext::GetClassInstance();
-        auto& CommandBuffer = VulkanContext->GetTransferCommandBuffer();
-        CommandBuffer.Begin(vk::CommandBufferUsageFlagBits::eOneTimeSubmit);
+        vk::ImageSubresourceLayers Subresource(vk::ImageAspectFlagBits::eColor, 0, 0, ArrayLayers);
+        std::array<vk::Offset3D, 2> Offsets;
+        Offsets[1] = vk::Offset3D(static_cast<std::int32_t>(Extent.width),
+                                  static_cast<std::int32_t>(Extent.height),
+                                  static_cast<std::int32_t>(Extent.depth));
 
-        if (bNeedBlit)
-        {
-            vk::ImageSubresourceLayers Subresource(vk::ImageAspectFlagBits::eColor, 0, 0, ArrayLayers);
-            std::array<vk::Offset3D, 2> Offsets;
-            Offsets[1] = vk::Offset3D(static_cast<std::int32_t>(Extent.width),
-                                      static_cast<std::int32_t>(Extent.height),
-                                      static_cast<std::int32_t>(Extent.depth));
-
-            vk::ImageBlit Region(Subresource, Offsets, Subresource, Offsets);
-            BlitImage(CommandBuffer, Filter, kPostTransferStates[bGenerateMipmaps], kPostTransferStates[bGenerateMipmaps], Region, SrcImage, DstImage);
-        }
-
-        if (bGenerateMipmaps)
-        {
-            GenerateMipmaps(CommandBuffer, Extent, MipLevels, ArrayLayers, Filter, kPostTransferStates[0], DstImage);
-        }
-
-        CommandBuffer.End();
-        VulkanContext->ExecuteGraphicsCommands(CommandBuffer);
+        vk::ImageBlit Region(Subresource, Offsets, Subresource, Offsets);
+        BlitImage(CommandBuffer, SrcImage, kPostTransferStates[bGenerateMipmaps], DstImage, kPostTransferStates[bGenerateMipmaps], Region, Filter);
     }
+
+    if (bGenerateMipmaps)
+    {
+        GenerateMipmaps(CommandBuffer, DstImage, kPostTransferStates[0], Extent, MipLevels, ArrayLayers, Filter);
+    }
+
+    CommandBuffer.End();
+    VulkanContext->ExecuteGraphicsCommands(CommandBuffer);
+}
+
+void FTextureBase::BlitApplyTexture(vk::Extent3D Extent, std::uint32_t MipLevels, std::uint32_t ArrayLayers,
+                                    vk::Filter Filter, vk::Image SrcImage, vk::Image DstImage)
+{
+    auto* ImageTracker = Graphics::FImageTracker::GetInstance();
+    if (!ImageTracker->IsExisting(SrcImage))
+    {
+        ImageTracker->TrackImage(SrcImage, Graphics::FImageTracker::FImageState());
+    }
+    if (!ImageTracker->IsExisting(DstImage))
+    {
+        ImageTracker->TrackImage(DstImage, Graphics::FImageTracker::FImageState());
+    }
+
+    auto* VulkanContext = Graphics::FVulkanContext::GetClassInstance();
+    auto& CommandBuffer = VulkanContext->GetTransferCommandBuffer();
+    CommandBuffer.Begin(vk::CommandBufferUsageFlagBits::eOneTimeSubmit);
+
+    std::vector<vk::ImageBlit> Regions;
+    for (std::uint32_t MipLevel = 0; MipLevel != MipLevels; ++MipLevel)
+    {
+        vk::ImageSubresourceLayers Subresource(vk::ImageAspectFlagBits::eColor, MipLevel, 0, ArrayLayers);
+        vk::Offset3D MipmapOffset = MipmapExtent(Extent, MipLevel);
+        std::array<vk::Offset3D, 2> Offsets;
+        Offsets[1] = vk::Offset3D(MipmapOffset);
+
+        Regions.emplace_back(Subresource, Offsets, Subresource, Offsets);
+    }
+
+    Graphics::FImageMemoryMaskPack PostTransferState(
+        vk::PipelineStageFlagBits2::eFragmentShader,
+        vk::AccessFlagBits2::eShaderRead,
+        vk::ImageLayout::eShaderReadOnlyOptimal
+    );
+
+    BlitImage(CommandBuffer, SrcImage, PostTransferState, DstImage, PostTransferState, Regions, Filter);
+
+    CommandBuffer.End();
+    VulkanContext->ExecuteGraphicsCommands(CommandBuffer);
 }
 
 void FTextureBase::CopyBufferToImage(const Graphics::FVulkanCommandBuffer& CommandBuffer,
+                                     vk::Buffer SrcBuffer, vk::Image DstImage,
                                      const Graphics::FImageMemoryMaskPack& PostTransferState,
-                                     const vk::BufferImageCopy& Region, vk::Buffer SrcBuffer, vk::Image DstImage)
+                                     const vk::ArrayProxy<vk::BufferImageCopy>& Regions)
 {
+    vk::BufferImageCopy Region = *(Regions.begin());
     vk::ImageSubresourceRange ImageSubresourceRange(
         Region.imageSubresource.aspectMask,
         Region.imageSubresource.mipLevel,
-        1,
+        Regions.size(),
         Region.imageSubresource.baseArrayLayer,
         Region.imageSubresource.layerCount
     );
 
     auto* ImageTracker = Graphics::FImageTracker::GetInstance();
-    auto  ImageState   = ImageTracker->GetImageState(DstImage);
+    auto  ImageState   = ImageTracker->GetImageState(DstImage, ImageSubresourceRange);
 
-    vk::ImageMemoryBarrier2 Barrier(
+    vk::ImageMemoryBarrier2 InitDstImageBarrier(
         ImageState.StageMask,
         ImageState.AccessMask,
         vk::PipelineStageFlagBits2::eTransfer,
@@ -719,40 +774,41 @@ void FTextureBase::CopyBufferToImage(const Graphics::FVulkanCommandBuffer& Comma
     ImageState.StageMask   = vk::PipelineStageFlagBits2::eTransfer;
     ImageState.AccessMask  = vk::AccessFlagBits2::eTransferWrite;
     ImageState.ImageLayout = vk::ImageLayout::eTransferDstOptimal;
-    ImageTracker->TrackImage(DstImage, ImageSubresourceRange, ImageState);
+    ImageTracker->FlushImageAllStates(DstImage, ImageState);
 
-    vk::DependencyInfo DependencyInfo = vk::DependencyInfo()
+    vk::DependencyInfo CopyDependencyInfo = vk::DependencyInfo()
         .setDependencyFlags(vk::DependencyFlagBits::eByRegion)
-        .setImageMemoryBarriers(Barrier);
+        .setImageMemoryBarriers(InitDstImageBarrier);
 
-    CommandBuffer->pipelineBarrier2(DependencyInfo);
-    CommandBuffer->copyBufferToImage(SrcBuffer, DstImage, vk::ImageLayout::eTransferDstOptimal, Region);
+    CommandBuffer->pipelineBarrier2(CopyDependencyInfo);
+    CommandBuffer->copyBufferToImage(SrcBuffer, DstImage, vk::ImageLayout::eTransferDstOptimal, Regions);
 
     if (PostTransferState.kbEnable)
     {
-        Barrier.setSrcStageMask(vk::PipelineStageFlagBits2::eTransfer)
-               .setSrcAccessMask(vk::AccessFlagBits2::eTransferWrite)
-               .setDstStageMask(PostTransferState.kStageMask)
-               .setDstAccessMask(PostTransferState.kAccessMask)
-               .setOldLayout(vk::ImageLayout::eTransferDstOptimal)
-               .setNewLayout(PostTransferState.kImageLayout);
+        InitDstImageBarrier.setSrcStageMask(vk::PipelineStageFlagBits2::eTransfer)
+                           .setSrcAccessMask(vk::AccessFlagBits2::eTransferWrite)
+                           .setDstStageMask(PostTransferState.kStageMask)
+                           .setDstAccessMask(PostTransferState.kAccessMask)
+                           .setOldLayout(vk::ImageLayout::eTransferDstOptimal)
+                           .setNewLayout(PostTransferState.kImageLayout);
 
-        ImageTracker->TrackImage(DstImage, ImageSubresourceRange, PostTransferState);
+        ImageTracker->FlushImageAllStates(DstImage, PostTransferState);
 
-        DependencyInfo.setImageMemoryBarriers(Barrier);
-        CommandBuffer->pipelineBarrier2(DependencyInfo);
+        CopyDependencyInfo.setImageMemoryBarriers(InitDstImageBarrier);
+        CommandBuffer->pipelineBarrier2(CopyDependencyInfo);
     }
 }
 
-void FTextureBase::BlitImage(const Graphics::FVulkanCommandBuffer& CommandBuffer, vk::Filter Filter,
-                             const Graphics::FImageMemoryMaskPack& SrcPostTransferState,
-                             const Graphics::FImageMemoryMaskPack& DstPostTransferState,
-                             const vk::ImageBlit& Region, vk::Image SrcImage, vk::Image DstImage)
+void FTextureBase::BlitImage(const Graphics::FVulkanCommandBuffer& CommandBuffer,
+                             vk::Image SrcImage, const Graphics::FImageMemoryMaskPack& SrcPostTransferState,
+                             vk::Image DstImage, const Graphics::FImageMemoryMaskPack& DstPostTransferState,
+                             const vk::ArrayProxy<vk::ImageBlit>& Regions, vk::Filter Filter)
 {
+    vk::ImageBlit Region = *(Regions.begin());
     vk::ImageSubresourceRange SrcImageSubresourceRange(
         Region.srcSubresource.aspectMask,
         Region.srcSubresource.mipLevel,
-        1,
+        Regions.size(),
         Region.srcSubresource.baseArrayLayer,
         Region.srcSubresource.layerCount
     );
@@ -760,14 +816,14 @@ void FTextureBase::BlitImage(const Graphics::FVulkanCommandBuffer& CommandBuffer
     vk::ImageSubresourceRange DstImageSubresourceRange(
         Region.dstSubresource.aspectMask,
         Region.dstSubresource.mipLevel,
-        1,
+        Regions.size(),
         Region.dstSubresource.baseArrayLayer,
         Region.dstSubresource.layerCount
     );
 
-    auto* ImageTracker  = Graphics::FImageTracker::GetInstance();
-    auto  SrcImageState = ImageTracker->GetImageState(SrcImage, SrcImageSubresourceRange);
-    auto  DstImageState = ImageTracker->GetImageState(DstImage, DstImageSubresourceRange);
+    auto* ImageTracker = Graphics::FImageTracker::GetInstance();
+    auto SrcImageState = ImageTracker->GetImageState(SrcImage, SrcImageSubresourceRange);
+    auto DstImageState = ImageTracker->GetImageState(DstImage, DstImageSubresourceRange);
 
     vk::ImageMemoryBarrier2 SrcPreTransferBarrier(
         SrcImageState.StageMask,
@@ -813,7 +869,7 @@ void FTextureBase::BlitImage(const Graphics::FVulkanCommandBuffer& CommandBuffer
 
     CommandBuffer->pipelineBarrier2(PreTransferDependencyInfo);
     CommandBuffer->blitImage(SrcImage, vk::ImageLayout::eTransferSrcOptimal,
-                             DstImage, vk::ImageLayout::eTransferDstOptimal, Region, Filter);
+                             DstImage, vk::ImageLayout::eTransferDstOptimal, Regions, Filter);
 
     if (SrcPostTransferState.kbEnable || DstPostTransferState.kbEnable)
     {
@@ -863,9 +919,9 @@ void FTextureBase::BlitImage(const Graphics::FVulkanCommandBuffer& CommandBuffer
     }
 }
 
-void FTextureBase::GenerateMipmaps(const Graphics::FVulkanCommandBuffer& CommandBuffer, vk::Extent3D Extent,
-                                   std::uint32_t MipLevels, std::uint32_t ArrayLayers, vk::Filter Filter,
-                                   const Graphics::FImageMemoryMaskPack& FinalState, vk::Image Image)
+void FTextureBase::GenerateMipmaps(const Graphics::FVulkanCommandBuffer& CommandBuffer,
+                                   vk::Image Image, const Graphics::FImageMemoryMaskPack& FinalState,
+                                   vk::Extent3D Extent, std::uint32_t MipLevels, std::uint32_t ArrayLayers, vk::Filter Filter)
 {
     Graphics::FImageMemoryMaskPack PostTransferStages;
 
@@ -878,7 +934,7 @@ void FTextureBase::GenerateMipmaps(const Graphics::FVulkanCommandBuffer& Command
             { vk::Offset3D(), MipmapExtent(Extent, MipLevel) }
         );
 
-        BlitImage(CommandBuffer, Filter, PostTransferStages, PostTransferStages, Region, Image, Image);
+        BlitImage(CommandBuffer, Image, PostTransferStages, Image, PostTransferStages, Region, Filter);
     }
 
     if (FinalState.kbEnable)
@@ -912,6 +968,9 @@ void FTextureBase::GenerateMipmaps(const Graphics::FVulkanCommandBuffer& Command
             LastMipRange
         );
 
+        auto* ImageTracker = Graphics::FImageTracker::GetInstance();
+        ImageTracker->FlushImageAllStates(Image, FinalState);
+
         std::array FinalBarriers{ PartFinalBarrier, LastFinalBarrier };
 
         vk::DependencyInfo FinalDependencyInfo = vk::DependencyInfo()
@@ -926,8 +985,7 @@ FTexture2D::FTexture2D(std::string_view Filename, vk::Format InitialFormat, vk::
                        vk::ImageCreateFlags Flags, bool bGenerateMipmaps)
     : Base(nullptr, nullptr)
 {
-    CreateTexture(GetAssetFullPath(EAssetType::kTexture, Filename.data()),
-                  InitialFormat, FinalFormat, Flags, bGenerateMipmaps);
+    CreateTexture(GetAssetFullPath(EAssetType::kTexture, Filename.data()), InitialFormat, FinalFormat, Flags, bGenerateMipmaps);
 }
 
 FTexture2D::FTexture2D(const VmaAllocationCreateInfo& AllocationCreateInfo, std::string_view Filename,
@@ -973,8 +1031,7 @@ void FTexture2D::CreateTexture(const FImageData& ImageData, vk::Format InitialFo
                                vk::ImageCreateFlags Flags, bool bGenerateMipmaps)
 {
     _ImageExtent = vk::Extent2D(ImageData.Extent.width, ImageData.Extent.height);
-    Base::CreateTexture(ImageData, InitialFormat, FinalFormat, Flags, vk::ImageType::e2D,
-                        vk::ImageViewType::e2D, 1, bGenerateMipmaps);
+    Base::CreateTexture(ImageData, Flags, vk::ImageType::e2D, vk::ImageViewType::e2D, InitialFormat, FinalFormat, 1, bGenerateMipmaps);
 }
 
 FTextureCube::FTextureCube(std::string_view Filename, vk::Format InitialFormat, vk::Format FinalFormat,
@@ -1013,8 +1070,7 @@ FTextureCube::FTextureCube(VmaAllocator Allocator, const VmaAllocationCreateInfo
     }
     else
     {
-        CreateCubemap(GetAssetFullPath(EAssetType::kTexture, Filename.data()),
-                      InitialFormat, FinalFormat, Flags, bGenerateMipmaps);
+        CreateCubemap(GetAssetFullPath(EAssetType::kTexture, Filename.data()), InitialFormat, FinalFormat, Flags, bGenerateMipmaps);
     }
 }
 
@@ -1086,8 +1142,7 @@ void FTextureCube::CreateCubemap(const FImageData& ImageData, vk::Format Initial
     _ImageExtent = vk::Extent2D(ImageData.Extent.width, ImageData.Extent.height);
     vk::ImageCreateFlags CubeFlags = Flags | vk::ImageCreateFlagBits::eCubeCompatible;
 
-    Base::CreateTexture(ImageData, InitialFormat, FinalFormat, CubeFlags,
-                        vk::ImageType::e2D, vk::ImageViewType::eCube, 6, bGenerateMipmaps);
+    Base::CreateTexture(ImageData, CubeFlags, vk::ImageType::e2D, vk::ImageViewType::eCube, InitialFormat, FinalFormat, 6, bGenerateMipmaps);
 }
 
 _ASSET_END

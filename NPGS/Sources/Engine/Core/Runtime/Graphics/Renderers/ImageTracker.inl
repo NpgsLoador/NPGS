@@ -4,12 +4,13 @@ _NPGS_BEGIN
 _RUNTIME_BEGIN
 _GRAPHICS_BEGIN
 
-NPGS_INLINE void FImageTracker::TrackImage(vk::Image Image, FImageState ImageState)
+NPGS_INLINE void FImageTracker::TrackImage(vk::Image Image, const FImageState& ImageState)
 {
     _ImageStateMap[Image] = ImageState;
+    _ImageSet.insert(Image);
 }
 
-NPGS_INLINE void FImageTracker::TrackImage(vk::Image Image, FImageMemoryMaskPack ImageMemoryMaskPack)
+NPGS_INLINE void FImageTracker::TrackImage(vk::Image Image, const FImageMemoryMaskPack& ImageMemoryMaskPack)
 {
     FImageState ImageState
     {
@@ -21,13 +22,25 @@ NPGS_INLINE void FImageTracker::TrackImage(vk::Image Image, FImageMemoryMaskPack
     TrackImage(Image, ImageState);
 }
 
-NPGS_INLINE void FImageTracker::TrackImage(vk::Image Image, const vk::ImageSubresourceRange& Range, FImageState ImageState)
+NPGS_INLINE void FImageTracker::TrackImage(vk::Image Image, const vk::ImageSubresourceRange& Range, const FImageState& ImageState)
 {
     FImageKey ImageKey = std::make_pair(Image, Range);
-    _ImageStateMap[ImageKey] = ImageState;
+    auto [it, bInserted] = _ImageStateMap.try_emplace(ImageKey, ImageState);
+    if (bInserted)
+    {
+        auto ImageIt = _ImageStateMap.find(Image);
+        if (ImageIt != _ImageStateMap.end())
+        {
+            _ImageStateMap.erase(ImageIt);
+        }
+    }
+
+    it->second = ImageState;
+    _ImageSet.insert(Image);
 }
 
-NPGS_INLINE void FImageTracker::TrackImage(vk::Image Image, const vk::ImageSubresourceRange& Range, FImageMemoryMaskPack ImageMemoryMaskPack)
+NPGS_INLINE void FImageTracker::TrackImage(vk::Image Image, const vk::ImageSubresourceRange& Range,
+                                           const FImageMemoryMaskPack& ImageMemoryMaskPack)
 {
     FImageState ImageState
     {
@@ -39,27 +52,26 @@ NPGS_INLINE void FImageTracker::TrackImage(vk::Image Image, const vk::ImageSubre
     TrackImage(Image, Range, ImageState);
 }
 
-NPGS_INLINE FImageTracker::FImageState FImageTracker::GetImageState(vk::Image Image) const
+NPGS_INLINE void FImageTracker::FlushImageAllStates(vk::Image Image, const FImageMemoryMaskPack& ImageMemoryMaskPack)
 {
-    auto it = _ImageStateMap.find(Image);
-    if (it == _ImageStateMap.end())
+    FImageState ImageState
     {
-        return {};
-    }
+        .StageMask   = ImageMemoryMaskPack.kStageMask,
+        .AccessMask  = ImageMemoryMaskPack.kAccessMask,
+        .ImageLayout = ImageMemoryMaskPack.kImageLayout
+    };
 
-    return it->second;
+    FlushImageAllStates(Image, ImageState);
 }
 
-NPGS_INLINE FImageTracker::FImageState FImageTracker::GetImageState(vk::Image Image, const vk::ImageSubresourceRange& Range) const
+NPGS_INLINE bool FImageTracker::IsExisting(vk::Image Image)
 {
-    FImageKey ImageKey = std::make_pair(Image, Range);
-    auto it = _ImageStateMap.find(ImageKey);
-    if (it == _ImageStateMap.end())
-    {
-        return {};
-    }
+    return _ImageSet.find(Image) != _ImageSet.end();
+}
 
-    return it->second;
+NPGS_INLINE FImageTracker::FImageState FImageTracker::GetImageState(vk::Image Image) const
+{
+    return _ImageStateMap.at(Image);
 }
 
 NPGS_INLINE void FImageTracker::Reset(vk::Image Image)
@@ -71,6 +83,7 @@ NPGS_INLINE void FImageTracker::Reset(vk::Image Image)
 NPGS_INLINE void FImageTracker::ResetAll()
 {
     _ImageStateMap.clear();
+    _ImageSet.clear();
 }
 
 _GRAPHICS_END

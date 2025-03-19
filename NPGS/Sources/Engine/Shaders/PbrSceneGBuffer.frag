@@ -56,8 +56,8 @@ void main()
 	RgbAlbedoAMetal = vec4(0.0);
     Shadow          = 0.0;
 #else
-	vec3  TexAlbedo    = textureLod(sampler2D(iDiffuseTex, iSampler), FragInput.TexCoord, 6).rgb;
-	vec3  TexNormal    = textureLod(sampler2D(iNormalTex,  iSampler), FragInput.TexCoord, 6).rgb;
+	vec3  TexAlbedo    = texture(sampler2D(iDiffuseTex, iSampler), FragInput.TexCoord).rgb;
+	vec3  TexNormal    = texture(sampler2D(iNormalTex,  iSampler), FragInput.TexCoord).rgb;
 	float TexAo        = texture(sampler2D(iArmTex,     iSampler), FragInput.TexCoord).r;
 	float TexRoughness = texture(sampler2D(iArmTex,     iSampler), FragInput.TexCoord).g;
 	float TexMetallic  = texture(sampler2D(iArmTex,     iSampler), FragInput.TexCoord).b;
@@ -66,7 +66,7 @@ void main()
 
 	RgbPositionAAo  = vec4(FragInput.FragPos, TexAo);
 	RgbNormalARough = vec4(Normal, TexRoughness);
-	RgbAlbedoAMetal = vec4(TexAlbedo, TexMetallic);
+	RgbAlbedoAMetal = vec4(pow(TexAlbedo, vec3(2.2)), TexMetallic);
     Shadow          = CalcShadow(FragInput.LightSpaceFragPos, 0.005);
 #endif // LAMP_BOX
 }
