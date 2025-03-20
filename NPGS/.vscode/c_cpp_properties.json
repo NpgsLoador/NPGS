@@ -5,12 +5,17 @@
             "includePath": [
                 "${workspaceFolder}/Sources",
                 "${workspaceFolder}/vcpkg_installed/x64-windows/x64-windows/include",
+                "${workspaceFolder}/vcpkg_installed/x64-windows/x64-windows/include/Imath",
+                "${workspaceFolder}/vcpkg_installed/x64-windows/x64-windows/include/OpenEXR",
                 "${env:VULKAN_SDK}/Include"
             ],
             "defines": [
                 "_DEBUG",
-                "UNICODE",
-                "_UNICODE"
+                "_UNICODE",
+                "_WIN64",
+                "GLFW_INCLUDE_VULKAN",
+                "NOMINMAX",
+                "UNICODE"
             ],
             "windowsSdkVersion": "10.0.26100.0",
             "cStandard": "c23",

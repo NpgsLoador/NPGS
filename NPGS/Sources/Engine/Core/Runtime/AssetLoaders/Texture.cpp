@@ -16,8 +16,8 @@
 #include <stb_image.h>
 
 #include "Engine/Core/Runtime/AssetLoaders/AssetManager.h"
-#include "Engine/Core/Runtime/Graphics/Renderers/ImageTracker.h"
 #include "Engine/Core/Runtime/Graphics/Vulkan/Context.h"
+#include "Engine/Core/Runtime/Graphics/Vulkan/ImageTracker.h"
 #include "Engine/Utils/Logger.h"
 
 _NPGS_BEGIN

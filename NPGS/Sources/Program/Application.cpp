@@ -1,5 +1,4 @@
 #include "Application.h"
-#include "vulkan/vulkan_structs.hpp"
 
 #include <cmath>
 #include <cstddef>
@@ -24,8 +23,8 @@
 #include "Engine/Core/Math/TangentSpaceTools.h"
 #include "Engine/Core/Runtime/AssetLoaders/Shader.h"
 #include "Engine/Core/Runtime/AssetLoaders/Texture.h"
-#include "Engine/Core/Runtime/Graphics/Renderers/ShaderBufferManager.h"
-#include "Engine/Core/Runtime/Graphics/Renderers/PipelineManager.h"
+#include "Engine/Core/Runtime/Graphics/Vulkan/PipelineManager.h"
+#include "Engine/Core/Runtime/Graphics/Vulkan/ShaderBufferManager.h"
 #include "Engine/Utils/Logger.h"
 
 _NPGS_BEGIN

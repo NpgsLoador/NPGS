@@ -13,20 +13,12 @@ CompileFlags:
     - -DUNICODE
     - -DWIN32_LEAN_AND_MEAN
 
-
   # 移除一些不需要的警告标志
   Remove: 
     - /W3
     - /EHsc
     - /nologo
 
-Index:
-  Background: Build
-  StandardLibrary: Yes
-
-InlayHints:
-  Enabled: false
-  
 Diagnostics:  
   ClangTidy:
     Add: 
@@ -37,3 +29,10 @@ Diagnostics:
       - modernize-use-trailing-return-type
       
   UnusedIncludes: Strict
+
+Index:
+  Background: Build
+  StandardLibrary: Yes
+
+InlayHints:
+  Enabled: false

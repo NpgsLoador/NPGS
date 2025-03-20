@@ -1,6 +1,6 @@
 {
     "clangd.fallbackFlags": [
-        "-std=c++2b",
+        "-std=c++latest",
         "-I${workspaceFolder}/Sources",
         "-I${workspaceFolder}/",
         "-I${workspaceFolder}/vcpkg_installed/x64-windows/x64-windows/include",
@@ -13,9 +13,9 @@
         "*.glh": "glsl",
         "*.glsl": "glsl",
         "*.glslh": "glsl",
+        "*.ipp": "cpp",
         "*.usf": "hlsl",
         "*.ush": "hlsl",
-        "*.vk": "glsl",
-        "*.ipp": "cpp"
+        "*.vk": "glsl"
     }
 }
