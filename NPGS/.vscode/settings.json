@@ -4,6 +4,8 @@
         "-I${workspaceFolder}/Sources",
         "-I${workspaceFolder}/",
         "-I${workspaceFolder}/vcpkg_installed/x64-windows/x64-windows/include",
+        "-I${workspaceFolder}/vcpkg_installed/x64-windows/x64-windows/include/Imath",
+        "-I${workspaceFolder}/vcpkg_installed/x64-windows/x64-windows/include/OpenEXR",
         "-I${env:VULKAN_SDK}/Include"
     ],
     "files.associations": {

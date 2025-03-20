@@ -1667,6 +1667,67 @@ vk::Result FVulkanPipelineLayout::CreatePipelineLayout(const vk::PipelineLayoutC
     return vk::Result::eSuccess;
 }
 
+// Wrapper for vk::QueryPool
+// -------------------------
+FVulkanQueryPool::FVulkanQueryPool(const vk::QueryPoolCreateInfo& CreateInfo)
+    : FVulkanQueryPool(FVulkanCore::GetClassInstance()->GetDevice(), CreateInfo)
+{
+}
+
+FVulkanQueryPool::FVulkanQueryPool(vk::Device Device, const vk::QueryPoolCreateInfo& CreateInfo)
+    : Base(Device)
+{
+    _ReleaseInfo = "Query pool destroyed successfully.";
+    _Status      = CreateQueryPool(CreateInfo);
+}
+
+FVulkanQueryPool::FVulkanQueryPool(vk::QueryType QueryType, std::uint32_t QueryCount, vk::QueryPoolCreateFlags Flags,
+                                   vk::QueryPipelineStatisticFlags PipelineStatisticsFlags)
+    : FVulkanQueryPool(FVulkanCore::GetClassInstance()->GetDevice(), QueryType, QueryCount, Flags, PipelineStatisticsFlags)
+{
+}
+
+FVulkanQueryPool::FVulkanQueryPool(vk::Device Device, vk::QueryType QueryType, std::uint32_t QueryCount,
+                                   vk::QueryPoolCreateFlags Flags, vk::QueryPipelineStatisticFlags PipelineStatisticsFlags)
+    : Base(Device)
+{
+    vk::QueryPoolCreateInfo CreateInfo(Flags, QueryType, QueryCount, PipelineStatisticsFlags);
+    _ReleaseInfo = "Query pool destroyed successfully.";
+    _Status      = CreateQueryPool(CreateInfo);
+}
+
+vk::Result FVulkanQueryPool::Reset(std::uint32_t FirstQuery, std::uint32_t QueryCount)
+{
+    try
+    {
+        _Device.resetQueryPool(_Handle, FirstQuery, QueryCount);
+    }
+    catch (const vk::SystemError& e)
+    {
+        NpgsCoreError("Failed to reset query pool: {}", e.what());
+        return static_cast<vk::Result>(e.code().value());
+    }
+
+    NpgsCoreTrace("Query pool reset successfully.");
+    return vk::Result::eSuccess;
+}
+
+vk::Result FVulkanQueryPool::CreateQueryPool(const vk::QueryPoolCreateInfo& CreateInfo)
+{
+    try
+    {
+        _Handle = _Device.createQueryPool(CreateInfo);
+    }
+    catch (const vk::SystemError& e)
+    {
+        NpgsCoreError("Failed to create query pool: {}", e.what());
+        return static_cast<vk::Result>(e.code().value());
+    }
+
+    NpgsCoreTrace("Query pool created successfully.");
+    return vk::Result::eSuccess;
+}
+
 // Wrapper for vk::RenderPass
 // --------------------------
 FVulkanRenderPass::FVulkanRenderPass(const vk::RenderPassCreateInfo& CreateInfo)

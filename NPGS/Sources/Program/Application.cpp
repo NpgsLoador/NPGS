@@ -1,4 +1,5 @@
 #include "Application.h"
+#include "vulkan/vulkan_structs.hpp"
 
 #include <cmath>
 #include <cstddef>
@@ -117,6 +118,11 @@ void FApplication::ExecuteMainRender()
     std::vector<Grt::FVulkanSemaphore> Semaphores_ImageAvailable;
     std::vector<Grt::FVulkanSemaphore> Semaphores_RenderFinished;
     std::vector<Grt::FVulkanCommandBuffer> CommandBuffers(Config::Graphics::kMaxFrameInFlight);
+    std::vector<Grt::FVulkanCommandBuffer> DepthMapCommandBuffers(Config::Graphics::kMaxFrameInFlight);
+    std::vector<Grt::FVulkanCommandBuffer> GBufferSceneCommandBuffers(Config::Graphics::kMaxFrameInFlight);
+    std::vector<Grt::FVulkanCommandBuffer> GBufferMergeCommandBuffers(Config::Graphics::kMaxFrameInFlight);
+    std::vector<Grt::FVulkanCommandBuffer> FrontgroundCommandBuffers(Config::Graphics::kMaxFrameInFlight);
+    std::vector<Grt::FVulkanCommandBuffer> PostProcessCommandBuffers(Config::Graphics::kMaxFrameInFlight);
     for (std::size_t i = 0; i != Config::Graphics::kMaxFrameInFlight; ++i)
     {
         InFlightFences.emplace_back(vk::FenceCreateFlagBits::eSignaled);
@@ -124,7 +130,14 @@ void FApplication::ExecuteMainRender()
         Semaphores_RenderFinished.emplace_back(vk::SemaphoreCreateFlags());
     }
 
-    _VulkanContext->GetGraphicsCommandPool().AllocateBuffers(vk::CommandBufferLevel::ePrimary, CommandBuffers);
+    const auto& GraphicsCommandPool = _VulkanContext->GetGraphicsCommandPool();
+
+    GraphicsCommandPool.AllocateBuffers(vk::CommandBufferLevel::ePrimary,   CommandBuffers);
+    GraphicsCommandPool.AllocateBuffers(vk::CommandBufferLevel::eSecondary, DepthMapCommandBuffers);
+    GraphicsCommandPool.AllocateBuffers(vk::CommandBufferLevel::eSecondary, GBufferSceneCommandBuffers);
+    GraphicsCommandPool.AllocateBuffers(vk::CommandBufferLevel::eSecondary, GBufferMergeCommandBuffers);
+    GraphicsCommandPool.AllocateBuffers(vk::CommandBufferLevel::eSecondary, FrontgroundCommandBuffers);
+    GraphicsCommandPool.AllocateBuffers(vk::CommandBufferLevel::eSecondary, PostProcessCommandBuffers);
 
     vk::DeviceSize Offset        = 0;
     std::uint32_t  DynamicOffset = 0;
@@ -169,6 +182,153 @@ void FApplication::ExecuteMainRender()
     // _Camera->SetOrbitTarget(glm::vec3(0.0f));
     // _Camera->SetOrbitAxis(glm::vec3(0.0f, 1.0f, 0.0f));
 
+    // Record secondary commands
+    // -------------------------
+    auto RecordSecondaryCommands = [&]() -> void
+    {
+        vk::Extent2D SupersamplingExtent(_WindowSize.width * 2, _WindowSize.height * 2);
+
+        vk::Viewport CommonViewport(0.0f, 0.0f, static_cast<float>(SupersamplingExtent.width),
+                                    static_cast<float>(SupersamplingExtent.height), 0.0f, 1.0f);
+
+        vk::Viewport DepthMapViewport(0.0f, 0.0f, static_cast<float>(DepthMapExtent.width),
+                                      static_cast<float>(DepthMapExtent.height), 0.0f, 1.0f);
+
+        vk::Rect2D CommonScissor(vk::Offset2D(), SupersamplingExtent);
+        vk::Rect2D DepthMapScissor(vk::Offset2D(), DepthMapExtent);
+
+        std::array GBufferAttachmentFormats
+        {
+            vk::Format::eR16G16B16A16Sfloat,
+            vk::Format::eR16G16B16A16Sfloat,
+            vk::Format::eR16G16B16A16Sfloat,
+            vk::Format::eR16G16B16A16Sfloat,
+        };
+
+        vk::Format ColorAttachmentFormat = vk::Format::eR16G16B16A16Sfloat;
+
+        vk::CommandBufferInheritanceRenderingInfo DepthMapInheritanceRenderingInfo = vk::CommandBufferInheritanceRenderingInfo()
+            .setDepthAttachmentFormat(vk::Format::eD32Sfloat)
+            .setRasterizationSamples(vk::SampleCountFlagBits::e1);
+
+        vk::CommandBufferInheritanceRenderingInfo GBufferSceneInheritanceRenderingInfo = vk::CommandBufferInheritanceRenderingInfo()
+            .setColorAttachmentCount(4)
+            .setColorAttachmentFormats(GBufferAttachmentFormats)
+            .setDepthAttachmentFormat(vk::Format::eD32Sfloat)
+            .setRasterizationSamples(vk::SampleCountFlagBits::e1);
+
+        vk::CommandBufferInheritanceRenderingInfo GBufferMergeInheritanceRenderingInfo = vk::CommandBufferInheritanceRenderingInfo()
+            .setColorAttachmentCount(1)
+            .setColorAttachmentFormats(ColorAttachmentFormat)
+            .setDepthAttachmentFormat(vk::Format::eD32Sfloat)
+            .setRasterizationSamples(vk::SampleCountFlagBits::e1);
+
+        vk::CommandBufferInheritanceRenderingInfo FrontgroundInheritanceRenderingInfo = vk::CommandBufferInheritanceRenderingInfo()
+            .setColorAttachmentCount(1)
+            .setColorAttachmentFormats(ColorAttachmentFormat)
+            .setDepthAttachmentFormat(vk::Format::eD32Sfloat)
+            .setRasterizationSamples(vk::SampleCountFlagBits::e1);
+
+        vk::CommandBufferInheritanceRenderingInfo PostInheritanceRenderingInfo = vk::CommandBufferInheritanceRenderingInfo()
+            .setColorAttachmentCount(1)
+            .setColorAttachmentFormats(ColorAttachmentFormat);
+
+        for (std::uint32_t i = 0; i != Config::Graphics::kMaxFrameInFlight; ++i)
+        {
+            auto& DepthMapCommandBuffer = DepthMapCommandBuffers[i];
+
+            vk::CommandBufferInheritanceInfo DepthMapInheritanceInfo = vk::CommandBufferInheritanceInfo()
+                .setPNext(&DepthMapInheritanceRenderingInfo);
+
+            DepthMapCommandBuffer.Begin(DepthMapInheritanceInfo, vk::CommandBufferUsageFlagBits::eRenderPassContinue | vk::CommandBufferUsageFlagBits::eSimultaneousUse);
+            DepthMapCommandBuffer->setViewport(0, DepthMapViewport);
+            DepthMapCommandBuffer->setScissor(0, DepthMapScissor);
+            DepthMapCommandBuffer->bindPipeline(vk::PipelineBindPoint::eGraphics, DepthMapPipeline);
+            DepthMapCommandBuffer->bindDescriptorSets(vk::PipelineBindPoint::eGraphics, DepthMapPipelineLayout, 0,
+                                                      DepthMapShader->GetDescriptorSets(CurrentFrame), {});
+            DepthMapCommandBuffer->bindVertexBuffers(0, PlaneVertexBuffers, PlaneOffsets);
+            DepthMapCommandBuffer->draw(6, 1, 0, 0);
+            DepthMapCommandBuffer->bindVertexBuffers(0, CubeVertexBuffers, CubeOffsets);
+            DepthMapCommandBuffer->draw(36, 3, 0, 0);
+            DepthMapCommandBuffer.End();
+
+            auto& GBufferSceneCommandBuffer = GBufferSceneCommandBuffers[i];
+
+            vk::CommandBufferInheritanceInfo GBufferSceneInheritanceInfo = vk::CommandBufferInheritanceInfo()
+                .setPNext(&GBufferSceneInheritanceRenderingInfo);
+
+            GBufferSceneCommandBuffer.Begin(GBufferSceneInheritanceInfo, vk::CommandBufferUsageFlagBits::eRenderPassContinue | vk::CommandBufferUsageFlagBits::eSimultaneousUse);
+            GBufferSceneCommandBuffer->setViewport(0, CommonViewport);
+            GBufferSceneCommandBuffer->setScissor(0, CommonScissor);
+            GBufferSceneCommandBuffer->bindPipeline(vk::PipelineBindPoint::eGraphics, PbrSceneGBufferPipeline);
+            GBufferSceneCommandBuffer->bindVertexBuffers(0, PlaneVertexBuffers, PlaneOffsets);
+            GBufferSceneCommandBuffer->bindDescriptorSets(vk::PipelineBindPoint::eGraphics, PbrSceneGBufferPipelineLayout, 0,
+                                                          PbrSceneGBufferShader->GetDescriptorSets(CurrentFrame), {});
+            GBufferSceneCommandBuffer->draw(6, 1, 0, 0);
+            GBufferSceneCommandBuffer->bindVertexBuffers(0, CubeVertexBuffers, CubeOffsets);
+            GBufferSceneCommandBuffer->draw(36, 3, 0, 0);
+            GBufferSceneCommandBuffer.End();
+
+            auto& GBufferMergeCommandBuffer = GBufferMergeCommandBuffers[i];
+
+            vk::CommandBufferInheritanceInfo GBufferMergeInheritanceInfo = vk::CommandBufferInheritanceInfo()
+                .setPNext(&GBufferMergeInheritanceRenderingInfo);
+
+            std::uint32_t WorkgroupSizeX = (SupersamplingExtent.width  + 15) / 16;
+            std::uint32_t WorkgroupSizeY = (SupersamplingExtent.height + 15) / 16;
+
+            GBufferMergeCommandBuffer.Begin(GBufferMergeInheritanceInfo, vk::CommandBufferUsageFlagBits::eSimultaneousUse);
+            GBufferMergeCommandBuffer->bindPipeline(vk::PipelineBindPoint::eCompute, PbrSceneMergePipeline);
+            GBufferMergeCommandBuffer->bindDescriptorSets(vk::PipelineBindPoint::eCompute, PbrSceneMergePipelineLayout, 0,
+                                                          PbrSceneMergeShader->GetDescriptorSets(CurrentFrame), {});
+            GBufferMergeCommandBuffer->dispatch(WorkgroupSizeX, WorkgroupSizeY, 1);
+            GBufferMergeCommandBuffer.End();
+
+            auto& FrontgroundCommandBuffer = FrontgroundCommandBuffers[i];
+
+            vk::CommandBufferInheritanceInfo FrontgroundInheritanceInfo = vk::CommandBufferInheritanceInfo()
+                .setPNext(&FrontgroundInheritanceRenderingInfo);
+
+            FrontgroundCommandBuffer.Begin(FrontgroundInheritanceInfo, vk::CommandBufferUsageFlagBits::eRenderPassContinue | vk::CommandBufferUsageFlagBits::eSimultaneousUse);
+            FrontgroundCommandBuffer->setScissor(0, CommonScissor);
+            FrontgroundCommandBuffer->setViewport(0, CommonViewport);
+            FrontgroundCommandBuffer->bindPipeline(vk::PipelineBindPoint::eGraphics, LampPipeline);
+            FrontgroundCommandBuffer->bindVertexBuffers(0, CubeVertexBuffers, LampOffsets);
+            FrontgroundCommandBuffer->bindDescriptorSets(vk::PipelineBindPoint::eGraphics, LampPipelineLayout, 0,
+                                                         LampShader->GetDescriptorSets(CurrentFrame), {});
+            FrontgroundCommandBuffer->draw(36, 1, 0, 0);
+            FrontgroundCommandBuffer->bindPipeline(vk::PipelineBindPoint::eGraphics, SkyboxPipeline);
+            FrontgroundCommandBuffer->bindVertexBuffers(0, *_SkyboxVertexBuffer->GetBuffer(), Offset);
+            FrontgroundCommandBuffer->bindDescriptorSets(vk::PipelineBindPoint::eGraphics, SkyboxPipelineLayout, 0,
+                                                         SkyboxShader->GetDescriptorSets(CurrentFrame), {});
+            FrontgroundCommandBuffer->draw(36, 1, 0, 0);
+            FrontgroundCommandBuffer.End();
+
+            auto& PostProcessCommandBuffer = PostProcessCommandBuffers[i];
+
+            vk::CommandBufferInheritanceInfo PostInheritanceInfo = vk::CommandBufferInheritanceInfo()
+                .setPNext(&PostInheritanceRenderingInfo);
+
+            PostProcessCommandBuffer.Begin(PostInheritanceInfo, vk::CommandBufferUsageFlagBits::eRenderPassContinue | vk::CommandBufferUsageFlagBits::eSimultaneousUse);
+            PostProcessCommandBuffer->setViewport(0, CommonViewport);
+            PostProcessCommandBuffer->setScissor(0, CommonScissor);
+            PostProcessCommandBuffer->bindPipeline(vk::PipelineBindPoint::eGraphics, PostPipeline);
+            PostProcessCommandBuffer->bindVertexBuffers(0, *_QuadVertexBuffer->GetBuffer(), Offset);
+            PostProcessCommandBuffer->bindDescriptorSets(vk::PipelineBindPoint::eGraphics, PostPipelineLayout, 0,
+                                                         PostShader->GetDescriptorSets(CurrentFrame), {});
+            PostProcessCommandBuffer->pushConstants(PostPipelineLayout, vk::ShaderStageFlagBits::eFragment, 0,
+                                                    sizeof(vk::Bool32), reinterpret_cast<vk::Bool32*>(&_bEnableHdr));
+            PostProcessCommandBuffer->draw(6, 1, 0, 0);
+            PostProcessCommandBuffer.End();
+        }
+    };
+
+    RecordSecondaryCommands();
+
+    _VulkanContext->RegisterAutoRemovedCallbacks(
+        Grt::FVulkanContext::ECallbackType::kCreateSwapchain, "RecordSecondaryCommands", RecordSecondaryCommands);
+
+    // Main rendering loop
     while (!glfwWindowShouldClose(_Window))
     {
         while (glfwGetWindowAttrib(_Window, GLFW_ICONIFIED))
@@ -327,24 +487,15 @@ void FApplication::ExecuteMainRender()
 
         CurrentBuffer->pipelineBarrier2(InitialDependencyInfo);
 
-        // Set shadow map viewport
-        CurrentBuffer->setViewport(0, DepthMapViewport);
-        CurrentBuffer->setScissor(0, DepthMapScissor);
-
         vk::RenderingInfo DepthMapRenderingInfo = vk::RenderingInfo()
+            .setFlags(vk::RenderingFlagBits::eContentsSecondaryCommandBuffers)
             .setRenderArea(DepthMapScissor)
             .setLayerCount(1)
             .setPDepthAttachment(&_DepthMapAttachmentInfo);
 
         CurrentBuffer->beginRendering(DepthMapRenderingInfo);
         // Draw scene for depth mapping
-        CurrentBuffer->bindPipeline(vk::PipelineBindPoint::eGraphics, DepthMapPipeline);
-        CurrentBuffer->bindDescriptorSets(vk::PipelineBindPoint::eGraphics, DepthMapPipelineLayout, 0,
-                                          DepthMapShader->GetDescriptorSets(CurrentFrame), {});
-        CurrentBuffer->bindVertexBuffers(0, PlaneVertexBuffers, PlaneOffsets);
-        CurrentBuffer->draw(6, 1, 0, 0);
-        CurrentBuffer->bindVertexBuffers(0, CubeVertexBuffers, CubeOffsets);
-        CurrentBuffer->draw(36, 3, 0, 0);
+        CurrentBuffer->executeCommands(*DepthMapCommandBuffers[CurrentFrame]);
         CurrentBuffer->endRendering();
 
         vk::ImageMemoryBarrier2 DepthMapRenderEndBarrier(
@@ -366,20 +517,20 @@ void FApplication::ExecuteMainRender()
 
         CurrentBuffer->pipelineBarrier2(DepthMapRenderEndDependencyInfo);
 
-        // Set scene viewport
-        CurrentBuffer->setViewport(0, CommonViewport);
-        CurrentBuffer->setScissor(0, CommonScissor);
-
         std::array GBufferAttachments{ _PositionAoAttachmentInfo, _NormalRoughAttachmentInfo,
                                        _AlbedoMetalAttachmentInfo, _ShadowAttachmentInfo };
 
         vk::RenderingInfo SceneRenderingInfo = vk::RenderingInfo()
+            .setFlags(vk::RenderingFlagBits::eContentsSecondaryCommandBuffers)
             .setRenderArea(CommonScissor)
             .setLayerCount(1)
             .setColorAttachments(GBufferAttachments)
             .setPDepthAttachment(&_DepthStencilAttachmentInfo);
 
         CurrentBuffer->beginRendering(SceneRenderingInfo);
+        CurrentBuffer->executeCommands(*GBufferSceneCommandBuffers[CurrentFrame]);
+        CurrentBuffer->endRendering();
+
         // CurrentBuffer->bindPipeline(vk::PipelineBindPoint::eGraphics, TerrainPipeline);
         // CurrentBuffer->bindDescriptorSets(vk::PipelineBindPoint::eGraphics, TerrainPipelineLayout, 0,
         //                                   TerrainShader->GetDescriptorSets(CurrentFrame), {});
@@ -389,18 +540,6 @@ void FApplication::ExecuteMainRender()
         // CurrentBuffer->draw(_TessResolution* _TessResolution * 4, 1, 0, 0);
 
         // CurrentBuffer->endRendering();
-
-        // Draw plane
-        CurrentBuffer->bindPipeline(vk::PipelineBindPoint::eGraphics, PbrSceneGBufferPipeline);
-        CurrentBuffer->bindVertexBuffers(0, PlaneVertexBuffers, PlaneOffsets);
-        CurrentBuffer->bindDescriptorSets(vk::PipelineBindPoint::eGraphics, PbrSceneGBufferPipelineLayout, 0,
-                                          PbrSceneGBufferShader->GetDescriptorSets(CurrentFrame), {});
-        CurrentBuffer->draw(6, 1, 0, 0);
-
-        // Draw cube
-        CurrentBuffer->bindVertexBuffers(0, CubeVertexBuffers, CubeOffsets);
-        CurrentBuffer->draw(36, 3, 0, 0);
-        CurrentBuffer->endRendering();
 
         vk::ImageMemoryBarrier2 PositionAoRenderEndBarrier(
             vk::PipelineStageFlagBits2::eColorAttachmentOutput,
@@ -464,12 +603,7 @@ void FApplication::ExecuteMainRender()
         CurrentBuffer->pipelineBarrier2(GBufferRenderEndDependencyInfo);
 
         // Compute merge G-buffers
-        std::uint32_t WorkgroupSizeX = (SupersamplingExtent.width  + 15) / 16;
-        std::uint32_t WorkgroupSizeY = (SupersamplingExtent.height + 15) / 16;
-        CurrentBuffer->bindPipeline(vk::PipelineBindPoint::eCompute, PbrSceneMergePipeline);
-        CurrentBuffer->bindDescriptorSets(vk::PipelineBindPoint::eCompute, PbrSceneMergePipelineLayout, 0,
-                                          PbrSceneMergeShader->GetDescriptorSets(CurrentFrame), {});
-        CurrentBuffer->dispatch(WorkgroupSizeX, WorkgroupSizeY, 1);
+        CurrentBuffer->executeCommands(*GBufferMergeCommandBuffers[CurrentFrame]);
 
         vk::ImageMemoryBarrier2 MergeEndBarrier(
             vk::PipelineStageFlagBits2::eComputeShader,
@@ -496,16 +630,7 @@ void FApplication::ExecuteMainRender()
         _DepthStencilAttachmentInfo.setLoadOp(vk::AttachmentLoadOp::eLoad);
 
         CurrentBuffer->beginRendering(SceneRenderingInfo);
-        CurrentBuffer->bindPipeline(vk::PipelineBindPoint::eGraphics, LampPipeline);
-        CurrentBuffer->bindVertexBuffers(0, CubeVertexBuffers, LampOffsets);
-        CurrentBuffer->bindDescriptorSets(vk::PipelineBindPoint::eGraphics, LampPipelineLayout, 0,
-                                          LampShader->GetDescriptorSets(CurrentFrame), {});
-        CurrentBuffer->draw(36, 1, 0, 0);
-        CurrentBuffer->bindPipeline(vk::PipelineBindPoint::eGraphics, SkyboxPipeline);
-        CurrentBuffer->bindVertexBuffers(0, *_SkyboxVertexBuffer->GetBuffer(), Offset);
-        CurrentBuffer->bindDescriptorSets(vk::PipelineBindPoint::eGraphics, SkyboxPipelineLayout, 0,
-                                          SkyboxShader->GetDescriptorSets(CurrentFrame), {});
-        CurrentBuffer->draw(36, 1, 0, 0);
+        CurrentBuffer->executeCommands(*FrontgroundCommandBuffers[CurrentFrame]);
         CurrentBuffer->endRendering();
 
         _ColorAttachmentInfo.setLoadOp(vk::AttachmentLoadOp::eClear);
@@ -531,21 +656,14 @@ void FApplication::ExecuteMainRender()
         CurrentBuffer->pipelineBarrier2(PrePostDependencyInfo);
 
         // Post process
-        CurrentBuffer->setViewport(0, CommonViewport);
-
         vk::RenderingInfo PostRenderingInfo = vk::RenderingInfo()
+            .setFlags(vk::RenderingFlagBits::eContentsSecondaryCommandBuffers)
             .setRenderArea(CommonScissor)
             .setLayerCount(1)
             .setColorAttachments(_PostProcessAttachmentInfo);
 
         CurrentBuffer->beginRendering(PostRenderingInfo);
-        CurrentBuffer->bindPipeline(vk::PipelineBindPoint::eGraphics, PostPipeline);
-        CurrentBuffer->bindVertexBuffers(0, *_QuadVertexBuffer->GetBuffer(), Offset);
-        CurrentBuffer->bindDescriptorSets(vk::PipelineBindPoint::eGraphics, PostPipelineLayout, 0,
-                                          PostShader->GetDescriptorSets(CurrentFrame), {});
-        CurrentBuffer->pushConstants(PostPipelineLayout, vk::ShaderStageFlagBits::eFragment, 0,
-                                     sizeof(vk::Bool32), reinterpret_cast<vk::Bool32*>(&_bEnableHdr));
-        CurrentBuffer->draw(6, 1, 0, 0);
+        CurrentBuffer->executeCommands(*PostProcessCommandBuffers[CurrentFrame]);
         CurrentBuffer->endRendering();
 
         vk::ImageMemoryBarrier2 PreBlitBarrier(

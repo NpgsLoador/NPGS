@@ -8,7 +8,7 @@
 #include <vector>
 
 #include <vma/vk_mem_alloc.h>
-#include <vulkan/vulkan_handles.hpp>
+#include <vulkan/vulkan.hpp>
 #include <vulkan/vulkan_to_string.hpp>
 
 #include "Engine/Core/Base/Base.h"

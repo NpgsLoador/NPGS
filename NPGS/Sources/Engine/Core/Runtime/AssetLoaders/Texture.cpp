@@ -2,14 +2,12 @@
 
 #include <cmath>
 #include <algorithm>
-#include <exception>
 #include <filesystem>
-#include <format>
 #include <ranges>
-#include <type_traits>
 #include <utility>
 
 #include <gli/gli.hpp>
+#include <Imath/half.h>
 #include <Imath/ImathBox.h>
 #include <ktx.h>
 #include <OpenEXR/ImfInputFile.h>
@@ -17,7 +15,6 @@
 #include <OpenEXR/ImfTiledRgbaFile.h>
 #include <stb_image.h>
 
-#include "Engine/Core/Base/Assert.h"
 #include "Engine/Core/Runtime/AssetLoaders/AssetManager.h"
 #include "Engine/Core/Runtime/Graphics/Renderers/ImageTracker.h"
 #include "Engine/Core/Runtime/Graphics/Vulkan/Context.h"
@@ -1106,7 +1103,7 @@ void FTextureCube::CreateCubemap(const std::array<std::string, 6>& Filenames, vk
 
     for (int i = 0; i != 6; ++i)
     {
-        FaceImages[i] = _ImageLoader->LoadImage(GetAssetFullPath(EAssetType::kTexture, Filenames[i]).c_str(), InitialFormat);
+        FaceImages[i] = _ImageLoader->LoadImage(GetAssetFullPath(EAssetType::kTexture, Filenames[i]), InitialFormat);
 
         if (i == 0)
         {

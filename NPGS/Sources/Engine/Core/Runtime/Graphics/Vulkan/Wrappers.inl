@@ -146,6 +146,24 @@ NPGS_INLINE const VmaAllocationInfo& FVulkanImage::GetAllocationInfo() const
     return _AllocationInfo;
 }
 
+// Wrapper for vk::QueryPool
+// -------------------------
+template <typename DataType>
+NPGS_INLINE std::vector<DataType>
+FVulkanQueryPool::GetResult(std::uint32_t FirstQuery, std::uint32_t QueryCount, std::size_t DataSize, vk::DeviceSize Stride, vk::QueryResultFlags Flags)
+{
+    try
+    {
+        std::vector<DataType> Results = _Device.getQueryPoolResults(_Handle, FirstQuery, QueryCount, DataSize, Stride, Flags).value;
+        return Results;
+    }
+    catch (const vk::SystemError& e)
+    {
+        NpgsCoreError("Failed to get query pool results: {}", e.code().value());
+        return {};
+    }
+}
+
 // Wrapper for vk::RenderPass
 // --------------------------
 NPGS_INLINE void FVulkanRenderPass::CommandBegin(const FVulkanCommandBuffer& CommandBuffer,

@@ -8,7 +8,7 @@
 
 #include <magic_enum/magic_enum.hpp>
 #include <vma/vk_mem_alloc.h>
-#include <vulkan/vulkan_handles.hpp>
+#include <vulkan/vulkan.hpp>
 
 #include "Engine/Core/Base/Base.h"
 #include "Engine/Core/Runtime/Graphics/Vulkan/Core.h"

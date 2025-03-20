@@ -915,6 +915,32 @@ private:
     vk::Result CreatePipelineLayout(const vk::PipelineLayoutCreateInfo& CreateInfo);
 };
 
+// Wrapper for vk::QueryPool
+// -------------------------
+class FVulkanQueryPool : public TVulkanHandle<vk::QueryPool>
+{
+public:
+    using Base = TVulkanHandle<vk::QueryPool>;
+    using Base::Base;
+
+    FVulkanQueryPool(const vk::QueryPoolCreateInfo& CreateInfo);
+    FVulkanQueryPool(vk::Device Device, const vk::QueryPoolCreateInfo& CreateInfo);
+    FVulkanQueryPool(vk::QueryType QueryType, std::uint32_t QueryCount, vk::QueryPoolCreateFlags Flags = {},
+                     vk::QueryPipelineStatisticFlags PipelineStatisticsFlags = {});
+
+    FVulkanQueryPool(vk::Device Device, vk::QueryType QueryType, std::uint32_t QueryCount,
+                     vk::QueryPoolCreateFlags Flags = {}, vk::QueryPipelineStatisticFlags PipelineStatisticsFlags = {});
+
+    template <typename DataType>
+    std::vector<DataType> GetResult(std::uint32_t FirstQuery, std::uint32_t QueryCount,
+                                    std::size_t DataSize, vk::DeviceSize Stride, vk::QueryResultFlags Flags);
+
+    vk::Result Reset(std::uint32_t FirstQuery, std::uint32_t QueryCount);
+
+private:
+    vk::Result CreateQueryPool(const vk::QueryPoolCreateInfo& CreateInfo);
+};
+
 // Wrapper for vk::RenderPass
 // --------------------------
 class FVulkanRenderPass : public TVulkanHandle<vk::RenderPass>

@@ -5,7 +5,7 @@
 #include <vector>
 
 #include <GLFW/glfw3.h>
-#include <vulkan/vulkan_handles.hpp>
+#include <vulkan/vulkan.hpp>
 
 #include "Engine/Core/Base/Base.h"
 #include "Engine/Core/Runtime/AssetLoaders/AssetManager.h"

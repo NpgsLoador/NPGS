@@ -4,8 +4,6 @@
 #include <algorithm>
 #include <ranges>
 
-#include <vulkan/vulkan.hpp>
-
 #include "Engine/Core/Runtime/Graphics/Vulkan/ExtFunctionsImpl.h"
 #include "Engine/Utils/Utils.h"
 

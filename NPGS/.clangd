@@ -6,11 +6,12 @@ CompileFlags:
   Add: 
     - -std=c++2b
     - -D_DEBUG
-    - -DUNICODE
     - -D_UNICODE 
     - -D_WIN64
-    - -DWIN32_LEAN_AND_MEAN
+    - -DGLFW_INCLUDE_VULKAN
     - -DNOMINMAX
+    - -DUNICODE
+    - -DWIN32_LEAN_AND_MEAN
 
 
   # 移除一些不需要的警告标志
