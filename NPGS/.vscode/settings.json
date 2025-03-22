@@ -13,9 +13,10 @@
         "*.glh": "glsl",
         "*.glsl": "glsl",
         "*.glslh": "glsl",
-        "*.ipp": "cpp",
         "*.usf": "hlsl",
         "*.ush": "hlsl",
-        "*.vk": "glsl"
+        "*.vk": "glsl",
+        "*.ipp": "cpp",
+        "mutex": "cpp"
     }
 }

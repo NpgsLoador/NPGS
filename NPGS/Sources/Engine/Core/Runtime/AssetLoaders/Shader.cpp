@@ -176,7 +176,7 @@ std::vector<vk::PipelineShaderStageCreateInfo> FShader::CreateShaderStageCreateI
     for (const auto& [Stage, ShaderModule] : _ShaderModules)
     {
         vk::PipelineShaderStageCreateInfo ShaderStageCreateInfo({}, Stage, *ShaderModule, "main");
-        ShaderStageCreateInfos.push_back(ShaderStageCreateInfo);
+        ShaderStageCreateInfos.push_back(std::move(ShaderStageCreateInfo));
     }
 
     return ShaderStageCreateInfos;
@@ -280,7 +280,7 @@ void FShader::ReflectShader(const FShaderInfo& ShaderInfo, const FResourceInfo& 
 
         NpgsCoreTrace("Push Constant \"{}\" size={} bytes, offset={}", PushConstant.name, BufferSize - TotalOffset, TotalOffset);
         vk::PushConstantRange PushConstantRange(ShaderInfo.Stage, TotalOffset, static_cast<std::uint32_t>(BufferSize - TotalOffset));
-        _ReflectionInfo.PushConstants.push_back(PushConstantRange);
+        _ReflectionInfo.PushConstants.push_back(std::move(PushConstantRange));
     }
 
     std::unordered_map<std::uint64_t, bool> DynemicBufferMap;
@@ -500,7 +500,7 @@ void FShader::AddDescriptorSetBindings(std::uint32_t Set, const vk::DescriptorSe
     auto it = _ReflectionInfo.DescriptorSetBindings.find(Set);
     if (it == _ReflectionInfo.DescriptorSetBindings.end())
     {
-        _ReflectionInfo.DescriptorSetBindings[Set].push_back(LayoutBinding);
+        _ReflectionInfo.DescriptorSetBindings[Set].push_back(std::move(LayoutBinding));
         return;
     }
 
@@ -519,7 +519,7 @@ void FShader::AddDescriptorSetBindings(std::uint32_t Set, const vk::DescriptorSe
 
     if (!bMergedStage)
     {
-        ExistedLayoutBindingVector.push_back(LayoutBinding);
+        ExistedLayoutBindingVector.push_back(std::move(LayoutBinding));
     }
 }
 

@@ -3,6 +3,7 @@
 #include <cstddef>
 #include <algorithm>
 #include <charconv>
+#include <concepts>
 #include <functional>
 #include <stdexcept>
 #include <string>
@@ -75,6 +76,7 @@ public:
     }
 
     template <typename Func = std::less<>>
+    requires std::predicate<Func, BaseType, BaseType>
     std::pair<FRowArray, FRowArray> FindSurroundingValues(const std::string& DataHeader, const BaseType& TargetValue,
                                                           bool bSorted = true, Func&& Pred = Func())
     {
@@ -163,6 +165,7 @@ private:
 
     void ReadData(io::ignore_column IgnoreColumn)
     {
+        _Data.reserve(std::min<size_t>(1000, std::filesystem::file_size(_Filename) / (ColSize * sizeof(BaseType))));
         io::CSVReader<ColSize> Reader(_Filename);
         ReadHeader(Reader, IgnoreColumn);
         FRowArray Row(_ColNames.size());

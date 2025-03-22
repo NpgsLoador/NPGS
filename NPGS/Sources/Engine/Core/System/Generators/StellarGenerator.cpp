@@ -1255,10 +1255,10 @@ void FStellarGenerator::AlignArrays(std::pair<std::vector<FDataArray>, std::vect
 
         Arrays.first.resize(MinSize - 2);
         Arrays.second.resize(MinSize - 2);
-        Arrays.first.push_back(SubLastArray1);
-        Arrays.first.push_back(LastArray1);
-        Arrays.second.push_back(SubLastArray2);
-        Arrays.second.push_back(LastArray2);
+        Arrays.first.push_back(std::move(SubLastArray1));
+        Arrays.first.push_back(std::move(LastArray1));
+        Arrays.second.push_back(std::move(SubLastArray2));
+        Arrays.second.push_back(std::move(LastArray2));
     }
     else
     {
@@ -1267,8 +1267,8 @@ void FStellarGenerator::AlignArrays(std::pair<std::vector<FDataArray>, std::vect
         std::size_t MinSize = std::min(Arrays.first.size(), Arrays.second.size());
         Arrays.first.resize(MinSize - 1);
         Arrays.second.resize(MinSize - 1);
-        Arrays.first.push_back(LastArray1);
-        Arrays.second.push_back(LastArray2);
+        Arrays.first.push_back(std::move(LastArray1));
+        Arrays.second.push_back(std::move(LastArray2));
     }
 }
 

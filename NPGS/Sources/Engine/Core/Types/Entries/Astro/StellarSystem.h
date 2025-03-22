@@ -4,6 +4,7 @@
 #include <memory>
 #include <string>
 #include <type_traits>
+#include <variant>
 #include <vector>
 
 #include <glm/glm.hpp>
@@ -32,6 +33,8 @@ struct FBaryCenter : public INpgsObject
 class FOrbit
 {
 public:
+    using FObjectPointer = std::variant<FBaryCenter*, AStar*, APlanet*, AAsteroidCluster*, Intelli::AArtifact*>;
+
     enum class EObjectType
     {
         kBaryCenter,
@@ -39,17 +42,6 @@ public:
         kPlanet,
         kAsteroidCluster,
         kArtifactCluster
-    };
-
-    union FObjectPointer
-    {
-        FBaryCenter*        SystemBary;
-        AStar*              Star;
-        APlanet*            Planet;
-        AAsteroidCluster*   Asteroids;
-        Intelli::AArtifact* Artifacts;
-
-        FObjectPointer() : SystemBary(nullptr) {}
     };
 
     struct FKeplerElements
@@ -69,11 +61,9 @@ public:
         FOrbitalObject(INpgsObject* Object, EObjectType Type);
         ~FOrbitalObject() = default;
 
-        FOrbitalObject& SetObject(FBaryCenter* SystemBary);
-        FOrbitalObject& SetObject(AStar* Star);
-        FOrbitalObject& SetObject(APlanet* Planet);
-        FOrbitalObject& SetObject(AAsteroidCluster* AsteroidCluster);
-        FOrbitalObject& SetObject(Intelli::AArtifact* AsteroidCluster);
+        template <typename ObjectType>
+        requires std::is_class_v<ObjectType>
+        FOrbitalObject& SetObject(ObjectType* Object);
 
         EObjectType GetObjectType() const;
 

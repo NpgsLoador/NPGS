@@ -12,7 +12,7 @@
 #include <vulkan/vulkan.hpp>
 
 #include "Engine/Core/Base/Base.h"
-#include "Engine/Core/Runtime/Graphics/Vulkan/Resources.h"
+#include "Engine/Core/Runtime/Graphics/Resources/Resources.h"
 #include "Engine/Core/Runtime/Graphics/Vulkan/Wrappers.h"
 
 _NPGS_BEGIN

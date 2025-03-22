@@ -19,19 +19,19 @@ FOrbit::FOrbitalObject::FOrbitalObject(INpgsObject* Object, EObjectType Type)
     switch (Type)
     {
     case EObjectType::kBaryCenter:
-        _Object.SystemBary = static_cast<FBaryCenter*>(Object);
+        _Object = static_cast<FBaryCenter*>(Object);
         break;
     case EObjectType::kStar:
-        _Object.Star = static_cast<AStar*>(Object);
+        _Object = static_cast<AStar*>(Object);
         break;
     case EObjectType::kPlanet:
-        _Object.Planet = static_cast<APlanet*>(Object);
+        _Object = static_cast<APlanet*>(Object);
         break;
     case EObjectType::kAsteroidCluster:
-        _Object.Asteroids = static_cast<AAsteroidCluster*>(Object);
+        _Object = static_cast<AAsteroidCluster*>(Object);
         break;
     case EObjectType::kArtifactCluster:
-        _Object.Artifacts = static_cast<Intelli::AArtifact*>(Object);
+        _Object = static_cast<Intelli::AArtifact*>(Object);
         break;
     }
 }

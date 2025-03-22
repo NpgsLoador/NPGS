@@ -11,7 +11,7 @@
 #include <vma/vk_mem_alloc.h>
 #include <vulkan/vulkan.hpp>
 
-#include "Engine/Core/Runtime/Graphics/Vulkan/Resources.h"
+#include "Engine/Core/Runtime/Graphics/Resources/Resources.h"
 #include "Engine/Core/Runtime/Graphics/Vulkan/Wrappers.h"
 
 _NPGS_BEGIN
@@ -47,7 +47,7 @@ private:
     FImageData _ImageData;
 };
 
-class FTextureBase
+class FTexture
 {
 protected:
     using FImageData = FImageLoader::FImageData;
@@ -64,13 +64,13 @@ public:
     static vk::SamplerCreateInfo CreateDefaultSamplerCreateInfo();
 
 protected:
-    FTextureBase(VmaAllocator Allocator, const VmaAllocationCreateInfo* AllocationCreateInfo);
-    FTextureBase(const FTextureBase&)     = delete;
-    FTextureBase(FTextureBase&&) noexcept = default;
-    virtual ~FTextureBase()               = default;
+    FTexture(VmaAllocator Allocator, const VmaAllocationCreateInfo* AllocationCreateInfo);
+    FTexture(const FTexture&)     = delete;
+    FTexture(FTexture&&) noexcept = default;
+    virtual ~FTexture()           = default;
 
-    FTextureBase& operator=(const FTextureBase&)     = delete;
-    FTextureBase& operator=(FTextureBase&&) noexcept = default;
+    FTexture& operator=(const FTexture&)     = delete;
+    FTexture& operator=(FTexture&&) noexcept = default;
 
     void CreateTexture(const FImageData& ImageData, vk::ImageCreateFlags Flags, vk::ImageType ImageType,
                        vk::ImageViewType ImageViewType, vk::Format InitialFormat, vk::Format FinalFormat,
@@ -123,10 +123,10 @@ protected:
     const VmaAllocationCreateInfo*                _AllocationCreateInfo;
 };
 
-class FTexture2D : public FTextureBase
+class FTexture2D : public FTexture
 {
 public:
-    using Base = FTextureBase;
+    using Base = FTexture;
     using Base::Base;
 
     FTexture2D(std::string_view Filename, vk::Format InitialFormat, vk::Format FinalFormat,
@@ -159,10 +159,10 @@ private:
     vk::Extent2D _ImageExtent;
 };
 
-class FTextureCube : public FTextureBase
+class FTextureCube : public FTexture
 {
 public:
-    using Base = FTextureBase;
+    using Base = FTexture;
     using Base::Base;
 
     FTextureCube(std::string_view Filename, vk::Format InitialFormat, vk::Format FinalFormat,

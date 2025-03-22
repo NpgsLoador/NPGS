@@ -48,8 +48,8 @@ FThreadPool::FThreadPool()
             {
                 std::function<void()> Task;
                 {
-                    std::unique_lock<std::mutex> Mutex(_Mutex);
-                    _Condition.wait(Mutex, [this]() -> bool { return !_Tasks.empty() || _Terminate; });
+                    std::unique_lock<std::mutex> Lock(_Mutex);
+                    _Condition.wait(Lock, [this]() -> bool { return !_Tasks.empty() || _Terminate; });
                     if (_Terminate && _Tasks.empty())
                     {
                         return;

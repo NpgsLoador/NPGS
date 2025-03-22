@@ -5,6 +5,7 @@
   "dependencies": [
     "assimp",
     "boost-multiprecision",
+    "concurrentqueue",
     "fast-cpp-csv-parser",
     "freetype",
     "glfw3",

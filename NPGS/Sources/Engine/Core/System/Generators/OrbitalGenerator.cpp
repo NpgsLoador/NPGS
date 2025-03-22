@@ -261,7 +261,7 @@ void FOrbitalGenerator::GenerateOrbitals(Astro::FStellarSystem& System)
 
         auto ZeroOrbit = std::make_unique<Astro::FOrbit>();
         Astro::FOrbit::FOrbitalDetails MainStar(Star, Astro::FOrbit::EObjectType::kStar, ZeroOrbit.get());
-        ZeroOrbit->ObjectsData().push_back(MainStar);
+        ZeroOrbit->ObjectsData().push_back(std::move(MainStar));
         ZeroOrbit->SetParent(System.GetBaryCenter(), Astro::FOrbit::EObjectType::kBaryCenter);
         System.OrbitsData().push_back(std::move(ZeroOrbit));
 
@@ -430,8 +430,8 @@ void FOrbitalGenerator::GenerateBinaryOrbit(Astro::FStellarSystem& System)
     Astro::FOrbit::FOrbitalDetails Star2(
         System.StarsData().back().get(),  Astro::FOrbit::EObjectType::kStar, Orbit2.get(), InitialTrueAnomaly2);
 
-    Orbit1->ObjectsData().push_back(Star1);
-    Orbit2->ObjectsData().push_back(Star2);
+    Orbit1->ObjectsData().push_back(std::move(Star1));
+    Orbit2->ObjectsData().push_back(std::move(Star2));
 
     System.OrbitsData().push_back(std::move(Orbit1));
     System.OrbitsData().push_back(std::move(Orbit2));
@@ -1081,10 +1081,10 @@ void FOrbitalGenerator::GeneratePlanets(std::size_t StarIndex, Astro::FOrbit::FO
                 GenerateCivilization(Star, PoyntingVector, HabitableZoneAu, Orbits[i].get(), Planets[i].get());
             }
 
-            Orbits[i]->ObjectsData().push_back(Planet);
-
             // 生成特洛伊带
             GenerateTrojan(Star, FrostLineAu, Orbits[i].get(), Planet, AsteroidClusters);
+
+            Orbits[i]->ObjectsData().push_back(std::move(Planet));
         }
 
         // 生成柯伊伯带
@@ -1116,7 +1116,7 @@ void FOrbitalGenerator::GeneratePlanets(std::size_t StarIndex, Astro::FOrbit::FO
             Astro::FOrbit::FOrbitalDetails KuiperBelt(
                 AsteroidClusters.back().get(), Astro::FOrbit::EObjectType::kAsteroidCluster, KuiperBeltOrbit.get());
 
-            KuiperBeltOrbit->ObjectsData().push_back(KuiperBelt);
+            KuiperBeltOrbit->ObjectsData().push_back(std::move(KuiperBelt));
             KuiperBeltOrbit->SetParent(Star, Astro::FOrbit::EObjectType::kStar);
             KuiperBeltOrbit->SetSemiMajorAxis(KuiperBeltRadiusAu * kAuToMeter);
 
@@ -1188,10 +1188,10 @@ void FOrbitalGenerator::GeneratePlanets(std::size_t StarIndex, Astro::FOrbit::FO
                 GenerateRings(i, std::numeric_limits<float>::infinity(), Star, Planet, Orbits, AsteroidClusters);
             }
 
-            Orbits[i]->ObjectsData().push_back(Planet);
-
             // 生成特洛伊带
             GenerateTrojan(Star, std::numeric_limits<float>::infinity(), Orbits[i].get(), Planet, AsteroidClusters);
+
+            Orbits[i]->ObjectsData().push_back(std::move(Planet));
         }
     }
 
@@ -1199,7 +1199,13 @@ void FOrbitalGenerator::GeneratePlanets(std::size_t StarIndex, Astro::FOrbit::FO
     for (auto& Orbit : Orbits)
     {
         auto& OrbitalDetail = Orbit->ObjectsData().front();
-        auto* PlanetPtr     = OrbitalDetail.GetOrbitalObject().GetObject<Astro::APlanet>();
+        auto& OrbitalObject = OrbitalDetail.GetOrbitalObject();
+        if (OrbitalObject.GetObjectType() != Astro::FOrbit::EObjectType::kPlanet)
+        {
+            continue;
+        }
+
+        auto* PlanetPtr = OrbitalDetail.GetOrbitalObject().GetObject<Astro::APlanet>();
         if (OrbitalDetail.GetOrbitalObject().GetObjectType() == Astro::FOrbit::EObjectType::kPlanet)
         {
             if (PlanetPtr->GetPlanetType() ==
@@ -2138,7 +2144,7 @@ void FOrbitalGenerator::GenerateMoons(std::size_t PlanetIndex, float FrostLineAu
         float Exponent = LogCoreMassLowerLimit + _CommonGenerator(_RandomEngine) * (LogCoreMassUpperLimit - LogCoreMassLowerLimit);
         boost::multiprecision::uint128_t InitialCoreMass(std::pow(10.0f, Exponent));
 
-        int VolatilesRate        = 9000 + static_cast<int>(_CommonGenerator(_RandomEngine)) + 2000;
+        int VolatilesRate        = 9000    + static_cast<int>(_CommonGenerator(_RandomEngine)) + 2000;
         int EnergeticNuclideRate = 4500000 + static_cast<int>(_CommonGenerator(_RandomEngine)) * 1000000;
 
         Astro::FComplexMass CoreMass;
@@ -2235,7 +2241,7 @@ void FOrbitalGenerator::GenerateMoons(std::size_t PlanetIndex, float FrostLineAu
     {
         Astro::FOrbit::FOrbitalDetails Moon(Moons[i].get(), Astro::FOrbit::EObjectType::kPlanet,
                                             MoonOrbits[i].get(), _CommonGenerator(_RandomEngine) * 2 * Math::kPi);
-        MoonOrbits[i]->ObjectsData().push_back(Moon);
+        MoonOrbits[i]->ObjectsData().push_back(std::move(Moon));
     }
 
     Orbits.reserve(Orbits.size() + MoonOrbits.size());
@@ -2320,7 +2326,7 @@ void FOrbitalGenerator::GenerateRings(std::size_t PlanetIndex, float FrostLineAu
 
     RingsOrbit->SetParent(Planet, Astro::FOrbit::EObjectType::kPlanet);
     RingsOrbit->SetSemiMajorAxis(SemiMajorAxis);
-    RingsOrbit->ObjectsData().push_back(Rings);
+    RingsOrbit->ObjectsData().push_back(std::move(Rings));
 
     ParentPlanet.DirectOrbitsData().push_back(RingsOrbit.get());
     Orbits.push_back(std::move(RingsOrbit));
@@ -2537,7 +2543,7 @@ void FOrbitalGenerator::GenerateTrojan(const Astro::AStar* Star, float FrostLine
 #endif // DEBUG_OUTPUT
 
     Astro::FOrbit::FOrbitalDetails MyBelt(TrojanBelt.get(), Astro::FOrbit::EObjectType::kAsteroidCluster, Orbit);
-    Orbit->ObjectsData().push_back(MyBelt);
+    Orbit->ObjectsData().push_back(std::move(MyBelt));
 
     AsteroidClusters.push_back(std::move(TrojanBelt));
 }

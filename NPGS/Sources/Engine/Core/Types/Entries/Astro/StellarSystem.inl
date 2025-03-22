@@ -1,40 +1,34 @@
 #include "StellarSystem.h"
 
+#include "Engine/Core/Base/Assert.h"
+
 _NPGS_BEGIN
 _ASTRO_BEGIN
 
-NPGS_INLINE FOrbit::FOrbitalObject& FOrbit::FOrbitalObject::SetObject(FBaryCenter* SystemBary)
+template <typename ObjectType>
+requires std::is_class_v<ObjectType>
+NPGS_INLINE FOrbit::FOrbitalObject& FOrbit::FOrbitalObject::SetObject(ObjectType* Object)
 {
-    _Object.SystemBary = SystemBary;
-    _Type = EObjectType::kBaryCenter;
-    return *this;
-}
+    NpgsStaticAssert(std::is_same_v<ObjectType, FBaryCenter>      ||
+                     std::is_same_v<ObjectType, AStar>            ||
+                     std::is_same_v<ObjectType, APlanet>          ||
+                     std::is_same_v<ObjectType, AAsteroidCluster> ||
+                     std::is_same_v<ObjectType, Intelli::AArtifact>,
+                     "Invalid object type for SetObject");
 
-NPGS_INLINE FOrbit::FOrbitalObject& FOrbit::FOrbitalObject::SetObject(AStar* Star)
-{
-    _Object.Star = Star;
-    _Type = EObjectType::kStar;
-    return *this;
-}
+    _Object = Object;
 
-NPGS_INLINE FOrbit::FOrbitalObject& FOrbit::FOrbitalObject::SetObject(APlanet* Planet)
-{
-    _Object.Planet = Planet;
-    _Type = EObjectType::kPlanet;
-    return *this;
-}
+    if constexpr (std::is_same_v<ObjectType, FBaryCenter>)
+        _Type = EObjectType::kBaryCenter;
+    else if constexpr (std::is_same_v<ObjectType, AStar>)
+        _Type = EObjectType::kStar;
+    else if constexpr (std::is_same_v<ObjectType, APlanet>)
+        _Type = EObjectType::kPlanet;
+    else if constexpr (std::is_same_v<ObjectType, AAsteroidCluster>)
+        _Type = EObjectType::kAsteroidCluster;
+    else if constexpr (std::is_same_v<ObjectType, Intelli::AArtifact>)
+        _Type = EObjectType::kArtifactCluster;
 
-NPGS_INLINE FOrbit::FOrbitalObject& FOrbit::FOrbitalObject::SetObject(AAsteroidCluster* AsteroidCluster)
-{
-    _Object.Asteroids = AsteroidCluster;
-    _Type = EObjectType::kAsteroidCluster;
-    return *this;
-}
-
-NPGS_INLINE FOrbit::FOrbitalObject& FOrbit::FOrbitalObject::SetObject(Intelli::AArtifact* ArtifactCluster)
-{
-    _Object.Artifacts = ArtifactCluster;
-    _Type = EObjectType::kArtifactCluster;
     return *this;
 }
 
@@ -47,28 +41,14 @@ template <typename ObjectType>
 requires std::is_class_v<ObjectType>
 NPGS_INLINE ObjectType* FOrbit::FOrbitalObject::GetObject() const
 {
-    if constexpr (std::is_same_v<ObjectType, FBaryCenter>)
-    {
-        return _Type == EObjectType::kBaryCenter ? _Object.SystemBary : nullptr;
-    }
-    else if constexpr (std::is_same_v<ObjectType, AStar>)
-    {
-        return _Type == EObjectType::kStar ? _Object.Star : nullptr;
-    }
-    else if constexpr (std::is_same_v<ObjectType, APlanet>)
-    {
-        return _Type == EObjectType::kPlanet ? _Object.Planet : nullptr;
-    }
-    else if constexpr (std::is_same_v<ObjectType, AAsteroidCluster>)
-    {
-        return _Type == EObjectType::kAsteroidCluster ? _Object.Asteroids : nullptr;
-    }
-    else if constexpr (std::is_same_v<ObjectType, Intelli::AArtifact>)
-    {
-        return _Type == EObjectType::kArtifactCluster ? _Object.Artifacts : nullptr;
-    }
+    NpgsStaticAssert(std::is_same_v<ObjectType, FBaryCenter>      ||
+                     std::is_same_v<ObjectType, AStar>            ||
+                     std::is_same_v<ObjectType, APlanet>          ||
+                     std::is_same_v<ObjectType, AAsteroidCluster> ||
+                     std::is_same_v<ObjectType, Intelli::AArtifact>,
+                     "Invalid object type for SetObject");
 
-    return nullptr;
+    return std::get<ObjectType*>(_Object);
 }
 
 NPGS_INLINE FOrbit::FOrbitalDetails& FOrbit::FOrbitalDetails::SetHostOrbit(FOrbit* HostFOrbit)

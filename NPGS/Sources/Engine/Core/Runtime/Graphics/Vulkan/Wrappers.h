@@ -353,8 +353,7 @@ class TVulkanHandleNoDestroy
 public:
     TVulkanHandleNoDestroy() = default;
     explicit TVulkanHandleNoDestroy(HandleType Handle)
-        :
-        _Handle(Handle)
+        : _Handle(Handle)
     {
     }
 

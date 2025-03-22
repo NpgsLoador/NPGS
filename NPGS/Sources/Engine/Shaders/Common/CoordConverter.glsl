@@ -1,5 +1,4 @@
-#ifndef COORDCONVERTER_GLSL_
-#define COORDCONVERTER_GLSL_
+#pragma once
 
 vec3 FragUvToDir(vec2 FragUv, float Fov, vec2 NdcResolution)
 {
@@ -27,5 +26,3 @@ vec2 PosToFragUv(vec4 Pos, vec2 NdcResolution)
 {
     return vec2(0.5 - 0.5 * Pos.x / Pos.z, 0.5 - 0.5 * Pos.y / Pos.z * NdcResolution.x / NdcResolution.y);
 }
-
-#endif // !COORDCONVERTER_GLSL_

@@ -6,37 +6,37 @@ _NPGS_BEGIN
 _RUNTIME_BEGIN
 _ASSET_BEGIN
 
-NPGS_INLINE vk::DescriptorImageInfo FTextureBase::CreateDescriptorImageInfo(const Graphics::FVulkanSampler& Sampler) const
+NPGS_INLINE vk::DescriptorImageInfo FTexture::CreateDescriptorImageInfo(const Graphics::FVulkanSampler& Sampler) const
 {
     return { *Sampler, **_ImageView, vk::ImageLayout::eShaderReadOnlyOptimal };
 }
 
-NPGS_INLINE vk::DescriptorImageInfo FTextureBase::CreateDescriptorImageInfo(const vk::Sampler& Sampler) const
+NPGS_INLINE vk::DescriptorImageInfo FTexture::CreateDescriptorImageInfo(const vk::Sampler& Sampler) const
 {
     return { Sampler, **_ImageView, vk::ImageLayout::eShaderReadOnlyOptimal };
 }
 
-NPGS_INLINE Graphics::FVulkanImage& FTextureBase::GetImage()
+NPGS_INLINE Graphics::FVulkanImage& FTexture::GetImage()
 {
     return _ImageMemory->GetResource();
 }
 
-NPGS_INLINE const Graphics::FVulkanImage& FTextureBase::GetImage() const
+NPGS_INLINE const Graphics::FVulkanImage& FTexture::GetImage() const
 {
     return _ImageMemory->GetResource();
 }
 
-NPGS_INLINE Graphics::FVulkanImageView& FTextureBase::GetImageView()
+NPGS_INLINE Graphics::FVulkanImageView& FTexture::GetImageView()
 {
     return *_ImageView;
 }
 
-NPGS_INLINE const Graphics::FVulkanImageView& FTextureBase::GetImageView() const
+NPGS_INLINE const Graphics::FVulkanImageView& FTexture::GetImageView() const
 {
     return *_ImageView;
 }
 
-NPGS_INLINE vk::SamplerCreateInfo FTextureBase::CreateDefaultSamplerCreateInfo()
+NPGS_INLINE vk::SamplerCreateInfo FTexture::CreateDefaultSamplerCreateInfo()
 {
     vk::SamplerCreateInfo DefaultSamplerCreateInfo(
         {},

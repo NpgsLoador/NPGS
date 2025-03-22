@@ -2,9 +2,11 @@
 
 #include <cmath>
 #include <array>
+#include <concepts>
 #include <functional>
 #include <future>
 #include <memory>
+#include <type_traits>
 #include <utility>
 #include <vector>
 
@@ -115,6 +117,7 @@ public:
     }
 
     template <typename Func>
+    requires std::predicate<Func, const LinkTargetType*> || std::predicate<Func, LinkTargetType*> || std::predicate<Func, void*>
     LinkTargetType* GetLink(Func&& Pred) const
     {
         for (LinkTargetType* Target : _DataLink)
@@ -209,12 +212,14 @@ public:
     }
 
     template <typename Func = std::function<bool(const FNodeType&)>>
+    requires std::predicate<Func, const FNodeType&> || std::predicate<Func, FNodeType&>
     FNodeType* Find(glm::vec3 Point, Func&& Pred = [](const FNodeType&) -> bool { return true; }) const
     {
         return FindImpl(_Root.get(), Point, std::forward<Func>(Pred));
     }
 
     template <typename Func>
+    requires std::is_invocable_r_v<void, Func, const FNodeType&> || std::is_invocable_r_v<void, Func, FNodeType&>
     void Traverse(Func&& Pred) const
     {
         TraverseImpl(_Root.get(), std::forward<Func>(Pred));

@@ -23,8 +23,8 @@
 #include "Engine/Core/Math/TangentSpaceTools.h"
 #include "Engine/Core/Runtime/AssetLoaders/Shader.h"
 #include "Engine/Core/Runtime/AssetLoaders/Texture.h"
-#include "Engine/Core/Runtime/Graphics/Vulkan/PipelineManager.h"
-#include "Engine/Core/Runtime/Graphics/Vulkan/ShaderBufferManager.h"
+#include "Engine/Core/Runtime/Graphics/Resources/Managers/PipelineManager.h"
+#include "Engine/Core/Runtime/Graphics/Resources/Managers/ShaderBufferManager.h"
 #include "Engine/Utils/Logger.h"
 
 _NPGS_BEGIN
@@ -1109,7 +1109,7 @@ void FApplication::BindDescriptorSets()
     auto* IceLand         = AssetManager->GetAsset<Art::FTexture2D>("IceLand");
     auto* Skybox          = AssetManager->GetAsset<Art::FTextureCube>("Skybox");
 
-    vk::SamplerCreateInfo SamplerCreateInfo = Art::FTextureBase::CreateDefaultSamplerCreateInfo();
+    vk::SamplerCreateInfo SamplerCreateInfo = Art::FTexture::CreateDefaultSamplerCreateInfo();
     static Grt::FVulkanSampler kSampler(SamplerCreateInfo);
 
     vk::DescriptorImageInfo SamplerInfo(*kSampler);
