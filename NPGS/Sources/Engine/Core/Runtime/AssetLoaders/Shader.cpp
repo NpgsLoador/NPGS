@@ -495,7 +495,7 @@ void FShader::ReflectShader(const FShaderInfo& ShaderInfo, const FResourceInfo& 
     NpgsCoreTrace("Shader reflection completed.");
 }
 
-void FShader::AddDescriptorSetBindings(std::uint32_t Set, const vk::DescriptorSetLayoutBinding& LayoutBinding)
+void FShader::AddDescriptorSetBindings(std::uint32_t Set, vk::DescriptorSetLayoutBinding& LayoutBinding)
 {
     auto it = _ReflectionInfo.DescriptorSetBindings.find(Set);
     if (it == _ReflectionInfo.DescriptorSetBindings.end())
@@ -505,8 +505,8 @@ void FShader::AddDescriptorSetBindings(std::uint32_t Set, const vk::DescriptorSe
     }
 
     bool bMergedStage = false;
-    auto& ExistedLayoutBindingVector = it->second;
-    for (auto& ExistedLayoutBinding : ExistedLayoutBindingVector)
+    auto& ExistedLayoutBindings = it->second;
+    for (auto& ExistedLayoutBinding : ExistedLayoutBindings)
     {
         if (ExistedLayoutBinding.binding         == LayoutBinding.binding &&
             ExistedLayoutBinding.descriptorType  == LayoutBinding.descriptorType &&
@@ -514,12 +514,13 @@ void FShader::AddDescriptorSetBindings(std::uint32_t Set, const vk::DescriptorSe
         {
             ExistedLayoutBinding.stageFlags |= LayoutBinding.stageFlags;
             bMergedStage = true;
+            break;
         }
     }
 
     if (!bMergedStage)
     {
-        ExistedLayoutBindingVector.push_back(std::move(LayoutBinding));
+        ExistedLayoutBindings.push_back(std::move(LayoutBinding));
     }
 }
 

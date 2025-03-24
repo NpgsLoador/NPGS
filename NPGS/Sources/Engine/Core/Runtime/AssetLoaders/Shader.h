@@ -92,7 +92,8 @@ public:
     std::vector<vk::DescriptorSetLayout> GetDescriptorSetLayouts() const;
     std::vector<vk::PushConstantRange> GetPushConstantRanges() const;
     std::uint32_t GetPushConstantOffset(const std::string& Name) const;
-
+    vk::DeviceSize GetDescriptorSetLayoutSize(std::uint32_t Set) const;
+    vk::DeviceSize GetDescriptorSetBindingOffset(std::uint32_t Set, std::uint32_t Binding) const;
     const std::vector<vk::VertexInputBindingDescription>& GetVertexInputBindings() const;
     const std::vector<vk::VertexInputAttributeDescription>& GetVertexInputAttributes() const;
     const std::vector<vk::DescriptorSet>& GetDescriptorSets(std::uint32_t FrameIndex);
@@ -101,7 +102,7 @@ private:
     void InitializeShaders(const std::vector<std::string>& ShaderFiles, const FResourceInfo& ResourceInfo);
     FShaderInfo LoadShader(const std::string& Filename);
     void ReflectShader(const FShaderInfo& ShaderInfo, const FResourceInfo& ResourceInfo);
-    void AddDescriptorSetBindings(std::uint32_t Set, const vk::DescriptorSetLayoutBinding& LayoutBinding);
+    void AddDescriptorSetBindings(std::uint32_t Set, vk::DescriptorSetLayoutBinding& LayoutBinding);
     void CreateDescriptors();
     void UpdateDescriptorSets(std::uint32_t FrameIndex);
     void MarkAllFramesForUpdate();

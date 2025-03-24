@@ -3,6 +3,7 @@
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
+#include <cstdlib>
 #include <array>
 #include <future>
 
@@ -47,6 +48,7 @@ FApplication::FApplication(const vk::Extent2D& WindowSize, const std::string& Wi
     if (!InitializeWindow())
     {
         NpgsCoreError("Failed to create application.");
+        std::exit(EXIT_FAILURE);
     }
 }
 
@@ -1543,11 +1545,6 @@ bool FApplication::InitializeWindow()
     {
         _VulkanContext->AddInstanceExtension(Extensions[i]);
     }
-
-    _VulkanContext->AddInstanceExtension(VK_EXT_SWAPCHAIN_COLOR_SPACE_EXTENSION_NAME);
-    _VulkanContext->AddDeviceExtension(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
-    _VulkanContext->AddDeviceExtension(VK_EXT_CUSTOM_BORDER_COLOR_EXTENSION_NAME);
-    _VulkanContext->AddDeviceExtension(VK_EXT_HDR_METADATA_EXTENSION_NAME);
 
     vk::Result Result;
     if ((Result = _VulkanContext->CreateInstance()) != vk::Result::eSuccess)

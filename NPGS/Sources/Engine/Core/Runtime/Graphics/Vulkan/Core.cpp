@@ -93,8 +93,13 @@ vk::Result FVulkanCore::CreateInstance(vk::InstanceCreateFlags Flags)
     AddInstanceExtension(vk::EXTDebugUtilsExtensionName);
 #endif // _DEBUG
 
-    vk::ApplicationInfo ApplicationInfo("Von-Neumann in Galaxy Simulator", VK_MAKE_VERSION(1, 0, 0),
-                                        "No Engine", VK_MAKE_VERSION(1, 0, 0), _ApiVersion);
+    AddInstanceExtension(vk::EXTSwapchainColorSpaceExtensionName);
+
+#pragma warning(push)
+#pragma warning(disable: 4996) // for deprecated api
+    vk::ApplicationInfo ApplicationInfo("Von-Neumann in Galaxy Simulator", vk::makeVersion(1, 0, 0),
+                                        "No Engine", vk::makeVersion(1, 0, 0), _ApiVersion);
+#pragma warning(pop)
     vk::InstanceCreateInfo InstanceCreateInfo(Flags, &ApplicationInfo, _InstanceLayers, _InstanceExtensions);
 
     VulkanHppCheck(CheckInstanceLayers());
@@ -110,6 +115,8 @@ vk::Result FVulkanCore::CreateInstance(vk::InstanceCreateFlags Flags)
         return static_cast<vk::Result>(e.code().value());
     }
 
+    VulkanHppCheck(GetInstanceExtFunctionProcAddress());
+
 #ifdef _DEBUG
     VulkanHppCheck(CreateDebugMessenger());
 #endif // _DEBUG
@@ -120,6 +127,11 @@ vk::Result FVulkanCore::CreateInstance(vk::InstanceCreateFlags Flags)
 
 vk::Result FVulkanCore::CreateDevice(std::uint32_t PhysicalDeviceIndex, vk::DeviceCreateFlags Flags)
 {
+    AddDeviceExtension(vk::EXTCustomBorderColorExtensionName);
+    AddDeviceExtension(vk::EXTDescriptorBufferExtensionName);    
+    AddDeviceExtension(vk::EXTHdrMetadataExtensionName);
+    AddDeviceExtension(vk::KHRSwapchainExtensionName);
+
     VulkanHppCheck(EnumeratePhysicalDevices());
     VulkanHppCheck(DeterminePhysicalDevice(PhysicalDeviceIndex, true, true));
     VulkanHppCheck(CheckDeviceExtensions());
@@ -148,35 +160,38 @@ vk::Result FVulkanCore::CreateDevice(std::uint32_t PhysicalDeviceIndex, vk::Devi
     vk::PhysicalDeviceVulkan12Features Features12;
     vk::PhysicalDeviceVulkan13Features Features13;
     vk::PhysicalDeviceVulkan14Features Features14;
+
     vk::PhysicalDeviceCustomBorderColorFeaturesEXT CustomBorderColorFeatures(vk::True, vk::True);
+    vk::PhysicalDeviceDescriptorBufferFeaturesEXT  DescriptorBufferFeatures(vk::True, vk::True, vk::True, vk::True);
 
     Features2.setPNext(&Features11);
     Features11.setPNext(&Features12);
     Features12.setPNext(&Features13);
     Features13.setPNext(&Features14);
     Features14.setPNext(&CustomBorderColorFeatures);
+    CustomBorderColorFeatures.setPNext(&DescriptorBufferFeatures);
 
     _PhysicalDevice.getFeatures2(&Features2);
 
     void* pNext = &CustomBorderColorFeatures;
     vk::PhysicalDeviceFeatures PhysicalDeviceFeatures = Features2.features;
 
-    if (_ApiVersion >= VK_API_VERSION_1_1)
+    if (_ApiVersion >= vk::ApiVersion11)
     {
         Features11.setPNext(pNext);
         pNext = &Features11;
     }
-    if (_ApiVersion >= VK_API_VERSION_1_2)
+    if (_ApiVersion >= vk::ApiVersion12)
     {
         Features12.setPNext(pNext);
         pNext = &Features12;
     }
-    if (_ApiVersion >= VK_API_VERSION_1_3)
+    if (_ApiVersion >= vk::ApiVersion13)
     {
         Features13.setPNext(pNext);
         pNext = &Features13;
     }
-    if (_ApiVersion >= VK_API_VERSION_1_4)
+    if (_ApiVersion >= vk::ApiVersion14)
     {
         Features14.setPNext(pNext);
         pNext = &Features14;
@@ -218,7 +233,10 @@ vk::Result FVulkanCore::CreateDevice(std::uint32_t PhysicalDeviceIndex, vk::Devi
         Callback.second();
     }
 
-    return InitializeVmaAllocator();
+    VulkanHppCheck(GetDeviceExtFunctionProcAddress());
+    VulkanHppCheck(InitializeVmaAllocator());
+
+    return vk::Result::eSuccess;
 }
 
 vk::Result FVulkanCore::RecreateDevice(std::uint32_t PhysicalDeviceIndex, vk::DeviceCreateFlags Flags)
@@ -397,10 +415,8 @@ vk::Result FVulkanCore::CreateSwapchain(vk::Extent2D Extent, bool bLimitFps, boo
         SurfaceFormats.emplace_back(vk::Format::eA2B10G10R10UnormPack32, vk::ColorSpaceKHR::eHdr10St2084EXT);
         SurfaceFormats.emplace_back(vk::Format::eA2R10G10B10UnormPack32, vk::ColorSpaceKHR::eHdr10St2084EXT);
         
-        kVkSetHdrMetadataExt = reinterpret_cast<PFN_vkSetHdrMetadataEXT>(_Instance.getProcAddr("vkSetHdrMetadataEXT"));
         if (kVkSetHdrMetadataExt == nullptr)
         {
-            NpgsCoreWarn("Failed to get vkSetHdrMetadataEXT function pointer.");
             SurfaceFormats.clear();
             _HdrMetadata = vk::HdrMetadataEXT();
         }
@@ -813,16 +829,18 @@ vk::Result FVulkanCore::UseLatestApiVersion()
     }
     else
     {
-        _ApiVersion = VK_API_VERSION_1_0;
-        NpgsCoreInfo("Vulkan 1.1+ not available, using Vulkan 1.0.");
+        NpgsCoreError("Vulkan 1.1+ not available, the application only support Vulkan 1.3+.");
+        std::exit(EXIT_FAILURE);
     }
 
-    NpgsCoreInfo("Vulkan API version: {}.{}.{}", VK_VERSION_MAJOR(_ApiVersion),
-                 VK_VERSION_MINOR(_ApiVersion), VK_VERSION_PATCH(_ApiVersion));
+#pragma warning(push)
+#pragma warning(disable: 4996) // for deprecated api
+    NpgsCoreInfo("Vulkan API version: {}.{}.{}", vk::versionMajor(_ApiVersion), vk::versionMinor(_ApiVersion), vk::versionPatch(_ApiVersion));
+#pragma warning(pop)
     return vk::Result::eSuccess;
 }
 
-vk::Result FVulkanCore::CreateDebugMessenger()
+vk::Result FVulkanCore::GetInstanceExtFunctionProcAddress()
 {
     kVkCreateDebugUtilsMessengerExt =
         reinterpret_cast<PFN_vkCreateDebugUtilsMessengerEXT>(_Instance.getProcAddr("vkCreateDebugUtilsMessengerEXT"));
@@ -840,6 +858,54 @@ vk::Result FVulkanCore::CreateDebugMessenger()
         return vk::Result::eErrorExtensionNotPresent;
     }
 
+    kVkSetHdrMetadataExt = reinterpret_cast<PFN_vkSetHdrMetadataEXT>(_Instance.getProcAddr("vkSetHdrMetadataEXT"));
+    if (kVkSetHdrMetadataExt == nullptr)
+    {
+        NpgsCoreWarn("Failed to get vkSetHdrMetadataEXT function pointer.");
+    }
+
+    return vk::Result::eSuccess;
+}
+
+vk::Result FVulkanCore::GetDeviceExtFunctionProcAddress()
+{
+    kVkCmdBindDescriptorBuffersExt =
+        reinterpret_cast<PFN_vkCmdBindDescriptorBuffersEXT>(_Device.getProcAddr("vkCmdBindDescriptorBuffersEXT"));
+    if (kVkCmdBindDescriptorBuffersExt == nullptr)
+    {
+        NpgsCoreError("Failed to get vkCmdBindDescriptorBuffersEXT function pointer.");
+        return vk::Result::eErrorExtensionNotPresent;
+    }
+
+    kVkCmdSetDescriptorBufferOffsetsExt =
+        reinterpret_cast<PFN_vkCmdSetDescriptorBufferOffsetsEXT>(_Device.getProcAddr("vkCmdSetDescriptorBufferOffsetsEXT"));
+    if (kVkCmdSetDescriptorBufferOffsetsExt == nullptr)
+    {
+        NpgsCoreError("Failed to get vkCmdSetDescriptorBufferOffsetsEXT function pointer.");
+        return vk::Result::eErrorExtensionNotPresent;
+    }
+
+    kVkGetDescriptorSetLayoutSizeExt =
+        reinterpret_cast<PFN_vkGetDescriptorSetLayoutSizeEXT>(_Device.getProcAddr("vkGetDescriptorSetLayoutSizeEXT"));
+    if (kVkGetDescriptorSetLayoutSizeExt == nullptr)
+    {
+        NpgsCoreError("Failed to get vkGetDescriptorSetLayoutSizeEXT function pointer.");
+        return vk::Result::eErrorExtensionNotPresent;
+    }
+
+    kVkGetDescriptorSetLayoutBindingOffsetExt =
+        reinterpret_cast<PFN_vkGetDescriptorSetLayoutBindingOffsetEXT>(_Device.getProcAddr("vkGetDescriptorSetLayoutBindingOffsetEXT"));
+    if (kVkGetDescriptorSetLayoutBindingOffsetExt == nullptr)
+    {
+        NpgsCoreError("Failed to get vkGetDescriptorSetLayoutBindingOffsetEXT function pointer.");
+        return vk::Result::eErrorExtensionNotPresent;
+    }
+
+    return vk::Result::eSuccess;
+}
+
+vk::Result FVulkanCore::CreateDebugMessenger()
+{
     vk::PFN_DebugUtilsMessengerCallbackEXT DebugCallback =
     [](vk::DebugUtilsMessageSeverityFlagBitsEXT      MessageSeverity,
        vk::DebugUtilsMessageTypeFlagsEXT             MessageType,

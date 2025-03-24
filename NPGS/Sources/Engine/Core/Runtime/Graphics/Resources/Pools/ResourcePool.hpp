@@ -112,6 +112,7 @@ public:
         _ResourceReclaimThresholdMs(PoolReclaimThresholdMs),
         _MaintenanceIntervalMs(MaintenanceIntervalMs)
     {
+        std::thread([this]() -> void { Maintenance(); }).detach();
     }
 
     TResourcePool(const TResourcePool&) = delete;
@@ -119,6 +120,7 @@ public:
 
     virtual ~TResourcePool()
     {
+        _MaintenanceIntervalMs = std::clamp(_MaintenanceIntervalMs, 0u, 500u);
         _bStopMaintenance.store(true);
         std::this_thread::sleep_for(std::chrono::milliseconds(_MaintenanceIntervalMs * 2));
     }
@@ -146,11 +148,11 @@ public:
             if (MatchedResources.size() > 1)
             {
                 std::sort(MatchedResources.begin(), MatchedResources.end(),
-                          [](const FResourceInfo& Lhs, const FResourceInfo& Rhs) -> bool
+                [](const auto& Lhs, const auto& Rhs) -> bool
                 {
-                    return Lhs.UsageCount != Rhs.UsageCount ?
-                        Lhs.UsageCount > Rhs.UsageCount :
-                    Lhs.LastUsedTimestamp > Rhs.LastUsedTimestamp;
+                    return Lhs->UsageCount       != Rhs->UsageCount ?
+                           Lhs->UsageCount        > Rhs->UsageCount :
+                           Lhs->LastUsedTimestamp > Rhs->LastUsedTimestamp;
                 });
             }
 
@@ -176,7 +178,7 @@ public:
         {
             constexpr std::uint32_t kMaxWaitTimeMs = 2000;
             if (_Condition.wait_for(Lock, std::chrono::milliseconds(kMaxWaitTimeMs),
-                                    [this, &Pred]() -> bool { return std::any_of(_AvailableResources.begin(), _AvailableResources.end(), Pred); }))
+                [this, &Pred]() -> bool { return std::any_of(_AvailableResources.begin(), _AvailableResources.end(), Pred); }))
             {
                 Lock.unlock();
                 return AcquireResource(CreateInfo, Pred);
@@ -313,6 +315,12 @@ protected:
         _Condition.notify_one();
     }
 
+    std::size_t GetCurrentTimeMs() const
+    {
+        return std::chrono::duration_cast<std::chrono::milliseconds>(
+            std::chrono::system_clock::now().time_since_epoch()).count();
+    }
+
 private:
     void Maintenance()
     {
@@ -326,13 +334,7 @@ private:
         }
     }
 
-    std::size_t GetCurrentTimeMs() const
-    {
-        return std::chrono::duration_cast<std::chrono::milliseconds>(
-            std::chrono::system_clock::now().time_since_epoch()).count();
-    }
-
-private:
+protected:
     std::mutex                 _Mutex;
     std::condition_variable    _Condition;
     std::deque<FResourceInfo>  _AvailableResources;

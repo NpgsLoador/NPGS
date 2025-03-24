@@ -11,6 +11,7 @@
 #include <vulkan/vulkan.hpp>
 
 #include "Engine/Core/Base/Base.h"
+#include "Engine/Core/Runtime/Graphics/Resources/Pools/CommandPoolManager.h"
 #include "Engine/Core/Runtime/Graphics/Vulkan/Core.h"
 #include "Engine/Core/Runtime/Graphics/Vulkan/Wrappers.h"
 
@@ -167,6 +168,10 @@ private:
 
     std::vector<std::pair<ECallbackType, std::string>> _AutoRemovedCallbacks;
     // std::array<vk::FormatProperties, magic_enum::enum_count<vk::Format>()> _FormatProperties;
+
+    std::shared_ptr<FCommandPoolManager> _GraphicsCommandPoolManager;
+    std::shared_ptr<FCommandPoolManager> _PresentCommandPoolManager;
+    std::shared_ptr<FCommandPoolManager> _ComputeCommandPoolMangaer;
 
     std::unique_ptr<FVulkanCommandPool>   _GraphicsCommandPool;
     std::unique_ptr<FVulkanCommandPool>   _PresentCommandPool;

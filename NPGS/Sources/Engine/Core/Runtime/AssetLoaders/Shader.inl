@@ -1,5 +1,7 @@
 #include "Shader.h"
 
+#include "Engine/Core/Runtime/Graphics/Vulkan/Context.h"
+
 _NPGS_BEGIN
 _RUNTIME_BEGIN
 _ASSET_BEGIN
@@ -37,6 +39,20 @@ NPGS_INLINE std::vector<vk::PushConstantRange> FShader::GetPushConstantRanges() 
 NPGS_INLINE std::uint32_t FShader::GetPushConstantOffset(const std::string& Name) const
 {
     return _PushConstantOffsetsMap.at(Name);
+}
+
+NPGS_INLINE vk::DeviceSize FShader::GetDescriptorSetLayoutSize(std::uint32_t Set) const
+{
+    auto& Layout = _DescriptorSetLayoutsMap.at(Set);
+    vk::Device Device = Graphics::FVulkanContext::GetClassInstance()->GetDevice();
+    return Device.getDescriptorSetLayoutSizeEXT(*Layout);
+}
+
+NPGS_INLINE vk::DeviceSize FShader::GetDescriptorSetBindingOffset(std::uint32_t Set, std::uint32_t Binding) const
+{
+    auto& Layout = _DescriptorSetLayoutsMap.at(Set);
+    vk::Device Device = Graphics::FVulkanContext::GetClassInstance()->GetDevice();
+    return Device.getDescriptorSetLayoutBindingOffsetEXT(*Layout, Binding);
 }
 
 NPGS_INLINE const std::vector<vk::VertexInputBindingDescription>& FShader::GetVertexInputBindings() const

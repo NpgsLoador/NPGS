@@ -1,8 +1,28 @@
 #include "ExtFunctionsImpl.h"
 
-PFN_vkCreateDebugUtilsMessengerEXT  kVkCreateDebugUtilsMessengerExt  = nullptr;
-PFN_vkDestroyDebugUtilsMessengerEXT kVkDestroyDebugUtilsMessengerExt = nullptr;
-PFN_vkSetHdrMetadataEXT             kVkSetHdrMetadataExt             = nullptr;
+#include <cstdint>
+
+PFN_vkCmdBindDescriptorBuffersEXT            kVkCmdBindDescriptorBuffersExt            = nullptr;
+PFN_vkCmdSetDescriptorBufferOffsetsEXT       kVkCmdSetDescriptorBufferOffsetsExt       = nullptr;
+PFN_vkCreateDebugUtilsMessengerEXT           kVkCreateDebugUtilsMessengerExt           = nullptr;
+PFN_vkDestroyDebugUtilsMessengerEXT          kVkDestroyDebugUtilsMessengerExt          = nullptr;
+PFN_vkGetDescriptorSetLayoutSizeEXT          kVkGetDescriptorSetLayoutSizeExt          = nullptr;
+PFN_vkGetDescriptorSetLayoutBindingOffsetEXT kVkGetDescriptorSetLayoutBindingOffsetExt = nullptr;
+PFN_vkSetHdrMetadataEXT                      kVkSetHdrMetadataExt                      = nullptr;
+
+VKAPI_ATTR void VKAPI_CALL
+vkCmdBindDescriptorBuffersEXT(VkCommandBuffer CommandBuffer, std::uint32_t BufferCount,
+                              const VkDescriptorBufferBindingInfoEXT* BindingInfos)
+{
+    kVkCmdBindDescriptorBuffersExt(CommandBuffer, BufferCount, BindingInfos);
+}
+
+VKAPI_ATTR void VKAPI_CALL
+vkCmdSetDescriptorBufferOffsetsEXT(VkCommandBuffer CommandBuffer, VkPipelineBindPoint PipelineBindPoint, VkPipelineLayout Layout,
+                                   std::uint32_t FirstSet, std::uint32_t SetCount, const std::uint32_t* BufferIndices, const VkDeviceSize* Offsets)
+{
+    kVkCmdSetDescriptorBufferOffsetsExt(CommandBuffer, PipelineBindPoint, Layout, FirstSet, SetCount, BufferIndices, Offsets);
+}
 
 VKAPI_ATTR VkResult VKAPI_CALL
 vkCreateDebugUtilsMessengerEXT(VkInstance Instance, const VkDebugUtilsMessengerCreateInfoEXT* CreateInfo,
@@ -15,6 +35,18 @@ VKAPI_ATTR void VKAPI_CALL
 vkDestroyDebugUtilsMessengerEXT(VkInstance Instance, VkDebugUtilsMessengerEXT Messenger, const VkAllocationCallbacks* Allocator)
 {
     kVkDestroyDebugUtilsMessengerExt(Instance, Messenger, Allocator);
+}
+
+VKAPI_ATTR void VKAPI_CALL
+vkGetDescriptorSetLayoutSizeEXT(VkDevice Device, VkDescriptorSetLayout Layout, VkDeviceSize* LayoutSizeInBytes)
+{
+    kVkGetDescriptorSetLayoutSizeExt(Device, Layout, LayoutSizeInBytes);
+}
+
+VKAPI_ATTR void VKAPI_CALL
+vkGetDescriptorSetLayoutBindingOffsetEXT(VkDevice Device, VkDescriptorSetLayout Layout, uint32_t Binding, VkDeviceSize* Offset)
+{
+    kVkGetDescriptorSetLayoutBindingOffsetExt(Device, Layout, Binding, Offset);
 }
 
 VKAPI_ATTR void VKAPI_CALL

@@ -132,6 +132,8 @@ private:
     vk::Result CheckDeviceExtensions();
 
     vk::Result UseLatestApiVersion();
+    vk::Result GetInstanceExtFunctionProcAddress();
+    vk::Result GetDeviceExtFunctionProcAddress();
     vk::Result CreateDebugMessenger();
     vk::Result EnumeratePhysicalDevices();
     vk::Result DeterminePhysicalDevice(std::uint32_t Index, bool bEnableGraphicsQueue, bool bEnableComputeQueue);
