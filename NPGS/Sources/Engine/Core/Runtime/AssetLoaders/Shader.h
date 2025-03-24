@@ -33,24 +33,18 @@ public:
         std::uint32_t Offset{};
     };
 
-    struct FUniformBufferInfo
+    struct FShaderBufferInfo
     {
         std::uint32_t Set{};
         std::uint32_t Binding{};
         bool bIsDynamic{ false };
     };
 
-    struct FDynamicResourceInfo
-    {
-        std::uint32_t Set{};
-        std::uint32_t Binding{};
-    };
-
     struct FResourceInfo
     {
         std::vector<FVertexBufferInfo>    VertexBufferInfos;
         std::vector<FVertexAttributeInfo> VertexAttributeInfos;
-        std::vector<FUniformBufferInfo>   UniformBufferInfos;
+        std::vector<FShaderBufferInfo>    ShaderBufferInfos;
         std::unordered_map<vk::ShaderStageFlagBits, std::vector<std::string>> PushConstantInfos;
     };
 
@@ -113,7 +107,7 @@ private:
     std::unordered_map<std::string, std::uint32_t>                                 _PushConstantOffsetsMap;
     std::unordered_map<std::uint32_t, Graphics::FVulkanDescriptorSetLayout>        _DescriptorSetLayoutsMap;
     std::unordered_map<std::uint32_t, std::vector<Graphics::FVulkanDescriptorSet>> _DescriptorSetsMap;
-    std::unordered_map<std::uint32_t, std::vector<vk::DescriptorSet>>              _DescriptorSets;
+    std::unordered_map<std::uint32_t, std::vector<vk::DescriptorSet>>              _DescriptorSetsFrameMap;
     std::unique_ptr<Graphics::FVulkanDescriptorPool>                               _DescriptorPool;
     std::uint32_t                                                                  _DescriptorSetsUpdateMask{ 0xFFFFFFFF };
 };

@@ -68,7 +68,7 @@ NPGS_INLINE const std::vector<vk::VertexInputAttributeDescription>& FShader::Get
 NPGS_INLINE const std::vector<vk::DescriptorSet>& FShader::GetDescriptorSets(std::uint32_t FrameIndex)
 {
     UpdateDescriptorSets(FrameIndex);
-    return _DescriptorSets[FrameIndex];
+    return _DescriptorSetsFrameMap[FrameIndex];
 }
 
 NPGS_INLINE void FShader::MarkAllFramesForUpdate()

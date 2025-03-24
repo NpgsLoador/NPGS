@@ -148,7 +148,7 @@ FShader::FShader(FShader&& Other) noexcept
     _ReflectionInfo(std::exchange(Other._ReflectionInfo, {})),
     _DescriptorSetLayoutsMap(std::move(Other._DescriptorSetLayoutsMap)),
     _DescriptorSetsMap(std::move(Other._DescriptorSetsMap)),
-    _DescriptorSets(std::move(Other._DescriptorSets)),
+    _DescriptorSetsFrameMap(std::move(Other._DescriptorSetsFrameMap)),
     _DescriptorPool(std::move(Other._DescriptorPool)),
     _DescriptorSetsUpdateMask(std::exchange(Other._DescriptorSetsUpdateMask, 0xFFFFFFFF))
 {
@@ -162,7 +162,7 @@ FShader& FShader::operator=(FShader&& Other) noexcept
         _ReflectionInfo           = std::exchange(Other._ReflectionInfo, {});
         _DescriptorSetLayoutsMap  = std::move(Other._DescriptorSetLayoutsMap);
         _DescriptorSetsMap        = std::move(Other._DescriptorSetsMap);
-        _DescriptorSets           = std::move(Other._DescriptorSets);
+        _DescriptorSetsFrameMap   = std::move(Other._DescriptorSetsFrameMap);
         _DescriptorPool           = std::move(Other._DescriptorPool);
         _DescriptorSetsUpdateMask = std::exchange(Other._DescriptorSetsUpdateMask, 0xFFFFFFFF);
     }
@@ -272,7 +272,6 @@ void FShader::ReflectShader(const FShaderInfo& ShaderInfo, const FResourceInfo& 
         {
             const std::string& MemberName   = PushConstantNames[i];
             std::uint32_t      MemberOffset = Reflection->get_member_decoration(Type.self, i, spv::DecorationOffset);
-            const auto&        MemberType   = Reflection->get_type(Type.member_types[i]);
 
             _PushConstantOffsetsMap[MemberName] = MemberOffset;
             NpgsCoreTrace("  Member \"{}\" at offset={}", MemberName, MemberOffset);
@@ -284,7 +283,7 @@ void FShader::ReflectShader(const FShaderInfo& ShaderInfo, const FResourceInfo& 
     }
 
     std::unordered_map<std::uint64_t, bool> DynemicBufferMap;
-    for (const auto& Buffer : ResourceInfo.UniformBufferInfos)
+    for (const auto& Buffer : ResourceInfo.ShaderBufferInfos)
     {
         std::uint64_t Key = (static_cast<std::uint64_t>(Buffer.Set) << 32) | Buffer.Binding;
         DynemicBufferMap[Key] = Buffer.bIsDynamic;
@@ -316,8 +315,6 @@ void FShader::ReflectShader(const FShaderInfo& ShaderInfo, const FResourceInfo& 
             .setStageFlags(ShaderInfo.Stage);
 
         AddDescriptorSetBindings(Set, LayoutBinding);
-
-        vk::DescriptorPoolSize PoolSize(LayoutBinding.descriptorType, Config::Graphics::kMaxFrameInFlight);
     }
 
     for (const auto& StorageBuffer : Resources->storage_buffers)
@@ -341,16 +338,16 @@ void FShader::ReflectShader(const FShaderInfo& ShaderInfo, const FResourceInfo& 
         AddDescriptorSetBindings(Set, LayoutBinding);
     }
 
-    for (const auto& CombinedSampler : Resources->sampled_images)
+    for (const auto& SampledImage : Resources->sampled_images)
     {
-        std::uint32_t Set     = Reflection->get_decoration(CombinedSampler.id, spv::DecorationDescriptorSet);
-        std::uint32_t Binding = Reflection->get_decoration(CombinedSampler.id, spv::DecorationBinding);
+        std::uint32_t Set     = Reflection->get_decoration(SampledImage.id, spv::DecorationDescriptorSet);
+        std::uint32_t Binding = Reflection->get_decoration(SampledImage.id, spv::DecorationBinding);
 
-        const auto&   Type      = Reflection->get_type(CombinedSampler.type_id);
+        const auto&   Type      = Reflection->get_type(SampledImage.type_id);
         std::uint32_t ArraySize = Type.array.empty() ? 1 : Type.array[0];
 
-        NpgsCoreTrace("Combined Sampler \"{}\" at set={}, binding={}, array_size={}",
-                      CombinedSampler.name, Set, Binding, ArraySize);
+        NpgsCoreTrace("Sampled Image \"{}\" at set={}, binding={}, array_size={}",
+                      SampledImage.name, Set, Binding, ArraySize);
 
         vk::DescriptorSetLayoutBinding LayoutBinding = vk::DescriptorSetLayoutBinding()
             .setBinding(Binding)
@@ -429,12 +426,11 @@ void FShader::ReflectShader(const FShaderInfo& ShaderInfo, const FResourceInfo& 
         std::unordered_map<std::uint32_t, std::pair<std::uint32_t, std::uint32_t>> LocationMap;
         for (const auto& Vertex : ResourceInfo.VertexAttributeInfos)
         {
-            LocationMap[Vertex.Location] = { Vertex.Binding, Vertex.Offset };
+            LocationMap[Vertex.Location] = std::make_pair(Vertex.Binding, Vertex.Offset);
         }
 
         std::uint32_t CurrentBinding = 0;
         std::uint32_t CurrentOffset  = 0;
-
         std::set<vk::VertexInputBindingDescription> UniqueBindings;
 
         for (const auto& Input : Resources->stage_inputs)
@@ -444,7 +440,7 @@ void FShader::ReflectShader(const FShaderInfo& ShaderInfo, const FResourceInfo& 
 
             auto LocationIt = LocationMap.find(Location);
             std::uint32_t Binding = LocationIt != LocationMap.end() ? LocationIt->second.first  : CurrentBinding;
-            std::uint32_t Offset  = LocationIt != LocationMap.end() ? LocationIt->second.second : 0;
+            std::uint32_t Offset  = LocationIt != LocationMap.end() ? LocationIt->second.second : CurrentOffset;
 
             auto BufferIt = BufferMap.find(Binding);
             std::uint32_t Stride = BufferIt != BufferMap.end() ? BufferIt->second.Stride : GetTypeSize(Type.basetype) * Type.vecsize;
@@ -584,13 +580,13 @@ void FShader::UpdateDescriptorSets(std::uint32_t FrameIndex)
         return;
     }
 
-    _DescriptorSets[FrameIndex].clear();
+    _DescriptorSetsFrameMap[FrameIndex].clear();
 
     for (const auto& [Set, DescriptorSets] : _DescriptorSetsMap)
     {
         if (FrameIndex < DescriptorSets.size())
         {
-            _DescriptorSets[FrameIndex].push_back(*DescriptorSets[FrameIndex]);
+            _DescriptorSetsFrameMap[FrameIndex].push_back(*DescriptorSets[FrameIndex]);
         }
     }
 
