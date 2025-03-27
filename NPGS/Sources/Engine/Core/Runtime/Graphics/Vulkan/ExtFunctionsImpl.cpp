@@ -1,11 +1,13 @@
 #include "ExtFunctionsImpl.h"
 
+#include <cstddef>
 #include <cstdint>
 
 PFN_vkCmdBindDescriptorBuffersEXT            kVkCmdBindDescriptorBuffersExt            = nullptr;
 PFN_vkCmdSetDescriptorBufferOffsetsEXT       kVkCmdSetDescriptorBufferOffsetsExt       = nullptr;
 PFN_vkCreateDebugUtilsMessengerEXT           kVkCreateDebugUtilsMessengerExt           = nullptr;
 PFN_vkDestroyDebugUtilsMessengerEXT          kVkDestroyDebugUtilsMessengerExt          = nullptr;
+PFN_vkGetDescriptorEXT                       kVkGetDescriptorExt                       = nullptr;
 PFN_vkGetDescriptorSetLayoutSizeEXT          kVkGetDescriptorSetLayoutSizeExt          = nullptr;
 PFN_vkGetDescriptorSetLayoutBindingOffsetEXT kVkGetDescriptorSetLayoutBindingOffsetExt = nullptr;
 PFN_vkSetHdrMetadataEXT                      kVkSetHdrMetadataExt                      = nullptr;
@@ -35,6 +37,12 @@ VKAPI_ATTR void VKAPI_CALL
 vkDestroyDebugUtilsMessengerEXT(VkInstance Instance, VkDebugUtilsMessengerEXT Messenger, const VkAllocationCallbacks* Allocator)
 {
     kVkDestroyDebugUtilsMessengerExt(Instance, Messenger, Allocator);
+}
+
+VKAPI_ATTR void VKAPI_CALL
+vkGetDescriptorEXT(VkDevice Device, const VkDescriptorGetInfoEXT* DescriptorInfo, std::size_t DataSize, void* Descriptor)
+{
+    kVkGetDescriptorExt(Device, DescriptorInfo, DataSize, Descriptor);
 }
 
 VKAPI_ATTR void VKAPI_CALL

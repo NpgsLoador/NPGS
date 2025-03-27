@@ -204,6 +204,8 @@ public:
 
     FVulkanBuffer& GetBuffer();
     const FVulkanBuffer& GetBuffer() const;
+    FVulkanDeviceMemory& GetMemory();
+    const FVulkanDeviceMemory& GetMemory() const;
 
     bool IsUsingVma() const;
 

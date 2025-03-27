@@ -652,6 +652,7 @@ public:
 
     vk::MemoryAllocateInfo CreateMemoryAllocateInfo(vk::MemoryPropertyFlags Flags) const;
     vk::Result BindMemory(const FVulkanDeviceMemory& DeviceMemory, vk::DeviceSize Offset = 0) const;
+    vk::DeviceSize GetDeviceAddress() const;
 
     VmaAllocator GetAllocator() const;
     VmaAllocation GetAllocation() const;

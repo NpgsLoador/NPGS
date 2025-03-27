@@ -1,35 +1,8 @@
 #include "Shader.h"
 
-#include "Engine/Core/Runtime/Graphics/Vulkan/Context.h"
-
 _NPGS_BEGIN
 _RUNTIME_BEGIN
 _ASSET_BEGIN
-
-template <typename DescriptorInfoType>
-requires std::is_class_v<DescriptorInfoType>
-inline void FShader::WriteSharedDescriptors(std::uint32_t Set, std::uint32_t Binding, vk::DescriptorType Type,
-                                            const vk::ArrayProxy<DescriptorInfoType>& DescriptorInfos)
-{
-    const auto& DescriptorSets = _DescriptorSetsMap.at(Set);
-    for (const auto& DescriptorSet : DescriptorSets)
-    {
-        DescriptorSet.Write(DescriptorInfos, Type, Binding);
-    }
-
-    MarkAllFramesForUpdate();
-}
-
-template <typename DescriptorInfoType>
-requires std::is_class_v<DescriptorInfoType>
-inline void FShader::WriteDynamicDescriptors(std::uint32_t Set, std::uint32_t Binding, std::uint32_t FrameIndex,
-                                             vk::DescriptorType Type, const vk::ArrayProxy<DescriptorInfoType>& DescriptorInfos)
-{
-    const auto& DescriptorSet = _DescriptorSetsMap.at(Set)[FrameIndex];
-    DescriptorSet.Write(DescriptorInfos, Type, Binding);
-
-    MarkAllFramesForUpdate();
-}
 
 NPGS_INLINE std::vector<vk::PushConstantRange> FShader::GetPushConstantRanges() const
 {
@@ -39,20 +12,6 @@ NPGS_INLINE std::vector<vk::PushConstantRange> FShader::GetPushConstantRanges() 
 NPGS_INLINE std::uint32_t FShader::GetPushConstantOffset(const std::string& Name) const
 {
     return _PushConstantOffsetsMap.at(Name);
-}
-
-NPGS_INLINE vk::DeviceSize FShader::GetDescriptorSetLayoutSize(std::uint32_t Set) const
-{
-    auto& Layout = _DescriptorSetLayoutsMap.at(Set);
-    vk::Device Device = Graphics::FVulkanContext::GetClassInstance()->GetDevice();
-    return Device.getDescriptorSetLayoutSizeEXT(*Layout);
-}
-
-NPGS_INLINE vk::DeviceSize FShader::GetDescriptorSetBindingOffset(std::uint32_t Set, std::uint32_t Binding) const
-{
-    auto& Layout = _DescriptorSetLayoutsMap.at(Set);
-    vk::Device Device = Graphics::FVulkanContext::GetClassInstance()->GetDevice();
-    return Device.getDescriptorSetLayoutBindingOffsetEXT(*Layout, Binding);
 }
 
 NPGS_INLINE const std::vector<vk::VertexInputBindingDescription>& FShader::GetVertexInputBindings() const
@@ -65,15 +24,9 @@ NPGS_INLINE const std::vector<vk::VertexInputAttributeDescription>& FShader::Get
     return _ReflectionInfo.VertexInputAttributes;
 }
 
-NPGS_INLINE const std::vector<vk::DescriptorSet>& FShader::GetDescriptorSets(std::uint32_t FrameIndex)
+NPGS_INLINE const std::vector<FShader::FDescriptorSetInfo>& FShader::GetDescriptorSetInfos() const
 {
-    UpdateDescriptorSets(FrameIndex);
-    return _DescriptorSetsFrameMap[FrameIndex];
-}
-
-NPGS_INLINE void FShader::MarkAllFramesForUpdate()
-{
-    _DescriptorSetsUpdateMask = 0xFFFFFFFF;
+    return _DescriptorSetInfos;
 }
 
 _ASSET_END

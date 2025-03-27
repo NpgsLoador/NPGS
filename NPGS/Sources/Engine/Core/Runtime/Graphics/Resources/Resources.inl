@@ -180,6 +180,16 @@ NPGS_INLINE const FVulkanBuffer& FDeviceLocalBuffer::GetBuffer() const
     return _BufferMemory->GetResource();
 }
 
+NPGS_INLINE FVulkanDeviceMemory& FDeviceLocalBuffer::GetMemory()
+{
+    return _BufferMemory->GetMemory();
+}
+
+NPGS_INLINE const FVulkanDeviceMemory& FDeviceLocalBuffer::GetMemory() const
+{
+    return _BufferMemory->GetMemory();
+}
+
 NPGS_INLINE bool FDeviceLocalBuffer::IsUsingVma() const
 {
     return _Allocator != nullptr;

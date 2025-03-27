@@ -72,6 +72,12 @@ NPGS_INLINE bool FVulkanDeviceMemory::IsPereistentlyMapped() const
 
 // Wrapper fo vk::Buffer
 // ---------------------
+NPGS_INLINE vk::DeviceSize FVulkanBuffer::GetDeviceAddress() const
+{
+    vk::BufferDeviceAddressInfo AddressInfo(_Handle);
+    return _Device.getBufferAddress(AddressInfo);
+}
+
 NPGS_INLINE VmaAllocator FVulkanBuffer::GetAllocator() const
 {
     return _Allocator;

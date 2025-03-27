@@ -13,6 +13,7 @@
 
 #include "Engine/Core/Base/Config/EngineConfig.h"
 #include "Engine/Core/Runtime/AssetLoaders/AssetManager.h"
+#include "Engine/Core/Runtime/Graphics/Vulkan/Context.h"
 #include "Engine/Utils/Logger.h"
 
 _NPGS_BEGIN
@@ -139,18 +140,17 @@ namespace
 FShader::FShader(const std::vector<std::string>& ShaderFiles, const FResourceInfo& ResourceInfo)
 {
     InitializeShaders(ShaderFiles, ResourceInfo);
-    CreateDescriptors();
+    CreateDescriptorSetLayouts();
+    GenerateDescriptorInfos();
 }
 
 FShader::FShader(FShader&& Other) noexcept
     :
     _ShaderModules(std::move(Other._ShaderModules)),
     _ReflectionInfo(std::exchange(Other._ReflectionInfo, {})),
+    _PushConstantOffsetsMap(std::move(Other._PushConstantOffsetsMap)),
     _DescriptorSetLayoutsMap(std::move(Other._DescriptorSetLayoutsMap)),
-    _DescriptorSetsMap(std::move(Other._DescriptorSetsMap)),
-    _DescriptorSetsFrameMap(std::move(Other._DescriptorSetsFrameMap)),
-    _DescriptorPool(std::move(Other._DescriptorPool)),
-    _DescriptorSetsUpdateMask(std::exchange(Other._DescriptorSetsUpdateMask, 0xFFFFFFFF))
+    _DescriptorSetInfos(std::move(Other._DescriptorSetInfos))
 {
 }
 
@@ -160,11 +160,9 @@ FShader& FShader::operator=(FShader&& Other) noexcept
     {
         _ShaderModules            = std::move(Other._ShaderModules);
         _ReflectionInfo           = std::exchange(Other._ReflectionInfo, {});
+        _PushConstantOffsetsMap   = std::move(Other._PushConstantOffsetsMap);
         _DescriptorSetLayoutsMap  = std::move(Other._DescriptorSetLayoutsMap);
-        _DescriptorSetsMap        = std::move(Other._DescriptorSetsMap);
-        _DescriptorSetsFrameMap   = std::move(Other._DescriptorSetsFrameMap);
-        _DescriptorPool           = std::move(Other._DescriptorPool);
-        _DescriptorSetsUpdateMask = std::exchange(Other._DescriptorSetsUpdateMask, 0xFFFFFFFF);
+        _DescriptorSetInfos       = std::move(Other._DescriptorSetInfos);
     }
 
     return *this;
@@ -191,6 +189,25 @@ std::vector<vk::DescriptorSetLayout> FShader::GetDescriptorSetLayouts() const
     }
 
     return NativeTypeLayouts;
+}
+
+const FShader::FDescriptorBindingInfo* FShader::GetDescriptorBindingInfo(std::uint32_t Set, std::uint32_t Binding) const
+{
+    for (const auto& DescriptorSetInfo : _DescriptorSetInfos)
+    {
+        if (DescriptorSetInfo.Set == Set)
+        {
+            for (const auto& BindingInfo : DescriptorSetInfo.Bindings)
+            {
+                if (BindingInfo.Binding == Binding)
+                {
+                    return &BindingInfo;
+                }
+            }
+        }
+    }
+
+    return nullptr;
 }
 
 void FShader::InitializeShaders(const std::vector<std::string>& ShaderFiles, const FResourceInfo& ResourceInfo)
@@ -520,7 +537,7 @@ void FShader::AddDescriptorSetBindings(std::uint32_t Set, vk::DescriptorSetLayou
     }
 }
 
-void FShader::CreateDescriptors()
+void FShader::CreateDescriptorSetLayouts()
 {
     if (_ReflectionInfo.DescriptorSetBindings.empty())
     {
@@ -529,68 +546,78 @@ void FShader::CreateDescriptors()
 
     for (const auto& [Set, Bindings] : _ReflectionInfo.DescriptorSetBindings)
     {
-        vk::DescriptorSetLayoutCreateInfo LayoutCreateInfo({}, Bindings);
+        vk::DescriptorSetLayoutCreateInfo LayoutCreateInfo(
+            vk::DescriptorSetLayoutCreateFlagBits::eDescriptorBufferEXT, Bindings);
         _DescriptorSetLayoutsMap.emplace(Set, LayoutCreateInfo);
 
         NpgsCoreTrace("Created descriptor set layout for set {} with {} bindings", Set, Bindings.size());
     }
-
-    std::vector<vk::DescriptorPoolSize> PoolSizes;
-    for (const auto& [Set, Bindings] : _ReflectionInfo.DescriptorSetBindings)
-    {
-        for (const auto& Binding : Bindings)
-        {
-            auto it = std::find_if(PoolSizes.begin(), PoolSizes.end(), [&Binding](const vk::DescriptorPoolSize& Size) -> bool
-            {
-                return Size.type == Binding.descriptorType;
-            });
-
-            if (it != PoolSizes.end())
-            {
-                it->descriptorCount += Config::Graphics::kMaxFrameInFlight;
-            }
-            else
-            {
-                PoolSizes.emplace_back(Binding.descriptorType, Config::Graphics::kMaxFrameInFlight);
-            }
-        }
-    }
-
-    std::uint32_t MaxSets =
-        static_cast<std::uint32_t>(_ReflectionInfo.DescriptorSetBindings.size() * Config::Graphics::kMaxFrameInFlight);
-
-    vk::DescriptorPoolCreateInfo PoolCreateInfo({}, MaxSets, PoolSizes);
-    _DescriptorPool = std::make_unique<Graphics::FVulkanDescriptorPool>(PoolCreateInfo);
-
-    for (const auto& [Set, Layout] : _DescriptorSetLayoutsMap)
-    {
-        std::vector<Graphics::FVulkanDescriptorSet> Sets(Config::Graphics::kMaxFrameInFlight);
-        std::vector<vk::DescriptorSetLayout> Layouts(Config::Graphics::kMaxFrameInFlight, *Layout);
-        _DescriptorPool->AllocateSets(Layouts, Sets);
-
-        NpgsCoreTrace("Allocated {} descriptor sets for set {}", Sets.size(), Set);
-        _DescriptorSetsMap[Set] = std::move(Sets);
-    }
 }
 
-void FShader::UpdateDescriptorSets(std::uint32_t FrameIndex)
+void FShader::GenerateDescriptorInfos()
 {
-    if ((_DescriptorSetsUpdateMask & (1u << FrameIndex)) == 0)
+    if (_DescriptorSetLayoutsMap.empty())
     {
         return;
     }
 
-    _DescriptorSetsFrameMap[FrameIndex].clear();
+    vk::Device Device = Graphics::FVulkanContext::GetClassInstance()->GetDevice();
 
-    for (const auto& [Set, DescriptorSets] : _DescriptorSetsMap)
+    for (const auto& [Set, Layout] : _DescriptorSetLayoutsMap)
     {
-        if (FrameIndex < DescriptorSets.size())
-        {
-            _DescriptorSetsFrameMap[FrameIndex].push_back(*DescriptorSets[FrameIndex]);
-        }
-    }
+        vk::DeviceSize LayoutSize = Device.getDescriptorSetLayoutSizeEXT(*Layout);
+        FDescriptorSetInfo SetInfo{ .Set = Set, .Size = LayoutSize };
 
-    _DescriptorSetsUpdateMask &= ~(1u << FrameIndex);
+        std::vector<std::pair<std::uint32_t, vk::DeviceSize>> BindingWithOffsets;
+        const auto& Bindings = _ReflectionInfo.DescriptorSetBindings[Set];
+        for (const auto& Binding : Bindings)
+        {
+            vk::DeviceSize BindingOffset = Device.getDescriptorSetLayoutBindingOffsetEXT(*Layout, Binding.binding);
+            BindingWithOffsets.emplace_back(Binding.binding, BindingOffset);
+        }
+
+        std::sort(BindingWithOffsets.begin(), BindingWithOffsets.end(), [](const auto& Lhs, const auto& Rhs) -> bool
+        {
+            return Lhs.second < Rhs.second;
+        });
+
+        for (std::size_t i = 0; i != BindingWithOffsets.size(); ++i)
+        {
+            std::uint32_t  BindingNumber = BindingWithOffsets[i].first;
+            vk::DeviceSize BindingOffset = BindingWithOffsets[i].second;
+            vk::DeviceSize BindingSize   = 0;
+            if (i < BindingWithOffsets.size() - 1)
+            {
+                BindingSize = BindingWithOffsets[i + 1].second - BindingOffset;
+            }
+            else
+            {
+                BindingSize = LayoutSize - BindingOffset;
+            }
+
+            auto it = std::find_if(Bindings.begin(), Bindings.end(), [BindingNumber](const auto& Binding) -> bool { return Binding.binding == BindingNumber; });
+
+            if (it != Bindings.end())
+            {
+                FDescriptorBindingInfo BindingInfo
+                {
+                    .Binding = BindingNumber,
+                    .Type    = it->descriptorType,
+                    .Count   = it->descriptorCount,
+                    .Stage   = it->stageFlags,
+                    .Offset  = BindingOffset,
+                    .Size    = BindingSize
+                };
+
+                SetInfo.Bindings.push_back(std::move(BindingInfo));
+                NpgsCoreTrace("Descriptor binding: set={}, binding={}, type={}, offset={}, size={}",
+                              Set, BindingNumber, vk::to_string(it->descriptorType), BindingOffset, BindingSize);
+            }
+        }
+
+        NpgsCoreTrace("Descriptor set info: set={}, size={} bytes with {} bindings", Set, LayoutSize, SetInfo.Bindings.size());
+        _DescriptorSetInfos.push_back(std::move(SetInfo));
+    }
 }
 
 _ASSET_END

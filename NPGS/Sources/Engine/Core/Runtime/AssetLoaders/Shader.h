@@ -48,6 +48,23 @@ public:
         std::unordered_map<vk::ShaderStageFlagBits, std::vector<std::string>> PushConstantInfos;
     };
 
+    struct FDescriptorBindingInfo
+    {
+        std::uint32_t        Binding{};
+        vk::DescriptorType   Type{};
+        std::uint32_t        Count{};
+        vk::ShaderStageFlags Stage;
+        vk::DeviceSize       Offset{};
+        vk::DeviceSize       Size{};
+    };
+
+    struct FDescriptorSetInfo
+    {
+        std::uint32_t  Set{};
+        vk::DeviceSize Size{};
+        std::vector<FDescriptorBindingInfo> Bindings;
+    };
+
 private:
     struct FShaderInfo
     {
@@ -72,44 +89,30 @@ public:
     FShader& operator=(const FShader&) = delete;
     FShader& operator=(FShader&& Other) noexcept;
 
-    template <typename DescriptorInfoType>
-    requires std::is_class_v<DescriptorInfoType>
-    void WriteSharedDescriptors(std::uint32_t Set, std::uint32_t Binding, vk::DescriptorType Type,
-                                const vk::ArrayProxy<DescriptorInfoType>& DescriptorInfos);
-
-    template <typename DescriptorInfoType>
-    requires std::is_class_v<DescriptorInfoType>
-    void WriteDynamicDescriptors(std::uint32_t Set, std::uint32_t Binding, std::uint32_t FrameIndex,
-                                 vk::DescriptorType Type, const vk::ArrayProxy<DescriptorInfoType>& DescriptorInfos);
-
     std::vector<vk::PipelineShaderStageCreateInfo> CreateShaderStageCreateInfo() const;
     std::vector<vk::DescriptorSetLayout> GetDescriptorSetLayouts() const;
     std::vector<vk::PushConstantRange> GetPushConstantRanges() const;
     std::uint32_t GetPushConstantOffset(const std::string& Name) const;
-    vk::DeviceSize GetDescriptorSetLayoutSize(std::uint32_t Set) const;
-    vk::DeviceSize GetDescriptorSetBindingOffset(std::uint32_t Set, std::uint32_t Binding) const;
+
     const std::vector<vk::VertexInputBindingDescription>& GetVertexInputBindings() const;
     const std::vector<vk::VertexInputAttributeDescription>& GetVertexInputAttributes() const;
-    const std::vector<vk::DescriptorSet>& GetDescriptorSets(std::uint32_t FrameIndex);
+    const std::vector<FDescriptorSetInfo>& GetDescriptorSetInfos() const;
+    const FDescriptorBindingInfo* GetDescriptorBindingInfo(std::uint32_t Set, std::uint32_t Binding) const;
 
 private:
     void InitializeShaders(const std::vector<std::string>& ShaderFiles, const FResourceInfo& ResourceInfo);
     FShaderInfo LoadShader(const std::string& Filename);
     void ReflectShader(const FShaderInfo& ShaderInfo, const FResourceInfo& ResourceInfo);
     void AddDescriptorSetBindings(std::uint32_t Set, vk::DescriptorSetLayoutBinding& LayoutBinding);
-    void CreateDescriptors();
-    void UpdateDescriptorSets(std::uint32_t FrameIndex);
-    void MarkAllFramesForUpdate();
+    void CreateDescriptorSetLayouts();
+    void GenerateDescriptorInfos();
 
 private:
     std::vector<std::pair<vk::ShaderStageFlagBits, Graphics::FVulkanShaderModule>> _ShaderModules;
     FShaderReflectionInfo                                                          _ReflectionInfo;
-    std::unordered_map<std::string, std::uint32_t>                                 _PushConstantOffsetsMap;
-    std::unordered_map<std::uint32_t, Graphics::FVulkanDescriptorSetLayout>        _DescriptorSetLayoutsMap;
-    std::unordered_map<std::uint32_t, std::vector<Graphics::FVulkanDescriptorSet>> _DescriptorSetsMap;
-    std::unordered_map<std::uint32_t, std::vector<vk::DescriptorSet>>              _DescriptorSetsFrameMap;
-    std::unique_ptr<Graphics::FVulkanDescriptorPool>                               _DescriptorPool;
-    std::uint32_t                                                                  _DescriptorSetsUpdateMask{ 0xFFFFFFFF };
+    std::unordered_map<std::string, std::uint32_t>                                 _PushConstantOffsetsMap;  // [Name, Offset]
+    std::unordered_map<std::uint32_t, Graphics::FVulkanDescriptorSetLayout>        _DescriptorSetLayoutsMap; // [Set,  Layout]
+    std::vector<FDescriptorSetInfo>                                                _DescriptorSetInfos;
 };
 
 _ASSET_END

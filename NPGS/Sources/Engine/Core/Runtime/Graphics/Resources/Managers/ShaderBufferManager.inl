@@ -3,6 +3,7 @@
 #include <utility>
 
 #include "Engine/Core/Base/Config/EngineConfig.h"
+#include "Engine/Core/Runtime/AssetLoaders/AssetManager.h"
 #include "Engine/Core/Runtime/Graphics/Vulkan/Context.h"
 #include "Engine/Utils/FieldReflection.hpp"
 #include "Engine/Utils/Logger.h"
@@ -11,30 +12,40 @@ _NPGS_BEGIN
 _RUNTIME_BEGIN
 _GRAPHICS_BEGIN
 
+NPGS_INLINE void FShaderBufferManager::SetCustomVmaAllocator(VmaAllocator Allocator)
+{
+    _Allocator = Allocator;
+}
+
+NPGS_INLINE void FShaderBufferManager::RestoreDefaultVmaAllocator()
+{
+    _Allocator = FVulkanContext::GetClassInstance()->GetVmaAllocator();
+}
+
 template <typename StructType>
 requires std::is_class_v<StructType>
-inline void FShaderBufferManager::CreateBuffers(const FBufferCreateInfo& BufferCreateInfo,
-                                                const VmaAllocationCreateInfo* AllocationCreateInfo,
-                                                std::uint32_t BufferCount)
+inline void FShaderBufferManager::CreateDataBuffers(const FDataBufferCreateInfo& DataBufferCreateInfo,
+                                                    const VmaAllocationCreateInfo* AllocationCreateInfo,
+                                                    std::uint32_t BufferCount)
 {
     const auto* VulkanContext = FVulkanContext::GetClassInstance();
-    FBufferInfo BufferInfo;
-    BufferInfo.CreateInfo = BufferCreateInfo;
+    FDataBufferInfo BufferInfo;
+    BufferInfo.CreateInfo = DataBufferCreateInfo;
 
     vk::DeviceSize MinUniformAlignment = VulkanContext->GetPhysicalDeviceProperties().limits.minUniformBufferOffsetAlignment;
     vk::DeviceSize MinStorageAlignment = VulkanContext->GetPhysicalDeviceProperties().limits.minStorageBufferOffsetAlignment;
     StructType BufferStruct{};
     Util::ForEachField(BufferStruct, [&](const auto& Field, std::size_t Index)
     {
-        FBufferFieldInfo FieldInfo;
+        FDataBufferFieldInfo FieldInfo;
         FieldInfo.Size = sizeof(decltype(Field));
 
-        if (BufferCreateInfo.Usage == vk::DescriptorType::eUniformBufferDynamic)
+        if (DataBufferCreateInfo.Usage == vk::DescriptorType::eUniformBufferDynamic)
         {
             FieldInfo.Alignment = (FieldInfo.Size + MinUniformAlignment - 1) & ~(MinUniformAlignment - 1);
             FieldInfo.Offset    = BufferInfo.Size;
         }
-        else if (BufferCreateInfo.Usage == vk::DescriptorType::eStorageBufferDynamic)
+        else if (DataBufferCreateInfo.Usage == vk::DescriptorType::eStorageBufferDynamic)
         {
             FieldInfo.Alignment = (FieldInfo.Size + MinStorageAlignment - 1) & ~(MinStorageAlignment - 1);
             FieldInfo.Offset    = BufferInfo.Size;
@@ -46,22 +57,23 @@ inline void FShaderBufferManager::CreateBuffers(const FBufferCreateInfo& BufferC
         }
 
         BufferInfo.Size += FieldInfo.Alignment;
-        BufferInfo.Fields.emplace(BufferCreateInfo.Fields[Index], std::move(FieldInfo));
+        BufferInfo.Fields.emplace(DataBufferCreateInfo.Fields[Index], std::move(FieldInfo));
     });
 
     BufferCount = BufferCount ? BufferCount : Config::Graphics::kMaxFrameInFlight;
 
     BufferInfo.Buffers.reserve(BufferCount);
-    vk::BufferUsageFlagBits BufferUsage = BufferCreateInfo.Usage == vk::DescriptorType::eUniformBuffer
-                                        ? vk::BufferUsageFlagBits::eUniformBuffer
-                                        : vk::BufferUsageFlagBits::eStorageBuffer;
+    vk::BufferUsageFlags BufferUsage = DataBufferCreateInfo.Usage == vk::DescriptorType::eUniformBuffer
+                                     ? vk::BufferUsageFlagBits::eUniformBuffer
+                                     : vk::BufferUsageFlagBits::eStorageBuffer;
+    BufferUsage |= vk::BufferUsageFlagBits::eShaderDeviceAddress;
 
     for (std::uint32_t i = 0; i != BufferCount; ++i)
     {
         if (AllocationCreateInfo != nullptr)
         {
             vk::BufferCreateInfo BufferCreateInfo({}, BufferInfo.Size, BufferUsage | vk::BufferUsageFlagBits::eTransferDst);
-            BufferInfo.Buffers.emplace_back(*AllocationCreateInfo, BufferCreateInfo);
+            BufferInfo.Buffers.emplace_back(_Allocator, *AllocationCreateInfo, BufferCreateInfo);
         }
         else
         {
@@ -73,25 +85,25 @@ inline void FShaderBufferManager::CreateBuffers(const FBufferCreateInfo& BufferC
         BufferInfo.Buffers[i].CopyData(0, 0, BufferInfo.Size, &EmptyData);
     }
 
-    _Buffers.emplace(BufferCreateInfo.Name, std::move(BufferInfo));
+    _DataBuffers.emplace(DataBufferCreateInfo.Name, std::move(BufferInfo));
 }
 
-NPGS_INLINE void FShaderBufferManager::RemoveBuffer(const std::string& Name)
+NPGS_INLINE void FShaderBufferManager::RemoveDataBuffer(const std::string& Name)
 {
-    auto it = _Buffers.find(Name);
-    if (it == _Buffers.end())
+    auto it = _DataBuffers.find(Name);
+    if (it == _DataBuffers.end())
     {
         return;
     }
 
-    _Buffers.erase(it);
+    _DataBuffers.erase(it);
 }
 
 template <typename StructType>
 requires std::is_class_v<StructType>
-inline void FShaderBufferManager::UpdateEntrieBuffers(const std::string& Name, const StructType& Data)
+inline void FShaderBufferManager::UpdateDataBuffers(const std::string& Name, const StructType& Data)
 {
-    auto& BufferInfo = _Buffers.at(Name);
+    auto& BufferInfo = _DataBuffers.at(Name);
     for (std::uint32_t i = 0; i != Config::Graphics::kMaxFrameInFlight; ++i)
     {
         BufferInfo.Buffers[i].CopyData(0, 0, BufferInfo.Size, &Data);
@@ -100,9 +112,9 @@ inline void FShaderBufferManager::UpdateEntrieBuffers(const std::string& Name, c
 
 template <typename StructType>
 requires std::is_class_v<StructType>
-inline void FShaderBufferManager::UpdateEntrieBuffer(std::uint32_t FrameIndex, const std::string& Name, const StructType& Data)
+inline void FShaderBufferManager::UpdateDataBuffer(std::uint32_t FrameIndex, const std::string& Name, const StructType& Data)
 {
-    auto& BufferInfo = _Buffers.at(Name);
+    auto& BufferInfo = _DataBuffers.at(Name);
     BufferInfo.Buffers[FrameIndex].CopyData(0, 0, BufferInfo.Size, &Data);
 }
 
@@ -110,7 +122,7 @@ template <typename FieldType>
 NPGS_INLINE std::vector<FShaderBufferManager::TUpdater<FieldType>>
 FShaderBufferManager::GetFieldUpdaters(const std::string& BufferName, const std::string& FieldName) const
 {
-    auto& BufferInfo = _Buffers.at(BufferName);
+    auto& BufferInfo = _DataBuffers.at(BufferName);
     std::vector<TUpdater<FieldType>> Updaters;
     for (std::uint32_t i = 0; i != Config::Graphics::kMaxFrameInFlight; ++i)
     {
@@ -124,27 +136,38 @@ template <typename FieldType>
 NPGS_INLINE FShaderBufferManager::TUpdater<FieldType>
 FShaderBufferManager::GetFieldUpdater(std::uint32_t FrameIndex, const std::string& BufferName, const std::string& FieldName) const
 {
-    auto& BufferInfo = _Buffers.at(BufferName);
+    auto& BufferInfo = _DataBuffers.at(BufferName);
     return TUpdater<FieldType>(BufferInfo.Buffers[FrameIndex], BufferInfo.Fields.at(FieldName).Offset, BufferInfo.Fields.at(FieldName).Size);
 }
 
-template <typename... Args>
-NPGS_INLINE void FShaderBufferManager::BindShadersToBuffers(const std::string& BufferName, Args&&... ShaderNames)
+NPGS_INLINE const Graphics::FDeviceLocalBuffer& FShaderBufferManager::GetDataBuffer(std::uint32_t FrameIndex, const std::string& BufferName)
 {
-    std::vector<std::string> ShaderNameList{ std::forward<Args>(ShaderNames)... };
-    BindShaderListToBuffers(BufferName, ShaderNameList);
+    auto& BufferInfo = _DataBuffers.at(BufferName);
+    return BufferInfo.Buffers[FrameIndex];
 }
 
-template <typename... Args>
-NPGS_INLINE void FShaderBufferManager::BindShadersToBuffer(std::uint32_t FrameIndex, const std::string& BufferName, Args&&... ShaderNames)
+NPGS_INLINE void FShaderBufferManager::RemoveDescriptorBuffer(const std::string& Name)
 {
-    std::vector<std::string> ShaderNameList{ std::forward<Args>(ShaderNames)... };
-    BindShaderListToBuffer(FrameIndex, BufferName, ShaderNameList);
+    auto it = _DescriptorBuffers.find(Name);
+    if (it == _DescriptorBuffers.end())
+    {
+        return;
+    }
+
+    _DescriptorBuffers.erase(it);
 }
 
-NPGS_INLINE const Graphics::FDeviceLocalBuffer& FShaderBufferManager::GetBuffer(std::uint32_t FrameIndex, const std::string& BufferName)
+NPGS_INLINE vk::DeviceSize
+FShaderBufferManager::GetDescriptorBindingOffset(const std::string& BufferName, std::uint32_t Set, std::uint32_t Binding) const
 {
-    auto& BufferInfo = _Buffers.at(BufferName);
+    auto Pair = std::make_pair(Set, Binding);
+    return _OffsetsMap.at(BufferName).at(Pair);
+}
+
+NPGS_INLINE const Graphics::FDeviceLocalBuffer&
+FShaderBufferManager::GetDescriptorBuffer(std::uint32_t FrameIndex, const std::string& BufferName)
+{
+    auto& BufferInfo = _DescriptorBuffers.at(BufferName);
     return BufferInfo.Buffers[FrameIndex];
 }
 

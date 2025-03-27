@@ -1120,7 +1120,7 @@ double FStellarGenerator::CalculateEvolutionProgress(std::pair<std::vector<FData
             AlignArrays(PhaseChanges);
 
             Result = CalculateEvolutionProgress(PhaseChanges, TargetAge, MassCoefficient);
-            double IntegerPart = 0.0;
+            double IntegerPart    = 0.0;
             double FractionalPart = std::modf(Result, &IntegerPart);
             if (PhaseChanges.second.back()[_kPhaseIndex] == 9 && FractionalPart > 0.99 && Result < 9.0 &&
                 IntegerPart >= (*std::prev(PhaseChanges.first.end(), 3))[_kPhaseIndex])

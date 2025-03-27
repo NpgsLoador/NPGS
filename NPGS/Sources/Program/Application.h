@@ -30,7 +30,7 @@ public:
     void CreateAttachments();
     void LoadAssets();
     void CreateUniformBuffers();
-    void BindDescriptorSets();
+    void BindDescriptors();
     void InitializeInstanceData();
     void InitializeVerticesData();
     void CreatePipelines();

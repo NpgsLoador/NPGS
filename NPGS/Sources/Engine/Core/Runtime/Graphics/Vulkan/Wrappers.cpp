@@ -657,20 +657,35 @@ vk::Result FVulkanDeviceMemory::UnmapMemory(vk::DeviceSize Offset, vk::DeviceSiz
 {
     if (!(_MemoryPropertyFlags & vk::MemoryPropertyFlagBits::eHostCoherent))
     {
-        AlignNonCoherentMemoryRange(Offset, Size);
-        vk::MappedMemoryRange MappedMemoryRange(_Handle, Offset, Size);
-        try
+        if (_Allocator != nullptr && _Allocation != nullptr)
         {
-            _Device.flushMappedMemoryRanges(MappedMemoryRange);
+            vmaFlushAllocation(_Allocator, _Allocation, Offset, Size);
         }
-        catch (const vk::SystemError& e)
+        else
         {
-            NpgsCoreError("Failed to flush mapped memory range: {}", e.what());
-            return static_cast<vk::Result>(e.code().value());
+            AlignNonCoherentMemoryRange(Offset, Size);
+            vk::MappedMemoryRange MappedMemoryRange(_Handle, Offset, Size);
+            try
+            {
+                _Device.flushMappedMemoryRanges(MappedMemoryRange);
+            }
+            catch (const vk::SystemError& e)
+            {
+                NpgsCoreError("Failed to flush mapped memory range: {}", e.what());
+                return static_cast<vk::Result>(e.code().value());
+            }
         }
     }
 
-    _Device.unmapMemory(_Handle);
+    if (_Allocator != nullptr && _Allocation != nullptr)
+    {
+        vmaUnmapMemory(_Allocator, _Allocation);
+    }
+    else
+    {
+        _Device.unmapMemory(_Handle);
+    }
+
     _MappedDataMemory   = nullptr;
     _MappedTargetMemory = nullptr;
     return vk::Result::eSuccess;
@@ -688,8 +703,12 @@ vk::Result FVulkanDeviceMemory::SubmitData(vk::DeviceSize MapOffset, vk::DeviceS
         }
         else
         {
-            vk::DeviceSize MappedBase = _bPersistentlyMapped ? 0 : MapOffset;
-            VulkanHppCheck(MapMemoryForSubmit(MappedBase, Size, Target));
+            if (_bPersistentlyMapped)
+            {
+                NpgsAssert(MapOffset == 0, "when enable persistently mapped, MapOffset must be 0.");
+            }
+
+            VulkanHppCheck(MapMemoryForSubmit(MapOffset, Size, Target));
         }
     }
     else
@@ -748,8 +767,12 @@ vk::Result FVulkanDeviceMemory::FetchData(vk::DeviceSize MapOffset, vk::DeviceSi
         }
         else
         {
-            vk::DeviceSize MappedBase = _bPersistentlyMapped ? 0 : MapOffset;
-            VulkanHppCheck(MapMemoryForFetch(MappedBase, Size, Data));
+            if (_bPersistentlyMapped)
+            {
+                NpgsAssert(MapOffset == 0, "when enable persistently mapped, MapOffset must be 0.");
+            }
+
+            VulkanHppCheck(MapMemoryForFetch(MapOffset, Size, Data));
         }
     }
     else
@@ -1890,6 +1913,13 @@ FVulkanBufferMemory::FVulkanBufferMemory(vk::Device Device, const vk::PhysicalDe
     : Base(std::make_unique<FVulkanBuffer>(Device, PhysicalDeviceMemoryProperties, BufferCreateInfo), nullptr)
 {
     auto MemoryAllocateInfo = _Resource->CreateMemoryAllocateInfo(MemoryPropertyFlags);
+    vk::MemoryAllocateFlagsInfo MemoryAllocateFlagsInfo;
+    if (BufferCreateInfo.usage & vk::BufferUsageFlagBits::eShaderDeviceAddress)
+    {
+        MemoryAllocateFlagsInfo.setFlags(vk::MemoryAllocateFlagBits::eDeviceAddress);
+        MemoryAllocateInfo.setPNext(&MemoryAllocateFlagsInfo);
+    }
+
     _Memory = std::make_unique<FVulkanDeviceMemory>(
         Device, PhysicalDeviceProperties, PhysicalDeviceMemoryProperties, MemoryAllocateInfo);
     _bMemoryBound = _Memory->IsValid() && (_Resource->BindMemory(*_Memory) == vk::Result::eSuccess);

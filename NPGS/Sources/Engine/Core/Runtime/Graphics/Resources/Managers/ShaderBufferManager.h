@@ -5,6 +5,7 @@
 #include <string>
 #include <type_traits>
 #include <unordered_map>
+#include <unordered_set>
 #include <vector>
 
 #include <glm/glm.hpp>
@@ -48,7 +49,7 @@ public:
         vk::DeviceSize                      _Size;
     };
 
-    struct FBufferCreateInfo
+    struct FDataBufferCreateInfo
     {
         std::string              Name;
         std::vector<std::string> Fields;
@@ -57,38 +58,75 @@ public:
         vk::DescriptorType       Usage{};
     };
 
+    struct FDescriptorImageInfo
+    {
+        std::uint32_t Set{};
+        std::uint32_t Binding{};
+        vk::DescriptorImageInfo Info;
+    };
+
+    struct FDescriptorBufferCreateInfo
+    {
+        std::string Name;
+        std::vector<std::string> UniformBuffers;
+        std::vector<std::string> StorageBuffers;
+        std::vector<FDescriptorImageInfo> SamplerInfos;
+        std::vector<FDescriptorImageInfo> SampledImageInfos;
+        std::vector<FDescriptorImageInfo> StorageImageInfos;
+        std::vector<FDescriptorImageInfo> CombinedImageSamplerInfos;
+    };
+
 private:
-    struct FBufferFieldInfo
+    struct FDataBufferFieldInfo
     {
         vk::DeviceSize Offset{};
         vk::DeviceSize Size{};
         vk::DeviceSize Alignment{};
     };
 
-    struct FBufferInfo
+    struct FDataBufferInfo
     {
-        std::unordered_map<std::string, FBufferFieldInfo> Fields;
+        std::unordered_map<std::string, FDataBufferFieldInfo> Fields;
+        std::unordered_map<std::string, vk::DeviceSize> BoundShaders; // [ShaderName, Range]
         std::vector<FDeviceLocalBuffer> Buffers;
-        FBufferCreateInfo               CreateInfo;
+        FDataBufferCreateInfo           CreateInfo;
         vk::DeviceSize                  Size{};
     };
 
+    struct FDescriptorBufferInfo
+    {
+        std::string                     Name;
+        std::vector<FDeviceLocalBuffer> Buffers;
+        vk::DeviceSize                  Size{};
+    };
+
+    struct FSetBindingHash
+    {
+        std::size_t operator()(const std::pair<std::uint32_t, std::uint32_t>& SetBinding) const noexcept
+        {
+            return std::hash<std::uint32_t>()(SetBinding.first) ^ std::hash<std::uint32_t>()(SetBinding.second);
+        }
+    };
+
 public:
-    template <typename StructType>
-    requires std::is_class_v<StructType>
-    void CreateBuffers(const FBufferCreateInfo& BufferCreateInfo,
-                       const VmaAllocationCreateInfo* AllocationCreateInfo = nullptr,
-                       std::uint32_t BufferCount = 0);
-
-    void RemoveBuffer(const std::string& Name);
+    void SetCustomVmaAllocator(VmaAllocator Allocator);
+    void RestoreDefaultVmaAllocator();
 
     template <typename StructType>
     requires std::is_class_v<StructType>
-    void UpdateEntrieBuffers(const std::string& Name, const StructType& Data);
+    void CreateDataBuffers(const FDataBufferCreateInfo& DataBufferCreateInfo,
+                           const VmaAllocationCreateInfo* AllocationCreateInfo = nullptr,
+                           std::uint32_t BufferCount = 0);
+
+    void RemoveDataBuffer(const std::string& Name);
 
     template <typename StructType>
     requires std::is_class_v<StructType>
-    void UpdateEntrieBuffer(std::uint32_t FrameIndex, const std::string& Name, const StructType& Data);
+    void UpdateDataBuffers(const std::string& Name, const StructType& Data);
+
+    template <typename StructType>
+    requires std::is_class_v<StructType>
+    void UpdateDataBuffer(std::uint32_t FrameIndex, const std::string& Name, const StructType& Data);
 
     template <typename FieldType>
     std::vector<TUpdater<FieldType>> GetFieldUpdaters(const std::string& BufferName, const std::string& FieldName) const;
@@ -96,18 +134,15 @@ public:
     template <typename FieldType>
     TUpdater<FieldType> GetFieldUpdater(std::uint32_t FrameIndex, const std::string& BufferName, const std::string& FieldName) const;
 
-    void BindShaderToBuffers(const std::string& BufferName, const std::string& ShaderName, vk::DeviceSize Range = 0);
-    void BindShaderToBuffer(std::uint32_t FrameIndex, const std::string& BufferName, const std::string& ShaderName, vk::DeviceSize Range = 0);
-    void BindShaderListToBuffers(const std::string& BufferName, const std::vector<std::string>& ShaderNameList);
-    void BindShaderListToBuffer(std::uint32_t FrameIndex, const std::string& BufferName, const std::vector<std::string>& ShaderNameList);
+    const Graphics::FDeviceLocalBuffer& GetDataBuffer(std::uint32_t FrameIndex, const std::string& BufferName);
 
-    template <typename... Args>
-    void BindShadersToBuffers(const std::string& BufferName, Args&&... ShaderNames);
+    void CreateDescriptorBuffer(const FDescriptorBufferCreateInfo& DescriptorBufferCreateInfo,
+                                const VmaAllocationCreateInfo* AllocationCreateInfo = nullptr);
 
-    template <typename... Args>
-    void BindShadersToBuffer(std::uint32_t FrameIndex, const std::string& BufferName, Args&&... ShaderNames);
+    void RemoveDescriptorBuffer(const std::string& Name);
+    vk::DeviceSize GetDescriptorBindingOffset(const std::string& BufferName, std::uint32_t Set, std::uint32_t Binding) const;
 
-    const Graphics::FDeviceLocalBuffer& GetBuffer(std::uint32_t FrameIndex, const std::string& BufferName);
+    const Graphics::FDeviceLocalBuffer& GetDescriptorBuffer(std::uint32_t FrameIndex, const std::string& BufferName);
 
     static FShaderBufferManager* GetInstance();
 
@@ -120,9 +155,18 @@ private:
     FShaderBufferManager& operator=(const FShaderBufferManager&) = delete;
     FShaderBufferManager& operator=(FShaderBufferManager&&)      = delete;
 
+    vk::DeviceSize CalculateDescriptorBufferSize(const FDescriptorBufferCreateInfo& DescriptorBufferCreateInfo);
+    void BindResourceToDescriptorBuffersInternal(const FDescriptorBufferCreateInfo& DescriptorBufferCreateInfo);
+
 private:
-    std::unordered_map<std::string, FBufferInfo> _Buffers;
-    VmaAllocator                                 _Allocator;
+    vk::PhysicalDeviceDescriptorBufferPropertiesEXT _DescriptorBufferProperties;
+    // [Name, Buffer]
+    std::unordered_map<std::string, FDataBufferInfo>       _DataBuffers;
+    std::unordered_map<std::string, FDescriptorBufferInfo> _DescriptorBuffers;
+    // [Name, [[Set, Binding], Offset]]
+    std::unordered_map<std::string, std::unordered_map<std::pair<std::uint32_t, std::uint32_t>, vk::DeviceSize, FSetBindingHash>> _OffsetsMap;
+
+    VmaAllocator _Allocator;
 };
 
 _GRAPHICS_END

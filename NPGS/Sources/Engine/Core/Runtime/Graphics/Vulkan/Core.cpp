@@ -885,6 +885,13 @@ vk::Result FVulkanCore::GetDeviceExtFunctionProcAddress()
         return vk::Result::eErrorExtensionNotPresent;
     }
 
+    kVkGetDescriptorExt = reinterpret_cast<PFN_vkGetDescriptorEXT>(_Device.getProcAddr("vkGetDescriptorEXT"));
+    if (kVkGetDescriptorExt == nullptr)
+    {
+        NpgsCoreError("Failed to get vkGetDescriptorEXT function pointer.");
+        return vk::Result::eErrorExtensionNotPresent;
+    }
+
     kVkGetDescriptorSetLayoutSizeExt =
         reinterpret_cast<PFN_vkGetDescriptorSetLayoutSizeEXT>(_Device.getProcAddr("vkGetDescriptorSetLayoutSizeEXT"));
     if (kVkGetDescriptorSetLayoutSizeExt == nullptr)
