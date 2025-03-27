@@ -260,8 +260,6 @@ void FApplication::ExecuteMainRender()
             vk::CommandBufferInheritanceInfo DepthMapInheritanceInfo = vk::CommandBufferInheritanceInfo()
                 .setPNext(&DepthMapInheritanceRenderingInfo);
 
-            auto a = DepthMapShader->GetDescriptorBindingInfo(0, 0);
-
             DepthMapCommandBuffer.Begin(DepthMapInheritanceInfo, vk::CommandBufferUsageFlagBits::eRenderPassContinue | vk::CommandBufferUsageFlagBits::eSimultaneousUse);
             DepthMapCommandBuffer->setViewport(0, DepthMapViewport);
             DepthMapCommandBuffer->setScissor(0, DepthMapScissor);
@@ -1156,7 +1154,8 @@ void FApplication::BindDescriptors()
     };
 
     Grt::FShaderBufferManager::FDescriptorBufferCreateInfo GBufferSceneDescriptorBufferCreateInfo;
-    GBufferSceneDescriptorBufferCreateInfo.Name = "GBufferSceneDescriptorBuffer";
+    GBufferSceneDescriptorBufferCreateInfo.Name           = "GBufferSceneDescriptorBuffer";
+    GBufferSceneDescriptorBufferCreateInfo.SetSizes       = std::move(PbrSceneGBufferShader->GetDescriptorSetSizes());
     GBufferSceneDescriptorBufferCreateInfo.UniformBuffers = { "Matrices" };
 
     vk::SamplerCreateInfo SamplerCreateInfo = Art::FTexture::CreateDefaultSamplerCreateInfo();
@@ -1177,7 +1176,8 @@ void FApplication::BindDescriptors()
     // TerrainShader->WriteSharedDescriptors<vk::DescriptorImageInfo>(1, 0, vk::DescriptorType::eCombinedImageSampler, HeightMapImageInfo);
 
     Grt::FShaderBufferManager::FDescriptorBufferCreateInfo SkyboxDescriptorBufferCreateInfo;
-    SkyboxDescriptorBufferCreateInfo.Name = "SkyboxDescriptorBuffer";
+    SkyboxDescriptorBufferCreateInfo.Name           = "SkyboxDescriptorBuffer";
+    SkyboxDescriptorBufferCreateInfo.SetSizes       = std::move(SkyboxShader->GetDescriptorSetSizes());
     SkyboxDescriptorBufferCreateInfo.UniformBuffers = { "Matrices" };
 
     SamplerCreateInfo
@@ -1191,11 +1191,13 @@ void FApplication::BindDescriptors()
     SkyboxDescriptorBufferCreateInfo.CombinedImageSamplerInfos.emplace_back(1u, 0u, SkyboxImageInfo);
 
     Grt::FShaderBufferManager::FDescriptorBufferCreateInfo GBufferMergeDescriptorBufferCreateInfo;
-    GBufferMergeDescriptorBufferCreateInfo.Name = "GBufferMergeDescriptorBuffer";
+    GBufferMergeDescriptorBufferCreateInfo.Name           = "GBufferMergeDescriptorBuffer";
+    GBufferMergeDescriptorBufferCreateInfo.SetSizes       = std::move(PbrSceneMergeShader->GetDescriptorSetSizes());
     GBufferMergeDescriptorBufferCreateInfo.UniformBuffers = { "Matrices" };
 
     Grt::FShaderBufferManager::FDescriptorBufferCreateInfo PostDescriptorBufferCreateInfo;
-    PostDescriptorBufferCreateInfo.Name = "PostDescriptorBuffer";
+    PostDescriptorBufferCreateInfo.Name     = "PostDescriptorBuffer";
+    PostDescriptorBufferCreateInfo.SetSizes = std::move(PostShader->GetDescriptorSetSizes());
 
     vk::SamplerCustomBorderColorCreateInfoEXT BorderColorCreateInfo(
         vk::ClearColorValue(1.0f, 1.0f, 1.0f, 1.0f), vk::Format::eR32G32B32A32Sfloat);

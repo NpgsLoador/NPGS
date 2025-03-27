@@ -74,6 +74,7 @@ public:
         std::vector<FDescriptorImageInfo> SampledImageInfos;
         std::vector<FDescriptorImageInfo> StorageImageInfos;
         std::vector<FDescriptorImageInfo> CombinedImageSamplerInfos;
+        std::unordered_map<std::uint32_t, vk::DeviceSize> SetSizes;
     };
 
 private:

@@ -191,25 +191,6 @@ std::vector<vk::DescriptorSetLayout> FShader::GetDescriptorSetLayouts() const
     return NativeTypeLayouts;
 }
 
-const FShader::FDescriptorBindingInfo* FShader::GetDescriptorBindingInfo(std::uint32_t Set, std::uint32_t Binding) const
-{
-    for (const auto& DescriptorSetInfo : _DescriptorSetInfos)
-    {
-        if (DescriptorSetInfo.Set == Set)
-        {
-            for (const auto& BindingInfo : DescriptorSetInfo.Bindings)
-            {
-                if (BindingInfo.Binding == Binding)
-                {
-                    return &BindingInfo;
-                }
-            }
-        }
-    }
-
-    return nullptr;
-}
-
 void FShader::InitializeShaders(const std::vector<std::string>& ShaderFiles, const FResourceInfo& ResourceInfo)
 {
     for (const auto& Filename : ShaderFiles)
@@ -568,55 +549,21 @@ void FShader::GenerateDescriptorInfos()
         vk::DeviceSize LayoutSize = Device.getDescriptorSetLayoutSizeEXT(*Layout);
         FDescriptorSetInfo SetInfo{ .Set = Set, .Size = LayoutSize };
 
-        std::vector<std::pair<std::uint32_t, vk::DeviceSize>> BindingWithOffsets;
         const auto& Bindings = _ReflectionInfo.DescriptorSetBindings[Set];
         for (const auto& Binding : Bindings)
         {
-            vk::DeviceSize BindingOffset = Device.getDescriptorSetLayoutBindingOffsetEXT(*Layout, Binding.binding);
-            BindingWithOffsets.emplace_back(Binding.binding, BindingOffset);
+            FDescriptorBindingInfo BindingInfo
+            {
+                .Binding = Binding.binding,
+                .Type    = Binding.descriptorType,
+                .Count   = Binding.descriptorCount,
+                .Stage   = Binding.stageFlags,
+            };
+
+            SetInfo.Bindings.push_back(std::move(BindingInfo));
         }
 
-        std::sort(BindingWithOffsets.begin(), BindingWithOffsets.end(), [](const auto& Lhs, const auto& Rhs) -> bool
-        {
-            return Lhs.second < Rhs.second;
-        });
-
-        for (std::size_t i = 0; i != BindingWithOffsets.size(); ++i)
-        {
-            std::uint32_t  BindingNumber = BindingWithOffsets[i].first;
-            vk::DeviceSize BindingOffset = BindingWithOffsets[i].second;
-            vk::DeviceSize BindingSize   = 0;
-            if (i < BindingWithOffsets.size() - 1)
-            {
-                BindingSize = BindingWithOffsets[i + 1].second - BindingOffset;
-            }
-            else
-            {
-                BindingSize = LayoutSize - BindingOffset;
-            }
-
-            auto it = std::find_if(Bindings.begin(), Bindings.end(), [BindingNumber](const auto& Binding) -> bool { return Binding.binding == BindingNumber; });
-
-            if (it != Bindings.end())
-            {
-                FDescriptorBindingInfo BindingInfo
-                {
-                    .Binding = BindingNumber,
-                    .Type    = it->descriptorType,
-                    .Count   = it->descriptorCount,
-                    .Stage   = it->stageFlags,
-                    .Offset  = BindingOffset,
-                    .Size    = BindingSize
-                };
-
-                SetInfo.Bindings.push_back(std::move(BindingInfo));
-                NpgsCoreTrace("Descriptor binding: set={}, binding={}, type={}, offset={}, size={}",
-                              Set, BindingNumber, vk::to_string(it->descriptorType), BindingOffset, BindingSize);
-            }
-        }
-
-        NpgsCoreTrace("Descriptor set info: set={}, size={} bytes with {} bindings", Set, LayoutSize, SetInfo.Bindings.size());
-        _DescriptorSetInfos.push_back(std::move(SetInfo));
+        _DescriptorSetInfos[Set] = std::move(SetInfo);
     }
 }
 

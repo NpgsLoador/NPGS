@@ -54,8 +54,6 @@ public:
         vk::DescriptorType   Type{};
         std::uint32_t        Count{};
         vk::ShaderStageFlags Stage;
-        vk::DeviceSize       Offset{};
-        vk::DeviceSize       Size{};
     };
 
     struct FDescriptorSetInfo
@@ -93,11 +91,11 @@ public:
     std::vector<vk::DescriptorSetLayout> GetDescriptorSetLayouts() const;
     std::vector<vk::PushConstantRange> GetPushConstantRanges() const;
     std::uint32_t GetPushConstantOffset(const std::string& Name) const;
+    std::unordered_map<std::uint32_t, vk::DeviceSize> GetDescriptorSetSizes() const;
 
     const std::vector<vk::VertexInputBindingDescription>& GetVertexInputBindings() const;
     const std::vector<vk::VertexInputAttributeDescription>& GetVertexInputAttributes() const;
-    const std::vector<FDescriptorSetInfo>& GetDescriptorSetInfos() const;
-    const FDescriptorBindingInfo* GetDescriptorBindingInfo(std::uint32_t Set, std::uint32_t Binding) const;
+    const FDescriptorSetInfo& GetDescriptorSetInfo(std::uint32_t Set) const;
 
 private:
     void InitializeShaders(const std::vector<std::string>& ShaderFiles, const FResourceInfo& ResourceInfo);
@@ -112,7 +110,7 @@ private:
     FShaderReflectionInfo                                                          _ReflectionInfo;
     std::unordered_map<std::string, std::uint32_t>                                 _PushConstantOffsetsMap;  // [Name, Offset]
     std::unordered_map<std::uint32_t, Graphics::FVulkanDescriptorSetLayout>        _DescriptorSetLayoutsMap; // [Set,  Layout]
-    std::vector<FDescriptorSetInfo>                                                _DescriptorSetInfos;
+    std::unordered_map<std::uint32_t, FDescriptorSetInfo>                          _DescriptorSetInfos;      // [Set,  Info]
 };
 
 _ASSET_END
