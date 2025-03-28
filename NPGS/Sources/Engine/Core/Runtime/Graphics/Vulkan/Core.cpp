@@ -130,6 +130,7 @@ vk::Result FVulkanCore::CreateDevice(std::uint32_t PhysicalDeviceIndex, vk::Devi
     AddDeviceExtension(vk::EXTCustomBorderColorExtensionName);
     AddDeviceExtension(vk::EXTDescriptorBufferExtensionName);    
     AddDeviceExtension(vk::EXTHdrMetadataExtensionName);
+    AddDeviceExtension(vk::KHRMaintenance6ExtensionName);
     AddDeviceExtension(vk::KHRSwapchainExtensionName);
 
     VulkanHppCheck(EnumeratePhysicalDevices());
@@ -884,6 +885,14 @@ vk::Result FVulkanCore::GetDeviceExtFunctionProcAddress()
     if (kVkCmdSetDescriptorBufferOffsetsExt == nullptr)
     {
         NpgsCoreError("Failed to get vkCmdSetDescriptorBufferOffsetsEXT function pointer.");
+        return vk::Result::eErrorExtensionNotPresent;
+    }
+
+    kVkCmdSetDescriptorBufferOffsets2Ext =
+        reinterpret_cast<PFN_vkCmdSetDescriptorBufferOffsets2EXT>(_Device.getProcAddr("vkCmdSetDescriptorBufferOffsets2EXT"));
+    if (kVkCmdSetDescriptorBufferOffsets2Ext == nullptr)
+    {
+        NpgsCoreError("Failed to get vkCmdSetDescriptorBufferOffsets2EXT function pointer.");
         return vk::Result::eErrorExtensionNotPresent;
     }
 

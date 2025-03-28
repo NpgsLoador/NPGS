@@ -4,6 +4,7 @@
 
 extern PFN_vkCmdBindDescriptorBuffersEXT            kVkCmdBindDescriptorBuffersExt;
 extern PFN_vkCmdSetDescriptorBufferOffsetsEXT       kVkCmdSetDescriptorBufferOffsetsExt;
+extern PFN_vkCmdSetDescriptorBufferOffsets2EXT      kVkCmdSetDescriptorBufferOffsets2Ext;
 extern PFN_vkCreateDebugUtilsMessengerEXT           kVkCreateDebugUtilsMessengerExt;
 extern PFN_vkDestroyDebugUtilsMessengerEXT          kVkDestroyDebugUtilsMessengerExt;
 extern PFN_vkGetDescriptorEXT                       kVkGetDescriptorExt;

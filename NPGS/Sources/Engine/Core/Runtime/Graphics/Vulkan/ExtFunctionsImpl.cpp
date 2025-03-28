@@ -5,6 +5,7 @@
 
 PFN_vkCmdBindDescriptorBuffersEXT            kVkCmdBindDescriptorBuffersExt            = nullptr;
 PFN_vkCmdSetDescriptorBufferOffsetsEXT       kVkCmdSetDescriptorBufferOffsetsExt       = nullptr;
+PFN_vkCmdSetDescriptorBufferOffsets2EXT      kVkCmdSetDescriptorBufferOffsets2Ext      = nullptr;
 PFN_vkCreateDebugUtilsMessengerEXT           kVkCreateDebugUtilsMessengerExt           = nullptr;
 PFN_vkDestroyDebugUtilsMessengerEXT          kVkDestroyDebugUtilsMessengerExt          = nullptr;
 PFN_vkGetDescriptorEXT                       kVkGetDescriptorExt                       = nullptr;
@@ -24,6 +25,12 @@ vkCmdSetDescriptorBufferOffsetsEXT(VkCommandBuffer CommandBuffer, VkPipelineBind
                                    std::uint32_t FirstSet, std::uint32_t SetCount, const std::uint32_t* BufferIndices, const VkDeviceSize* Offsets)
 {
     kVkCmdSetDescriptorBufferOffsetsExt(CommandBuffer, PipelineBindPoint, Layout, FirstSet, SetCount, BufferIndices, Offsets);
+}
+
+VKAPI_ATTR void VKAPI_CALL
+vkCmdSetDescriptorBufferOffsets2EXT(VkCommandBuffer CommandBuffer, const VkSetDescriptorBufferOffsetsInfoEXT* SetDescriptorBufferOffsetsInfo)
+{
+    kVkCmdSetDescriptorBufferOffsets2Ext(CommandBuffer, SetDescriptorBufferOffsetsInfo);
 }
 
 VKAPI_ATTR VkResult VKAPI_CALL
