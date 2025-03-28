@@ -12,16 +12,6 @@ _NPGS_BEGIN
 _RUNTIME_BEGIN
 _GRAPHICS_BEGIN
 
-NPGS_INLINE void FShaderBufferManager::SetCustomVmaAllocator(VmaAllocator Allocator)
-{
-    _Allocator = Allocator;
-}
-
-NPGS_INLINE void FShaderBufferManager::RestoreDefaultVmaAllocator()
-{
-    _Allocator = FVulkanContext::GetClassInstance()->GetVmaAllocator();
-}
-
 template <typename StructType>
 requires std::is_class_v<StructType>
 inline void FShaderBufferManager::CreateDataBuffers(const FDataBufferCreateInfo& DataBufferCreateInfo,

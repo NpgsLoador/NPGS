@@ -2,10 +2,12 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <map>
 #include <string>
 #include <type_traits>
 #include <unordered_map>
 #include <unordered_set>
+#include <utility>
 #include <vector>
 
 #include <glm/glm.hpp>
@@ -14,6 +16,7 @@
 
 #include "Engine/Core/Base/Base.h"
 #include "Engine/Core/Runtime/Graphics/Resources/Resources.h"
+#include "Engine/Core/Runtime/Graphics/Vulkan/Context.h"
 #include "Engine/Core/Runtime/Graphics/Vulkan/Wrappers.h"
 
 _NPGS_BEGIN
@@ -58,6 +61,13 @@ public:
         vk::DescriptorType       Usage{};
     };
 
+    struct FDescriptorSampler
+    {
+        std::uint32_t Set{};
+        std::uint32_t Binding{};
+        vk::Sampler   Sampler{};
+    };
+
     struct FDescriptorImageInfo
     {
         std::uint32_t Set{};
@@ -67,14 +77,14 @@ public:
 
     struct FDescriptorBufferCreateInfo
     {
-        std::string Name;
-        std::vector<std::string> UniformBuffers;
-        std::vector<std::string> StorageBuffers;
-        std::vector<FDescriptorImageInfo> SamplerInfos;
-        std::vector<FDescriptorImageInfo> SampledImageInfos;
-        std::vector<FDescriptorImageInfo> StorageImageInfos;
-        std::vector<FDescriptorImageInfo> CombinedImageSamplerInfos;
-        std::unordered_map<std::uint32_t, vk::DeviceSize> SetSizes;
+        std::string                             Name;
+        std::vector<std::string>                UniformBufferNames;
+        std::vector<std::string>                StorageBufferNames;
+        std::vector<FDescriptorSampler>         SamplerInfos;
+        std::vector<FDescriptorImageInfo>       SampledImageInfos;
+        std::vector<FDescriptorImageInfo>       StorageImageInfos;
+        std::vector<FDescriptorImageInfo>       CombinedImageSamplerInfos;
+        std::map<std::uint32_t, vk::DeviceSize> SetSizes;
     };
 
 private:
@@ -110,9 +120,6 @@ private:
     };
 
 public:
-    void SetCustomVmaAllocator(VmaAllocator Allocator);
-    void RestoreDefaultVmaAllocator();
-
     template <typename StructType>
     requires std::is_class_v<StructType>
     void CreateDataBuffers(const FDataBufferCreateInfo& DataBufferCreateInfo,
@@ -151,7 +158,7 @@ private:
     FShaderBufferManager();
     FShaderBufferManager(const FShaderBufferManager&) = delete;
     FShaderBufferManager(FShaderBufferManager&&)      = delete;
-    ~FShaderBufferManager()                           = default;
+    ~FShaderBufferManager();
 
     FShaderBufferManager& operator=(const FShaderBufferManager&) = delete;
     FShaderBufferManager& operator=(FShaderBufferManager&&)      = delete;
@@ -160,6 +167,8 @@ private:
     void BindResourceToDescriptorBuffersInternal(const FDescriptorBufferCreateInfo& DescriptorBufferCreateInfo);
 
 private:
+    FVulkanContext* _VulkanContext;
+
     vk::PhysicalDeviceDescriptorBufferPropertiesEXT _DescriptorBufferProperties;
     // [Name, Buffer]
     std::unordered_map<std::string, FDataBufferInfo>       _DataBuffers;

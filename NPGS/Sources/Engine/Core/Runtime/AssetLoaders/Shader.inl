@@ -14,9 +14,9 @@ NPGS_INLINE std::uint32_t FShader::GetPushConstantOffset(const std::string& Name
     return _PushConstantOffsetsMap.at(Name);
 }
 
-NPGS_INLINE std::unordered_map<std::uint32_t, vk::DeviceSize> FShader::GetDescriptorSetSizes() const
+NPGS_INLINE std::map<std::uint32_t, vk::DeviceSize> FShader::GetDescriptorSetSizes() const
 {
-    std::unordered_map<std::uint32_t, vk::DeviceSize> SetSizes;
+    std::map<std::uint32_t, vk::DeviceSize> SetSizes;
     for (const auto& [Set, Info] : _DescriptorSetInfos)
     {
         SetSizes.emplace(Set, Info.Size);

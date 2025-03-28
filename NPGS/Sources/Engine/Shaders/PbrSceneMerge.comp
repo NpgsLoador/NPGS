@@ -13,11 +13,11 @@ layout(std140, set = 0, binding = 0) uniform LightArgs
 	vec3 CameraPos;
 } iLightArgs;
 
-layout(set = 1, binding = 0, rgba16f) uniform writeonly image2D iStorageImage;
-layout(set = 1, binding = 1) uniform texture2D iRgbPositionAAo;
-layout(set = 1, binding = 2) uniform texture2D iRgbNormalARough;
-layout(set = 1, binding = 3) uniform texture2D iRgbAlbedoAMetal;
-layout(set = 1, binding = 4) uniform texture2D iRShadowGbaNull;
+layout(set = 1, binding = 0) uniform texture2D iRgbPositionAAo;
+layout(set = 1, binding = 1) uniform texture2D iRgbNormalARough;
+layout(set = 1, binding = 2) uniform texture2D iRgbAlbedoAMetal;
+layout(set = 1, binding = 3) uniform texture2D iRShadowGbaNull;
+layout(set = 2, binding = 0, rgba16f) uniform writeonly image2D iStorageImage;
 
 float TrowbridgeReitzGGX(vec3 Normal, vec3 HalfDir, float Roughness)
 {

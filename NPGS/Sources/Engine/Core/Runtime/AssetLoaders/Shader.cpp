@@ -146,8 +146,8 @@ FShader::FShader(const std::vector<std::string>& ShaderFiles, const FResourceInf
 
 FShader::FShader(FShader&& Other) noexcept
     :
-    _ShaderModules(std::move(Other._ShaderModules)),
     _ReflectionInfo(std::exchange(Other._ReflectionInfo, {})),
+    _ShaderModules(std::move(Other._ShaderModules)),
     _PushConstantOffsetsMap(std::move(Other._PushConstantOffsetsMap)),
     _DescriptorSetLayoutsMap(std::move(Other._DescriptorSetLayoutsMap)),
     _DescriptorSetInfos(std::move(Other._DescriptorSetInfos))
@@ -158,8 +158,8 @@ FShader& FShader::operator=(FShader&& Other) noexcept
 {
     if (this != &Other)
     {
-        _ShaderModules            = std::move(Other._ShaderModules);
         _ReflectionInfo           = std::exchange(Other._ReflectionInfo, {});
+        _ShaderModules            = std::move(Other._ShaderModules);
         _PushConstantOffsetsMap   = std::move(Other._PushConstantOffsetsMap);
         _DescriptorSetLayoutsMap  = std::move(Other._DescriptorSetLayoutsMap);
         _DescriptorSetInfos       = std::move(Other._DescriptorSetInfos);

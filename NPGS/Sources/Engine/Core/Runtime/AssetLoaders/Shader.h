@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include <map>
 #include <memory>
 #include <string>
 #include <type_traits>
@@ -91,7 +92,7 @@ public:
     std::vector<vk::DescriptorSetLayout> GetDescriptorSetLayouts() const;
     std::vector<vk::PushConstantRange> GetPushConstantRanges() const;
     std::uint32_t GetPushConstantOffset(const std::string& Name) const;
-    std::unordered_map<std::uint32_t, vk::DeviceSize> GetDescriptorSetSizes() const;
+    std::map<std::uint32_t, vk::DeviceSize> GetDescriptorSetSizes() const;
 
     const std::vector<vk::VertexInputBindingDescription>& GetVertexInputBindings() const;
     const std::vector<vk::VertexInputAttributeDescription>& GetVertexInputAttributes() const;
@@ -106,11 +107,11 @@ private:
     void GenerateDescriptorInfos();
 
 private:
-    std::vector<std::pair<vk::ShaderStageFlagBits, Graphics::FVulkanShaderModule>> _ShaderModules;
     FShaderReflectionInfo                                                          _ReflectionInfo;
+    std::vector<std::pair<vk::ShaderStageFlagBits, Graphics::FVulkanShaderModule>> _ShaderModules;
     std::unordered_map<std::string, std::uint32_t>                                 _PushConstantOffsetsMap;  // [Name, Offset]
-    std::unordered_map<std::uint32_t, Graphics::FVulkanDescriptorSetLayout>        _DescriptorSetLayoutsMap; // [Set,  Layout]
-    std::unordered_map<std::uint32_t, FDescriptorSetInfo>                          _DescriptorSetInfos;      // [Set,  Info]
+    std::map<std::uint32_t, Graphics::FVulkanDescriptorSetLayout>                  _DescriptorSetLayoutsMap; // [Set,  Layout]
+    std::map<std::uint32_t, FDescriptorSetInfo>                                    _DescriptorSetInfos;      // [Set,  Info]
 };
 
 _ASSET_END

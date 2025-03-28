@@ -842,6 +842,7 @@ vk::Result FVulkanCore::UseLatestApiVersion()
 
 vk::Result FVulkanCore::GetInstanceExtFunctionProcAddress()
 {
+#ifdef _DEBUG
     kVkCreateDebugUtilsMessengerExt =
         reinterpret_cast<PFN_vkCreateDebugUtilsMessengerEXT>(_Instance.getProcAddr("vkCreateDebugUtilsMessengerEXT"));
     if (kVkCreateDebugUtilsMessengerExt == nullptr)
@@ -857,6 +858,7 @@ vk::Result FVulkanCore::GetInstanceExtFunctionProcAddress()
         NpgsCoreError("Failed to get vkDestroyDebugUtilsMessengerEXT function pointer.");
         return vk::Result::eErrorExtensionNotPresent;
     }
+#endif // _DEBUG
 
     kVkSetHdrMetadataExt = reinterpret_cast<PFN_vkSetHdrMetadataEXT>(_Instance.getProcAddr("vkSetHdrMetadataEXT"));
     if (kVkSetHdrMetadataExt == nullptr)

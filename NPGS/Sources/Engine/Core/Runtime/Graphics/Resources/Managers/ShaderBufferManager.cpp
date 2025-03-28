@@ -1,13 +1,7 @@
 #include "ShaderBufferManager.h"
 
-#include <algorithm>
-#include <array>
-#include <map>
-#include <utility>
-
 #include "Engine/Core/Runtime/AssetLoaders/AssetManager.h"
 #include "Engine/Core/Runtime/AssetLoaders/Shader.h"
-#include "Engine/Core/Runtime/Graphics/Vulkan/Context.h"
 #include "Engine/Utils/Logger.h"
 
 _NPGS_BEGIN
@@ -15,8 +9,27 @@ _RUNTIME_BEGIN
 _GRAPHICS_BEGIN
 
 FShaderBufferManager::FShaderBufferManager()
-    : _Allocator(FVulkanContext::GetClassInstance()->GetVmaAllocator())
+    : _VulkanContext(FVulkanContext::GetClassInstance())
 {
+    VmaAllocatorCreateInfo AllocatorCreateInfo
+    {
+        .flags          = VMA_ALLOCATOR_CREATE_BUFFER_DEVICE_ADDRESS_BIT,
+        .physicalDevice = _VulkanContext->GetPhysicalDevice(),
+        .device         = _VulkanContext->GetDevice(),
+        .instance       = _VulkanContext->GetInstance()
+    };
+
+    vmaCreateAllocator(&AllocatorCreateInfo, &_Allocator);
+}
+
+FShaderBufferManager::~FShaderBufferManager()
+{
+    _DataBuffers.clear();
+    _DescriptorBuffers.clear();
+    if (_Allocator != FVulkanContext::GetClassInstance()->GetVmaAllocator())
+    {
+        vmaDestroyAllocator(_Allocator);
+    }
 }
 
 void FShaderBufferManager::CreateDescriptorBuffer(const FDescriptorBufferCreateInfo& DescriptorBufferCreateInfo,
@@ -72,7 +85,7 @@ vk::DeviceSize FShaderBufferManager::CalculateDescriptorBufferSize(const FDescri
     {
         vk::PhysicalDeviceProperties2 Properties2;
         Properties2.pNext = &_DescriptorBufferProperties;
-        FVulkanContext::GetClassInstance()->GetPhysicalDevice().getProperties2(&Properties2);
+        _VulkanContext->GetPhysicalDevice().getProperties2(&Properties2);
         kbDescriptorBufferPropertiesGot = true;
     }
 
@@ -88,7 +101,7 @@ vk::DeviceSize FShaderBufferManager::CalculateDescriptorBufferSize(const FDescri
 void FShaderBufferManager::BindResourceToDescriptorBuffersInternal(const FDescriptorBufferCreateInfo& DescriptorBufferCreateInfo)
 {
     auto& DescriptorBufferInfo = _DescriptorBuffers.at(DescriptorBufferCreateInfo.Name);
-    vk::Device Device = FVulkanContext::GetClassInstance()->GetDevice();
+    vk::Device Device = _VulkanContext->GetDevice();
 
     auto InsertOffsetMap = [this, &DescriptorBufferCreateInfo](const auto& Info, vk::DeviceSize Offset) -> void
     {
@@ -100,7 +113,7 @@ void FShaderBufferManager::BindResourceToDescriptorBuffersInternal(const FDescri
     std::map<std::uint32_t, vk::DeviceSize> SetOffsets;
     for (auto [Set, Size] : DescriptorBufferCreateInfo.SetSizes)
     {
-        if (Set > 0)
+        if (Set > DescriptorBufferCreateInfo.SetSizes.begin()->first)
         {
             SetOffsets[Set] = SetOffsets[Set - 1] + DescriptorBufferCreateInfo.SetSizes.at(Set - 1);
         }
@@ -119,9 +132,9 @@ void FShaderBufferManager::BindResourceToDescriptorBuffersInternal(const FDescri
         vk::DeviceSize Offset  = 0;
         std::uint32_t  PrevSet = 0;
 
-        for (std::size_t j = 0; j != DescriptorBufferCreateInfo.UniformBuffers.size(); ++j)
+        for (std::size_t j = 0; j != DescriptorBufferCreateInfo.UniformBufferNames.size(); ++j)
         {
-            const auto&   BufferInfo = _DataBuffers.at(DescriptorBufferCreateInfo.UniformBuffers[j]);
+            const auto&   BufferInfo = _DataBuffers.at(DescriptorBufferCreateInfo.UniformBufferNames[j]);
             std::uint32_t CurrentSet = BufferInfo.CreateInfo.Set;
 
             if (CurrentSet != PrevSet && CurrentSet < DescriptorBufferCreateInfo.SetSizes.size())
@@ -139,9 +152,9 @@ void FShaderBufferManager::BindResourceToDescriptorBuffersInternal(const FDescri
             Offset += DescriptorSize;
         }
 
-        for (std::size_t j = 0; j != DescriptorBufferCreateInfo.StorageBuffers.size(); ++j)
+        for (std::size_t j = 0; j != DescriptorBufferCreateInfo.StorageBufferNames.size(); ++j)
         {
-            const auto&   BufferInfo = _DataBuffers.at(DescriptorBufferCreateInfo.StorageBuffers[j]);
+            const auto&   BufferInfo = _DataBuffers.at(DescriptorBufferCreateInfo.StorageBufferNames[j]);
             std::uint32_t CurrentSet = BufferInfo.CreateInfo.Set;
 
             if (CurrentSet != PrevSet && CurrentSet < DescriptorBufferCreateInfo.SetSizes.size())
@@ -170,7 +183,7 @@ void FShaderBufferManager::BindResourceToDescriptorBuffersInternal(const FDescri
                 PrevSet = CurrentSet;
             }
 
-            vk::DescriptorGetInfoEXT DescriptorInfo(vk::DescriptorType::eSampler, &SamplerInfo.Info);
+            vk::DescriptorGetInfoEXT DescriptorInfo(vk::DescriptorType::eSampler, &SamplerInfo.Sampler);
             vk::DeviceSize DescriptorSize = _DescriptorBufferProperties.samplerDescriptorSize;
             Device.getDescriptorEXT(DescriptorInfo, DescriptorSize, static_cast<std::byte*>(Target) + Offset);
 
