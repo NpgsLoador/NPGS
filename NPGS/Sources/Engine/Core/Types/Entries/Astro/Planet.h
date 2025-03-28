@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstdint>
 #include <memory>
 #include <boost/multiprecision/cpp_int.hpp>
 
@@ -20,7 +21,7 @@ struct FComplexMass
 class APlanet : public FCelestialBody
 {
 public:
-    enum class EPlanetType : int
+    enum class EPlanetType : std::uint8_t
     {
         kRocky                            = 0,
         kTerra                            = 1,
@@ -45,8 +46,8 @@ public:
         FComplexMass OceanMass;                                // 海洋质量，单位 kg
         boost::multiprecision::uint128_t    CrustMineralMass;  // 地壳矿脉质量，单位 kg
         std::unique_ptr<Intelli::FStandard> CivilizationData;  // 文明数据
-        EPlanetType  Type{ EPlanetType::kRocky };              // 行星类型
         float        BalanceTemperature{};                     // 平衡温度，单位 K
+        EPlanetType  Type{ EPlanetType::kRocky };              // 行星类型
         bool         bIsMigrated{ false };                     // 是否为迁移行星
     };
 

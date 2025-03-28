@@ -340,7 +340,7 @@ constexpr FFormatInfo kFormatInfos[]
     { 4, 0, 0, FFormatInfo::ERawDataType::kInteger, true },         // vk::Format::eAstc12x12SrgbBlock       = 184,
 };
 
-enum class EVulkanHandleReleaseMethod
+enum class EVulkanHandleReleaseMethod : std::uint8_t
 {
     kDestroy,
     kFree

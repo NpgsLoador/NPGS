@@ -10,6 +10,7 @@
 
 #include "Engine/Core/Base/Base.h"
 #include "Engine/Core/Runtime/Graphics/Resources/Pools/ResourcePool.hpp"
+#include "Engine/Core/Runtime/Graphics/Vulkan/Wrappers.h"
 
 _NPGS_BEGIN
 _RUNTIME_BEGIN

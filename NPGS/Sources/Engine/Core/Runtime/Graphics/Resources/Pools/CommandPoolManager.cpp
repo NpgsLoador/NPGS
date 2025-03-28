@@ -1,13 +1,5 @@
 #include "CommandPoolManager.h"
 
-#include <algorithm>
-#include <chrono>
-#include <condition_variable>
-#include <limits>
-#include <stdexcept>
-#include <thread>
-#include <utility>
-
 _NPGS_BEGIN
 _RUNTIME_BEGIN
 _GRAPHICS_BEGIN

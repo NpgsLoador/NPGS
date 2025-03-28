@@ -10,7 +10,6 @@
 #include <utility>
 #include <vector>
 
-#include <glm/glm.hpp>
 #include <vma/vk_mem_alloc.h>
 #include <vulkan/vulkan.hpp>
 

@@ -1,7 +1,5 @@
 #include "ShaderBufferManager.h"
 
-#include "Engine/Core/Runtime/AssetLoaders/AssetManager.h"
-#include "Engine/Core/Runtime/AssetLoaders/Shader.h"
 #include "Engine/Utils/Logger.h"
 
 _NPGS_BEGIN

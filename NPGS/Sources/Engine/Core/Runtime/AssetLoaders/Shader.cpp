@@ -1,17 +1,16 @@
 #include "Shader.h"
 
 #include <cstddef>
-#include <algorithm>
 #include <exception>
 #include <filesystem>
 #include <fstream>
 #include <ios>
+#include <numeric>
 #include <set>
 #include <utility>
 
 #include <spirv_cross/spirv_reflect.hpp>
 
-#include "Engine/Core/Base/Config/EngineConfig.h"
 #include "Engine/Core/Runtime/AssetLoaders/AssetManager.h"
 #include "Engine/Core/Runtime/Graphics/Vulkan/Context.h"
 #include "Engine/Utils/Logger.h"
@@ -525,8 +524,26 @@ void FShader::CreateDescriptorSetLayouts()
         return;
     }
 
-    for (const auto& [Set, Bindings] : _ReflectionInfo.DescriptorSetBindings)
+    std::vector<vk::ShaderStageFlags> Stages;
+    for (auto& [Set, Bindings] : _ReflectionInfo.DescriptorSetBindings)
     {
+        Stages.clear();
+        for (const auto& Binding : Bindings)
+        {
+            Stages.push_back(Binding.stageFlags);
+        }
+
+        vk::ShaderStageFlags CombinedStages = std::accumulate(Stages.begin(), Stages.end(), vk::ShaderStageFlags(),
+        [](vk::ShaderStageFlags Lhs, vk::ShaderStageFlags Rhs) -> vk::ShaderStageFlags
+        {
+            return Lhs | Rhs;
+        });
+
+        for (auto& Binding : Bindings)
+        {
+            Binding.stageFlags |= CombinedStages;
+        }
+
         vk::DescriptorSetLayoutCreateInfo LayoutCreateInfo(
             vk::DescriptorSetLayoutCreateFlagBits::eDescriptorBufferEXT, Bindings);
         _DescriptorSetLayoutsMap.emplace(Set, LayoutCreateInfo);

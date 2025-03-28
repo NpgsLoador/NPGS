@@ -43,10 +43,10 @@ FStellarClass::FSpectralType FStellarClass::Data() const
             .HSpectralClass  = ESpectralClass::kSpectral_Unknown,
             .MSpectralClass  = ESpectralClass::kSpectral_Unknown,
             .LuminosityClass = ELuminosityClass::kLuminosity_Unknown,
+            .bIsAmStar       = false,
             .SpecialMark     = std::to_underlying(ESpecialMark::kCode_Null),
             .Subclass        = 0.0f,
-            .AmSubclass      = 0.0f,
-            .bIsAmStar       = false
+            .AmSubclass      = 0.0f
         };
     }
 
@@ -268,7 +268,7 @@ FStellarClass FStellarClass::Parse(const std::string& StellarClassStr)
         }
     }
 
-    return { StellarType, { HSpectralClass, MSpectralClass, LuminosityClass, SpecialMark, Subclass, AmSubclass, bIsAmStar } };
+    return { StellarType, { HSpectralClass, MSpectralClass, LuminosityClass, bIsAmStar, SpecialMark, Subclass, AmSubclass } };
 }
 
 // Processor functions implementations

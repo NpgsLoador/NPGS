@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstdint>
 #include <concepts>
 #include <memory>
 #include <mutex>
@@ -14,7 +15,7 @@ _NPGS_BEGIN
 _RUNTIME_BEGIN
 _ASSET_BEGIN
 
-enum class EAssetType
+enum class EAssetType : std::uint8_t
 {
     kBinaryShader, // 二进制着色器程序（不是 SPIR-V）
     kDataTable,    // 数据表

@@ -12,7 +12,7 @@ _INTELLI_BEGIN
 class FStandard : public INpgsObject
 {
 public:
-    enum class ELifePhase : int
+    enum class ELifePhase : std::uint8_t
     {
         kNull                  = 0,
         kLuca                  = 1,

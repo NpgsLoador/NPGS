@@ -1,7 +1,6 @@
 #include "StellarGenerator.h"
 
 #include <cmath>
-#include <cstdint>
 #include <algorithm>
 #include <charconv>
 #include <filesystem>
@@ -33,10 +32,10 @@ Astro::FStellarClass::FSpectralType DeathStarClass                              
     .HSpectralClass  = Astro::FStellarClass::ESpectralClass::kSpectral_Unknown,                                             \
     .MSpectralClass  = Astro::FStellarClass::ESpectralClass::kSpectral_Unknown,                                             \
     .LuminosityClass = Astro::FStellarClass::ELuminosityClass::kLuminosity_Unknown,                                         \
+    .bIsAmStar       = false,                                                                                               \
     .SpecialMark     = std::to_underlying(Astro::FStellarClass::ESpecialMark::kCode_Null),                                  \
     .Subclass        = 0.0f,                                                                                                \
-    .AmSubclass      = 0.0f,                                                                                                \
-    .bIsAmStar       = false                                                                                                \
+    .AmSubclass      = 0.0f                                                                                                 \
 };                                                                                                                          \
                                                                                                                             \
 Astro::AStar DeathStar;                                                                                                     \
@@ -1806,10 +1805,10 @@ void FStellarGenerator::ProcessDeathStar(EStellarTypeGenerationOption DeathStarT
             .HSpectralClass  = Astro::FStellarClass::ESpectralClass::kSpectral_Unknown,
             .MSpectralClass  = Astro::FStellarClass::ESpectralClass::kSpectral_Unknown,
             .LuminosityClass = Astro::FStellarClass::ELuminosityClass::kLuminosity_Unknown,
+            .bIsAmStar       = false,
             .SpecialMark     = std::to_underlying(Astro::FStellarClass::ESpecialMark::kCode_Null),
             .Subclass        = 0.0f,
-            .AmSubclass      = 0.0f,
-            .bIsAmStar       = false
+            .AmSubclass      = 0.0f
         };
     }
     else if (InputFeH <= -2.0f && InputMassSol >= 250)
@@ -1822,10 +1821,10 @@ void FStellarGenerator::ProcessDeathStar(EStellarTypeGenerationOption DeathStarT
             .HSpectralClass  = Astro::FStellarClass::ESpectralClass::kSpectral_X,
             .MSpectralClass  = Astro::FStellarClass::ESpectralClass::kSpectral_Unknown,
             .LuminosityClass = Astro::FStellarClass::ELuminosityClass::kLuminosity_Unknown,
+            .bIsAmStar       = false,
             .SpecialMark     = std::to_underlying(Astro::FStellarClass::ESpecialMark::kCode_Null),
             .Subclass        = 0.0f,
-            .AmSubclass      = 0.0f,
-            .bIsAmStar       = false
+            .AmSubclass      = 0.0f
         };
         DeathStarMassSol = CalculateBlackHoleMass();
     }
@@ -1873,10 +1872,10 @@ void FStellarGenerator::ProcessDeathStar(EStellarTypeGenerationOption DeathStarT
                 .HSpectralClass  = Astro::FStellarClass::ESpectralClass::kSpectral_Unknown,
                 .MSpectralClass  = Astro::FStellarClass::ESpectralClass::kSpectral_Unknown,
                 .LuminosityClass = Astro::FStellarClass::ELuminosityClass::kLuminosity_Unknown,
+                .bIsAmStar       = false,
                 .SpecialMark     = std::to_underlying(Astro::FStellarClass::ESpecialMark::kCode_Null),
                 .Subclass        = 0.0f,
-                .AmSubclass      = 0.0f,
-                .bIsAmStar       = false
+                .AmSubclass      = 0.0f
             };
         }
         else if (InputMassSol >= 0.5f && InputMassSol < 8.0f)
@@ -1889,10 +1888,10 @@ void FStellarGenerator::ProcessDeathStar(EStellarTypeGenerationOption DeathStarT
                 .HSpectralClass  = Astro::FStellarClass::ESpectralClass::kSpectral_Unknown,
                 .MSpectralClass  = Astro::FStellarClass::ESpectralClass::kSpectral_Unknown,
                 .LuminosityClass = Astro::FStellarClass::ELuminosityClass::kLuminosity_Unknown,
+                .bIsAmStar       = false,
                 .SpecialMark     = std::to_underlying(Astro::FStellarClass::ESpecialMark::kCode_Null),
                 .Subclass        = 0.0f,
-                .AmSubclass      = 0.0f,
-                .bIsAmStar       = false
+                .AmSubclass      = 0.0f
             };
         }
         else if (InputMassSol >= 8.0f && InputMassSol < 9.759f)
@@ -1905,10 +1904,10 @@ void FStellarGenerator::ProcessDeathStar(EStellarTypeGenerationOption DeathStarT
                 .HSpectralClass  = Astro::FStellarClass::ESpectralClass::kSpectral_Unknown,
                 .MSpectralClass  = Astro::FStellarClass::ESpectralClass::kSpectral_Unknown,
                 .LuminosityClass = Astro::FStellarClass::ELuminosityClass::kLuminosity_Unknown,
+                .bIsAmStar       = false,
                 .SpecialMark     = std::to_underlying(Astro::FStellarClass::ESpecialMark::kCode_Null),
                 .Subclass        = 0.0f,
-                .AmSubclass      = 0.0f,
-                .bIsAmStar       = false
+                .AmSubclass      = 0.0f
             };
         }
         else if (InputMassSol >= 9.759f && InputMassSol < 10.0f)
@@ -1921,10 +1920,10 @@ void FStellarGenerator::ProcessDeathStar(EStellarTypeGenerationOption DeathStarT
                 .HSpectralClass  = Astro::FStellarClass::ESpectralClass::kSpectral_Q,
                 .MSpectralClass  = Astro::FStellarClass::ESpectralClass::kSpectral_Unknown,
                 .LuminosityClass = Astro::FStellarClass::ELuminosityClass::kLuminosity_Unknown,
+                .bIsAmStar       = false,
                 .SpecialMark     = std::to_underlying(Astro::FStellarClass::ESpecialMark::kCode_Null),
                 .Subclass        = 0.0f,
-                .AmSubclass      = 0.0f,
-                .bIsAmStar       = false
+                .AmSubclass      = 0.0f
             };
         }
         else if (InputMassSol >= 10.0f && InputMassSol < 21.0f)
@@ -1937,10 +1936,10 @@ void FStellarGenerator::ProcessDeathStar(EStellarTypeGenerationOption DeathStarT
                 .HSpectralClass  = Astro::FStellarClass::ESpectralClass::kSpectral_Q,
                 .MSpectralClass  = Astro::FStellarClass::ESpectralClass::kSpectral_Unknown,
                 .LuminosityClass = Astro::FStellarClass::ELuminosityClass::kLuminosity_Unknown,
+                .bIsAmStar       = false,
                 .SpecialMark     = std::to_underlying(Astro::FStellarClass::ESpecialMark::kCode_Null),
                 .Subclass        = 0.0f,
-                .AmSubclass      = 0.0f,
-                .bIsAmStar       = false
+                .AmSubclass      = 0.0f
             };
         }
         else if (InputMassSol >= 21.0f && InputMassSol < 23.3537f)
@@ -1953,10 +1952,10 @@ void FStellarGenerator::ProcessDeathStar(EStellarTypeGenerationOption DeathStarT
                 .HSpectralClass  = Astro::FStellarClass::ESpectralClass::kSpectral_X,
                 .MSpectralClass  = Astro::FStellarClass::ESpectralClass::kSpectral_Unknown,
                 .LuminosityClass = Astro::FStellarClass::ELuminosityClass::kLuminosity_Unknown,
+                .bIsAmStar       = false,
                 .SpecialMark     = std::to_underlying(Astro::FStellarClass::ESpecialMark::kCode_Null),
                 .Subclass        = 0.0f,
-                .AmSubclass      = 0.0f,
-                .bIsAmStar       = false
+                .AmSubclass      = 0.0f
             };
         }
         else if (InputMassSol >= 23.3537f && InputMassSol < 33.75f)
@@ -1969,10 +1968,10 @@ void FStellarGenerator::ProcessDeathStar(EStellarTypeGenerationOption DeathStarT
                 .HSpectralClass  = Astro::FStellarClass::ESpectralClass::kSpectral_Q,
                 .MSpectralClass  = Astro::FStellarClass::ESpectralClass::kSpectral_Unknown,
                 .LuminosityClass = Astro::FStellarClass::ELuminosityClass::kLuminosity_Unknown,
+                .bIsAmStar       = false,
                 .SpecialMark     = std::to_underlying(Astro::FStellarClass::ESpecialMark::kCode_Null),
                 .Subclass        = 0.0f,
-                .AmSubclass      = 0.0f,
-                .bIsAmStar       = false
+                .AmSubclass      = 0.0f
             };
         }
         else
@@ -1985,10 +1984,10 @@ void FStellarGenerator::ProcessDeathStar(EStellarTypeGenerationOption DeathStarT
                 .HSpectralClass  = Astro::FStellarClass::ESpectralClass::kSpectral_X,
                 .MSpectralClass  = Astro::FStellarClass::ESpectralClass::kSpectral_Unknown,
                 .LuminosityClass = Astro::FStellarClass::ELuminosityClass::kLuminosity_Unknown,
+                .bIsAmStar       = false,
                 .SpecialMark     = std::to_underlying(Astro::FStellarClass::ESpecialMark::kCode_Null),
                 .Subclass        = 0.0f,
-                .AmSubclass      = 0.0f,
-                .bIsAmStar       = false
+                .AmSubclass      = 0.0f
             };
         }
     }
@@ -2016,10 +2015,10 @@ void FStellarGenerator::ProcessDeathStar(EStellarTypeGenerationOption DeathStarT
                     .HSpectralClass  = Astro::FStellarClass::ESpectralClass::kSpectral_X,
                     .MSpectralClass  = Astro::FStellarClass::ESpectralClass::kSpectral_Unknown,
                     .LuminosityClass = Astro::FStellarClass::ELuminosityClass::kLuminosity_Unknown,
+                    .bIsAmStar       = false,
                     .SpecialMark     = std::to_underlying(Astro::FStellarClass::ESpecialMark::kCode_Null),
                     .Subclass        = 0.0f,
-                    .AmSubclass      = 0.0f,
-                    .bIsAmStar       = false
+                    .AmSubclass      = 0.0f
                 };
             }
             else
@@ -2033,10 +2032,10 @@ void FStellarGenerator::ProcessDeathStar(EStellarTypeGenerationOption DeathStarT
                     .HSpectralClass  = Astro::FStellarClass::ESpectralClass::kSpectral_Q,
                     .MSpectralClass  = Astro::FStellarClass::ESpectralClass::kSpectral_Unknown,
                     .LuminosityClass = Astro::FStellarClass::ELuminosityClass::kLuminosity_Unknown,
+                    .bIsAmStar       = false,
                     .SpecialMark     = std::to_underlying(Astro::FStellarClass::ESpecialMark::kCode_Null),
                     .Subclass        = 0.0f,
-                    .AmSubclass      = 0.0f,
-                    .bIsAmStar       = false
+                    .AmSubclass      = 0.0f
                 };
             }
 

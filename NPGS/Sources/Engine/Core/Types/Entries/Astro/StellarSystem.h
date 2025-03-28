@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstddef>
+#include <cstdint>
 #include <memory>
 #include <string>
 #include <type_traits>
@@ -35,7 +36,7 @@ class FOrbit
 public:
     using FObjectPointer = std::variant<FBaryCenter*, AStar*, APlanet*, AAsteroidCluster*, Intelli::AArtifact*>;
 
-    enum class EObjectType
+    enum class EObjectType : std::uint8_t
     {
         kBaryCenter,
         kStar,

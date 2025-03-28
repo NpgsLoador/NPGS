@@ -1,6 +1,5 @@
 #include "PipelineManager.h"
 
-#include <algorithm>
 #include <functional>
 #include <utility>
 

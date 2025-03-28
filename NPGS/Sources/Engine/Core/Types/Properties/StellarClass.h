@@ -13,7 +13,7 @@ class FStellarClass
 public:
     using FSpecialMarkDigital = std::uint32_t;
 
-    enum class EStellarType : std::uint32_t
+    enum class EStellarType : std::uint8_t
     {
         kNormalStar           = 0,
         kWhiteDwarf           = 1,
@@ -22,7 +22,7 @@ public:
         kDeathStarPlaceholder = 4
     };
 
-    enum class ESpectralClass : std::uint32_t
+    enum class ESpectralClass : std::uint8_t
     {
         kSpectral_Unknown     = 0,
         // 常规光谱型
@@ -62,7 +62,7 @@ public:
         kSpectral_X           = 27  // 黑洞
     };
 
-    enum class ELuminosityClass : std::uint32_t
+    enum class ELuminosityClass : std::uint8_t
     {
         kLuminosity_Unknown   = 0,
         kLuminosity_0         = 1,
@@ -78,7 +78,7 @@ public:
         kLuminosity_VI        = 11
     };
 
-    enum class ESpecialMark : std::uint32_t
+    enum class ESpecialMark : std::uint8_t
     {
         kCode_Null            = 0,      // 无
         kCode_f               = Bit(1), // N III 和 He II 发射线
@@ -124,10 +124,10 @@ public:
         ESpectralClass      HSpectralClass{ ESpectralClass::kSpectral_Unknown };
         ESpectralClass      MSpectralClass{ ESpectralClass::kSpectral_Unknown };
         ELuminosityClass    LuminosityClass{ ELuminosityClass::kLuminosity_Unknown };
+        bool                bIsAmStar{ false };
         FSpecialMarkDigital SpecialMark;
         float               Subclass{};
         float               AmSubclass{};
-        bool                bIsAmStar{ false };
     };
 
 public:

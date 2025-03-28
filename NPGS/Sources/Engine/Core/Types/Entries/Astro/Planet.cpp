@@ -22,8 +22,8 @@ APlanet::APlanet(const APlanet& Other)
         .CivilizationData   = Other._ExtraProperties.CivilizationData
                             ? std::make_unique<Intelli::FStandard>(*Other._ExtraProperties.CivilizationData)
                             : nullptr,
-        .Type               = Other._ExtraProperties.Type,
         .BalanceTemperature = Other._ExtraProperties.BalanceTemperature,
+        .Type               = Other._ExtraProperties.Type,
         .bIsMigrated        = Other._ExtraProperties.bIsMigrated
     };
 }
@@ -43,8 +43,8 @@ APlanet& APlanet::operator=(const APlanet& Other)
             .CivilizationData   = Other._ExtraProperties.CivilizationData
                                 ? std::make_unique<Intelli::FStandard>(*Other._ExtraProperties.CivilizationData)
                                 : nullptr,
-            .Type               = Other._ExtraProperties.Type,
             .BalanceTemperature = Other._ExtraProperties.BalanceTemperature,
+            .Type               = Other._ExtraProperties.Type,
             .bIsMigrated        = Other._ExtraProperties.bIsMigrated
         };
     }

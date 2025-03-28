@@ -1,6 +1,7 @@
 #pragma once
 
 // #include <array>
+#include <cstdint>
 #include <functional>
 #include <memory>
 #include <string>
@@ -22,7 +23,7 @@ _GRAPHICS_BEGIN
 class FVulkanContext
 {
 public:
-    enum class ECallbackType
+    enum class ECallbackType : std::uint8_t
     {
         kCreateSwapchain,
         kDestroySwapchain,

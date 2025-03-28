@@ -1,6 +1,5 @@
 #include "AssetManager.h"
 
-#include <cstdlib>
 #include "Engine/Core/Base/Assert.h"
 
 _NPGS_BEGIN

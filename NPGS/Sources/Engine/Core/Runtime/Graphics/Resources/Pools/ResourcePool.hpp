@@ -17,8 +17,6 @@
 
 #include "Engine/Core/Base/Assert.h"
 #include "Engine/Core/Base/Base.h"
-#include "Engine/Core/Runtime/Graphics/Vulkan/Core.h"
-#include "Engine/Core/Runtime/Graphics/Vulkan/Wrappers.h"
 
 _NPGS_BEGIN
 _RUNTIME_BEGIN
@@ -174,35 +172,31 @@ public:
             ++_BusyResourceCount;
             return FResourceGuard(this, Resource, 1);
         }
-        else
-        {
-            constexpr std::uint32_t kMaxWaitTimeMs = 2000;
-            if (_Condition.wait_for(Lock, std::chrono::milliseconds(kMaxWaitTimeMs),
-                [this, &Pred]() -> bool { return std::any_of(_AvailableResources.begin(), _AvailableResources.end(), Pred); }))
-            {
-                Lock.unlock();
-                return AcquireResource(CreateInfo, Pred);
-            }
-            else
-            {
-                if (!_AvailableResources.empty())
-                {
-                    for (auto it = _AvailableResources.begin(); it != _AvailableResources.end(); ++it)
-                    {
-                        if (HandleResourceEmergency(*it, CreateInfo))
-                        {
-                            ResourceType* Resource = it->Resource.release();
-                            std::size_t UsageCount = it->UsageCount + 1;
-                            _AvailableResources.erase(it);
-                            ++_BusyResourceCount;
-                            return FResourceGuard(this, Resource, UsageCount);
-                        }
-                    }
-                }
 
-                throw std::runtime_error("Failed to acquire resource. Reset the max resource limit or reduce resource requirements.");
+        constexpr std::uint32_t kMaxWaitTimeMs = 2000;
+        if (_Condition.wait_for(Lock, std::chrono::milliseconds(kMaxWaitTimeMs),
+        [this, &Pred]() -> bool { return std::any_of(_AvailableResources.begin(), _AvailableResources.end(), Pred); }))
+        {
+            Lock.unlock();
+            return AcquireResource(CreateInfo, Pred);
+        }
+
+        if (!_AvailableResources.empty())
+        {
+            for (auto it = _AvailableResources.begin(); it != _AvailableResources.end(); ++it)
+            {
+                if (HandleResourceEmergency(*it, CreateInfo))
+                {
+                    ResourceType* Resource = it->Resource.release();
+                    std::size_t UsageCount = it->UsageCount + 1;
+                    _AvailableResources.erase(it);
+                    ++_BusyResourceCount;
+                    return FResourceGuard(this, Resource, UsageCount);
+                }
             }
         }
+
+        throw std::runtime_error("Failed to acquire resource. Reset the max resource limit or reduce resource requirements.");
     }
 
     void OptimizeResourceCount()

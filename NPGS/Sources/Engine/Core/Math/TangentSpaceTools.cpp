@@ -1,12 +1,11 @@
 #include "TangentSpaceTools.h"
 
 #include <cmath>
-#include "Engine/Core/Math/NumericConstants.h"
 
 _NPGS_BEGIN
 _MATH_BEGIN
 
-void CalculateTangentBitangent(std::vector<Runtime::Graphics::FVertex>& Vertices, std::size_t Index)
+void CalculateTangentBitangent(std::size_t Index, std::vector<Runtime::Graphics::FVertex>& Vertices)
 {
     const auto& Vertex0 = Vertices[Index + 0];
     const auto& Vertex1 = Vertices[Index + 1];
@@ -31,7 +30,7 @@ void CalculateTangentBitangent(std::vector<Runtime::Graphics::FVertex>& Vertices
     Vertices[Index + 2].Bitangent += Bitangent;
 }
 
-void CalculateTangentBitangent(std::vector<Runtime::Graphics::FVertex>& Vertices, const std::vector<std::uint32_t> Indices)
+void CalculateTangentBitangent(const std::vector<std::uint32_t>& Indices, std::vector<Runtime::Graphics::FVertex>& Vertices)
 {
     for (std::size_t i = 0; i < Indices.size(); i += 3)
     {
@@ -65,7 +64,7 @@ void CalculateTangentBitangent(std::vector<Runtime::Graphics::FVertex>& Vertices
     }
 }
 
-void CalculateTangentBitangent(std::vector<Runtime::Graphics::FVertex>& Vertices, std::uint32_t SegmentsX, std::uint32_t SegmentsY)
+void CalculateTangentBitangent(std::uint32_t SegmentsX, std::uint32_t SegmentsY, std::vector<Runtime::Graphics::FVertex>& Vertices)
 {
     // 初始化切线和副切线向量为零
     for (auto& Vertex : Vertices)
@@ -148,7 +147,7 @@ void CalculateAllTangents(std::vector<Runtime::Graphics::FVertex>& Vertices)
 {
     for (std::size_t i = 0; i < Vertices.size(); i += 3)
     {
-        CalculateTangentBitangent(Vertices, i);
+        CalculateTangentBitangent(i, Vertices);
     }
 
     for (auto& Vertex : Vertices)

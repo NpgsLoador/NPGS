@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstdint>
 #include <limits>
 #include <string>
 #include <unordered_map>
@@ -36,7 +37,7 @@ public:
         kNull                      =  std::numeric_limits<int>::max()
     };
 
-    enum class EStarFrom : int
+    enum class EStarFrom : std::uint8_t
     {
         kNormalFrom                = 0,
         kWhiteDwarfMerge           = 1,

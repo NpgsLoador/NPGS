@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstddef>
+#include <cstdint>
 #include <array>
 #include <functional>
 #include <limits>
@@ -32,14 +33,14 @@ public:
     using FHrDiagram  = Runtime::Asset::TCommaSeparatedValues<double, 7>;
     using FDataArray  = std::vector<double>;
 
-    enum class EGenerationDistribution
+    enum class EGenerationDistribution : std::uint8_t
     {
         kFromPdf,
         kUniform,
         kUniformByExponent
     };
 
-    enum class EStellarTypeGenerationOption
+    enum class EStellarTypeGenerationOption : std::uint8_t
     {
         kRandom,
         kGiant,
@@ -47,7 +48,7 @@ public:
         kMergeStar,
     };
 
-    enum class EMultiplicityGenerationOption
+    enum class EMultiplicityGenerationOption : std::uint8_t
     {
         kSingleStar,
         kBinaryFirstStar,

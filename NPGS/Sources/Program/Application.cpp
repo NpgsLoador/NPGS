@@ -1373,7 +1373,7 @@ void FApplication::InitializeVerticesData()
 
     Math::CalculateAllTangents(CubeVertices);
     Math::CalculateAllTangents(PlaneVertices);
-    Math::CalculateTangentBitangent(SphereVertices, kSegmentsX, kSegmentsY);
+    Math::CalculateTangentBitangent(kSegmentsX, kSegmentsY, SphereVertices);
 
     vk::BufferCreateInfo VertexBufferCreateInfo = vk::BufferCreateInfo()
         .setSize(SphereVertices.size() * sizeof(Grt::FVertex))

@@ -28,7 +28,7 @@ namespace
     };
 
     // 格式族枚举
-    enum class EFormatFamily : std::uint32_t
+    enum class EFormatFamily : std::uint8_t
     {
         kUnknown = 0,
         kR8,             // R8 系列
@@ -41,6 +41,10 @@ namespace
         kBC1,            // BC1压缩格式
         kBC2,            // BC2压缩格式
         kBC3,            // BC3压缩格式
+        kBC4,            // BC4压缩格式
+        kBC5,            // BC5压缩格式
+        kBC6H,           // BC6H压缩格式
+        kBC7,            // BC7压缩格式
         // 可以继续添加更多格式族...
     };
 
