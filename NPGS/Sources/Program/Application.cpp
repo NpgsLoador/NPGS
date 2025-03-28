@@ -232,7 +232,7 @@ void FApplication::ExecuteMainRender()
 
         vk::CommandBufferInheritanceRenderingInfo PostInheritanceRenderingInfo = vk::CommandBufferInheritanceRenderingInfo()
             .setColorAttachmentCount(1)
-            .setColorAttachmentFormats(ColorAttachmentFormat);
+            .setColorAttachmentFormats(_VulkanContext->GetSwapchainCreateInfo().imageFormat);
 
         for (std::uint32_t i = 0; i != Config::Graphics::kMaxFrameInFlight; ++i)
         {
@@ -286,7 +286,6 @@ void FApplication::ExecuteMainRender()
             SceneGBufferCommandBuffer->draw(6, 1, 0, 0);
             SceneGBufferCommandBuffer->bindVertexBuffers(0, CubeVertexBuffers, CubeOffsets);
             SceneGBufferCommandBuffer->draw(36, 3, 0, 0);
-            
             SceneGBufferCommandBuffer.End();
 
             auto& SceneMergeCommandBuffer = SceneMergeCommandBuffers[i];
@@ -846,7 +845,7 @@ void FApplication::CreateAttachments()
             vk::SampleCountFlagBits::e1, vk::ImageUsageFlagBits::eSampled | vk::ImageUsageFlagBits::eStorage);
 
         _ResolveAttachment = std::make_unique<Grt::FColorAttachment>(
-            AllocationCreateInfo, vk::Format::eR16G16B16A16Sfloat, AttachmentExtent, 1,
+            AllocationCreateInfo, _VulkanContext->GetSwapchainCreateInfo().imageFormat, AttachmentExtent, 1,
             vk::SampleCountFlagBits::e1, vk::ImageUsageFlagBits::eTransferSrc);
 
         _DepthStencilAttachment = std::make_unique<Grt::FDepthStencilAttachment>(

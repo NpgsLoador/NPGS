@@ -18,7 +18,7 @@ void main()
     vec3 FrameColor = texture(iTexture, TexCoord).rgb;
     if (iHdrArgs.bEnableHdr)
     {
-        // FrameColor = ScRgbToPqWithGamut(FrameColor);
+        FrameColor = ScRgbToPqWithGamut(FrameColor);
     }
     else
     {
