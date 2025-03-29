@@ -107,6 +107,30 @@ def parse_includes(shader_file: Path, included_files: set = None) -> set:
     
     return included_files
 
+def check_needs_int64_support(shader_file: Path) -> bool:
+    """检查GLSL文件是否需要int64支持
+    
+    检查源文件及其包含文件中是否有GL_EXT_shader_explicit_arithmetic_types_int64扩展的启用或必须指令
+    """
+    try:
+        # 获取所有包含文件
+        included_files = parse_includes(shader_file)
+        files_to_check = list(included_files) + [shader_file]
+        
+        for file in files_to_check:
+            with open(file, 'r', encoding='utf-8') as f:
+                content = f.read()
+                # 检查是否有启用或必须指令
+                if "#extension GL_EXT_shader_explicit_arithmetic_types_int64 : enable" in content or \
+                   "#extension GL_EXT_shader_explicit_arithmetic_types_int64 : require" in content:
+                    return True
+        
+        return False
+    except Exception as e:
+        print(f"警告: 检查int64支持时出错 {shader_file.name}: {str(e)}")
+        # 出错时默认添加支持以避免编译问题
+        return True
+
 # 修改 needs_recompile 函数
 def needs_recompile(source_file: Path, spv_file: Path, macros: list[str] = None) -> bool:
     """检查源文件及其依赖是否需要重新编译"""
@@ -169,6 +193,10 @@ def compile_shader(source_file: Path, target_file: Path, macros: list[str] = Non
     
     try:
         cmd = [GLSLC_PATH, '--target-env=vulkan1.4', '-O']
+        
+        # 检查是否需要int64支持
+        if check_needs_int64_support(source_file):
+            cmd.append('-DSPV_KHR_shader_explicit_arithmetic_types_int64=1')
         
         # 添加宏定义
         if macros:

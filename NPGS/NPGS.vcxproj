@@ -364,6 +364,7 @@
     <None Include="Sources\Engine\Shaders\Bloom.comp" />
     <None Include="Sources\Engine\Shaders\Bloom.frag" />
     <None Include="Sources\Engine\Shaders\ColorBlend.frag" />
+    <None Include="Sources\Engine\Shaders\Common\BindlessExtensions.glsl" />
     <None Include="Sources\Engine\Shaders\Common\CoordConverter.glsl" />
     <None Include="Sources\Engine\Shaders\Common\NumericConstants.glsl" />
     <None Include="Sources\Engine\Shaders\Common\Random\Hash.glsl" />

@@ -1,6 +1,8 @@
 #version 450
 #pragma shader_stage(vertex)
 
+#include "Common/BindlessExtensions.glsl"
+
 layout(location = 0) in vec3 Position;
 layout(location = 1) in vec3 Normal;
 layout(location = 2) in vec2 TexCoord;
@@ -16,12 +18,17 @@ layout(location = 0) out _VertOutput
 	vec4   LightSpaceFragPos;
 } VertOutput;
 
-layout(std140, set = 0, binding = 0) uniform Matrices
+layout(push_constant) uniform DeviceAddress
+{
+	uint64_t MatricesAddress;
+} iDeviceAddress;
+
+layout(buffer_reference, scalar) readonly buffer Matrices
 {
 	mat4x4 View;
 	mat4x4 Projection;
 	mat4x4 LightSpaceMatrix;
-} iMatrices;
+};
 
 // layout(set = 1, binding = 0) uniform sampler   iSampler;
 // layout(set = 1, binding = 4) uniform texture2D iDisplacementTex;
@@ -47,6 +54,7 @@ void main()
 	mat3x3 TbnMatrix = mat3x3(T, B, N);
 	VertOutput.TbnMatrix = transpose(TbnMatrix);
 
+	Matrices iMatrices = Matrices(iDeviceAddress.MatricesAddress);
 	VertOutput.LightSpaceFragPos = iMatrices.LightSpaceMatrix * vec4(VertOutput.FragPos, 1.0);
 
 	gl_Position = iMatrices.Projection * iMatrices.View * vec4(VertOutput.FragPos, 1.0);

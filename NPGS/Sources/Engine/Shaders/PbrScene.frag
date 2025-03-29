@@ -1,6 +1,7 @@
 #version 450
 #pragma shader_stage(fragment)
 
+#include "Common/BindlessExtensions.glsl"
 #include "Common/NumericConstants.glsl"
 
 layout(location = 0) out vec4 FragColor;
@@ -13,18 +14,23 @@ layout(location = 0) in _FragInput
 	vec4   LightSpaceFragPos;
 } FragInput;
 
-layout(std140, set = 0, binding = 1) uniform LightArgs
+layout(push_constant) uniform DeviceAddress
+{
+	layout(offset = 8) uint64_t LightArgsAddress;
+} iDeviceAddress;
+
+layout(buffer_reference, scalar) readonly buffer LightArgs
 {
 	vec3 LightPos;
 	vec3 LightColor;
 	vec3 CameraPos;
-} iLightArgs;
+};
 
-layout(set = 1, binding = 0) uniform sampler   iSampler;
+layout(set = 0, binding = 0) uniform sampler   iSampler;
 layout(set = 1, binding = 1) uniform texture2D iDiffuseTex;
 layout(set = 1, binding = 2) uniform texture2D iNormalTex;
 layout(set = 1, binding = 3) uniform texture2D iArmTex;
-layout(set = 1, binding = 4) uniform sampler2D iDepthMap;
+layout(set = 2, binding = 0) uniform sampler2D iDepthMap;
 
 float TrowbridgeReitzGGX(vec3 Normal, vec3 HalfDir, float Roughness)
 {
@@ -89,6 +95,7 @@ float CalcShadow(vec4 FragPosLightSpace, float Bias)
 
 void main()
 {
+	LightArgs iLightArgs = LightArgs(iDeviceAddress.LightArgsAddress);
 #ifdef LAMP_BOX
 	FragColor = vec4(iLightArgs.LightColor, 1.0);
 #else

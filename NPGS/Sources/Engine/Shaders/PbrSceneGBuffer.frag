@@ -14,10 +14,11 @@ layout(location = 0) in _FragInput
 	vec4   LightSpaceFragPos;
 } FragInput;
 
-layout(set = 1, binding = 0) uniform sampler2D iDiffuseTex;
-layout(set = 1, binding = 1) uniform sampler2D iNormalTex;
-layout(set = 1, binding = 2) uniform sampler2D iArmTex;
-layout(set = 1, binding = 3) uniform sampler2D iDepthMap;
+layout(set = 0, binding = 0) uniform sampler   iSampler;
+layout(set = 1, binding = 1) uniform texture2D iDiffuseTex;
+layout(set = 1, binding = 2) uniform texture2D iNormalTex;
+layout(set = 1, binding = 3) uniform texture2D iArmTex;
+layout(set = 2, binding = 0) uniform sampler2D iDepthMap;
 
 float CalcShadow(vec4 FragPosLightSpace, float Bias)
 {
@@ -55,9 +56,9 @@ void main()
 	RgbAlbedoAMetal = vec4(0.0);
     Shadow          = 0.0;
 #else
-	vec3  TexAlbedo    = texture(iDiffuseTex, FragInput.TexCoord).rgb;
-	vec3  TexNormal    = texture(iNormalTex,  FragInput.TexCoord).rgb;
-    vec3  TexArm       = texture(iArmTex,     FragInput.TexCoord).rgb;
+	vec3  TexAlbedo    = texture(sampler2D(iDiffuseTex, iSampler), FragInput.TexCoord).rgb;
+	vec3  TexNormal    = texture(sampler2D(iNormalTex, iSampler),  FragInput.TexCoord).rgb;
+    vec3  TexArm       = texture(sampler2D(iArmTex, iSampler),     FragInput.TexCoord).rgb;
 	float TexAo        = TexArm.r;
 	float TexRoughness = TexArm.g;
 	float TexMetallic  = TexArm.b;

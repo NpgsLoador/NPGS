@@ -76,23 +76,23 @@ struct FBlackHoleArgs
 
 struct FMatrices
 {
-    glm::aligned_mat4x4 View{ glm::mat4x4(1.0f) };
-    glm::aligned_mat4x4 Projection{ glm::mat4x4(1.0f) };
-    glm::aligned_mat4x4 LightSpaceMatrix{ glm::mat4x4(1.0f) };
+    glm::mat4x4 View{ glm::mat4x4(1.0f) };
+    glm::mat4x4 Projection{ glm::mat4x4(1.0f) };
+    glm::mat4x4 LightSpaceMatrix{ glm::mat4x4(1.0f) };
 };
 
 struct FMvpMatrices
 {
-    glm::aligned_mat4x4 Model{ glm::mat4x4(1.0f) };
-    glm::aligned_mat4x4 View{ glm::mat4x4(1.0f) };
-    glm::aligned_mat4x4 Projection{ glm::mat4x4(1.0f) };
+    glm::mat4x4 Model{ glm::mat4x4(1.0f) };
+    glm::mat4x4 View{ glm::mat4x4(1.0f) };
+    glm::mat4x4 Projection{ glm::mat4x4(1.0f) };
 };
 
 struct FLightArgs
 {
-    glm::aligned_vec3 LightPos;
-    glm::aligned_vec3 LightColor;
-    glm::aligned_vec3 CameraPos;
+    glm::vec3 LightPos;
+    glm::vec3 LightColor;
+    glm::vec3 CameraPos;
 };
 
 _GRAPHICS_END

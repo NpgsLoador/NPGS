@@ -1,23 +1,29 @@
 #version 450
 #pragma shader_stage(compute)
-#extension GL_EXT_samplerless_texture_functions : enable
+#extension GL_EXT_samplerless_texture_functions : require
 
+#include "Common/BindlessExtensions.glsl"
 #include "Common/NumericConstants.glsl"
 
 layout(local_size_x = 16, local_size_y = 16, local_size_z = 1) in;
 
-layout(std140, set = 0, binding = 0) uniform LightArgs
+layout(push_constant) uniform DeviceAddress
+{
+	uint64_t LightArgsAddress;
+} iDeviceAddress;
+
+layout(buffer_reference, scalar) readonly buffer LightArgs
 {
 	vec3 LightPos;
 	vec3 LightColor;
 	vec3 CameraPos;
-} iLightArgs;
+};
 
-layout(set = 1, binding = 0) uniform texture2D iRgbPositionAAo;
-layout(set = 1, binding = 1) uniform texture2D iRgbNormalARough;
-layout(set = 1, binding = 2) uniform texture2D iRgbAlbedoAMetal;
-layout(set = 1, binding = 3) uniform texture2D iRShadowGbaNull;
-layout(set = 2, binding = 0, rgba16f) uniform writeonly image2D iStorageImage;
+layout(set = 0, binding = 0) uniform texture2D iRgbPositionAAo;
+layout(set = 0, binding = 1) uniform texture2D iRgbNormalARough;
+layout(set = 0, binding = 2) uniform texture2D iRgbAlbedoAMetal;
+layout(set = 0, binding = 3) uniform texture2D iRShadowGbaNull;
+layout(set = 1, binding = 0, rgba16f) uniform writeonly image2D iStorageImage;
 
 float TrowbridgeReitzGGX(vec3 Normal, vec3 HalfDir, float Roughness)
 {
@@ -71,6 +77,8 @@ void main()
 	Fx = mix(Fx, TexAlbedo, TexMetallic);
 
 	vec3 RadianceSum = vec3(0.0);
+
+	LightArgs iLightArgs = LightArgs(iDeviceAddress.LightArgsAddress);
 
 	vec3 LightDir = normalize(iLightArgs.LightPos  - TexFragPos);
 	vec3 ViewDir  = normalize(iLightArgs.CameraPos - TexFragPos);

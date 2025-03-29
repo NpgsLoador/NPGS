@@ -130,6 +130,19 @@ FShaderBufferManager::GetFieldUpdater(std::uint32_t FrameIndex, const std::strin
     return TUpdater<FieldType>(BufferInfo.Buffers[FrameIndex], BufferInfo.Fields.at(FieldName).Offset, BufferInfo.Fields.at(FieldName).Size);
 }
 
+template <typename... Args>
+NPGS_INLINE std::vector<vk::DeviceSize>
+FShaderBufferManager::GetDescriptorBindingOffsets(const std::string& BufferName, Args... Sets)
+{
+    std::vector<vk::DeviceSize> Offsets;
+    for (auto Set : { Sets... })
+    {
+        Offsets.emplace_back(GetDescriptorBindingOffset(BufferName, Set, 0));
+    }
+
+    return Offsets;
+}
+
 NPGS_INLINE const Graphics::FDeviceLocalBuffer& FShaderBufferManager::GetDataBuffer(std::uint32_t FrameIndex, const std::string& BufferName)
 {
     auto& BufferInfo = _DataBuffers.at(BufferName);

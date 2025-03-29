@@ -171,14 +171,12 @@ void FApplication::ExecuteMainRender()
     Grt::FMvpMatrices MvpMatrices{};
     Grt::FLightArgs   LightArgs{};
 
-    // auto CameraPosUpdater = ShaderBufferManager->GetFieldUpdaters<glm::aligned_vec3>("LightArgs", "CameraPos");
-    auto CameraPosUpdater = ShaderBufferManager->GetFieldUpdaters<glm::aligned_vec3>("LightArgsForCompute", "CameraPos");
+    auto CameraPosUpdater = ShaderBufferManager->GetFieldUpdaters<glm::aligned_vec3>("LightArgs", "CameraPos");
 
     LightArgs.LightPos   = LightPos;
     LightArgs.LightColor = glm::vec3(300.0f);
 
     ShaderBufferManager->UpdateDataBuffers("LightArgs", LightArgs);
-    ShaderBufferManager->UpdateDataBuffers("LightArgsForCompute", LightArgs);
 
     // _Camera->SetOrbitTarget(glm::vec3(0.0f));
     // _Camera->SetOrbitAxis(glm::vec3(0.0f, 1.0f, 0.0f));
@@ -261,9 +259,8 @@ void FApplication::ExecuteMainRender()
             DepthMapCommandBuffer->setViewport(0, DepthMapViewport);
             DepthMapCommandBuffer->setScissor(0, DepthMapScissor);
             DepthMapCommandBuffer->bindPipeline(vk::PipelineBindPoint::eGraphics, DepthMapPipeline);
-            DepthMapCommandBuffer->bindDescriptorBuffersEXT(SceneGBufferDescriptorBufferBindingInfo);
-            vk::DeviceSize OffsetSet0 = ShaderBufferManager->GetDescriptorBindingOffset("SceneGBufferDescriptorBuffer", 0, 0);
-            DepthMapCommandBuffer->setDescriptorBufferOffsetsEXT(vk::PipelineBindPoint::eGraphics, DepthMapPipelineLayout, 0, { 0 }, OffsetSet0);
+            vk::DeviceSize MatricesAddress = ShaderBufferManager->GetDataBuffer(i, "Matrices").GetBuffer().GetDeviceAddress();
+            DepthMapCommandBuffer->pushConstants<vk::DeviceAddress>(DepthMapPipelineLayout, vk::ShaderStageFlagBits::eVertex, 0, MatricesAddress);
             DepthMapCommandBuffer->bindVertexBuffers(0, PlaneVertexBuffers, PlaneOffsets);
             DepthMapCommandBuffer->draw(6, 1, 0, 0);
             DepthMapCommandBuffer->bindVertexBuffers(0, CubeVertexBuffers, CubeOffsets);
@@ -280,8 +277,8 @@ void FApplication::ExecuteMainRender()
             SceneGBufferCommandBuffer->setScissor(0, CommonScissor);
             SceneGBufferCommandBuffer->bindPipeline(vk::PipelineBindPoint::eGraphics, PbrSceneGBufferPipeline);
             SceneGBufferCommandBuffer->bindDescriptorBuffersEXT(SceneGBufferDescriptorBufferBindingInfo);
-            vk::DeviceSize OffsetSet1 = ShaderBufferManager->GetDescriptorBindingOffset("SceneGBufferDescriptorBuffer", 1, 0);
-            SceneGBufferCommandBuffer->setDescriptorBufferOffsetsEXT(vk::PipelineBindPoint::eGraphics, PbrSceneGBufferPipelineLayout, 0, { 0, 0 }, { OffsetSet0, OffsetSet1 });
+            auto Offsets = ShaderBufferManager->GetDescriptorBindingOffsets("SceneGBufferDescriptorBuffer", 0, 1, 2);
+            SceneGBufferCommandBuffer->setDescriptorBufferOffsetsEXT(vk::PipelineBindPoint::eGraphics, PbrSceneGBufferPipelineLayout, 0, { 0, 0, 0 }, Offsets);
             SceneGBufferCommandBuffer->bindVertexBuffers(0, PlaneVertexBuffers, PlaneOffsets);
             SceneGBufferCommandBuffer->draw(6, 1, 0, 0);
             SceneGBufferCommandBuffer->bindVertexBuffers(0, CubeVertexBuffers, CubeOffsets);
@@ -298,11 +295,11 @@ void FApplication::ExecuteMainRender()
 
             SceneMergeCommandBuffer.Begin(GBufferMergeInheritanceInfo, vk::CommandBufferUsageFlagBits::eSimultaneousUse);
             SceneMergeCommandBuffer->bindPipeline(vk::PipelineBindPoint::eCompute, PbrSceneMergePipeline);
+            vk::DeviceAddress LightArgsAddress = ShaderBufferManager->GetDataBuffer(i, "LightArgs").GetBuffer().GetDeviceAddress();
+            SceneMergeCommandBuffer->pushConstants<vk::DeviceAddress>(PbrSceneMergePipelineLayout, vk::ShaderStageFlagBits::eCompute, 0, LightArgsAddress);
             SceneMergeCommandBuffer->bindDescriptorBuffersEXT(SceneMergeDescriptorBufferBindingInfo);
-            OffsetSet0 = ShaderBufferManager->GetDescriptorBindingOffset("SceneMergeDescriptorBuffer", 0, 0);
-            OffsetSet1 = ShaderBufferManager->GetDescriptorBindingOffset("SceneMergeDescriptorBuffer", 1, 0);
-            vk::DeviceSize OffsetSet2 = ShaderBufferManager->GetDescriptorBindingOffset("SceneMergeDescriptorBuffer", 2, 0);
-            SceneMergeCommandBuffer->setDescriptorBufferOffsetsEXT(vk::PipelineBindPoint::eCompute, PbrSceneMergePipelineLayout, 0, { 0, 0, 0 }, { OffsetSet0, OffsetSet1, OffsetSet2 });
+            Offsets = ShaderBufferManager->GetDescriptorBindingOffsets("SceneMergeDescriptorBuffer", 0, 1);
+            SceneMergeCommandBuffer->setDescriptorBufferOffsetsEXT(vk::PipelineBindPoint::eCompute, PbrSceneMergePipelineLayout, 0, { 0, 0 }, Offsets);
             SceneMergeCommandBuffer->dispatch(WorkgroupSizeX, WorkgroupSizeY, 1);
             SceneMergeCommandBuffer.End();
 
@@ -315,16 +312,15 @@ void FApplication::ExecuteMainRender()
             FrontgroundCommandBuffer->setScissor(0, CommonScissor);
             FrontgroundCommandBuffer->setViewport(0, CommonViewport);
             FrontgroundCommandBuffer->bindPipeline(vk::PipelineBindPoint::eGraphics, LampPipeline);
-            FrontgroundCommandBuffer->bindDescriptorBuffersEXT(SceneGBufferDescriptorBufferBindingInfo);
-            OffsetSet0 = ShaderBufferManager->GetDescriptorBindingOffset("SceneGBufferDescriptorBuffer", 0, 0);
-            FrontgroundCommandBuffer->setDescriptorBufferOffsetsEXT(vk::PipelineBindPoint::eGraphics, LampPipelineLayout, 0, { 0 }, OffsetSet0);
+            FrontgroundCommandBuffer->pushConstants<vk::DeviceAddress>(LampPipelineLayout, vk::ShaderStageFlagBits::eVertex, 0, MatricesAddress);
+            FrontgroundCommandBuffer->pushConstants<vk::DeviceAddress>(LampPipelineLayout, vk::ShaderStageFlagBits::eFragment, LampShader->GetPushConstantOffset("LightArgsAddress"), LightArgsAddress);
             FrontgroundCommandBuffer->bindVertexBuffers(0, CubeVertexBuffers, LampOffsets);
             FrontgroundCommandBuffer->draw(36, 1, 0, 0);
             FrontgroundCommandBuffer->bindPipeline(vk::PipelineBindPoint::eGraphics, SkyboxPipeline);
+            FrontgroundCommandBuffer->pushConstants<vk::DeviceAddress>(SkyboxPipelineLayout, vk::ShaderStageFlagBits::eVertex, 0, MatricesAddress);
             FrontgroundCommandBuffer->bindDescriptorBuffersEXT(SkyboxDescriptorBufferBindingInfo);
-            OffsetSet0 = ShaderBufferManager->GetDescriptorBindingOffset("SkyboxDescriptorBuffer", 0, 0);
-            OffsetSet1 = ShaderBufferManager->GetDescriptorBindingOffset("SkyboxDescriptorBuffer", 1, 0);
-            FrontgroundCommandBuffer->setDescriptorBufferOffsetsEXT(vk::PipelineBindPoint::eGraphics, SkyboxPipelineLayout, 0, { 0, 0 }, { OffsetSet0, OffsetSet1 });
+            vk::DeviceSize OffsetSet0 = ShaderBufferManager->GetDescriptorBindingOffset("SkyboxDescriptorBuffer", 0, 0);
+            FrontgroundCommandBuffer->setDescriptorBufferOffsetsEXT(vk::PipelineBindPoint::eGraphics, SkyboxPipelineLayout, 0, { 0 }, OffsetSet0);
             FrontgroundCommandBuffer->bindVertexBuffers(0, *_SkyboxVertexBuffer->GetBuffer(), Offset);
             FrontgroundCommandBuffer->draw(36, 1, 0, 0);
             FrontgroundCommandBuffer.End();
@@ -339,7 +335,7 @@ void FApplication::ExecuteMainRender()
             PostProcessCommandBuffer->setScissor(0, CommonScissor);
             PostProcessCommandBuffer->bindPipeline(vk::PipelineBindPoint::eGraphics, PostPipeline);
             PostProcessCommandBuffer->bindDescriptorBuffersEXT(PostDescriptorBufferBindingInfo);
-            PostProcessCommandBuffer->pushConstants(PostPipelineLayout, vk::ShaderStageFlagBits::eFragment, 0, sizeof(vk::Bool32), reinterpret_cast<vk::Bool32*>(&_bEnableHdr));
+            PostProcessCommandBuffer->pushConstants<vk::Bool32>(PostPipelineLayout, vk::ShaderStageFlagBits::eFragment, PostShader->GetPushConstantOffset("bEnableHdr"), static_cast<vk::Bool32>(_bEnableHdr));
             OffsetSet0 = ShaderBufferManager->GetDescriptorBindingOffset("PostDescriptorBuffer", 0, 0);
             PostProcessCommandBuffer->setDescriptorBufferOffsetsEXT(vk::PipelineBindPoint::eGraphics, PostPipelineLayout, 0, { 0 }, OffsetSet0);
             PostProcessCommandBuffer->bindVertexBuffers(0, *_QuadVertexBuffer->GetBuffer(), Offset);
@@ -896,9 +892,8 @@ void FApplication::LoadAssets()
             { 0, 4, offsetof(Grt::FVertex, Bitangent) },
             { 1, 5, offsetof(Grt::FInstanceData, Model) }
         },
-        {
-            { 0, 0, false }
-        }
+        {},
+        { { vk::ShaderStageFlagBits::eVertex, { "MatricesAddress" } } }
     };
 
     Art::FShader::FResourceInfo PbrSceneResourceInfo
@@ -915,15 +910,16 @@ void FApplication::LoadAssets()
             { 0, 4, offsetof(Grt::FVertex, Bitangent) },
             { 1, 5, offsetof(Grt::FInstanceData, Model) }
         },
+        {},
         {
-            { 0, 0, false },
-            { 0, 1, false }
+            { vk::ShaderStageFlagBits::eVertex, { "MatricesAddress" } },
+            { vk::ShaderStageFlagBits::eFragment, { "LightArgsAddress" } }
         }
     };
 
     Art::FShader::FResourceInfo PbrSceneMergeResourceInfo
     {
-        {}, {}, { { 0, 0, false } }
+        {}, {}, {}, { { vk::ShaderStageFlagBits::eCompute, { "LightArgsAddress" } } }
     };
 
     Art::FShader::FResourceInfo DepthMapResourceInfo
@@ -936,7 +932,8 @@ void FApplication::LoadAssets()
             { 0, 0, offsetof(Grt::FVertex, Position) },
             { 1, 1, offsetof(Grt::FInstanceData, Model) }
         },
-        { { 0, 0, false } },
+        {},
+        { { vk::ShaderStageFlagBits::eVertex, { "MatricesAddress" } } }
     };
 
     Art::FShader::FResourceInfo TerrainResourceInfo
@@ -954,7 +951,8 @@ void FApplication::LoadAssets()
     {
         { { 0, sizeof(Grt::FSkyboxVertex), false } },
         { { 0, 0, offsetof(Grt::FSkyboxVertex, Position) } },
-        { { 0, 0, false } }
+        {},
+        { { vk::ShaderStageFlagBits::eVertex, { "MatricesAddress" } } }
     };
 
     Art::FShader::FResourceInfo PostResourceInfo
@@ -1088,15 +1086,6 @@ void FApplication::CreateUniformBuffers()
         .Name    = "LightArgs",
         .Fields  = { "LightPos", "LightColor", "CameraPos" },
         .Set     = 0,
-        .Binding = 1,
-        .Usage   = vk::DescriptorType::eUniformBuffer
-    };
-
-    Grt::FShaderBufferManager::FDataBufferCreateInfo LightArgsForComputeCreateInfo
-    {
-        .Name    = "LightArgsForCompute",
-        .Fields  = { "LightPos", "LightColor", "CameraPos" },
-        .Set     = 0,
         .Binding = 0,
         .Usage   = vk::DescriptorType::eUniformBuffer
     };
@@ -1120,7 +1109,6 @@ void FApplication::CreateUniformBuffers()
     ShaderBufferManager->CreateDataBuffers<Grt::FMatrices>(MatricesCreateInfo, &AllocationCreateInfo);
     ShaderBufferManager->CreateDataBuffers<Grt::FMvpMatrices>(MvpMatricesCreateInfo, &AllocationCreateInfo);
     ShaderBufferManager->CreateDataBuffers<Grt::FLightArgs>(LightArgsCreateInfo, &AllocationCreateInfo);
-    ShaderBufferManager->CreateDataBuffers<Grt::FLightArgs>(LightArgsForComputeCreateInfo, &AllocationCreateInfo);
 }
 
 void FApplication::BindDescriptors()
@@ -1155,29 +1143,28 @@ void FApplication::BindDescriptors()
         };
 
         Grt::FShaderBufferManager::FDescriptorBufferCreateInfo SceneGBufferDescriptorBufferCreateInfo;
-        SceneGBufferDescriptorBufferCreateInfo.Name               = "SceneGBufferDescriptorBuffer";
-        SceneGBufferDescriptorBufferCreateInfo.SetSizes           = std::move(PbrSceneGBufferShader->GetDescriptorSetSizes());
-        SceneGBufferDescriptorBufferCreateInfo.UniformBufferNames = { "Matrices", "LightArgs" };
+        SceneGBufferDescriptorBufferCreateInfo.Name     = "SceneGBufferDescriptorBuffer";
+        SceneGBufferDescriptorBufferCreateInfo.SetSizes = std::move(PbrSceneGBufferShader->GetDescriptorSetSizes());
 
         vk::SamplerCreateInfo SamplerCreateInfo = Art::FTexture::CreateDefaultSamplerCreateInfo();
         static Grt::FVulkanSampler kSampler(SamplerCreateInfo);
+        SceneGBufferDescriptorBufferCreateInfo.SamplerInfos.emplace_back(0u, 0u, *kSampler);
 
-        auto PbrDiffuseImageInfo = PbrDiffuse->CreateDescriptorImageInfo(kSampler);
-        SceneGBufferDescriptorBufferCreateInfo.CombinedImageSamplerInfos.emplace_back(1u, 0u, PbrDiffuseImageInfo);
+        auto PbrDiffuseImageInfo = PbrDiffuse->CreateDescriptorImageInfo(nullptr);
+        SceneGBufferDescriptorBufferCreateInfo.SampledImageInfos.emplace_back(1u, 0u, PbrDiffuseImageInfo);
 
-        auto PbrNormalImageInfo = PbrNormal->CreateDescriptorImageInfo(kSampler);
-        SceneGBufferDescriptorBufferCreateInfo.CombinedImageSamplerInfos.emplace_back(1u, 1u, PbrNormalImageInfo);
+        auto PbrNormalImageInfo = PbrNormal->CreateDescriptorImageInfo(nullptr);
+        SceneGBufferDescriptorBufferCreateInfo.SampledImageInfos.emplace_back(1u, 1u, PbrNormalImageInfo);
 
-        auto PbrArmImageInfo = PbrArm->CreateDescriptorImageInfo(kSampler);
-        SceneGBufferDescriptorBufferCreateInfo.CombinedImageSamplerInfos.emplace_back(1u, 2u, PbrArmImageInfo);
+        auto PbrArmImageInfo = PbrArm->CreateDescriptorImageInfo(nullptr);
+        SceneGBufferDescriptorBufferCreateInfo.SampledImageInfos.emplace_back(1u, 2u, PbrArmImageInfo);
 
         // auto HeightMapImageInfo = IceLand->CreateDescriptorImageInfo(kSampler);
         // TerrainShader->WriteSharedDescriptors<vk::DescriptorImageInfo>(1, 0, vk::DescriptorType::eCombinedImageSampler, HeightMapImageInfo);
 
         Grt::FShaderBufferManager::FDescriptorBufferCreateInfo SkyboxDescriptorBufferCreateInfo;
-        SkyboxDescriptorBufferCreateInfo.Name               = "SkyboxDescriptorBuffer";
-        SkyboxDescriptorBufferCreateInfo.SetSizes           = std::move(SkyboxShader->GetDescriptorSetSizes());
-        SkyboxDescriptorBufferCreateInfo.UniformBufferNames = { "Matrices" };
+        SkyboxDescriptorBufferCreateInfo.Name     = "SkyboxDescriptorBuffer";
+        SkyboxDescriptorBufferCreateInfo.SetSizes = std::move(SkyboxShader->GetDescriptorSetSizes());
 
         SamplerCreateInfo
             .setMipmapMode(vk::SamplerMipmapMode::eNearest)
@@ -1187,12 +1174,11 @@ void FApplication::BindDescriptors()
 
         static Grt::FVulkanSampler kSkyboxSampler(SamplerCreateInfo);
         auto SkyboxImageInfo = Skybox->CreateDescriptorImageInfo(kSkyboxSampler);
-        SkyboxDescriptorBufferCreateInfo.CombinedImageSamplerInfos.emplace_back(1u, 0u, SkyboxImageInfo);
+        SkyboxDescriptorBufferCreateInfo.CombinedImageSamplerInfos.emplace_back(0u, 0u, SkyboxImageInfo);
 
         Grt::FShaderBufferManager::FDescriptorBufferCreateInfo SceneMergeDescriptorBufferCreateInfo;
-        SceneMergeDescriptorBufferCreateInfo.Name               = "SceneMergeDescriptorBuffer";
-        SceneMergeDescriptorBufferCreateInfo.SetSizes           = std::move(PbrSceneMergeShader->GetDescriptorSetSizes());
-        SceneMergeDescriptorBufferCreateInfo.UniformBufferNames = { "LightArgsForCompute" };
+        SceneMergeDescriptorBufferCreateInfo.Name     = "SceneMergeDescriptorBuffer";
+        SceneMergeDescriptorBufferCreateInfo.SetSizes = std::move(PbrSceneMergeShader->GetDescriptorSetSizes());
 
         Grt::FShaderBufferManager::FDescriptorBufferCreateInfo PostDescriptorBufferCreateInfo;
         PostDescriptorBufferCreateInfo.Name     = "PostDescriptorBuffer";
@@ -1231,12 +1217,12 @@ void FApplication::BindDescriptors()
         vk::DescriptorImageInfo ShadowImageInfo(
             *kFramebufferSampler, *_ShadowAttachment->GetImageView(), vk::ImageLayout::eShaderReadOnlyOptimal);
 
-        SceneGBufferDescriptorBufferCreateInfo.CombinedImageSamplerInfos.emplace_back(1u, 3u, DepthMapImageInfo);
-        SceneMergeDescriptorBufferCreateInfo.SampledImageInfos.emplace_back(1u, 0u, PositionAoImageInfo);
-        SceneMergeDescriptorBufferCreateInfo.SampledImageInfos.emplace_back(1u, 1u, NormalRoughImageInfo);
-        SceneMergeDescriptorBufferCreateInfo.SampledImageInfos.emplace_back(1u, 2u, AlbedoMetalImageInfo);
-        SceneMergeDescriptorBufferCreateInfo.SampledImageInfos.emplace_back(1u, 3u, ShadowImageInfo);
-        SceneMergeDescriptorBufferCreateInfo.StorageImageInfos.emplace_back(2u, 0u, ColorStorageImageInfo);
+        SceneGBufferDescriptorBufferCreateInfo.CombinedImageSamplerInfos.emplace_back(2u, 0u, DepthMapImageInfo);
+        SceneMergeDescriptorBufferCreateInfo.SampledImageInfos.emplace_back(0u, 0u, PositionAoImageInfo);
+        SceneMergeDescriptorBufferCreateInfo.SampledImageInfos.emplace_back(0u, 1u, NormalRoughImageInfo);
+        SceneMergeDescriptorBufferCreateInfo.SampledImageInfos.emplace_back(0u, 2u, AlbedoMetalImageInfo);
+        SceneMergeDescriptorBufferCreateInfo.SampledImageInfos.emplace_back(0u, 3u, ShadowImageInfo);
+        SceneMergeDescriptorBufferCreateInfo.StorageImageInfos.emplace_back(1u, 0u, ColorStorageImageInfo);
         PostDescriptorBufferCreateInfo.CombinedImageSamplerInfos.emplace_back(0u, 0u, ColorImageInfo);
 
         ShaderBufferManager->CreateDescriptorBuffer(SceneGBufferDescriptorBufferCreateInfo, &AllocationCreateInfo);

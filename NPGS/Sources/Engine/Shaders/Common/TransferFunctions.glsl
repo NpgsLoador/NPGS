@@ -1,4 +1,5 @@
-#pragma once
+#ifndef TRANSFERFUNCTIONS_GLSL_
+#define TRANSFERFUNCTIONS_GLSL_
 
 const mat3x3 kSrgbToBt2020 = mat3x3(
     0.6274, 0.0691, 0.0164,
@@ -55,3 +56,5 @@ vec3 ScRgbToPqWithGamut(vec3 Color)
 
     return InversePqEotf(NormalizedLinear);
 }
+
+#endif  // !TRANSFERFUNCTIONS_GLSL_

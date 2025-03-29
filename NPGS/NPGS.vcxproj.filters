@@ -347,5 +347,6 @@
     <None Include="Sources\Engine\Core\Runtime\Graphics\Resources\Pools\CommandPoolManager.inl">
       <Filter>头文件</Filter>
     </None>
+    <None Include="Sources\Engine\Shaders\Common\BindlessExtensions.glsl" />
   </ItemGroup>
 </Project>

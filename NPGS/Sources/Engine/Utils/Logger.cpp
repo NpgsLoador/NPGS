@@ -34,6 +34,9 @@ void FLogger::Initialize()
 #elif defined(NPGS_ENABLE_FILE_LOGGER)
     _kCoreLogger   = spdlog::basic_logger_mt("NPGS", "NpgsCore.log", true);
     _kClientLogger = spdlog::basic_logger_mt("App",  "Npgs.log",     true);
+
+    _kCoreLogger->flush_on(spdlog::level::trace);
+    _kClientLogger->flush_on(spdlog::level::trace);
 #endif
 
     _kCoreLogger->set_level(spdlog::level::trace);

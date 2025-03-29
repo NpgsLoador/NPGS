@@ -149,6 +149,9 @@ public:
     void RemoveDescriptorBuffer(const std::string& Name);
     vk::DeviceSize GetDescriptorBindingOffset(const std::string& BufferName, std::uint32_t Set, std::uint32_t Binding) const;
 
+    template <typename... Args>
+    std::vector<vk::DeviceSize> GetDescriptorBindingOffsets(const std::string& BufferName, Args... Sets);
+
     const Graphics::FDeviceLocalBuffer& GetDescriptorBuffer(std::uint32_t FrameIndex, const std::string& BufferName);
 
     static FShaderBufferManager* GetInstance();
