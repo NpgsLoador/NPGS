@@ -1,6 +1,7 @@
 #include "StagingBufferPool.h"
 
 #include <algorithm>
+#include <utility>
 
 _NPGS_BEGIN
 _RUNTIME_BEGIN
@@ -26,6 +27,22 @@ FStagingBufferPool::FStagingBufferPool(std::uint32_t MinBufferLimit, std::uint32
     }
 }
 
+FStagingBufferPool::FBufferGuard
+FStagingBufferPool::AcquireBuffer(vk::DeviceSize RequestedSize, const VmaAllocationCreateInfo* AllocationCreateInfo)
+{
+    bool bAllocatedByVma = (AllocationCreateInfo != nullptr);
+    vk::DeviceSize AlignedSize = AlignSize(RequestedSize);
+
+    FStagingBufferCreateInfo CreateInfo{ AlignedSize, AllocationCreateInfo };
+    return AcquireResource(CreateInfo, [=](const FResourceInfo& BaseInfo) -> bool
+    {
+        auto& Info = static_cast<const FStagingBufferInfo&>(BaseInfo);
+        return Info.Size >= RequestedSize &&
+              (Info.Size <= AlignedSize * 2 || Info.Size <= RequestedSize + 1ull * 1024 * 1024) &&
+               Info.bAllocatedByVma == bAllocatedByVma;
+    });
+}
+
 void FStagingBufferPool::CreateResource(const FStagingBufferCreateInfo& CreateInfo)
 {
     FStagingBufferInfo BufferInfo;
@@ -49,6 +66,27 @@ void FStagingBufferPool::CreateResource(const FStagingBufferCreateInfo& CreateIn
     BufferInfo.UsageCount = 1;
 
     _AvailableResources.push_back(std::move(BufferInfo));
+    TryPreallocateBuffers(CreateInfo.Size, CreateInfo.AllocationCreateInfo != nullptr);
+}
+
+bool FStagingBufferPool::HandleResourceEmergency(FResourceInfo& LowUsageResource, const FStagingBufferCreateInfo& CreateInfo)
+{
+    auto& BufferInfo = static_cast<FStagingBufferInfo&>(LowUsageResource);
+    bool bRequestVma = (CreateInfo.AllocationCreateInfo != nullptr);
+    if (BufferInfo.bAllocatedByVma == bRequestVma && BufferInfo.Size < CreateInfo.Size)
+    {
+        vk::DeviceSize NewSize = std::max(AlignSize(CreateInfo.Size), BufferInfo.Size * 2);
+        if (NewSize > kSizeTiers.back())
+        {
+            NewSize = BufferInfo.Size * 1.5;
+        }
+
+        FStagingBufferCreateInfo NewCreateInfo{ NewSize, CreateInfo.AllocationCreateInfo };
+        CreateResource(NewCreateInfo);
+        return true;
+    }
+
+    return false;
 }
 
 vk::DeviceSize FStagingBufferPool::AlignSize(vk::DeviceSize RequestedSize)
