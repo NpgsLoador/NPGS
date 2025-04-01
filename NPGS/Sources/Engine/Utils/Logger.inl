@@ -1,17 +1,16 @@
 #include "Logger.h"
 
-_NPGS_BEGIN
-_UTIL_BEGIN
+#include "Engine/Core/Base/Base.h"
 
-NPGS_INLINE std::shared_ptr<spdlog::logger>& FLogger::GetCoreLogger()
+namespace Npgs::Util
 {
-    return _kCoreLogger;
-}
+    NPGS_INLINE std::shared_ptr<spdlog::logger>& FLogger::GetCoreLogger()
+    {
+        return _kCoreLogger;
+    }
 
-NPGS_INLINE std::shared_ptr<spdlog::logger>& FLogger::GetClientLogger()
-{
-    return _kClientLogger;
-}
-
-_UTIL_END
-_NPGS_END
+    NPGS_INLINE std::shared_ptr<spdlog::logger>& FLogger::GetClientLogger()
+    {
+        return _kClientLogger;
+    }
+} // namespace Npgs::Util

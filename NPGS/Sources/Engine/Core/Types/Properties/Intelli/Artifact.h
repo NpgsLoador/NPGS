@@ -1,14 +1,10 @@
 #pragma once
 
-#include "Engine/Core/Base/Base.h"
 #include "Engine/Core/Types/Entries/NpgsObject.h"
 
-_NPGS_BEGIN
-_INTELLI_BEGIN
-
-class AArtifact : public INpgsObject
+namespace Npgs::Intelli
 {
-};
-
-_INTELLI_END
-_NPGS_END
+    class AArtifact : public INpgsObject
+    {
+    };
+} // namespace Npgs::Intelli

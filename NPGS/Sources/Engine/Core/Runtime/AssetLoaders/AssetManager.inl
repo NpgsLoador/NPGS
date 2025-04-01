@@ -1,67 +1,65 @@
 #include "AssetManager.h"
 
-_NPGS_BEGIN
-_RUNTIME_BEGIN
-_ASSET_BEGIN
+#include "Engine/Core/Base/Base.h"
 
-template <typename AssetType>
-requires CAssetCompatible<AssetType>
-inline void FAssetManager::AddAsset(const std::string& Name, AssetType&& Asset)
+namespace Npgs
 {
-    _Assets.emplace(Name, FManagedAsset(
-        static_cast<void*>(new AssetType(std::move(Asset))),
-        FTypeErasedDeleter(static_cast<AssetType*>(nullptr))
-    ));
-}
-
-template<typename AssetType, typename... Args>
-requires CAssetCompatible<AssetType>
-inline void FAssetManager::AddAsset(const std::string& Name, Args&&... ConstructArgs)
-{
-    _Assets.emplace(Name, FManagedAsset(
-        static_cast<void*>(new AssetType(std::forward<Args>(ConstructArgs)...)),
-        FTypeErasedDeleter(static_cast<AssetType*>(nullptr))
-    ));
-}
-
-template <typename AssetType>
-requires CAssetCompatible<AssetType>
-inline AssetType* FAssetManager::GetAsset(const std::string& Name)
-{
-    if (auto it = _Assets.find(Name); it != _Assets.end())
+    template <typename AssetType>
+    requires CAssetCompatible<AssetType>
+    inline void FAssetManager::AddAsset(const std::string& Name, AssetType&& Asset)
     {
-        return static_cast<AssetType*>(it->second.get());
+        _Assets.emplace(Name, FManagedAsset(
+            static_cast<void*>(new AssetType(std::move(Asset))),
+            FTypeErasedDeleter(static_cast<AssetType*>(nullptr))
+        ));
     }
 
-    return nullptr;
-}
-
-template <typename AssetType>
-requires CAssetCompatible<AssetType>
-inline std::vector<AssetType*> FAssetManager::GetAssets()
-{
-    std::vector<AssetType*> Result;
-    for (const auto& [Name, Asset] : _Assets)
+    template<typename AssetType, typename... Args>
+    requires CAssetCompatible<AssetType>
+    inline void FAssetManager::AddAsset(const std::string& Name, Args&&... ConstructArgs)
     {
-        if (auto* AssetPtr = dynamic_cast<AssetType*>(Asset.get()))
+        _Assets.emplace(Name, FManagedAsset(
+            static_cast<void*>(new AssetType(std::forward<Args>(ConstructArgs)...)),
+            FTypeErasedDeleter(static_cast<AssetType*>(nullptr))
+        ));
+    }
+
+    template <typename AssetType>
+    requires CAssetCompatible<AssetType>
+    inline AssetType* FAssetManager::GetAsset(const std::string& Name)
+    {
+        if (auto it = _Assets.find(Name); it != _Assets.end())
         {
-            Result.push_back(AssetPtr);
+            return static_cast<AssetType*>(it->second.get());
         }
+
+        return nullptr;
     }
 
-    return Result;
-}
+    template <typename AssetType>
+    requires CAssetCompatible<AssetType>
+    inline std::vector<AssetType*> FAssetManager::GetAssets()
+    {
+        std::vector<AssetType*> Result;
+        for (const auto& [Name, Asset] : _Assets)
+        {
+            if (auto* AssetPtr = dynamic_cast<AssetType*>(Asset.get()))
+            {
+                Result.push_back(AssetPtr);
+            }
+        }
 
-NPGS_INLINE void FAssetManager::RemoveAsset(const std::string& Name)
-{
-    _Assets.erase(Name);
-}
+        return Result;
+    }
 
-NPGS_INLINE void FAssetManager::ClearAssets()
-{
-    _Assets.clear();
-}
+    NPGS_INLINE void FAssetManager::RemoveAsset(const std::string& Name)
+    {
+        _Assets.erase(Name);
+    }
 
-_ASSET_END
-_RUNTIME_END
-_NPGS_END
+    NPGS_INLINE void FAssetManager::ClearAssets()
+    {
+        _Assets.clear();
+    }
+
+} // namespace Npgs

@@ -1,6 +1,5 @@
 #include "Artifact.h"
 
-_NPGS_BEGIN
-_INTELLI_BEGIN
-_INTELLI_END
-_NPGS_END
+namespace Npgs::Intelli
+{
+} // namespace Npgs::Intelli

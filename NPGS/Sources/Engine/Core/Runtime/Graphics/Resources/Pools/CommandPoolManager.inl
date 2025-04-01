@@ -7,39 +7,34 @@
 
 #include "Engine/Core/Base/Assert.h"
 
-_NPGS_BEGIN
-_RUNTIME_BEGIN
-_GRAPHICS_BEGIN
-
-NPGS_INLINE FCommandPoolManager::FPoolGuard FCommandPoolManager::AcquirePool()
+namespace Npgs
 {
-    FCommandPoolCreateInfo CreateInfo
+    NPGS_INLINE FCommandPoolManager::FPoolGuard FCommandPoolManager::AcquirePool()
     {
-        .Device           = _Device,
-        .Flags            = vk::CommandPoolCreateFlagBits::eResetCommandBuffer,
-        .QueueFamilyIndex = _QueueFamilyIndex
-    };
+        FCommandPoolCreateInfo CreateInfo
+        {
+            .Device           = _Device,
+            .Flags            = vk::CommandPoolCreateFlagBits::eResetCommandBuffer,
+            .QueueFamilyIndex = _QueueFamilyIndex
+        };
 
-    return AcquireResource(CreateInfo, [](const FResourceInfo&) -> bool { return true; });
-}
+        return AcquireResource(CreateInfo, [](const FResourceInfo&) -> bool { return true; });
+    }
 
-NPGS_INLINE void FCommandPoolManager::CreateResource(const FCommandPoolCreateInfo& CreateInfo)
-{
-    FResourceInfo ResourceInfo
+    NPGS_INLINE void FCommandPoolManager::CreateResource(const FCommandPoolCreateInfo& CreateInfo)
     {
-        .Resource = std::make_unique<FVulkanCommandPool>(CreateInfo.Device, CreateInfo.QueueFamilyIndex, CreateInfo.Flags),
-        .LastUsedTimestamp = GetCurrentTimeMs(),
-        .UsageCount        = 1
-    };
+        FResourceInfo ResourceInfo
+        {
+            .Resource          = std::make_unique<FVulkanCommandPool>(CreateInfo.Device, CreateInfo.QueueFamilyIndex, CreateInfo.Flags),
+            .LastUsedTimestamp = GetCurrentTimeMs(),
+            .UsageCount        = 1
+        };
 
-    _AvailableResources.push_back(std::move(ResourceInfo));
-}
+        _AvailableResources.push_back(std::move(ResourceInfo));
+    }
 
-NPGS_INLINE bool FCommandPoolManager::HandleResourceEmergency(FResourceInfo& LowUsageResource, const FCommandPoolCreateInfo& CreateInfo)
-{
-    return true;
-}
-
-_GRAPHICS_END
-_RUNTIME_END
-_NPGS_END
+    NPGS_INLINE bool FCommandPoolManager::HandleResourceEmergency(FResourceInfo& LowUsageResource, const FCommandPoolCreateInfo& CreateInfo)
+    {
+        return true;
+    }
+} // namespace Npgsg

@@ -1,95 +1,91 @@
 #include "Texture.h"
 
+#include "Engine/Core/Base/Base.h"
 #include "Engine/Core/Runtime/Graphics/Vulkan/Context.h"
 
-_NPGS_BEGIN
-_RUNTIME_BEGIN
-_ASSET_BEGIN
-
-NPGS_INLINE vk::DescriptorImageInfo FTexture::CreateDescriptorImageInfo(const Graphics::FVulkanSampler& Sampler) const
+namespace Npgs
 {
-    return { *Sampler, **_ImageView, vk::ImageLayout::eShaderReadOnlyOptimal };
-}
+    NPGS_INLINE vk::DescriptorImageInfo FTexture::CreateDescriptorImageInfo(const FVulkanSampler& Sampler) const
+    {
+        return { *Sampler, **_ImageView, vk::ImageLayout::eShaderReadOnlyOptimal };
+    }
 
-NPGS_INLINE vk::DescriptorImageInfo FTexture::CreateDescriptorImageInfo(const vk::Sampler& Sampler) const
-{
-    return { Sampler, **_ImageView, vk::ImageLayout::eShaderReadOnlyOptimal };
-}
+    NPGS_INLINE vk::DescriptorImageInfo FTexture::CreateDescriptorImageInfo(const vk::Sampler& Sampler) const
+    {
+        return { Sampler, **_ImageView, vk::ImageLayout::eShaderReadOnlyOptimal };
+    }
 
-NPGS_INLINE Graphics::FVulkanImage& FTexture::GetImage()
-{
-    return _ImageMemory->GetResource();
-}
+    NPGS_INLINE FVulkanImage& FTexture::GetImage()
+    {
+        return _ImageMemory->GetResource();
+    }
 
-NPGS_INLINE const Graphics::FVulkanImage& FTexture::GetImage() const
-{
-    return _ImageMemory->GetResource();
-}
+    NPGS_INLINE const FVulkanImage& FTexture::GetImage() const
+    {
+        return _ImageMemory->GetResource();
+    }
 
-NPGS_INLINE Graphics::FVulkanImageView& FTexture::GetImageView()
-{
-    return *_ImageView;
-}
+    NPGS_INLINE FVulkanImageView& FTexture::GetImageView()
+    {
+        return *_ImageView;
+    }
 
-NPGS_INLINE const Graphics::FVulkanImageView& FTexture::GetImageView() const
-{
-    return *_ImageView;
-}
+    NPGS_INLINE const FVulkanImageView& FTexture::GetImageView() const
+    {
+        return *_ImageView;
+    }
 
-NPGS_INLINE vk::SamplerCreateInfo FTexture::CreateDefaultSamplerCreateInfo()
-{
-    vk::SamplerCreateInfo DefaultSamplerCreateInfo(
-        {},
-        vk::Filter::eLinear,
-        vk::Filter::eLinear,
-        vk::SamplerMipmapMode::eLinear,
-        vk::SamplerAddressMode::eRepeat,
-        vk::SamplerAddressMode::eRepeat,
-        vk::SamplerAddressMode::eRepeat,
-        0.0f,
-        vk::True,
-        Graphics::FVulkanContext::GetClassInstance()->GetPhysicalDeviceProperties().limits.maxSamplerAnisotropy,
-        vk::False,
-        vk::CompareOp::eAlways,
-        0.0f,
-        vk::LodClampNone,
-        vk::BorderColor::eFloatOpaqueWhite,
-        vk::False
-    );
+    NPGS_INLINE vk::SamplerCreateInfo FTexture::CreateDefaultSamplerCreateInfo()
+    {
+        vk::SamplerCreateInfo DefaultSamplerCreateInfo(
+            {},
+            vk::Filter::eLinear,
+            vk::Filter::eLinear,
+            vk::SamplerMipmapMode::eLinear,
+            vk::SamplerAddressMode::eRepeat,
+            vk::SamplerAddressMode::eRepeat,
+            vk::SamplerAddressMode::eRepeat,
+            0.0f,
+            vk::True,
+            FVulkanContext::GetClassInstance()->GetPhysicalDeviceProperties().limits.maxSamplerAnisotropy,
+            vk::False,
+            vk::CompareOp::eAlways,
+            0.0f,
+            vk::LodClampNone,
+            vk::BorderColor::eFloatOpaqueWhite,
+            vk::False
+        );
 
-    return DefaultSamplerCreateInfo;
-}
+        return DefaultSamplerCreateInfo;
+    }
 
-NPGS_INLINE std::uint32_t FTexture2D::GetImageWidth() const
-{
-    return _ImageExtent.width;
-}
+    NPGS_INLINE std::uint32_t FTexture2D::GetImageWidth() const
+    {
+        return _ImageExtent.width;
+    }
 
-NPGS_INLINE std::uint32_t FTexture2D::GetImageHeight() const
-{
-    return _ImageExtent.height;
-}
+    NPGS_INLINE std::uint32_t FTexture2D::GetImageHeight() const
+    {
+        return _ImageExtent.height;
+    }
 
-NPGS_INLINE vk::Extent2D FTexture2D::GetImageExtent() const
-{
-    return _ImageExtent;
-}
+    NPGS_INLINE vk::Extent2D FTexture2D::GetImageExtent() const
+    {
+        return _ImageExtent;
+    }
 
-NPGS_INLINE std::uint32_t FTextureCube::GetImageWidth() const
-{
-    return _ImageExtent.width;
-}
+    NPGS_INLINE std::uint32_t FTextureCube::GetImageWidth() const
+    {
+        return _ImageExtent.width;
+    }
 
-NPGS_INLINE std::uint32_t FTextureCube::GetImageHeight() const
-{
-    return _ImageExtent.height;
-}
+    NPGS_INLINE std::uint32_t FTextureCube::GetImageHeight() const
+    {
+        return _ImageExtent.height;
+    }
 
-NPGS_INLINE vk::Extent2D FTextureCube::GetImageExtent() const
-{
-    return _ImageExtent;
-}
-
-_ASSET_END
-_RUNTIME_END
-_NPGS_END
+    NPGS_INLINE vk::Extent2D FTextureCube::GetImageExtent() const
+    {
+        return _ImageExtent;
+    }
+} // namespace Npgs

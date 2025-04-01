@@ -1,4 +1,5 @@
 #include "NpgsObject.h"
 
-_NPGS_BEGIN
-_NPGS_END
+namespace Npgs
+{
+} // namespace Npgs

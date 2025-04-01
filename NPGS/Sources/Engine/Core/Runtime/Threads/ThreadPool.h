@@ -12,53 +12,46 @@
 #include <utility>
 #include <vector>
 
-#include "Engine/Core/Base/Base.h"
-
-_NPGS_BEGIN
-_RUNTIME_BEGIN
-_THREAD_BEGIN
-
-class FThreadPool
+namespace Npgs
 {
-public:
-    template <typename Func, typename... Args>
-    auto Submit(Func&& Pred, Args&&... Params);
+    class FThreadPool
+    {
+    public:
+        template <typename Func, typename... Args>
+        auto Submit(Func&& Pred, Args&&... Params);
 
-    void Terminate();
-    void ChangeHyperThread();
-    int GetMaxThreadCount() const;
+        void Terminate();
+        void ChangeHyperThread();
+        int GetMaxThreadCount() const;
 
-    static FThreadPool* GetInstance();
+        static FThreadPool* GetInstance();
 
-private:
-    FThreadPool();
-    FThreadPool(const FThreadPool&) = delete;
-    FThreadPool(FThreadPool&&)      = delete;
-    ~FThreadPool();
+    private:
+        FThreadPool();
+        FThreadPool(const FThreadPool&) = delete;
+        FThreadPool(FThreadPool&&)      = delete;
+        ~FThreadPool();
 
-    FThreadPool& operator=(const FThreadPool&) = delete;
-    FThreadPool& operator=(FThreadPool&&)      = delete;
+        FThreadPool& operator=(const FThreadPool&) = delete;
+        FThreadPool& operator=(FThreadPool&&)      = delete;
 
-    void SetThreadAffinity(std::thread& Thread, std::size_t CoreId) const;
+        void SetThreadAffinity(std::thread& Thread, std::size_t CoreId) const;
 
-private:
-    std::vector<std::thread>          _Threads;
-    std::queue<std::function<void()>> _Tasks;
-    std::mutex                        _Mutex;
-    std::condition_variable           _Condition;
-    int                               _kMaxThreadCount;
-    int                               _kPhysicalCoreCount;
-    int                               _kHyperThreadIndex;
-    bool                              _Terminate{ false };
-};
+    private:
+        std::vector<std::thread>          _Threads;
+        std::queue<std::function<void()>> _Tasks;
+        std::mutex                        _Mutex;
+        std::condition_variable           _Condition;
+        int                               _kMaxThreadCount;
+        int                               _kPhysicalCoreCount;
+        int                               _kHyperThreadIndex;
+        bool                              _Terminate{ false };
+    };
 
-template <typename DataType, typename ResultType>
-void MakeChunks(int MaxThread, std::vector<DataType>& Data, std::vector<std::vector<DataType>>& DataLists,
-                std::vector<std::promise<std::vector<ResultType>>>& Promises,
-                std::vector<std::future<std::vector<ResultType>>>& ChunkFutures);
-
-_THREAD_END
-_RUNTIME_END
-_NPGS_END
+    template <typename DataType, typename ResultType>
+    void MakeChunks(int MaxThread, std::vector<DataType>& Data, std::vector<std::vector<DataType>>& DataLists,
+                    std::vector<std::promise<std::vector<ResultType>>>& Promises,
+                    std::vector<std::future<std::vector<ResultType>>>& ChunkFutures);
+} // namespace Npgs
 
 #include "ThreadPool.inl"

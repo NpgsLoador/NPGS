@@ -14,193 +14,183 @@
 #include "Engine/Core/Runtime/Graphics/Resources/Resources.h"
 #include "Engine/Core/Runtime/Graphics/Vulkan/Wrappers.h"
 
-_NPGS_BEGIN
-_RUNTIME_BEGIN
-_ASSET_BEGIN
-
-class FImageLoader
+namespace Npgs
 {
-public:
-    struct FImageData
+    class FImageLoader
     {
-        std::vector<std::byte>   Data;
-        std::vector<std::size_t> LevelOffsets;
-        vk::DeviceSize           Size{};
-        vk::Extent3D             Extent{};
-        std::uint32_t            MipLevels{};
-        Graphics::FFormatInfo    FormatInfo{ Graphics::kFormatInfos[0] };
+    public:
+        struct FImageData
+        {
+            std::vector<std::byte>   Data;
+            std::vector<std::size_t> LevelOffsets;
+            vk::DeviceSize           Size{};
+            vk::Extent3D             Extent{};
+            std::uint32_t            MipLevels{};
+            FFormatInfo              FormatInfo{ kFormatInfos[0] };
+        };
+
+    public:
+        FImageLoader() = default;
+        ~FImageLoader() = default;
+
+        FImageData LoadImage(std::string_view Filename, vk::Format ImageFormat);
+
+    private:
+        FImageData LoadCommonFormat(std::string_view Filename, FFormatInfo FormatInfo);
+        FImageData LoadDdsFormat(std::string_view Filename,    FFormatInfo FormatInfo);
+        FImageData LoadExrFormat(std::string_view Filename,    FFormatInfo FormatInfo);
+        FImageData LoadHdrFormat(std::string_view Filename,    FFormatInfo FormatInfo);
+        FImageData LoadKtxFormat(std::string_view Filename,    FFormatInfo FormatInfo);
+    private:
+        FImageData _ImageData;
     };
 
-public:
-    FImageLoader() = default;
-    ~FImageLoader() = default;
+    class FTexture
+    {
+    protected:
+        using FImageData = FImageLoader::FImageData;
 
-    FImageData LoadImage(std::string_view Filename, vk::Format ImageFormat);
+    public:
+        vk::DescriptorImageInfo CreateDescriptorImageInfo(const FVulkanSampler& Sampler) const;
+        vk::DescriptorImageInfo CreateDescriptorImageInfo(const vk::Sampler& Sampler) const;
 
-private:
-    FImageData LoadCommonFormat(std::string_view Filename, Graphics::FFormatInfo FormatInfo);
-    FImageData LoadDdsFormat(std::string_view Filename, Graphics::FFormatInfo FormatInfo);
-    FImageData LoadExrFormat(std::string_view Filename, Graphics::FFormatInfo FormatInfo);
-    FImageData LoadHdrFormat(std::string_view Filename, Graphics::FFormatInfo FormatInfo);
-    FImageData LoadKtxFormat(std::string_view Filename, Graphics::FFormatInfo FormatInfo);
-private:
-    FImageData _ImageData;
-};
+        FVulkanImage& GetImage();
+        const FVulkanImage& GetImage() const;
+        FVulkanImageView& GetImageView();
+        const FVulkanImageView& GetImageView() const;
 
-class FTexture
-{
-protected:
-    using FImageData = FImageLoader::FImageData;
+        static vk::SamplerCreateInfo CreateDefaultSamplerCreateInfo();
 
-public:
-    vk::DescriptorImageInfo CreateDescriptorImageInfo(const Graphics::FVulkanSampler& Sampler) const;
-    vk::DescriptorImageInfo CreateDescriptorImageInfo(const vk::Sampler& Sampler) const;
+    protected:
+        FTexture(VmaAllocator Allocator, const VmaAllocationCreateInfo* AllocationCreateInfo);
+        FTexture(const FTexture&)     = delete;
+        FTexture(FTexture&&) noexcept = default;
+        virtual ~FTexture()           = default;
 
-    Graphics::FVulkanImage& GetImage();
-    const Graphics::FVulkanImage& GetImage() const;
-    Graphics::FVulkanImageView& GetImageView();
-    const Graphics::FVulkanImageView& GetImageView() const;
+        FTexture& operator=(const FTexture&)     = delete;
+        FTexture& operator=(FTexture&&) noexcept = default;
 
-    static vk::SamplerCreateInfo CreateDefaultSamplerCreateInfo();
+        void CreateTexture(const FImageData& ImageData, vk::ImageCreateFlags Flags, vk::ImageType ImageType,
+                           vk::ImageViewType ImageViewType, vk::Format InitialFormat, vk::Format FinalFormat,
+                           std::uint32_t ArrayLayers, bool bGenerateMipmaps);
 
-protected:
-    FTexture(VmaAllocator Allocator, const VmaAllocationCreateInfo* AllocationCreateInfo);
-    FTexture(const FTexture&)     = delete;
-    FTexture(FTexture&&) noexcept = default;
-    virtual ~FTexture()           = default;
+    private:
+        void CreateTextureInternal(const FImageData& ImageData, vk::ImageCreateFlags Flags, vk::ImageType ImageType,
+                                   vk::ImageViewType ImageViewType, vk::Format InitialFormat, vk::Format FinalFormat,
+                                   std::uint32_t ArrayLayers, bool bGenerateMipmaps);
 
-    FTexture& operator=(const FTexture&)     = delete;
-    FTexture& operator=(FTexture&&) noexcept = default;
+        void CreateImageMemory(vk::ImageCreateFlags Flags, vk::ImageType ImageType, vk::Format Format,
+                               vk::Extent3D Extent, std::uint32_t MipLevels, std::uint32_t ArrayLayers);
 
-    void CreateTexture(const FImageData& ImageData, vk::ImageCreateFlags Flags, vk::ImageType ImageType,
-                       vk::ImageViewType ImageViewType, vk::Format InitialFormat, vk::Format FinalFormat,
-                       std::uint32_t ArrayLayers, bool bGenerateMipmaps);
+        void CreateImageView(vk::ImageViewCreateFlags Flags, vk::ImageViewType ImageViewType, vk::Format Format,
+                             std::uint32_t MipLevels, std::uint32_t ArrayLayers);
 
-private:
-    void CreateTextureInternal(const FImageData& ImageData, vk::ImageCreateFlags Flags, vk::ImageType ImageType,
-                               vk::ImageViewType ImageViewType, vk::Format InitialFormat, vk::Format FinalFormat,
-                               std::uint32_t ArrayLayers, bool bGenerateMipmaps);
+        void CopyBlitGenerateTexture(vk::Buffer SrcBuffer, vk::Extent3D Extent, std::uint32_t MipLevels, std::uint32_t ArrayLayers,
+                                     vk::Filter Filter, vk::Image DstImageSrcBlit, vk::Image DstImageDstBlit);
 
-    void CreateImageMemory(vk::ImageCreateFlags Flags, vk::ImageType ImageType, vk::Format Format,
-                           vk::Extent3D Extent, std::uint32_t MipLevels, std::uint32_t ArrayLayers);
+        void CopyBlitApplyTexture(vk::Buffer SrcBuffer, vk::Extent3D Extent, std::uint32_t MipLevels,
+                                  const std::vector<std::size_t>& LevelOffsets,
+                                  std::uint32_t ArrayLayers, vk::Filter Filter, vk::Image DstImage);
 
-    void CreateImageView(vk::ImageViewCreateFlags Flags, vk::ImageViewType ImageViewType, vk::Format Format,
-                         std::uint32_t MipLevels, std::uint32_t ArrayLayers);
+        void BlitGenerateTexture(vk::Extent3D Extent, std::uint32_t MipLevels, std::uint32_t ArrayLayers,
+                                 vk::Filter Filter, vk::Image SrcImage, vk::Image DstImage);
 
-    void CopyBlitGenerateTexture(vk::Buffer SrcBuffer, vk::Extent3D Extent, std::uint32_t MipLevels, std::uint32_t ArrayLayers,
-                                 vk::Filter Filter, vk::Image DstImageSrcBlit, vk::Image DstImageDstBlit);
+        void BlitApplyTexture(vk::Extent3D Extent, std::uint32_t MipLevels, std::uint32_t ArrayLayers,
+                              vk::Filter Filter, vk::Image SrcImage, vk::Image DstImage);
 
-    void CopyBlitApplyTexture(vk::Buffer SrcBuffer, vk::Extent3D Extent, std::uint32_t MipLevels,
-                              const std::vector<std::size_t>& LevelOffsets,
-                              std::uint32_t ArrayLayers, vk::Filter Filter, vk::Image DstImage);
+        void CopyBufferToImage(const FVulkanCommandBuffer& CommandBuffer, vk::Buffer SrcBuffer, vk::Image DstImage,
+                               const FImageMemoryMaskPack& PostTransferState, const vk::ArrayProxy<vk::BufferImageCopy>& Regions);
 
-    void BlitGenerateTexture(vk::Extent3D Extent, std::uint32_t MipLevels, std::uint32_t ArrayLayers,
-                             vk::Filter Filter, vk::Image SrcImage, vk::Image DstImage);
+        void BlitImage(const FVulkanCommandBuffer& CommandBuffer,
+                       vk::Image SrcImage, const FImageMemoryMaskPack& SrcPostTransferState,
+                       vk::Image DstImage, const FImageMemoryMaskPack& DstPostTransferState,
+                       const vk::ArrayProxy<vk::ImageBlit>& Regions, vk::Filter Filter);
 
-    void BlitApplyTexture(vk::Extent3D Extent, std::uint32_t MipLevels, std::uint32_t ArrayLayers,
-                          vk::Filter Filter, vk::Image SrcImage, vk::Image DstImage);
+        void GenerateMipmaps(const FVulkanCommandBuffer& CommandBuffer, vk::Image Image, const FImageMemoryMaskPack& FinalState,
+                             vk::Extent3D Extent, std::uint32_t MipLevels, std::uint32_t ArrayLayers, vk::Filter Filter);
 
-    void CopyBufferToImage(const Graphics::FVulkanCommandBuffer& CommandBuffer,
-                           vk::Buffer SrcBuffer, vk::Image DstImage,
-                           const Graphics::FImageMemoryMaskPack& PostTransferState,
-                           const vk::ArrayProxy<vk::BufferImageCopy>& Regions);
+    protected:
+        std::unique_ptr<FImageLoader>       _ImageLoader;
+        std::unique_ptr<FVulkanImageMemory> _ImageMemory;
+        std::unique_ptr<FVulkanImageView>   _ImageView;
+        VmaAllocator                        _Allocator;
+        const VmaAllocationCreateInfo*      _AllocationCreateInfo;
+    };
 
-    void BlitImage(const Graphics::FVulkanCommandBuffer& CommandBuffer,
-                   vk::Image SrcImage, const Graphics::FImageMemoryMaskPack& SrcPostTransferState,
-                   vk::Image DstImage, const Graphics::FImageMemoryMaskPack& DstPostTransferState,
-                   const vk::ArrayProxy<vk::ImageBlit>& Regions, vk::Filter Filter);
+    class FTexture2D : public FTexture
+    {
+    public:
+        using Base = FTexture;
+        using Base::Base;
 
+        FTexture2D(std::string_view Filename, vk::Format InitialFormat, vk::Format FinalFormat,
+                   vk::ImageCreateFlags Flags = {}, bool bGenerateMipmaps = true);
 
-    void GenerateMipmaps(const Graphics::FVulkanCommandBuffer& CommandBuffer,
-                         vk::Image Image, const Graphics::FImageMemoryMaskPack& FinalState,
-                         vk::Extent3D Extent, std::uint32_t MipLevels, std::uint32_t ArrayLayers, vk::Filter Filter);
+        FTexture2D(const VmaAllocationCreateInfo& AllocationCreateInfo, std::string_view Filename, vk::Format InitialFormat,
+                   vk::Format FinalFormat, vk::ImageCreateFlags Flags = {}, bool bGenerateMipmaps = true);
 
-protected:
-    std::unique_ptr<FImageLoader>                 _ImageLoader;
-    std::unique_ptr<Graphics::FVulkanImageMemory> _ImageMemory;
-    std::unique_ptr<Graphics::FVulkanImageView>   _ImageView;
-    VmaAllocator                                  _Allocator;
-    const VmaAllocationCreateInfo*                _AllocationCreateInfo;
-};
+        FTexture2D(VmaAllocator Allocator, const VmaAllocationCreateInfo& AllocationCreateInfo, std::string_view Filename,
+                   vk::Format InitialFormat, vk::Format FinalFormat, vk::ImageCreateFlags Flags = {}, bool bGenerateMipmaps = true);
 
-class FTexture2D : public FTexture
-{
-public:
-    using Base = FTexture;
-    using Base::Base;
+        FTexture2D(const FTexture2D&) = delete;
+        FTexture2D(FTexture2D&& Other) noexcept;
 
-    FTexture2D(std::string_view Filename, vk::Format InitialFormat, vk::Format FinalFormat,
-               vk::ImageCreateFlags Flags = {}, bool bGenerateMipmaps = true);
+        FTexture2D& operator=(const FTexture2D&) = delete;
+        FTexture2D& operator=(FTexture2D&& Other) noexcept;
 
-    FTexture2D(const VmaAllocationCreateInfo& AllocationCreateInfo, std::string_view Filename, vk::Format InitialFormat,
-               vk::Format FinalFormat, vk::ImageCreateFlags Flags = {}, bool bGenerateMipmaps = true);
+        std::uint32_t GetImageWidth()  const;
+        std::uint32_t GetImageHeight() const;
+        vk::Extent2D  GetImageExtent() const;
 
-    FTexture2D(VmaAllocator Allocator, const VmaAllocationCreateInfo& AllocationCreateInfo, std::string_view Filename,
-               vk::Format InitialFormat, vk::Format FinalFormat, vk::ImageCreateFlags Flags = {}, bool bGenerateMipmaps = true);
+    private:
+        void CreateTexture(std::string_view Filename, vk::Format  InitialFormat,
+                           vk::Format FinalFormat, vk::ImageCreateFlags Flags, bool bGenreteMipmaps);
 
-    FTexture2D(const FTexture2D&) = delete;
-    FTexture2D(FTexture2D&& Other) noexcept;
+        void CreateTexture(const FImageData& ImageData, vk::Format InitialFormat,
+                           vk::Format FinalFormat, vk::ImageCreateFlags Flags, bool bGenerateMipmaps);
 
-    FTexture2D& operator=(const FTexture2D&) = delete;
-    FTexture2D& operator=(FTexture2D&& Other) noexcept;
+    private:
+        vk::Extent2D _ImageExtent;
+    };
 
-    std::uint32_t GetImageWidth()  const;
-    std::uint32_t GetImageHeight() const;
-    vk::Extent2D  GetImageExtent() const;
+    class FTextureCube : public FTexture
+    {
+    public:
+        using Base = FTexture;
+        using Base::Base;
 
-private:
-    void CreateTexture(std::string_view Filename, vk::Format  InitialFormat,
-                       vk::Format FinalFormat, vk::ImageCreateFlags Flags, bool bGenreteMipmaps);
+        FTextureCube(std::string_view Filename, vk::Format InitialFormat, vk::Format FinalFormat,
+                     vk::ImageCreateFlags Flags = {}, bool bGenerateMipmaps = true);
 
-    void CreateTexture(const FImageData& ImageData, vk::Format InitialFormat,
-                       vk::Format FinalFormat, vk::ImageCreateFlags Flags, bool bGenerateMipmaps);
+        FTextureCube(const VmaAllocationCreateInfo& AllocationCreateInfo, std::string_view Filename, vk::Format InitialFormat,
+                     vk::Format FinalFormat, vk::ImageCreateFlags Flags = {}, bool bGenerateMipmaps = true);
 
-private:
-    vk::Extent2D _ImageExtent;
-};
+        FTextureCube(VmaAllocator Allocator, const VmaAllocationCreateInfo& AllocationCreateInfo, std::string_view Filename,
+                     vk::Format InitialFormat, vk::Format FinalFormat, vk::ImageCreateFlags Flags = {}, bool bGenerateMipmaps = true);
 
-class FTextureCube : public FTexture
-{
-public:
-    using Base = FTexture;
-    using Base::Base;
+        FTextureCube(const FTextureCube&) = delete;
+        FTextureCube(FTextureCube&& Other) noexcept;
 
-    FTextureCube(std::string_view Filename, vk::Format InitialFormat, vk::Format FinalFormat,
-                 vk::ImageCreateFlags Flags = {}, bool bGenerateMipmaps = true);
+        FTextureCube& operator=(const FTextureCube&) = delete;
+        FTextureCube& operator=(FTextureCube&& Other) noexcept;
 
-    FTextureCube(const VmaAllocationCreateInfo& AllocationCreateInfo, std::string_view Filename, vk::Format InitialFormat,
-                 vk::Format FinalFormat, vk::ImageCreateFlags Flags = {}, bool bGenerateMipmaps = true);
+        std::uint32_t GetImageWidth()  const;
+        std::uint32_t GetImageHeight() const;
+        vk::Extent2D  GetImageExtent() const;
 
-    FTextureCube(VmaAllocator Allocator, const VmaAllocationCreateInfo& AllocationCreateInfo, std::string_view Filename,
-                 vk::Format InitialFormat, vk::Format FinalFormat, vk::ImageCreateFlags Flags = {}, bool bGenerateMipmaps = true);
+    private:
+        void CreateCubemap(std::string_view Filename, vk::Format InitialFormat, vk::Format FinalFormat,
+                           vk::ImageCreateFlags Flags, bool bGenerateMipmaps);
 
-    FTextureCube(const FTextureCube&) = delete;
-    FTextureCube(FTextureCube&& Other) noexcept;
+        void CreateCubemap(const std::array<std::string, 6>& Filenames, vk::Format InitialFormat, vk::Format FinalFormat,
+                           vk::ImageCreateFlags Flags, bool bGenerateMipmaps);
 
-    FTextureCube& operator=(const FTextureCube&) = delete;
-    FTextureCube& operator=(FTextureCube&& Other) noexcept;
+        void CreateCubemap(const FImageData& ImageData, vk::Format InitialFormat, vk::Format FinalFormat,
+                           vk::ImageCreateFlags Flags, bool bGenerateMipmaps);
 
-    std::uint32_t GetImageWidth()  const;
-    std::uint32_t GetImageHeight() const;
-    vk::Extent2D  GetImageExtent() const;
-
-private:
-    void CreateCubemap(std::string_view Filename, vk::Format InitialFormat, vk::Format FinalFormat,
-                       vk::ImageCreateFlags Flags, bool bGenerateMipmaps);
-
-    void CreateCubemap(const std::array<std::string, 6>& Filenames, vk::Format InitialFormat, vk::Format FinalFormat,
-                       vk::ImageCreateFlags Flags, bool bGenerateMipmaps);
-
-    void CreateCubemap(const FImageData& ImageData, vk::Format InitialFormat, vk::Format FinalFormat,
-                       vk::ImageCreateFlags Flags, bool bGenerateMipmaps);
-
-private:
-    vk::Extent2D _ImageExtent;
-};
-
-
-_ASSET_END
-_RUNTIME_END
-_NPGS_END
+    private:
+        vk::Extent2D _ImageExtent;
+    };
+} // namespace Npgs
 
 #include "Texture.inl"

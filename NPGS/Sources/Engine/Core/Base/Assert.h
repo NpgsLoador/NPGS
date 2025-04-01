@@ -18,11 +18,8 @@ if (!(Expr))                                                                    
     DebugBreak();                                                                                             \
 }
 
-#define NpgsStaticAssert(Expr, ...) static_assert(Expr, __VA_ARGS__)
-
 #else
 
-#define NpgsAssert(Expr, ...)       static_cast<void>(0)
-#define NpgsStaticAssert(Expr, ...) static_cast<void>(0)
+#define NpgsAssert(Expr, ...) static_cast<void>(0)
 
 #endif // NPGS_ENABLE_ASSERT

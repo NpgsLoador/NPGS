@@ -2,28 +2,24 @@
 
 #include <memory>
 #include <spdlog/spdlog.h>
-#include "Engine/Core/Base/Base.h"
 
-_NPGS_BEGIN
-_UTIL_BEGIN
-
-class FLogger
+namespace Npgs::Util
 {
-public:
-    static void Initialize();
-    static std::shared_ptr<spdlog::logger>& GetCoreLogger();
-    static std::shared_ptr<spdlog::logger>& GetClientLogger();
+    class FLogger
+    {
+    public:
+        static void Initialize();
+        static std::shared_ptr<spdlog::logger>& GetCoreLogger();
+        static std::shared_ptr<spdlog::logger>& GetClientLogger();
 
-private:
-    FLogger()  = default;
-    ~FLogger() = default;
+    private:
+        FLogger()  = default;
+        ~FLogger() = default;
 
-    static std::shared_ptr<spdlog::logger> _kCoreLogger;
-    static std::shared_ptr<spdlog::logger> _kClientLogger;
-};
-
-_UTIL_END
-_NPGS_END
+        static std::shared_ptr<spdlog::logger> _kCoreLogger;
+        static std::shared_ptr<spdlog::logger> _kClientLogger;
+    };
+} // namespace Npgs::Util
 
 #include "Logger.inl"
 

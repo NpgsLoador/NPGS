@@ -9,86 +9,80 @@
 #include <utility>
 #include <vector>
 
-#include "Engine/Core/Base/Base.h"
-
-_NPGS_BEGIN
-_RUNTIME_BEGIN
-_ASSET_BEGIN
-
-enum class EAssetType : std::uint8_t
+namespace Npgs
 {
-    kBinaryShader, // 二进制着色器程序（不是 SPIR-V）
-    kDataTable,    // 数据表
-    kFont,         // 字体
-    kModel,        // 模型
-    kShader,       // 着色器
-    kTexture       // 纹理
-};
-
-std::string GetAssetFullPath(EAssetType Type, const std::string& Filename);
-
-class FTypeErasedDeleter
-{
-public:
-    template <typename OriginalType>
-    requires std::is_class_v<OriginalType>
-    FTypeErasedDeleter(OriginalType*)
-        : _Deleter([](void* Ptr) -> void { delete static_cast<OriginalType*>(Ptr); })
+    enum class EAssetType : std::uint8_t
     {
-    }
+        kBinaryShader, // (deprecated)
+        kDataTable,    // 数据表
+        kFont,         // 字体
+        kModel,        // 模型
+        kShader,       // 着色器
+        kTexture       // 纹理
+    };
 
-    void operator()(void* Ptr) const
+    std::string GetAssetFullPath(EAssetType Type, const std::string& Filename);
+
+    class FTypeErasedDeleter
     {
-        _Deleter(Ptr);
-    }
+    public:
+        template <typename OriginalType>
+        requires std::is_class_v<OriginalType>
+        FTypeErasedDeleter(OriginalType*)
+            : _Deleter([](void* Ptr) -> void { delete static_cast<OriginalType*>(Ptr); })
+        {
+        }
 
-private:
-    void (*_Deleter)(void*);
-};
+        void operator()(void* Ptr) const
+        {
+            _Deleter(Ptr);
+        }
 
-template <typename AssetType>
-concept CAssetCompatible = std::is_class_v<AssetType> && std::movable<AssetType>;
-
-class FAssetManager
-{
-public:
-    template <typename AssetType>
-    requires CAssetCompatible<AssetType>
-    void AddAsset(const std::string& Name, AssetType&& Asset);
-
-    template <typename AssetType, typename... Args>
-    requires CAssetCompatible<AssetType>
-    void AddAsset(const std::string& Name, Args&&... ConstructArgs);
+    private:
+        void (*_Deleter)(void*);
+    };
 
     template <typename AssetType>
-    requires CAssetCompatible<AssetType>
-    AssetType* GetAsset(const std::string& Name);
+    concept CAssetCompatible = std::is_class_v<AssetType> && std::movable<AssetType>;
 
-    template <typename AssetType>
-    requires CAssetCompatible<AssetType>
-    std::vector<AssetType*> GetAssets();
+    class FAssetManager
+    {
+    public:
+        template <typename AssetType>
+        requires CAssetCompatible<AssetType>
+        void AddAsset(const std::string& Name, AssetType&& Asset);
 
-    void RemoveAsset(const std::string& Name);
-    void ClearAssets();
+        template <typename AssetType, typename... Args>
+        requires CAssetCompatible<AssetType>
+        void AddAsset(const std::string& Name, Args&&... ConstructArgs);
 
-    static FAssetManager* GetInstance();
+        template <typename AssetType>
+        requires CAssetCompatible<AssetType>
+        AssetType* GetAsset(const std::string& Name);
 
-private:
-    FAssetManager()                     = default;
-    FAssetManager(const FAssetManager&) = delete;
-    FAssetManager(FAssetManager&&)      = delete;
-    ~FAssetManager();
+        template <typename AssetType>
+        requires CAssetCompatible<AssetType>
+        std::vector<AssetType*> GetAssets();
 
-    FAssetManager& operator=(const FAssetManager&) = delete;
-    FAssetManager& operator=(FAssetManager&&)      = delete;
+        void RemoveAsset(const std::string& Name);
+        void ClearAssets();
 
-private:
-    using FManagedAsset = std::unique_ptr<void, FTypeErasedDeleter>;
-    std::unordered_map<std::string, FManagedAsset> _Assets;
-};
+        static FAssetManager* GetInstance();
 
-_ASSET_END
-_RUNTIME_END
-_NPGS_END
+    private:
+        FAssetManager()                     = default;
+        FAssetManager(const FAssetManager&) = delete;
+        FAssetManager(FAssetManager&&)      = delete;
+        ~FAssetManager();
+
+        FAssetManager& operator=(const FAssetManager&) = delete;
+        FAssetManager& operator=(FAssetManager&&)      = delete;
+
+    private:
+        using FManagedAsset = std::unique_ptr<void, FTypeErasedDeleter>;
+        std::unordered_map<std::string, FManagedAsset> _Assets;
+    };
+
+} // namespace Npgs
 
 #include "AssetManager.inl"

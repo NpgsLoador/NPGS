@@ -1,12 +1,9 @@
 #include "CelestialObject.h"
 
-_NPGS_BEGIN
-_ASTRO_BEGIN
-
-FCelestialBody::FCelestialBody(const FBasicProperties& Properties)
-    : _Properties(Properties)
+namespace Npgs::Astro
 {
-}
-
-_ASTRO_END
-_NPGS_END
+    FCelestialBody::FCelestialBody(const FBasicProperties& Properties)
+        : _Properties(Properties)
+    {
+    }
+} // namespace Npgs::Astro
