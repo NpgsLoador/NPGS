@@ -50,7 +50,7 @@ namespace Npgs
         Util::TUniformIntDistribution<std::uint32_t>    _SeedGenerator;
         Util::TUniformRealDistribution<>                _CommonGenerator;
         std::unique_ptr<TOctree<Astro::FStellarSystem>> _Octree;
-        FThreadPool*                                    _ThreadPool;
+        FThreadPool                                     _ThreadPool;
 
         std::size_t _StarCount;
         std::size_t _ExtraGiantCount;

@@ -33,7 +33,7 @@ namespace Npgs
     FApplication::FApplication(const vk::Extent2D& WindowSize, const std::string& WindowTitle,
                                bool bEnableVSync, bool bEnableFullscreen, bool bEnableHdr)
         : _VulkanContext(FVulkanContext::GetClassInstance())
-        , _ThreadPool(FThreadPool::GetInstance())
+        , _ThreadPool()
         , _WindowTitle(WindowTitle)
         , _WindowSize(WindowSize)
         , _bEnableVSync(bEnableVSync)

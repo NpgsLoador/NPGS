@@ -2,6 +2,7 @@
 
 #include <cstdint>
 #include <cstdlib>
+#include <algorithm>
 #include <Windows.h>
 
 #include "Engine/Core/Base/Base.h"
@@ -37,10 +38,12 @@ namespace Npgs
 
     // ThreadPool implementations
     // --------------------------
-    FThreadPool::FThreadPool()
-        : _kMaxThreadCount(GetPhysicalCoreCount()), _kPhysicalCoreCount(GetPhysicalCoreCount())
+    FThreadPool::FThreadPool(int MaxThreadCount, bool bEnableHyperThread)
+        : _MaxThreadCount(std::clamp(MaxThreadCount, 0, static_cast<int>(std::thread::hardware_concurrency())))
+        , _PhysicalCoreCount(GetPhysicalCoreCount())
+        , _bEnableHyperThread(bEnableHyperThread)
     {
-        for (std::size_t i = 0; i != _kPhysicalCoreCount; ++i)
+        for (std::size_t i = 0; i != _MaxThreadCount; ++i)
         {
             _Threads.emplace_back([this]() -> void
             {
@@ -49,8 +52,8 @@ namespace Npgs
                     std::function<void()> Task;
                     {
                         std::unique_lock<std::mutex> Lock(_Mutex);
-                        _Condition.wait(Lock, [this]() -> bool { return !_Tasks.empty() || _Terminate; });
-                        if (_Terminate && _Tasks.empty())
+                        _Condition.wait(Lock, [this]() -> bool { return !_Tasks.empty() || _bTerminate; });
+                        if (_bTerminate && _Tasks.empty())
                         {
                             return;
                         }
@@ -63,7 +66,10 @@ namespace Npgs
                 }
             });
 
-            SetThreadAffinity(_Threads.back(), i);
+            if (!_bEnableHyperThread)
+            {
+                SetThreadAffinity(_Threads.back(), i);
+            }
         }
     }
 
@@ -76,7 +82,7 @@ namespace Npgs
     {
         {
             std::unique_lock<std::mutex> Mutex(_Mutex);
-            _Terminate = true;
+            _bTerminate = true;
         }
         _Condition.notify_all();
         for (auto& Thread : _Threads)
@@ -88,17 +94,12 @@ namespace Npgs
         }
     }
 
-    FThreadPool* FThreadPool::GetInstance()
-    {
-        static FThreadPool kInstance;
-        return &kInstance;
-    }
-
     void FThreadPool::SetThreadAffinity(std::thread& Thread, std::size_t CoreId) const
     {
+        CoreId = CoreId % _PhysicalCoreCount;
         HANDLE Handle = Thread.native_handle();
         DWORD_PTR Mask = 0;
-        Mask = static_cast<DWORD_PTR>(Bit(CoreId * 2) + _kHyperThreadIndex);
+        Mask = static_cast<DWORD_PTR>(Bit(CoreId * 2) + _HyperThreadIndex);
         SetThreadAffinityMask(Handle, Mask);
     }
 } // namespace Npgs

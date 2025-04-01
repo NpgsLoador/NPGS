@@ -17,24 +17,22 @@ namespace Npgs
     class FThreadPool
     {
     public:
+        FThreadPool(int MaxThreadCount = 0, bool bEnableHyperThread = false);
+        FThreadPool(const FThreadPool&) = default;
+        FThreadPool(FThreadPool&&)      = default;
+        ~FThreadPool();
+
+        FThreadPool& operator=(const FThreadPool&) = default;
+        FThreadPool& operator=(FThreadPool&&)      = default;
+
         template <typename Func, typename... Args>
         auto Submit(Func&& Pred, Args&&... Params);
 
         void Terminate();
-        void ChangeHyperThread();
+        void SwitchHyperThread();
         int GetMaxThreadCount() const;
 
-        static FThreadPool* GetInstance();
-
     private:
-        FThreadPool();
-        FThreadPool(const FThreadPool&) = delete;
-        FThreadPool(FThreadPool&&)      = delete;
-        ~FThreadPool();
-
-        FThreadPool& operator=(const FThreadPool&) = delete;
-        FThreadPool& operator=(FThreadPool&&)      = delete;
-
         void SetThreadAffinity(std::thread& Thread, std::size_t CoreId) const;
 
     private:
@@ -42,10 +40,11 @@ namespace Npgs
         std::queue<std::function<void()>> _Tasks;
         std::mutex                        _Mutex;
         std::condition_variable           _Condition;
-        int                               _kMaxThreadCount;
-        int                               _kPhysicalCoreCount;
-        int                               _kHyperThreadIndex;
-        bool                              _Terminate{ false };
+        int                               _MaxThreadCount;
+        int                               _PhysicalCoreCount;
+        int                               _HyperThreadIndex{ 0 };
+        bool                              _bEnableHyperThread;
+        bool                              _bTerminate{ false };
     };
 
     template <typename DataType, typename ResultType>

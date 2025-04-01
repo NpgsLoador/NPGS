@@ -25,7 +25,7 @@ namespace Npgs
         : _RandomEngine(Seed)
         , _SeedGenerator(0ull, std::numeric_limits<std::uint32_t>::max())
         , _CommonGenerator(0.0f, 1.0f)
-        , _ThreadPool(FThreadPool::GetInstance())
+        , _ThreadPool(8, false)
 
         , _StarCount(StarCount)
         , _ExtraGiantCount(ExtraGiantCount)
@@ -48,12 +48,12 @@ namespace Npgs
 
     void FUniverse::FillUniverse()
     {
-        int MaxThread = _ThreadPool->GetMaxThreadCount();
+        int MaxThread = _ThreadPool.GetMaxThreadCount();
 
         GenerateStars(MaxThread);
         FillStellarSystem(MaxThread);
 
-        _ThreadPool->Terminate();
+        _ThreadPool.Terminate();
     }
 
     void FUniverse::ReplaceStar(std::size_t DistanceRank, const Astro::AStar& StarData)
@@ -689,7 +689,7 @@ namespace Npgs
         CreateGenerators(FStellarGenerator::EStellarTypeGenerationOption::kRandom, 0.075f);
         GenerateBasicProperties(CommonStarsCount);
 
-        NpgsCoreInfo("Interpolating stellar data as {} physical cores...", MaxThread);
+        NpgsCoreInfo("Interpolating stellar data as {} threads...", MaxThread);
 
         std::vector<Astro::AStar> Stars = InterpolateStars(MaxThread, Generators, BasicProperties);
 
@@ -818,7 +818,7 @@ namespace Npgs
 
         for (int i = 0; i != MaxThread; ++i)
         {
-            _ThreadPool->Submit([&, i]() -> void
+            _ThreadPool.Submit([&, i]() -> void
             {
                 std::vector<Astro::AStar> Stars;
                 for (auto& Properties : PropertyLists[i])

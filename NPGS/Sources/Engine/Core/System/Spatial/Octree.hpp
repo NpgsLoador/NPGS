@@ -180,7 +180,7 @@ namespace Npgs
     public:
         TOctree(glm::vec3 Center, float Radius, int MaxDepth = 8)
             : _Root(std::make_unique<FNodeType>(Center, Radius, nullptr))
-            , _ThreadPool(FThreadPool::GetInstance())
+            , _ThreadPool(8, false)
             , _MaxDepth(MaxDepth)
         {
         }
@@ -254,7 +254,7 @@ namespace Npgs
                 Node->GetNext(i) = std::make_unique<FNodeType>(Node->GetCenter() + Offset, NextRadius, Node);
                 if (Depth == static_cast<int>(std::ceil(std::log2(_Root->GetRadius() / LeafRadius))))
                 {
-                    Futures.push_back(_ThreadPool->Submit(&TOctree::BuildEmptyTreeImpl, this, Node->GetNext(i).get(), LeafRadius, Depth - 1));
+                    Futures.push_back(_ThreadPool.Submit(&TOctree::BuildEmptyTreeImpl, this, Node->GetNext(i).get(), LeafRadius, Depth - 1));
                 }
                 else
                 {
@@ -442,7 +442,7 @@ namespace Npgs
 
     private:
         std::unique_ptr<FNodeType> _Root;
-        FThreadPool*               _ThreadPool;
+        FThreadPool                _ThreadPool;
         int                        _MaxDepth;
     };
 } // namespace Npgs

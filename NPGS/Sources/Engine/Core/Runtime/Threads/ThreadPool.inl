@@ -17,14 +17,14 @@ namespace Npgs
         return Future;
     }
 
-    NPGS_INLINE void FThreadPool::ChangeHyperThread()
+    NPGS_INLINE void FThreadPool::SwitchHyperThread()
     {
-        _kHyperThreadIndex = 1 - _kHyperThreadIndex;
+        _HyperThreadIndex = 1 - _HyperThreadIndex;
     }
 
     NPGS_INLINE int FThreadPool::GetMaxThreadCount() const
     {
-        return _kMaxThreadCount;
+        return _MaxThreadCount;
     }
 
     template <typename DataType, typename ResultType>
