@@ -93,8 +93,8 @@ namespace Npgs
         struct FResourceInfo
         {
             std::unique_ptr<ResourceType> Resource;
-            std::size_t LastUsedTimestamp;
-            std::size_t UsageCount;
+            std::size_t LastUsedTimestamp{};
+            std::size_t UsageCount{};
         };
 
     public:
@@ -194,33 +194,7 @@ namespace Npgs
             throw std::runtime_error("Failed to acquire resource. Reset the max resource limit or reduce resource requirements.");
         }
 
-        void OptimizeResourceCount()
-        {
-            std::size_t CurrentTimeMs = GetCurrentTimeMs();
-            std::lock_guard Lock(_Mutex);
-
-            std::uint32_t TargetCount = std::max(_MinResourceLimit, _PeakResourceDemand.load());
-            if (_AvailableResources.size() > TargetCount)
-            {
-                std::erase_if(_AvailableResources, [&](const FResourceInfo& ResourceInfo) -> bool
-                {
-                    return CurrentTimeMs - ResourceInfo.LastUsedTimestamp > _ResourceReclaimThresholdMs;
-                });
-            }
-
-            if (_AvailableResources.size() > TargetCount)
-            {
-                std::sort(_AvailableResources.begin(), _AvailableResources.end(),
-                [](const FResourceInfo& Lhs, const FResourceInfo& Rhs) -> bool
-                {
-                    return Lhs.UsageCount > Rhs.UsageCount;
-                });
-
-                _AvailableResources.resize(TargetCount);
-            }
-        }
-
-        void FreeSpace()
+        void Reset()
         {
             std::lock_guard Lock(_Mutex);
             _AvailableResources.clear();
@@ -285,6 +259,7 @@ namespace Npgs
 
         virtual void OnReleaseResource(FResourceInfo& ResourceInfo)
         {
+            // Default implementation does nothing.
         }
 
         virtual void ReleaseResource(ResourceType* Resource, std::size_t UsageCount)
@@ -302,6 +277,32 @@ namespace Npgs
 
             _AvailableResources.push_back(std::move(ResourceInfo));
             _Condition.notify_one();
+        }
+
+        virtual void OptimizeResourceCount()
+        {
+            std::size_t CurrentTimeMs = GetCurrentTimeMs();
+            std::lock_guard Lock(_Mutex);
+
+            std::uint32_t TargetCount = std::max(_MinResourceLimit, _PeakResourceDemand.load());
+            if (_AvailableResources.size() > TargetCount)
+            {
+                std::erase_if(_AvailableResources, [&](const FResourceInfo& ResourceInfo) -> bool
+                {
+                    return CurrentTimeMs - ResourceInfo.LastUsedTimestamp > _ResourceReclaimThresholdMs;
+                });
+            }
+
+            if (_AvailableResources.size() > TargetCount)
+            {
+                std::sort(_AvailableResources.begin(), _AvailableResources.end(),
+                [](const FResourceInfo& Lhs, const FResourceInfo& Rhs) -> bool
+                {
+                    return Lhs.UsageCount > Rhs.UsageCount;
+                });
+
+                _AvailableResources.resize(TargetCount);
+            }
         }
 
         std::size_t GetCurrentTimeMs() const

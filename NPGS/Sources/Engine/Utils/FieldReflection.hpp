@@ -3888,15 +3888,6 @@ namespace Npgs::Util
     }
 #pragma endregion // Generation end
 
-    // template <typename Ty, std::size_t Size>
-    // concept CAggregateInitializable = requires
-    // {
-    //     [] <std::size_t... Indices>(std::index_sequence<Indices...>)
-    //     {
-    //         Ty{ (static_cast<void>(Indices), FAny{})... };
-    //     } (std::make_index_sequence<Size>{});
-    // };
-
     template <typename Ty, std::size_t... Indices>
     constexpr auto IsAggregateInitializableImpl(std::index_sequence<Indices...>, int)
         -> decltype(static_cast<void>(Ty{ (static_cast<void>(Indices), FAny{})... }), std::true_type{});
@@ -3921,7 +3912,6 @@ namespace Npgs::Util
         {
             using FIndices = std::make_index_sequence<Size>;
             if constexpr (IsAggregateInitializable<Ty>(FIndices{}))
-                // if constexpr (CAggregateInitializable<Ty, Size>)
             {
                 return Size;
             }

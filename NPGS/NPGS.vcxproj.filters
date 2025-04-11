@@ -54,9 +54,6 @@
     <ClCompile Include="Sources\Engine\Core\System\Generators\OrbitalGenerator.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="Sources\Engine\Core\System\Generators\StellarGenerator.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
     <ClCompile Include="Sources\Engine\Core\System\Spatial\Camera.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
@@ -115,6 +112,9 @@
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="Sources\Program\Application.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="Sources\Engine\Core\System\Generators\StellarGenerator.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>

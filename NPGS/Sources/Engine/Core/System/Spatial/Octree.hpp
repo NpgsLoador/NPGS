@@ -35,9 +35,33 @@ namespace Npgs
         {
             int Octant = 0;
 
-            if (Point.x >= _Center.x) Octant |= 4;
-            if (Point.y >= _Center.y) Octant |= 2;
-            if (Point.z >= _Center.z) Octant |= 1;
+            if (Point.z < _Center.z)
+            {
+                Octant |= 4;
+            }
+
+            if (Point.x >= _Center.x)
+            {
+                if (Point.y >= _Center.y)
+                {
+                    Octant |= 0; // (+x, +y)，第一象限
+                }
+                else
+                {
+                    Octant |= 3; // (+x, -y)，第四象限
+                }
+            }
+            else
+            {
+                if (Point.y >= _Center.y)
+                {
+                    Octant |= 1; // (-x, +y)，第二象限
+                }
+                else
+                {
+                    Octant |= 2; // (-x, -y)，第三象限
+                }
+            }
 
             return Octant;
         }
@@ -247,9 +271,27 @@ namespace Npgs
             float NextRadius = Node->GetRadius() * 0.5f;
             for (int i = 0; i != 8; ++i)
             {
-                glm::vec3 Offset((i & 1 ? 1 : -1) * NextRadius,
-                                 (i & 2 ? 1 : -1) * NextRadius,
-                                 (i & 4 ? 1 : -1) * NextRadius);
+                glm::vec3 Offset(0.0f);
+                switch (i & 3)
+                {
+                case 0: // (+x, +y)
+                    Offset.x =  NextRadius;
+                    Offset.y =  NextRadius;
+                    break;
+                case 1: // (-x, +y)
+                    Offset.x = -NextRadius;
+                    Offset.y =  NextRadius;
+                    break;
+                case 2: // (-x, -y)
+                    Offset.x = -NextRadius;
+                    Offset.y = -NextRadius;
+                    break;
+                case 3: // (+x, -y)
+                    Offset.x =  NextRadius;
+                    Offset.y = -NextRadius;
+                    break;
+                }
+                Offset.z = (i & 4) ? -NextRadius : NextRadius;
 
                 Node->GetNext(i) = std::make_unique<FNodeType>(Node->GetCenter() + Offset, NextRadius, Node);
                 if (Depth == static_cast<int>(std::ceil(std::log2(_Root->GetRadius() / LeafRadius))))
@@ -281,9 +323,28 @@ namespace Npgs
                 {
                     glm::vec3 NewCenter = Node->GetCenter();
                     float Radius = Node->GetRadius();
-                    NewCenter.x += (i & 4) ? Radius * 0.5f : -Radius * 0.5f;
-                    NewCenter.y += (i & 2) ? Radius * 0.5f : -Radius * 0.5f;
-                    NewCenter.z += (i & 1) ? Radius * 0.5f : -Radius * 0.5f;
+
+                    switch (i & 3)
+                    {
+                    case 0: // (+x, +y)
+                        NewCenter.x += Radius * 0.5f;
+                        NewCenter.y += Radius * 0.5f;
+                        break;
+                    case 1: // (-x, +y)
+                        NewCenter.x -= Radius * 0.5f;
+                        NewCenter.y += Radius * 0.5f;
+                        break;
+                    case 2: // (-x, -y)
+                        NewCenter.x -= Radius * 0.5f;
+                        NewCenter.y -= Radius * 0.5f;
+                        break;
+                    case 3: // (+x, -y)
+                        NewCenter.x += Radius * 0.5f;
+                        NewCenter.y -= Radius * 0.5f;
+                        break;
+                    }
+                    NewCenter.z += ((i & 4) ? -1 : 1) * Radius * 0.5f;
+
                     Node->GetNext(i) = std::make_unique<FNodeType>(NewCenter, Radius * 0.5f, Node);
                 }
             }

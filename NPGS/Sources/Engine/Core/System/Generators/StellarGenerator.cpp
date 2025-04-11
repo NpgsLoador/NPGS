@@ -32,7 +32,6 @@ Astro::FStellarClass::FSpectralType DeathStarClass                              
     .Subclass        = 0.0f,                                                                                                \
     .AmSubclass      = 0.0f                                                                                                 \
 };                                                                                                                          \
-                                                                                                                            \
 Astro::AStar DeathStar;                                                                                                     \
 DeathStar.SetStellarClass(Astro::FStellarClass(Astro::FStellarClass::EStellarType::kDeathStarPlaceholder, DeathStarClass)); \
 DeathStar.SetLifetime(Lifetime);                                                                                            \

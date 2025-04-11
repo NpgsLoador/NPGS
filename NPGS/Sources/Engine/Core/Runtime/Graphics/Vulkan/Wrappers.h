@@ -96,7 +96,11 @@ namespace Npgs
 
         FFormatInfo(vk::Format Format);
         constexpr FFormatInfo(int ComponentCount, int ComponentSize, int PixelSize, ERawDataType RawDataType, bool bIsCompressed)
-            : ComponentCount(ComponentCount), ComponentSize(ComponentSize), PixelSize(PixelSize), RawDataType(RawDataType), bIsCompressed(bIsCompressed)
+            : ComponentCount(ComponentCount)
+            , ComponentSize(ComponentSize)
+            , PixelSize(PixelSize)
+            , RawDataType(RawDataType)
+            , bIsCompressed(bIsCompressed)
         {
         }
     };

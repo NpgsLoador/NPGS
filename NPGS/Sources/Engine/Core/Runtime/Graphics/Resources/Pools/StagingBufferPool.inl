@@ -1,9 +1,7 @@
 #include "StagingBufferPool.h"
 
-_NPGS_BEGIN
-_RUNTIME_BEGIN
-_GRAPHICS_BEGIN
+#include "Engine/Core/Base/Base.h"
 
-_GRAPHICS_END
-_RUNTIME_END
-_NPGS_END
+namespace Npgs
+{
+} // namespace Npgs

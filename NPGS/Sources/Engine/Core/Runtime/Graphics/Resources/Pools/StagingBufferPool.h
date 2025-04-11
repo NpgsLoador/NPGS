@@ -7,62 +7,59 @@
 #include <vma/vk_mem_alloc.h>
 #include <vulkan/vulkan.hpp>
 
-#include "Engine/Core/Base/Base.h"
-#include "Engine/Core/Runtime/Graphics/Resources/Resources.h"
 #include "Engine/Core/Runtime/Graphics/Resources/Pools/ResourcePool.hpp"
+#include "Engine/Core/Runtime/Graphics/Resources/StagingBuffer.h"
 
-_NPGS_BEGIN
-_RUNTIME_BEGIN
-_GRAPHICS_BEGIN
-
-struct FStagingBufferCreateInfo
+namespace Npgs
 {
-    vk::DeviceSize Size;
-    const VmaAllocationCreateInfo* AllocationCreateInfo;
-};
-
-class FStagingBufferPool : public TResourcePool<FStagingBuffer, FStagingBufferCreateInfo>
-{
-private:
-    struct FStagingBufferInfo : public FResourceInfo
+    struct FStagingBufferCreateInfo
     {
         vk::DeviceSize Size;
-        bool bAllocatedByVma;
+        const VmaAllocationCreateInfo* AllocationCreateInfo;
     };
 
-public:
-    using Base = TResourcePool<FStagingBuffer, FStagingBufferCreateInfo>;
-    using FBufferGuard = Base::FResourceGuard;
+    class FStagingBufferPool : public TResourcePool<FStagingBuffer, FStagingBufferCreateInfo>
+    {
+    private:
+        struct FStagingBufferInfo : public FResourceInfo
+        {
+            vk::DeviceSize Size{};
+            bool bAllocatedByVma{ false };
+        };
 
-    FStagingBufferPool(std::uint32_t MinBufferLimit, std::uint32_t MaxBufferLimit,
-                       std::uint32_t BufferReclaimThresholdMs, std::uint32_t MaintenanceIntervalMs);
+    public:
+        using Base = TResourcePool<FStagingBuffer, FStagingBufferCreateInfo>;
+        using FBufferGuard = Base::FResourceGuard;
 
-    FBufferGuard AcquireBuffer(vk::DeviceSize RequestedSize, const VmaAllocationCreateInfo* AllocationCreateInfo = nullptr);
+        FStagingBufferPool(std::uint32_t MinBufferLimit, std::uint32_t MaxBufferLimit,
+                           std::uint32_t BufferReclaimThresholdMs, std::uint32_t MaintenanceIntervalMs);
 
-private:
-    void CreateResource(const FStagingBufferCreateInfo& CreateInfo) override;
-    bool HandleResourceEmergency(FResourceInfo& LowUsageResource, const FStagingBufferCreateInfo& CreateInfo) override;
-    vk::DeviceSize AlignSize(vk::DeviceSize RequestedSize);
-    void TryPreallocateBuffers(vk::DeviceSize RequestedSize, bool bAllocatedByVma);
+        FBufferGuard AcquireBuffer(vk::DeviceSize RequestedSize, const VmaAllocationCreateInfo* AllocationCreateInfo = nullptr);
 
-private:
-    VmaAllocationCreateInfo _AllocationCreateInfo;
+    private:
+        void CreateResource(const FStagingBufferCreateInfo& CreateInfo) override;
+        bool HandleResourceEmergency(FResourceInfo& LowUsageResource, const FStagingBufferCreateInfo& CreateInfo) override;
+        void ReleaseResource(FStagingBuffer* Buffer, std::size_t UsageCount) override;
+        void OptimizeResourceCount() override;
+        void TryPreallocateBuffers(vk::DeviceSize RequestedSize, bool bAllocatedByVma);
+        vk::DeviceSize AlignSize(vk::DeviceSize RequestedSize);
 
-    static constexpr std::array kSizeTiers = {
-        64ull   * 1024,
-        256ull  * 1024,
-        1ull    * 1024 * 1024,
-        4ull    * 1024 * 1024,
-        16ull   * 1024 * 1024,
-        64ull   * 1024 * 1024,
-        256ull  * 1024 * 1024,
-        1024ull * 1024 * 1024,
-        4096ull * 1024 * 1024
+    private:
+        VmaAllocationCreateInfo _AllocationCreateInfo;
+
+        static constexpr std::array kSizeTiers
+        {
+            64ull   * 1024,
+            256ull  * 1024,
+            1ull    * 1024 * 1024,
+            4ull    * 1024 * 1024,
+            16ull   * 1024 * 1024,
+            64ull   * 1024 * 1024,
+            256ull  * 1024 * 1024,
+            1024ull * 1024 * 1024,
+            4096ull * 1024 * 1024
+        };
     };
-};
-
-_GRAPHICS_END
-_RUNTIME_END
-_NPGS_END
+} // namespace Npgs
 
 #include "StagingBufferPool.inl"

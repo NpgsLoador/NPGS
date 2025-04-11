@@ -512,7 +512,7 @@ namespace Npgs
     {
         std::lock_guard<std::mutex> Lock(_Mutex);
         auto it = std::find_if(_BusyBuffers.begin(), _BusyBuffers.end(),
-                               [Buffer](const std::unique_ptr<FStagingBuffer>& BusyBuffer) -> bool
+        [Buffer](const std::unique_ptr<FStagingBuffer>& BusyBuffer) -> bool
         {
             return BusyBuffer.get() == Buffer;
         });
