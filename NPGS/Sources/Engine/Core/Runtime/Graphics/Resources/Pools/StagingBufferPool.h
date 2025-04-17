@@ -31,21 +31,22 @@ namespace Npgs
         using Base = TResourcePool<FStagingBuffer, FStagingBufferCreateInfo>;
         using FBufferGuard = Base::FResourceGuard;
 
-        FStagingBufferPool(std::uint32_t MinBufferLimit, std::uint32_t MaxBufferLimit,
-                           std::uint32_t BufferReclaimThresholdMs, std::uint32_t MaintenanceIntervalMs);
+        FStagingBufferPool(std::uint32_t MinBufferLimit, std::uint32_t MaxBufferLimit, std::uint32_t BufferReclaimThresholdMs,
+                           std::uint32_t MaintenanceIntervalMs, bool bUsingVma = true);
 
-        FBufferGuard AcquireBuffer(vk::DeviceSize RequestedSize, const VmaAllocationCreateInfo* AllocationCreateInfo = nullptr);
+        FBufferGuard AcquireBuffer(vk::DeviceSize RequestedSize);
 
     private:
         void CreateResource(const FStagingBufferCreateInfo& CreateInfo) override;
         bool HandleResourceEmergency(FResourceInfo& LowUsageResource, const FStagingBufferCreateInfo& CreateInfo) override;
         void ReleaseResource(FStagingBuffer* Buffer, std::size_t UsageCount) override;
         void OptimizeResourceCount() override;
-        void TryPreallocateBuffers(vk::DeviceSize RequestedSize, bool bAllocatedByVma);
+        void RemoveOversizedBuffers(vk::DeviceSize Threshold);
         vk::DeviceSize AlignSize(vk::DeviceSize RequestedSize);
 
     private:
         VmaAllocationCreateInfo _AllocationCreateInfo;
+        bool                    _bUsingVma{ true };
 
         static constexpr std::array kSizeTiers
         {

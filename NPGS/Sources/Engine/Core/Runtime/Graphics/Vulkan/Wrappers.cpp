@@ -908,10 +908,9 @@ namespace Npgs
 
     FVulkanBuffer::FVulkanBuffer(vk::Device Device, const vk::PhysicalDeviceMemoryProperties& PhysicalDeviceMemoryProperties,
                                  const vk::BufferCreateInfo& CreateInfo)
-        :
-        Base(Device),
-        _PhysicalDeviceMemoryProperties(&PhysicalDeviceMemoryProperties),
-        _Allocator(nullptr)
+        : Base(Device)
+        , _PhysicalDeviceMemoryProperties(&PhysicalDeviceMemoryProperties)
+        , _Allocator(nullptr)
     {
         _ReleaseInfo = "Buffer destroyed successfully.";
         _Status      = CreateBuffer(CreateInfo);
@@ -923,10 +922,9 @@ namespace Npgs
     }
 
     FVulkanBuffer::FVulkanBuffer(VmaAllocator Allocator, const VmaAllocationCreateInfo& AllocationCreateInfo, const vk::BufferCreateInfo& CreateInfo)
-        :
-        Base(FVulkanCore::GetClassInstance()->GetDevice()),
-        _PhysicalDeviceMemoryProperties(&FVulkanCore::GetClassInstance()->GetPhysicalDeviceMemoryProperties()),
-        _Allocator(Allocator)
+        : Base(FVulkanCore::GetClassInstance()->GetDevice())
+        , _PhysicalDeviceMemoryProperties(&FVulkanCore::GetClassInstance()->GetPhysicalDeviceMemoryProperties())
+        , _Allocator(Allocator)
     {
         _ReleaseInfo = "Buffer destroyed successfully.";
         _Status      = CreateBuffer(AllocationCreateInfo, CreateInfo);

@@ -257,6 +257,7 @@
     <ClCompile Include="Sources\Engine\Core\Runtime\AssetLoaders\AssetManager.cpp" />
     <ClCompile Include="Sources\Engine\Core\Runtime\AssetLoaders\Shader.cpp" />
     <ClCompile Include="Sources\Engine\Core\Runtime\AssetLoaders\Texture.cpp" />
+    <ClCompile Include="Sources\Engine\Core\Runtime\Graphics\Resources\Pools\StagingBufferPool.cpp" />
     <ClCompile Include="Sources\Engine\Core\Runtime\Graphics\Vulkan\Context.cpp" />
     <ClCompile Include="Sources\Engine\Core\Runtime\Graphics\Vulkan\Core.cpp" />
     <ClCompile Include="Sources\Engine\Core\Runtime\Graphics\Vulkan\ExtFunctionsImpl.cpp" />
@@ -304,6 +305,7 @@
     <ClInclude Include="Sources\Engine\Core\Runtime\AssetLoaders\Texture.h" />
     <ClInclude Include="Sources\Engine\Core\Runtime\Graphics\Resources\Pools\ResourcePool.hpp" />
     <ClInclude Include="Sources\Engine\Core\Runtime\Graphics\Resources\Pools\ResourcePoolBase.hpp" />
+    <ClInclude Include="Sources\Engine\Core\Runtime\Graphics\Resources\Pools\StagingBufferPool.h" />
     <ClInclude Include="Sources\Engine\Core\Runtime\Graphics\Vulkan\Context.h" />
     <ClInclude Include="Sources\Engine\Core\Runtime\Graphics\Vulkan\Core.h" />
     <ClInclude Include="Sources\Engine\Core\Runtime\Graphics\Vulkan\ExtFunctionsImpl.h" />
@@ -342,6 +344,7 @@
     <None Include="Sources\Engine\Core\Runtime\AssetLoaders\AssetManager.inl" />
     <None Include="Sources\Engine\Core\Runtime\AssetLoaders\Shader.inl" />
     <None Include="Sources\Engine\Core\Runtime\AssetLoaders\Texture.inl" />
+    <None Include="Sources\Engine\Core\Runtime\Graphics\Resources\Pools\StagingBufferPool.inl" />
     <None Include="Sources\Engine\Core\Runtime\Graphics\Vulkan\Context.inl" />
     <None Include="Sources\Engine\Core\Runtime\Graphics\Vulkan\Core.inl" />
     <None Include="Sources\Engine\Core\Runtime\Graphics\Resources\Managers\ImageTracker.inl" />

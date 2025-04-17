@@ -117,6 +117,9 @@
     <ClCompile Include="Sources\Engine\Core\System\Generators\StellarGenerator.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="Sources\Engine\Core\Runtime\Graphics\Resources\Pools\StagingBufferPool.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Sources\stdafx.h">
@@ -251,6 +254,9 @@
     <ClInclude Include="Sources\Engine\Core\Runtime\Graphics\Resources\Pools\ResourcePool.hpp">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="Sources\Engine\Core\Runtime\Graphics\Resources\Pools\StagingBufferPool.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="Sources\Engine\Utils\Logger.inl">
@@ -348,5 +354,8 @@
       <Filter>头文件</Filter>
     </None>
     <None Include="Sources\Engine\Shaders\Common\BindlessExtensions.glsl" />
+    <None Include="Sources\Engine\Core\Runtime\Graphics\Resources\Pools\StagingBufferPool.inl">
+      <Filter>头文件</Filter>
+    </None>
   </ItemGroup>
 </Project>
