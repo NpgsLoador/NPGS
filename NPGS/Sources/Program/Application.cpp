@@ -26,14 +26,15 @@
 #include "Engine/Core/Runtime/AssetLoaders/Texture.h"
 #include "Engine/Core/Runtime/Graphics/Resources/Managers/PipelineManager.h"
 #include "Engine/Core/Runtime/Graphics/Resources/Managers/ShaderBufferManager.h"
+#include "Engine/Core/System/Services/EngineServices.h"
 #include "Engine/Utils/Logger.h"
 
 namespace Npgs
 {
     FApplication::FApplication(const vk::Extent2D& WindowSize, const std::string& WindowTitle,
                                bool bEnableVSync, bool bEnableFullscreen, bool bEnableHdr)
-        : _VulkanContext(FVulkanContext::GetClassInstance())
-        , _ThreadPool()
+        : _VulkanContext(FEngineServices::GetInstance()->GetCoreServices()->GetVulkanContext())
+        , _ThreadPool(FEngineServices::GetInstance()->GetCoreServices()->GetThreadPool())
         , _WindowTitle(WindowTitle)
         , _WindowSize(WindowSize)
         , _bEnableVSync(bEnableVSync)
@@ -62,9 +63,9 @@ namespace Npgs
         InitializeVerticesData();
         CreatePipelines();
 
-        auto* AssetManager        = FAssetManager::GetInstance();
-        auto* ShaderBufferManager = FShaderBufferManager::GetInstance();
-        auto* PipelineManager     = FPipelineManager::GetInstance();
+        auto* AssetManager        = FEngineServices::GetInstance()->GetCoreServices()->GetAssetManager();
+        auto* ShaderBufferManager = FEngineServices::GetInstance()->GetResourceServices()->GetShaderBufferManager();
+        auto* PipelineManager     = FEngineServices::GetInstance()->GetResourceServices()->GetPipelineManager();
 
         auto* PbrSceneGBufferShader = AssetManager->GetAsset<FShader>("PbrSceneGBufferShader");
         auto* PbrSceneMergeShader   = AssetManager->GetAsset<FShader>("PbrSceneMergeShader");
@@ -121,9 +122,9 @@ namespace Npgs
         std::vector<FVulkanCommandBuffer> PostProcessCommandBuffers(Config::Graphics::kMaxFrameInFlight);
         for (std::size_t i = 0; i != Config::Graphics::kMaxFrameInFlight; ++i)
         {
-            InFlightFences.emplace_back(vk::FenceCreateFlagBits::eSignaled);
-            Semaphores_ImageAvailable.emplace_back(vk::SemaphoreCreateFlags());
-            Semaphores_RenderFinished.emplace_back(vk::SemaphoreCreateFlags());
+            InFlightFences.emplace_back(_VulkanContext->GetDevice(), vk::FenceCreateFlagBits::eSignaled);
+            Semaphores_ImageAvailable.emplace_back(_VulkanContext->GetDevice(), vk::SemaphoreCreateFlags());
+            Semaphores_RenderFinished.emplace_back(_VulkanContext->GetDevice(), vk::SemaphoreCreateFlags());
         }
 
         const auto& GraphicsCommandPool = _VulkanContext->GetGraphicsCommandPool();
@@ -814,37 +815,39 @@ namespace Npgs
             vk::Extent2D DepthMapExtent(8192, 8192);
 
             _VulkanContext->WaitIdle();
+            auto Allocator = _VulkanContext->GetVmaAllocator();
 
             _PositionAoAttachment = std::make_unique<FColorAttachment>(
-                AllocationCreateInfo, vk::Format::eR16G16B16A16Sfloat, AttachmentExtent, 1,
-                vk::SampleCountFlagBits::e1, vk::ImageUsageFlagBits::eSampled);
+                _VulkanContext, Allocator, AllocationCreateInfo, vk::Format::eR16G16B16A16Sfloat,
+                AttachmentExtent, 1, vk::SampleCountFlagBits::e1, vk::ImageUsageFlagBits::eSampled);
 
             _NormalRoughAttachment = std::make_unique<FColorAttachment>(
-                AllocationCreateInfo, vk::Format::eR16G16B16A16Sfloat, AttachmentExtent, 1,
-                vk::SampleCountFlagBits::e1, vk::ImageUsageFlagBits::eSampled);
+                _VulkanContext, Allocator, AllocationCreateInfo, vk::Format::eR16G16B16A16Sfloat,
+                AttachmentExtent, 1, vk::SampleCountFlagBits::e1, vk::ImageUsageFlagBits::eSampled);
 
             _AlbedoMetalAttachment = std::make_unique<FColorAttachment>(
-                AllocationCreateInfo, vk::Format::eR16G16B16A16Sfloat, AttachmentExtent, 1,
-                vk::SampleCountFlagBits::e1, vk::ImageUsageFlagBits::eSampled);
+                _VulkanContext, Allocator, AllocationCreateInfo, vk::Format::eR16G16B16A16Sfloat,
+                AttachmentExtent, 1, vk::SampleCountFlagBits::e1, vk::ImageUsageFlagBits::eSampled);
 
             _ShadowAttachment = std::make_unique<FColorAttachment>(
-                AllocationCreateInfo, vk::Format::eR16G16B16A16Sfloat, AttachmentExtent, 1,
-                vk::SampleCountFlagBits::e1, vk::ImageUsageFlagBits::eSampled);
+                _VulkanContext, Allocator, AllocationCreateInfo, vk::Format::eR16G16B16A16Sfloat,
+                AttachmentExtent, 1, vk::SampleCountFlagBits::e1, vk::ImageUsageFlagBits::eSampled);
 
             _ColorAttachment = std::make_unique<FColorAttachment>(
-                AllocationCreateInfo, vk::Format::eR16G16B16A16Sfloat, AttachmentExtent, 1,
-                vk::SampleCountFlagBits::e1, vk::ImageUsageFlagBits::eSampled | vk::ImageUsageFlagBits::eStorage);
+                _VulkanContext, Allocator, AllocationCreateInfo, vk::Format::eR16G16B16A16Sfloat,
+                AttachmentExtent, 1, vk::SampleCountFlagBits::e1, vk::ImageUsageFlagBits::eSampled | vk::ImageUsageFlagBits::eStorage);
 
             _ResolveAttachment = std::make_unique<FColorAttachment>(
-                AllocationCreateInfo, _VulkanContext->GetSwapchainCreateInfo().imageFormat, AttachmentExtent, 1,
-                vk::SampleCountFlagBits::e1, vk::ImageUsageFlagBits::eTransferSrc);
+                _VulkanContext, Allocator, AllocationCreateInfo, _VulkanContext->GetSwapchainCreateInfo().imageFormat,
+                AttachmentExtent, 1, vk::SampleCountFlagBits::e1, vk::ImageUsageFlagBits::eTransferSrc);
 
             _DepthStencilAttachment = std::make_unique<FDepthStencilAttachment>(
-                AllocationCreateInfo, vk::Format::eD32Sfloat, AttachmentExtent, 1, vk::SampleCountFlagBits::e1);
+                _VulkanContext, Allocator, AllocationCreateInfo, vk::Format::eD32Sfloat,
+                AttachmentExtent, 1, vk::SampleCountFlagBits::e1);
 
             _DepthMapAttachment = std::make_unique<FDepthStencilAttachment>(
-                AllocationCreateInfo, vk::Format::eD32Sfloat, DepthMapExtent, 1,
-                vk::SampleCountFlagBits::e1, vk::ImageUsageFlagBits::eSampled);
+                _VulkanContext, Allocator, AllocationCreateInfo, vk::Format::eD32Sfloat,
+                DepthMapExtent, 1, vk::SampleCountFlagBits::e1, vk::ImageUsageFlagBits::eSampled);
 
             _PositionAoAttachmentInfo.setImageView(*_PositionAoAttachment->GetImageView());
             _NormalRoughAttachmentInfo.setImageView(*_NormalRoughAttachment->GetImageView());
@@ -976,7 +979,7 @@ namespace Npgs
             .usage = VMA_MEMORY_USAGE_GPU_ONLY
         };
 
-        auto* AssetManager = FAssetManager::GetInstance();
+        auto* AssetManager = FEngineServices::GetInstance()->GetCoreServices()->GetAssetManager();
         AssetManager->AddAsset<FShader>("PbrSceneGBufferShader", PbrSceneGBufferShaderFiles, PbrSceneGBufferResourceInfo);
         AssetManager->AddAsset<FShader>("PbrSceneMergeShader", PbrSceneMergeShaderFiles, PbrSceneMergeResourceInfo);
         AssetManager->AddAsset<FShader>("PbrSceneShader", PbrSceneShaderFiles, PbrSceneResourceInfo);
@@ -1028,8 +1031,11 @@ namespace Npgs
         // };
 #endif
 
+        auto Allocator = _VulkanContext->GetVmaAllocator();
+
         AssetManager->AddAsset<FTextureCube>(
-            "Skybox", TextureAllocationCreateInfo, "Skybox", vk::Format::eR8G8B8A8Srgb, vk::Format::eR8G8B8A8Srgb, vk::ImageCreateFlags(), true);
+            "Skybox", Allocator, TextureAllocationCreateInfo, "Skybox",
+            vk::Format::eR8G8B8A8Srgb, vk::Format::eR8G8B8A8Srgb, vk::ImageCreateFlags(), true);
 
         //AssetManager->AddAsset<FTexture2D>(
         //    "PureSky", TextureAllocationCreateInfo, "HDRI/autumn_field_puresky_16k.hdr",
@@ -1046,7 +1052,8 @@ namespace Npgs
             // Futures.push_back(_ThreadPool->Submit([&, i]() -> void
             // {
             AssetManager->AddAsset<FTexture2D>(
-                TextureNames[i], TextureAllocationCreateInfo, TextureFiles[i], InitialTextureFormats[i], FinalTextureFormats[i], vk::ImageCreateFlagBits::eMutableFormat, true);
+                TextureNames[i], Allocator, TextureAllocationCreateInfo, TextureFiles[i],
+                InitialTextureFormats[i], FinalTextureFormats[i], vk::ImageCreateFlagBits::eMutableFormat, true);
             // }));
         }
 
@@ -1100,7 +1107,7 @@ namespace Npgs
             .requiredFlags = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT | VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT,
         };
 
-        auto* ShaderBufferManager = FShaderBufferManager::GetInstance();
+        auto* ShaderBufferManager = FEngineServices::GetInstance()->GetResourceServices()->GetShaderBufferManager();
         ShaderBufferManager->CreateDataBuffers<FMatrices>(MatricesCreateInfo, &AllocationCreateInfo);
         ShaderBufferManager->CreateDataBuffers<FMvpMatrices>(MvpMatricesCreateInfo, &AllocationCreateInfo);
         ShaderBufferManager->CreateDataBuffers<FLightArgs>(LightArgsCreateInfo, &AllocationCreateInfo);
@@ -1108,7 +1115,7 @@ namespace Npgs
 
     void FApplication::BindDescriptors()
     {
-        auto* AssetManager = FAssetManager::GetInstance();
+        auto* AssetManager = FEngineServices::GetInstance()->GetCoreServices()->GetAssetManager();
 
         auto* PbrSceneGBufferShader = AssetManager->GetAsset<FShader>("PbrSceneGBufferShader");
         auto* PbrSceneMergeShader   = AssetManager->GetAsset<FShader>("PbrSceneMergeShader");
@@ -1126,7 +1133,7 @@ namespace Npgs
         auto* IceLand         = AssetManager->GetAsset<FTexture2D>("IceLand");
         auto* Skybox          = AssetManager->GetAsset<FTextureCube>("Skybox");
 
-        auto* ShaderBufferManager = FShaderBufferManager::GetInstance();
+        auto* ShaderBufferManager = FEngineServices::GetInstance()->GetResourceServices()->GetShaderBufferManager();
 
         auto CreateAttachmentDescriptors = [=]() mutable -> void
         {
@@ -1141,8 +1148,8 @@ namespace Npgs
             SceneGBufferDescriptorBufferCreateInfo.Name = "SceneGBufferDescriptorBuffer";
             SceneGBufferDescriptorBufferCreateInfo.SetSizes = std::move(PbrSceneGBufferShader->GetDescriptorSetSizes());
 
-            vk::SamplerCreateInfo SamplerCreateInfo = FTexture::CreateDefaultSamplerCreateInfo();
-            static FVulkanSampler kSampler(SamplerCreateInfo);
+            vk::SamplerCreateInfo SamplerCreateInfo = FTexture::CreateDefaultSamplerCreateInfo(_VulkanContext);
+            static FVulkanSampler kSampler(_VulkanContext->GetDevice(), SamplerCreateInfo);
             SceneGBufferDescriptorBufferCreateInfo.SamplerInfos.emplace_back(0u, 0u, *kSampler);
 
             auto PbrDiffuseImageInfo = PbrDiffuse->CreateDescriptorImageInfo(nullptr);
@@ -1167,7 +1174,7 @@ namespace Npgs
                 .setAddressModeV(vk::SamplerAddressMode::eClampToEdge)
                 .setAddressModeW(vk::SamplerAddressMode::eClampToEdge);
 
-            static FVulkanSampler kSkyboxSampler(SamplerCreateInfo);
+            static FVulkanSampler kSkyboxSampler(_VulkanContext->GetDevice(), SamplerCreateInfo);
             auto SkyboxImageInfo = Skybox->CreateDescriptorImageInfo(kSkyboxSampler);
             SkyboxDescriptorBufferCreateInfo.CombinedImageSamplerInfos.emplace_back(0u, 0u, SkyboxImageInfo);
 
@@ -1195,7 +1202,7 @@ namespace Npgs
                 .setMaxLod(0.0f)
                 .setBorderColor(vk::BorderColor::eFloatCustomEXT);
 
-            static FVulkanSampler kFramebufferSampler(SamplerCreateInfo);
+            static FVulkanSampler kFramebufferSampler(_VulkanContext->GetDevice(), SamplerCreateInfo);
 
             vk::DescriptorImageInfo ColorStorageImageInfo(
                 *kFramebufferSampler, *_ColorAttachment->GetImageView(), vk::ImageLayout::eGeneral);
@@ -1359,41 +1366,43 @@ namespace Npgs
             .setSize(SphereVertices.size() * sizeof(FVertex))
             .setUsage(vk::BufferUsageFlagBits::eVertexBuffer | vk::BufferUsageFlagBits::eTransferDst);
 
-        _SphereVertexBuffer = std::make_unique<FDeviceLocalBuffer>(AllocationCreateInfo, VertexBufferCreateInfo);
+        auto Allocator = _VulkanContext->GetVmaAllocator();
+
+        _SphereVertexBuffer = std::make_unique<FDeviceLocalBuffer>(_VulkanContext, Allocator, AllocationCreateInfo, VertexBufferCreateInfo);
         _SphereVertexBuffer->CopyData(SphereVertices);
 
         VertexBufferCreateInfo.setSize(CubeVertices.size() * sizeof(FVertex));
-        _CubeVertexBuffer = std::make_unique<FDeviceLocalBuffer>(AllocationCreateInfo, VertexBufferCreateInfo);
+        _CubeVertexBuffer = std::make_unique<FDeviceLocalBuffer>(_VulkanContext, Allocator, AllocationCreateInfo, VertexBufferCreateInfo);
         _CubeVertexBuffer->CopyData(CubeVertices);
 
         VertexBufferCreateInfo.setSize(SkyboxVertices.size() * sizeof(FSkyboxVertex));
-        _SkyboxVertexBuffer = std::make_unique<FDeviceLocalBuffer>(AllocationCreateInfo, VertexBufferCreateInfo);
+        _SkyboxVertexBuffer = std::make_unique<FDeviceLocalBuffer>(_VulkanContext, Allocator, AllocationCreateInfo, VertexBufferCreateInfo);
         _SkyboxVertexBuffer->CopyData(SkyboxVertices);
 
         VertexBufferCreateInfo.setSize(PlaneVertices.size() * sizeof(FVertex));
-        _PlaneVertexBuffer = std::make_unique<FDeviceLocalBuffer>(AllocationCreateInfo, VertexBufferCreateInfo);
+        _PlaneVertexBuffer = std::make_unique<FDeviceLocalBuffer>(_VulkanContext, Allocator, AllocationCreateInfo, VertexBufferCreateInfo);
         _PlaneVertexBuffer->CopyData(PlaneVertices);
 
         VertexBufferCreateInfo.setSize(QuadVertices.size() * sizeof(FQuadVertex));
-        _QuadVertexBuffer = std::make_unique<FDeviceLocalBuffer>(AllocationCreateInfo, VertexBufferCreateInfo);
+        _QuadVertexBuffer = std::make_unique<FDeviceLocalBuffer>(_VulkanContext, Allocator, AllocationCreateInfo, VertexBufferCreateInfo);
         _QuadVertexBuffer->CopyData(QuadVertices);
 
         VertexBufferCreateInfo.setSize(_InstanceData.size() * sizeof(FInstanceData));
-        _InstanceBuffer = std::make_unique<FDeviceLocalBuffer>(AllocationCreateInfo, VertexBufferCreateInfo);
+        _InstanceBuffer = std::make_unique<FDeviceLocalBuffer>(_VulkanContext, Allocator, AllocationCreateInfo, VertexBufferCreateInfo);
         _InstanceBuffer->CopyData(_InstanceData);
 
         vk::BufferCreateInfo IndexBufferCreateInfo = vk::BufferCreateInfo()
             .setSize(SphereIndices.size() * sizeof(std::uint32_t))
             .setUsage(vk::BufferUsageFlagBits::eIndexBuffer | vk::BufferUsageFlagBits::eTransferDst);
 
-        _SphereIndexBuffer = std::make_unique<FDeviceLocalBuffer>(AllocationCreateInfo, IndexBufferCreateInfo);
+        _SphereIndexBuffer = std::make_unique<FDeviceLocalBuffer>(_VulkanContext, Allocator, AllocationCreateInfo, IndexBufferCreateInfo);
         _SphereIndexBuffer->CopyData(SphereIndices);
         _SphereIndicesCount = static_cast<std::uint32_t>(SphereIndices.size());
 
 #if 0
         // Create height map vertices
         // --------------------------
-        auto* AssetManager = FAssetManager::GetInstance();
+        auto* AssetManager = FEngineServices::GetInstance()->GetCoreServices()->GetAssetManager()
         auto* IceLand      = AssetManager->GetAsset<FTexture2D>("IceLand");
 
         int   ImageWidth  = static_cast<int>(IceLand->GetImageExtent().width);
@@ -1432,14 +1441,14 @@ namespace Npgs
         }
 
         VertexBufferCreateInfo.setSize(TerrainVertices.size() * sizeof(FPatchVertex));
-        _TerrainVertexBuffer = std::make_unique<FDeviceLocalBuffer>(AllocationCreateInfo, VertexBufferCreateInfo);
+        _TerrainVertexBuffer = std::make_unique<FDeviceLocalBuffer>(_VulkanContext, Allocator, AllocationCreateInfo, VertexBufferCreateInfo);
         _TerrainVertexBuffer->CopyData(TerrainVertices);
 #endif
     }
 
     void FApplication::CreatePipelines()
     {
-        auto* PipelineManager = FPipelineManager::GetInstance();
+        auto* PipelineManager = FEngineServices::GetInstance()->GetResourceServices()->GetPipelineManager();
 
         FGraphicsPipelineCreateInfoPack ScenePipelineCreateInfoPack;
         ScenePipelineCreateInfoPack.DynamicStates.push_back(vk::DynamicState::eViewport);
@@ -1552,6 +1561,7 @@ namespace Npgs
         _VulkanContext->WaitIdle();
         glfwDestroyWindow(_Window);
         glfwTerminate();
+        FEngineServices::GetInstance()->ShutdownResourceServices();
     }
 
     bool FApplication::InitializeWindow()
@@ -1617,6 +1627,8 @@ namespace Npgs
         {
             return false;
         }
+
+        FEngineServices::GetInstance()->InitializeResourceServices();
 
         _Camera = std::make_unique<FCamera>(glm::vec3(0.0f, 0.0f, 3.0f));
 

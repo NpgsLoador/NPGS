@@ -9,7 +9,8 @@
 
 #include "Engine/Core/Runtime/AssetLoaders/AssetManager.h"
 #include "Engine/Core/Runtime/Graphics/Buffers/BufferStructs.h"
-#include "Engine/Core/Runtime/Graphics/Resources/Resources.h"
+#include "Engine/Core/Runtime/Graphics/Resources/Attachment.h"
+#include "Engine/Core/Runtime/Graphics/Resources/DeviceLocalBuffer.h"
 #include "Engine/Core/Runtime/Graphics/Vulkan/Context.h"
 #include "Engine/Core/Runtime/Graphics/Vulkan/Wrappers.h"
 #include "Engine/Core/Runtime/Threads/ThreadPool.h"

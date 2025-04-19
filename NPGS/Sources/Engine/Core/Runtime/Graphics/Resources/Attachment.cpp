@@ -1,28 +1,19 @@
-#include "Attachments.h"
+#include "Attachment.h"
 
 #include <vulkan/vulkan_to_string.hpp>
-
-#include "Engine/Core/Runtime/Graphics/Vulkan/Context.h"
-#include "Engine/Core/Runtime/Graphics/Vulkan/Core.h"
 #include "Engine/Utils/Logger.h"
 
 namespace Npgs
 {
-    FAttachment::FAttachment(VmaAllocator Allocator)
-        : _Allocator(Allocator)
+    FAttachment::FAttachment(FVulkanContext* VulkanContext, VmaAllocator Allocator)
+        : _VulkanContext(VulkanContext)
+        , _Allocator(Allocator)
     {
     }
 
-    FColorAttachment::FColorAttachment(const VmaAllocationCreateInfo& AllocationCreateInfo, vk::Format Format, vk::Extent2D Extent,
-                                       std::uint32_t LayerCount, vk::SampleCountFlagBits SampleCount, vk::ImageUsageFlags ExtraUsage)
-        : FColorAttachment(FVulkanCore::GetClassInstance()->GetVmaAllocator(), AllocationCreateInfo,
-                           Format, Extent, LayerCount, SampleCount, ExtraUsage)
-    {
-    }
-
-    FColorAttachment::FColorAttachment(VmaAllocator Allocator, const VmaAllocationCreateInfo& AllocationCreateInfo, vk::Format Format,
+    FColorAttachment::FColorAttachment(FVulkanContext* VulkanContext, VmaAllocator Allocator, const VmaAllocationCreateInfo& AllocationCreateInfo, vk::Format Format,
                                        vk::Extent2D Extent, std::uint32_t LayerCount, vk::SampleCountFlagBits SampleCount, vk::ImageUsageFlags ExtraUsage)
-        : Base(Allocator)
+        : Base(VulkanContext, Allocator)
     {
         vk::Result Result = CreateAttachment(&AllocationCreateInfo, Format, Extent, LayerCount, SampleCount, ExtraUsage);
         if (Result != vk::Result::eSuccess)
@@ -31,9 +22,9 @@ namespace Npgs
         }
     }
 
-    FColorAttachment::FColorAttachment(vk::Format Format, vk::Extent2D Extent, std::uint32_t LayerCount,
+    FColorAttachment::FColorAttachment(FVulkanContext* VulkanContext, vk::Format Format, vk::Extent2D Extent, std::uint32_t LayerCount,
                                        vk::SampleCountFlagBits SampleCount, vk::ImageUsageFlags ExtraUsage)
-        : Base(nullptr)
+        : Base(VulkanContext, nullptr)
     {
         vk::Result Result = CreateAttachment(nullptr, Format, Extent, LayerCount, SampleCount, ExtraUsage);
         if (Result != vk::Result::eSuccess)
@@ -42,9 +33,9 @@ namespace Npgs
         }
     }
 
-    bool FColorAttachment::CheckFormatAvailability(vk::Format Format, bool bSupportBlend)
+    bool FColorAttachment::CheckFormatAvailability(vk::PhysicalDevice PhysicalDevice, vk::Format Format, bool bSupportBlend)
     {
-        vk::FormatProperties FormatProperties = FVulkanCore::GetClassInstance()->GetPhysicalDevice().getFormatProperties(Format);
+        vk::FormatProperties FormatProperties = PhysicalDevice.getFormatProperties(Format);
         if (bSupportBlend)
         {
             if (FormatProperties.optimalTilingFeatures & (vk::FormatFeatureFlagBits::eColorAttachment | vk::FormatFeatureFlagBits::eColorAttachmentBlend))
@@ -81,9 +72,17 @@ namespace Npgs
             MemoryPropertyFlags |= vk::MemoryPropertyFlagBits::eLazilyAllocated;
         }
 
-        _ImageMemory = AllocationCreateInfo
-            ? std::make_unique<FVulkanImageMemory>(_Allocator, *AllocationCreateInfo, ImageCreateInfo)
-            : std::make_unique<FVulkanImageMemory>(ImageCreateInfo, MemoryPropertyFlags);
+        if (AllocationCreateInfo != nullptr)
+        {
+            _ImageMemory = std::make_unique<FVulkanImageMemory>(
+                _VulkanContext->GetDevice(), _Allocator, *AllocationCreateInfo, ImageCreateInfo);
+        }
+        else
+        {
+            _ImageMemory = std::make_unique<FVulkanImageMemory>(
+                _VulkanContext->GetDevice(), _VulkanContext->GetPhysicalDeviceProperties(),
+                _VulkanContext->GetPhysicalDeviceMemoryProperties(), ImageCreateInfo, MemoryPropertyFlags);
+        }
 
         if (!_ImageMemory->IsValid())
         {
@@ -91,9 +90,11 @@ namespace Npgs
         }
 
         vk::ImageSubresourceRange SubresourceRange(vk::ImageAspectFlagBits::eColor, 0, 1, 0, LayerCount);
-        _ImageView = std::make_unique<FVulkanImageView>(_ImageMemory->GetResource(),
-                                                        LayerCount > 1 ? vk::ImageViewType::e2DArray : vk::ImageViewType::e2D,
-                                                        Format, vk::ComponentMapping(), SubresourceRange);
+        _ImageView = std::make_unique<FVulkanImageView>(
+            _VulkanContext->GetDevice(), _ImageMemory->GetResource(),
+            LayerCount > 1 ? vk::ImageViewType::e2DArray : vk::ImageViewType::e2D,
+            Format, vk::ComponentMapping(), SubresourceRange);
+
         if (!_ImageView->IsValid())
         {
             return vk::Result::eErrorInitializationFailed;
@@ -102,18 +103,10 @@ namespace Npgs
         return vk::Result::eSuccess;
     }
 
-    FDepthStencilAttachment::FDepthStencilAttachment(const VmaAllocationCreateInfo& AllocationCreateInfo, vk::Format Format,
-                                                     vk::Extent2D Extent, std::uint32_t LayerCount, vk::SampleCountFlagBits SampleCount,
-                                                     vk::ImageUsageFlags ExtraUsage, bool bStencilOnly)
-        : FDepthStencilAttachment(FVulkanCore::GetClassInstance()->GetVmaAllocator(), AllocationCreateInfo,
-                                  Format, Extent, LayerCount, SampleCount, ExtraUsage, bStencilOnly)
-    {
-    }
-
-    FDepthStencilAttachment::FDepthStencilAttachment(VmaAllocator Allocator, const VmaAllocationCreateInfo& AllocationCreateInfo,
+    FDepthStencilAttachment::FDepthStencilAttachment(FVulkanContext* VulkanContext, VmaAllocator Allocator, const VmaAllocationCreateInfo& AllocationCreateInfo,
                                                      vk::Format Format, vk::Extent2D Extent, std::uint32_t LayerCount,
                                                      vk::SampleCountFlagBits SampleCount, vk::ImageUsageFlags ExtraUsage, bool bStencilOnly)
-        : Base(Allocator)
+        : Base(VulkanContext, Allocator)
     {
         vk::Result Result = CreateAttachment(&AllocationCreateInfo, Format, Extent, LayerCount, SampleCount, ExtraUsage, bStencilOnly);
         if (Result != vk::Result::eSuccess)
@@ -122,9 +115,9 @@ namespace Npgs
         }
     }
 
-    FDepthStencilAttachment::FDepthStencilAttachment(vk::Format Format, vk::Extent2D Extent, std::uint32_t LayerCount,
+    FDepthStencilAttachment::FDepthStencilAttachment(FVulkanContext* VulkanContext, vk::Format Format, vk::Extent2D Extent, std::uint32_t LayerCount,
                                                      vk::SampleCountFlagBits SampleCount, vk::ImageUsageFlags ExtraUsage, bool bStencilOnly)
-        : Base(nullptr)
+        : Base(VulkanContext, nullptr)
     {
         vk::Result Result = CreateAttachment(nullptr, Format, Extent, LayerCount, SampleCount, ExtraUsage, bStencilOnly);
         if (Result != vk::Result::eSuccess)
@@ -133,9 +126,9 @@ namespace Npgs
         }
     }
 
-    bool FDepthStencilAttachment::CheckFormatAvailability(vk::Format Format)
+    bool FDepthStencilAttachment::CheckFormatAvailability(vk::PhysicalDevice PhysicalDevice, vk::Format Format)
     {
-        vk::FormatProperties FormatProperties = FVulkanCore::GetClassInstance()->GetPhysicalDevice().getFormatProperties(Format);
+        vk::FormatProperties FormatProperties = PhysicalDevice.getFormatProperties(Format);
         if (FormatProperties.bufferFeatures & vk::FormatFeatureFlagBits::eDepthStencilAttachment)
         {
             return true;
@@ -162,9 +155,17 @@ namespace Npgs
             MemoryPropertyFlags |= vk::MemoryPropertyFlagBits::eLazilyAllocated;
         }
 
-        _ImageMemory = AllocationCreateInfo
-                     ? std::make_unique<FVulkanImageMemory>(_Allocator, *AllocationCreateInfo, ImageCreateInfo)
-                     : std::make_unique<FVulkanImageMemory>(ImageCreateInfo, MemoryPropertyFlags);
+        if (AllocationCreateInfo != nullptr)
+        {
+            _ImageMemory = std::make_unique<FVulkanImageMemory>(
+                _VulkanContext->GetDevice(), _Allocator, *AllocationCreateInfo, ImageCreateInfo);
+        }
+        else
+        {
+            _ImageMemory = std::make_unique<FVulkanImageMemory>(
+                _VulkanContext->GetDevice(), _VulkanContext->GetPhysicalDeviceProperties(),
+                _VulkanContext->GetPhysicalDeviceMemoryProperties(), ImageCreateInfo, MemoryPropertyFlags);
+        }
 
         if (!_ImageMemory->IsValid())
         {
@@ -182,9 +183,11 @@ namespace Npgs
         }
 
         vk::ImageSubresourceRange SubresourceRange(AspectFlags, 0, 1, 0, LayerCount);
-        _ImageView = std::make_unique<FVulkanImageView>(_ImageMemory->GetResource(),
-                                                        LayerCount > 1 ? vk::ImageViewType::e2DArray : vk::ImageViewType::e2D,
-                                                        Format, vk::ComponentMapping(), SubresourceRange);
+        _ImageView = std::make_unique<FVulkanImageView>(
+            _VulkanContext->GetDevice(), _ImageMemory->GetResource(),
+            LayerCount > 1 ? vk::ImageViewType::e2DArray : vk::ImageViewType::e2D,
+            Format, vk::ComponentMapping(), SubresourceRange);
+
         if (!_ImageView->IsValid())
         {
             return vk::Result::eErrorInitializationFailed;

@@ -17,12 +17,11 @@ namespace Npgs
                                                         const VmaAllocationCreateInfo* AllocationCreateInfo,
                                                         std::uint32_t BufferCount)
     {
-        const auto* VulkanContext = FVulkanContext::GetClassInstance();
         FDataBufferInfo BufferInfo;
         BufferInfo.CreateInfo = DataBufferCreateInfo;
 
-        vk::DeviceSize MinUniformAlignment = VulkanContext->GetPhysicalDeviceProperties().limits.minUniformBufferOffsetAlignment;
-        vk::DeviceSize MinStorageAlignment = VulkanContext->GetPhysicalDeviceProperties().limits.minStorageBufferOffsetAlignment;
+        vk::DeviceSize MinUniformAlignment = _VulkanContext->GetPhysicalDeviceProperties().limits.minUniformBufferOffsetAlignment;
+        vk::DeviceSize MinStorageAlignment = _VulkanContext->GetPhysicalDeviceProperties().limits.minStorageBufferOffsetAlignment;
         StructType BufferStruct{};
         Util::ForEachField(BufferStruct, [&](const auto& Field, std::size_t Index)
         {
@@ -62,11 +61,11 @@ namespace Npgs
             if (AllocationCreateInfo != nullptr)
             {
                 vk::BufferCreateInfo BufferCreateInfo({}, BufferInfo.Size, BufferUsage | vk::BufferUsageFlagBits::eTransferDst);
-                BufferInfo.Buffers.emplace_back(_Allocator, *AllocationCreateInfo, BufferCreateInfo);
+                BufferInfo.Buffers.emplace_back(_VulkanContext, _Allocator, *AllocationCreateInfo, BufferCreateInfo);
             }
             else
             {
-                BufferInfo.Buffers.emplace_back(BufferInfo.Size, BufferUsage);
+                BufferInfo.Buffers.emplace_back(_VulkanContext, BufferInfo.Size, BufferUsage);
             }
 
             StructType EmptyData{};

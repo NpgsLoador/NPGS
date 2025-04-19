@@ -3,28 +3,31 @@
 #include <functional>
 #include <utility>
 
-#include "Engine/Core/Runtime/AssetLoaders/AssetManager.h"
 #include "Engine/Core/Runtime/AssetLoaders/Shader.h"
-#include "Engine/Core/Runtime/Graphics/Vulkan/Context.h"
 
 namespace Npgs
 {
+    FPipelineManager::FPipelineManager(FVulkanContext* VulkanContext, FAssetManager* AssetManager)
+        : _VulkanContext(VulkanContext)
+        , _AssetManager(AssetManager)
+    {
+    }
+
     void FPipelineManager::CreateGraphicsPipeline(const std::string& PipelineName, const std::string& ShaderName,
                                                   FGraphicsPipelineCreateInfoPack& GraphicsPipelineCreateInfoPack)
     {
-        auto* VulkanContext = FVulkanContext::GetClassInstance();
-        auto* AssetManager  = FAssetManager::GetInstance();
-        auto* Shader        = AssetManager->GetAsset<FShader>(ShaderName);
+        auto* Shader = _AssetManager->GetAsset<FShader>(ShaderName);
 
-        VulkanContext->WaitIdle();
+        _VulkanContext->WaitIdle();
+        vk::Device Device = _VulkanContext->GetDevice();
 
         if (ShaderName == "")
         {
             GraphicsPipelineCreateInfoPack.Update();
-            FVulkanPipelineLayout PipelineLayout(GraphicsPipelineCreateInfoPack.GraphicsPipelineCreateInfo.layout, "Pipeline layout");
+            FVulkanPipelineLayout PipelineLayout(Device, GraphicsPipelineCreateInfoPack.GraphicsPipelineCreateInfo.layout, "Pipeline layout");
             _PipelineLayouts.emplace(PipelineName, std::move(PipelineLayout));
 
-            FVulkanPipeline Pipeline(GraphicsPipelineCreateInfoPack);
+            FVulkanPipeline Pipeline(Device, GraphicsPipelineCreateInfoPack);
             _Pipelines.emplace(PipelineName, std::move(Pipeline));
 
             RegisterCallback(PipelineName, EPipelineType::kGraphics);
@@ -38,7 +41,7 @@ namespace Npgs
         auto PushConstantRanges = Shader->GetPushConstantRanges();
         PipelineLayoutCreateInfo.setPushConstantRanges(PushConstantRanges);
 
-        FVulkanPipelineLayout PipelineLayout(PipelineLayoutCreateInfo);
+        FVulkanPipelineLayout PipelineLayout(Device, PipelineLayoutCreateInfo);
         GraphicsPipelineCreateInfoPack.GraphicsPipelineCreateInfo.setLayout(*PipelineLayout);
         GraphicsPipelineCreateInfoPack.ShaderStages = Shader->CreateShaderStageCreateInfo();
         _PipelineLayouts.emplace(PipelineName, std::move(PipelineLayout));
@@ -50,7 +53,7 @@ namespace Npgs
         GraphicsPipelineCreateInfoPack.Update();
         _GraphicsPipelineCreateInfoPacks.emplace(PipelineName, GraphicsPipelineCreateInfoPack);
 
-        FVulkanPipeline Pipeline(GraphicsPipelineCreateInfoPack);
+        FVulkanPipeline Pipeline(Device, GraphicsPipelineCreateInfoPack);
         _Pipelines.emplace(PipelineName, std::move(Pipeline));
 
         RegisterCallback(PipelineName, EPipelineType::kGraphics);
@@ -59,18 +62,17 @@ namespace Npgs
     void FPipelineManager::CreateComputePipeline(const std::string& PipelineName, const std::string& ShaderName,
                                                  vk::ComputePipelineCreateInfo* ComputePipelineCreateInfo)
     {
-        auto* VulkanContext = FVulkanContext::GetClassInstance();
-        auto* AssetManager  = FAssetManager::GetInstance();
-        auto* Shader        = AssetManager->GetAsset<FShader>(ShaderName);
+        auto* Shader = _AssetManager->GetAsset<FShader>(ShaderName);
 
-        VulkanContext->WaitIdle();
+        _VulkanContext->WaitIdle();
+        vk::Device Device = _VulkanContext->GetDevice();
 
         if (ShaderName == "" && ComputePipelineCreateInfo != nullptr)
         {
-            FVulkanPipelineLayout PipelineLayout(ComputePipelineCreateInfo->layout, "Pipeline layout");
+            FVulkanPipelineLayout PipelineLayout(Device, ComputePipelineCreateInfo->layout, "Pipeline layout");
             _PipelineLayouts.emplace(PipelineName, std::move(PipelineLayout));
 
-            FVulkanPipeline Pipeline(*ComputePipelineCreateInfo);
+            FVulkanPipeline Pipeline(Device, *ComputePipelineCreateInfo);
             _Pipelines.emplace(PipelineName, std::move(Pipeline));
 
             RegisterCallback(PipelineName, EPipelineType::kCompute);
@@ -87,14 +89,14 @@ namespace Npgs
         auto PushConstantRanges = Shader->GetPushConstantRanges();
         PipelineLayoutCreateInfo.setPushConstantRanges(PushConstantRanges);
 
-        FVulkanPipelineLayout PipelineLayout(PipelineLayoutCreateInfo);
+        FVulkanPipelineLayout PipelineLayout(Device, PipelineLayoutCreateInfo);
         ComputePipelineCreateInfo->setLayout(*PipelineLayout);
         ComputePipelineCreateInfo->setStage(Shader->CreateShaderStageCreateInfo().front());
         _PipelineLayouts.emplace(PipelineName, std::move(PipelineLayout));
 
         _ComputePipelineCreateInfos.emplace(PipelineName, *ComputePipelineCreateInfo);
 
-        FVulkanPipeline Pipeline(*ComputePipelineCreateInfo);
+        FVulkanPipeline Pipeline(Device, *ComputePipelineCreateInfo);
         _Pipelines.emplace(PipelineName, std::move(Pipeline));
 
         RegisterCallback(PipelineName, EPipelineType::kCompute);
@@ -105,15 +107,8 @@ namespace Npgs
         _Pipelines.erase(Name);
     }
 
-    FPipelineManager* FPipelineManager::GetInstance()
-    {
-        static FPipelineManager kInstance;
-        return &kInstance;
-    }
-
     void FPipelineManager::RegisterCallback(const std::string& Name, EPipelineType Type)
     {
-        auto VulkanContext = FVulkanContext::GetClassInstance();
         std::function<void()> CreatePipeline;
         std::function<void()> DestroyPipeline;
 
@@ -121,9 +116,10 @@ namespace Npgs
         {
             // CreatePipeline = [this, Name, VulkanContext]() -> void
             // {
-            //     VulkanContext->WaitIdle();
+            //     _VulkanContext->WaitIdle();
+            //     vk::Device Device = _VulkanContext->GetDevice();
             // 
-            //     auto& SwapchainExtent = VulkanContext->GetSwapchainCreateInfo().imageExtent;
+            //     auto& SwapchainExtent = _VulkanContext->GetSwapchainCreateInfo().imageExtent;
             //     auto& PipelineCreateInfoPack = _GraphicsPipelineCreateInfoPacks.at(Name);
             // 
             //     if (PipelineCreateInfoPack.DynamicStates.empty())
@@ -145,7 +141,7 @@ namespace Npgs
             // 
             //     auto it = _Pipelines.find(Name);
             //     _Pipelines.erase(it);
-            //     _Pipelines.emplace(Name, std::move(FVulkanPipeline(PipelineCreateInfoPack)));
+            //     _Pipelines.emplace(Name, std::move(FVulkanPipeline(Device, PipelineCreateInfoPack)));
             // };
 
             // DestroyPipeline = [this, Name]() -> void
@@ -162,7 +158,7 @@ namespace Npgs
             DestroyPipeline = []() -> void {};
         }
 
-        VulkanContext->RegisterAutoRemovedCallbacks(FVulkanContext::ECallbackType::kCreateSwapchain,  Name, CreatePipeline);
-        VulkanContext->RegisterAutoRemovedCallbacks(FVulkanContext::ECallbackType::kDestroySwapchain, Name, DestroyPipeline);
+        _VulkanContext->RegisterAutoRemovedCallbacks(FVulkanContext::ECallbackType::kCreateSwapchain,  Name, CreatePipeline);
+        _VulkanContext->RegisterAutoRemovedCallbacks(FVulkanContext::ECallbackType::kDestroySwapchain, Name, DestroyPipeline);
     }
 } // namespace Npgs

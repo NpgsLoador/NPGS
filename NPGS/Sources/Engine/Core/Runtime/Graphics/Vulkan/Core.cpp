@@ -5,6 +5,7 @@
 #include <ranges>
 
 #include "Engine/Core/Runtime/Graphics/Vulkan/ExtFunctionsImpl.h"
+#include "Engine/Utils/VulkanCheck.h"
 #include "Engine/Utils/Utils.h"
 
 namespace Npgs
@@ -639,12 +640,6 @@ namespace Npgs
         }
 
         return vk::Result::eSuccess;
-    }
-
-    FVulkanCore* FVulkanCore::GetClassInstance()
-    {
-        static FVulkanCore kInstance;
-        return &kInstance;
     }
 
     void FVulkanCore::AddElementChecked(const char* Element, std::vector<const char*>& Vector)

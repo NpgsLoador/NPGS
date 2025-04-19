@@ -35,7 +35,7 @@ namespace Npgs
         return *_ImageView;
     }
 
-    NPGS_INLINE vk::SamplerCreateInfo FTexture::CreateDefaultSamplerCreateInfo()
+    NPGS_INLINE vk::SamplerCreateInfo FTexture::CreateDefaultSamplerCreateInfo(FVulkanContext* VulkanContext)
     {
         vk::SamplerCreateInfo DefaultSamplerCreateInfo(
             {},
@@ -47,7 +47,7 @@ namespace Npgs
             vk::SamplerAddressMode::eRepeat,
             0.0f,
             vk::True,
-            FVulkanContext::GetClassInstance()->GetPhysicalDeviceProperties().limits.maxSamplerAnisotropy,
+            VulkanContext->GetPhysicalDeviceProperties().limits.maxSamplerAnisotropy,
             vk::False,
             vk::CompareOp::eAlways,
             0.0f,

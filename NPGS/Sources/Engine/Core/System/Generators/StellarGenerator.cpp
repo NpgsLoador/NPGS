@@ -16,6 +16,7 @@
 #include "Engine/Core/Math/NumericConstants.h"
 #include "Engine/Core/Runtime/AssetLoaders/AssetManager.h"
 #include "Engine/Core/Runtime/AssetLoaders/CommaSeparatedValues.hpp"
+#include "Engine/Core/System/Services/EngineServices.h"
 #include "Engine/Utils/Logger.h"
 #include "Engine/Utils/Utils.h"
 
@@ -648,7 +649,7 @@ namespace Npgs
     requires std::is_class_v<CsvType>
     CsvType* FStellarGenerator::LoadCsvAsset(const std::string& Filename, const std::vector<std::string>& Headers)
     {
-        auto* AssetManager = FAssetManager::GetInstance();
+        auto* AssetManager = FEngineServices::GetInstance()->GetCoreServices()->GetAssetManager();
         {
             std::shared_lock Lock(_kCacheMutex);
             auto* Asset = AssetManager->GetAsset<CsvType>(Filename);

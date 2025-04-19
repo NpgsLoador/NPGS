@@ -1,7 +1,5 @@
 #include "ImageTracker.h"
 
-#include <bit>
-
 namespace Npgs
 {
     bool FImageTracker::FImageState::operator==(const FImageState& Other) const
@@ -18,12 +16,13 @@ namespace Npgs
     {
         if (std::holds_alternative<vk::Image>(Key))
         {
-            return std::hash<std::uint64_t>{}(static_cast<std::uint64_t>(std::bit_cast<std::uint64_t>(std::get<vk::Image>(Key))));
+            const vk::Image& Image = std::get<vk::Image>(Key);
+            return std::hash<std::uint64_t>{}(reinterpret_cast<std::uint64_t>(static_cast<VkImage>(Image)));
         }
         else
         {
             const auto& [Image, Range] = std::get<std::pair<vk::Image, vk::ImageSubresourceRange>>(Key);
-            std::size_t Hx = std::hash<std::uint64_t>{}(static_cast<std::uint64_t>(std::bit_cast<std::uint64_t>(Image)));
+            std::size_t Hx = std::hash<std::uint64_t>{}(reinterpret_cast<std::uint64_t>(static_cast<VkImage>(Image)));
             std::size_t Ix = std::hash<std::uint32_t>{}(Range.aspectMask.operator std::uint32_t() ^ Range.baseMipLevel ^
                                                         Range.levelCount ^ Range.baseArrayLayer ^ Range.layerCount);
             return Hx ^ (Ix << 1);
@@ -104,11 +103,5 @@ namespace Npgs
                .setSubresourceRange(Range);
 
         return Barrier;
-    }
-
-    FImageTracker* FImageTracker::GetInstance()
-    {
-        static FImageTracker kInstance;
-        return &kInstance;
     }
 } // namespace Npgs

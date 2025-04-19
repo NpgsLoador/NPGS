@@ -12,7 +12,6 @@
 #include <spirv_cross/spirv_reflect.hpp>
 
 #include "Engine/Core/Runtime/AssetLoaders/AssetManager.h"
-#include "Engine/Core/Runtime/Graphics/Vulkan/Context.h"
 #include "Engine/Utils/Logger.h"
 
 namespace Npgs
@@ -120,7 +119,8 @@ namespace Npgs
         }
     }
 
-    FShader::FShader(const std::vector<std::string>& ShaderFiles, const FResourceInfo& ResourceInfo)
+    FShader::FShader(FVulkanContext* VulkanContext, const std::vector<std::string>& ShaderFiles, const FResourceInfo& ResourceInfo)
+        : _VulkanContext(VulkanContext)
     {
         InitializeShaders(ShaderFiles, ResourceInfo);
         CreateDescriptorSetLayouts();
@@ -128,7 +128,8 @@ namespace Npgs
     }
 
     FShader::FShader(FShader&& Other) noexcept
-        : _ReflectionInfo(std::exchange(Other._ReflectionInfo, {}))
+        : _VulkanContext(std::exchange(Other._VulkanContext, nullptr))
+        , _ReflectionInfo(std::exchange(Other._ReflectionInfo, {}))
         , _ShaderModules(std::move(Other._ShaderModules))
         , _PushConstantOffsetsMap(std::move(Other._PushConstantOffsetsMap))
         , _DescriptorSetLayoutsMap(std::move(Other._DescriptorSetLayoutsMap))
@@ -140,6 +141,7 @@ namespace Npgs
     {
         if (this != &Other)
         {
+            _VulkanContext           = std::exchange(Other._VulkanContext, nullptr);
             _ReflectionInfo          = std::exchange(Other._ReflectionInfo, {});
             _ShaderModules           = std::move(Other._ShaderModules);
             _PushConstantOffsetsMap  = std::move(Other._PushConstantOffsetsMap);
@@ -184,7 +186,7 @@ namespace Npgs
             }
 
             vk::ShaderModuleCreateInfo ShaderModuleCreateInfo({}, ShaderInfo.Code);
-            FVulkanShaderModule ShaderModule(ShaderModuleCreateInfo);
+            FVulkanShaderModule ShaderModule(_VulkanContext->GetDevice(), ShaderModuleCreateInfo);
             _ShaderModules.emplace_back(ShaderInfo.Stage, std::move(ShaderModule));
 
             ReflectShader(ShaderInfo, ResourceInfo);
@@ -521,7 +523,8 @@ namespace Npgs
             }
 
             vk::DescriptorSetLayoutCreateInfo LayoutCreateInfo(vk::DescriptorSetLayoutCreateFlagBits::eDescriptorBufferEXT, Bindings);
-            _DescriptorSetLayoutsMap.emplace(Set, LayoutCreateInfo);
+            FVulkanDescriptorSetLayout Layout(_VulkanContext->GetDevice(), LayoutCreateInfo);
+            _DescriptorSetLayoutsMap.emplace(Set, std::move(Layout));
 
             NpgsCoreTrace("Created descriptor set layout for set {} with {} bindings", Set, Bindings.size());
         }
@@ -534,7 +537,7 @@ namespace Npgs
             return;
         }
 
-        vk::Device Device = FVulkanContext::GetClassInstance()->GetDevice();
+        vk::Device Device = _VulkanContext->GetDevice();
 
         for (const auto& [Set, Layout] : _DescriptorSetLayoutsMap)
         {

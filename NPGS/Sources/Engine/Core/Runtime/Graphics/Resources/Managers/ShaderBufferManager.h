@@ -13,7 +13,7 @@
 #include <vma/vk_mem_alloc.h>
 #include <vulkan/vulkan.hpp>
 
-#include "Engine/Core/Runtime/Graphics/Resources/Resources.h"
+#include "Engine/Core/Runtime/Graphics/Resources/DeviceLocalBuffer.h"
 #include "Engine/Core/Runtime/Graphics/Vulkan/Context.h"
 #include "Engine/Core/Runtime/Graphics/Vulkan/Wrappers.h"
 
@@ -116,6 +116,14 @@ namespace Npgs
         };
 
     public:
+        FShaderBufferManager(FVulkanContext* VulkanContext);
+        FShaderBufferManager(const FShaderBufferManager&) = delete;
+        FShaderBufferManager(FShaderBufferManager&&)      = delete;
+        ~FShaderBufferManager();
+
+        FShaderBufferManager& operator=(const FShaderBufferManager&) = delete;
+        FShaderBufferManager& operator=(FShaderBufferManager&&)      = delete;
+
         template <typename StructType>
         requires std::is_class_v<StructType>
         void CreateDataBuffers(const FDataBufferCreateInfo& DataBufferCreateInfo,
@@ -151,17 +159,7 @@ namespace Npgs
 
         const FDeviceLocalBuffer& GetDescriptorBuffer(std::uint32_t FrameIndex, const std::string& BufferName);
 
-        static FShaderBufferManager* GetInstance();
-
     private:
-        FShaderBufferManager();
-        FShaderBufferManager(const FShaderBufferManager&) = delete;
-        FShaderBufferManager(FShaderBufferManager&&)      = delete;
-        ~FShaderBufferManager();
-
-        FShaderBufferManager& operator=(const FShaderBufferManager&) = delete;
-        FShaderBufferManager& operator=(FShaderBufferManager&&)      = delete;
-
         vk::DeviceSize CalculateDescriptorBufferSize(const FDescriptorBufferCreateInfo& DescriptorBufferCreateInfo);
         void BindResourceToDescriptorBuffersInternal(const FDescriptorBufferCreateInfo& DescriptorBufferCreateInfo);
 

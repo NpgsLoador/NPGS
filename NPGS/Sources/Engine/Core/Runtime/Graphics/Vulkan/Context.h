@@ -29,6 +29,14 @@ namespace Npgs
         };
 
     public:
+        FVulkanContext();
+        FVulkanContext(const FVulkanContext&) = delete;
+        FVulkanContext(FVulkanContext&&)      = delete;
+        ~FVulkanContext();
+
+        FVulkanContext& operator=(const FVulkanContext&) = delete;
+        FVulkanContext& operator=(FVulkanContext&&)      = delete;
+
         void AddCreateDeviceCallback(const std::string& Name, const std::function<void()>& Callback);
         void AddDestroyDeviceCallback(const std::string& Name, const std::function<void()>& Callback);
         void AddCreateSwapchainCallback(const std::string& Name, const std::function<void()>& Callback);
@@ -148,21 +156,11 @@ namespace Npgs
 
         std::uint32_t GetApiVersion() const;
 
-        static FVulkanContext* GetClassInstance();
-
     private:
-        FVulkanContext();
-        FVulkanContext(const FVulkanContext&) = delete;
-        FVulkanContext(FVulkanContext&&)      = delete;
-        ~FVulkanContext();
-
-        FVulkanContext& operator=(const FVulkanContext&) = delete;
-        FVulkanContext& operator=(FVulkanContext&&)      = delete;
-
         void TransferImageOwnershipToPresentImpl(vk::CommandBuffer PresentCommandBuffer) const;
 
     private:
-        FVulkanCore* _VulkanCore;
+        std::unique_ptr<FVulkanCore> _VulkanCore;
 
         std::vector<std::pair<ECallbackType, std::string>> _AutoRemovedCallbacks;
         // std::array<vk::FormatProperties, magic_enum::enum_count<vk::Format>()> _FormatProperties;

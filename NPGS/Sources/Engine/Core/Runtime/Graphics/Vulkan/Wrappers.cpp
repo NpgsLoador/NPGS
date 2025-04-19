@@ -8,8 +8,8 @@
 
 #include "Engine/Core/Base/Assert.h"
 #include "Engine/Core/Base/Base.h"
-#include "Engine/Core/Runtime/Graphics/Vulkan/Core.h"
 #include "Engine/Utils/Logger.h"
+#include "Engine/Utils/VulkanCheck.h"
 
 namespace Npgs
 {
@@ -264,20 +264,10 @@ namespace Npgs
 
     // Wrapper for vk::CommandPool
     // ---------------------------
-    FVulkanCommandPool::FVulkanCommandPool(vk::CommandPoolCreateInfo& CreateInfo)
-        : FVulkanCommandPool(FVulkanCore::GetClassInstance()->GetDevice(), CreateInfo)
-    {
-    }
-
     FVulkanCommandPool::FVulkanCommandPool(vk::Device Device, vk::CommandPoolCreateInfo& CreateInfo)
         : Base(Device)
     {
         CreateCommandPool(CreateInfo);
-    }
-
-    FVulkanCommandPool::FVulkanCommandPool(std::uint32_t QueueFamilyIndex, vk::CommandPoolCreateFlags Flags)
-        : FVulkanCommandPool(FVulkanCore::GetClassInstance()->GetDevice(), QueueFamilyIndex, Flags)
-    {
     }
 
     FVulkanCommandPool::FVulkanCommandPool(vk::Device Device, std::uint32_t QueueFamilyIndex, vk::CommandPoolCreateFlags Flags)
@@ -420,14 +410,6 @@ namespace Npgs
 
     // Wrapper for vk::DeviceMemory
     // ----------------------------
-    FVulkanDeviceMemory::FVulkanDeviceMemory(const vk::MemoryAllocateInfo& AllocateInfo)
-        : FVulkanDeviceMemory(FVulkanCore::GetClassInstance()->GetDevice(),
-                              FVulkanCore::GetClassInstance()->GetPhysicalDeviceProperties(),
-                              FVulkanCore::GetClassInstance()->GetPhysicalDeviceMemoryProperties(),
-                              AllocateInfo)
-    {
-    }
-
     FVulkanDeviceMemory::FVulkanDeviceMemory(vk::Device Device, const vk::PhysicalDeviceProperties& PhysicalDeviceProperties,
                                              const vk::PhysicalDeviceMemoryProperties& PhysicalDeviceMemoryProperties,
                                              const vk::MemoryAllocateInfo& AllocateInfo)
@@ -435,8 +417,8 @@ namespace Npgs
         , _Allocator(nullptr)
         , _Allocation(nullptr)
         , _AllocationInfo{}
-        , _PhysicalDeviceProperties(&PhysicalDeviceProperties)
-        , _PhysicalDeviceMemoryProperties(&PhysicalDeviceMemoryProperties)
+        , _PhysicalDeviceProperties(PhysicalDeviceProperties)
+        , _PhysicalDeviceMemoryProperties(PhysicalDeviceMemoryProperties)
         , _AllocationSize{}
         , _bHostingVma(false)
     {
@@ -444,20 +426,17 @@ namespace Npgs
         _Status      = AllocateDeviceMemory(AllocateInfo);
     }
 
-    FVulkanDeviceMemory::FVulkanDeviceMemory(const VmaAllocationCreateInfo& AllocationCreateInfo,
+    FVulkanDeviceMemory::FVulkanDeviceMemory(vk::Device Device, VmaAllocator Allocator,
+                                             const VmaAllocationCreateInfo& AllocationCreateInfo,
+                                             const vk::PhysicalDeviceProperties& PhysicalDeviceProperties,
+                                             const vk::PhysicalDeviceMemoryProperties& PhysicalDeviceMemoryProperties,
                                              const vk::MemoryRequirements& MemoryRequirements)
-        : FVulkanDeviceMemory(FVulkanCore::GetClassInstance()->GetVmaAllocator(), AllocationCreateInfo, MemoryRequirements)
-    {
-    }
-
-    FVulkanDeviceMemory::FVulkanDeviceMemory(VmaAllocator Allocator, const VmaAllocationCreateInfo& AllocationCreateInfo,
-                                             const vk::MemoryRequirements& MemoryRequirements)
-        : Base(FVulkanCore::GetClassInstance()->GetDevice())
+        : Base(Device)
         , _Allocator(Allocator)
         , _Allocation(nullptr)
         , _AllocationInfo{}
-        , _PhysicalDeviceProperties(&FVulkanCore::GetClassInstance()->GetPhysicalDeviceProperties())
-        , _PhysicalDeviceMemoryProperties(&FVulkanCore::GetClassInstance()->GetPhysicalDeviceMemoryProperties())
+        , _PhysicalDeviceProperties(PhysicalDeviceProperties)
+        , _PhysicalDeviceMemoryProperties(PhysicalDeviceMemoryProperties)
         , _AllocationSize{}
         , _bHostingVma(false)
     {
@@ -465,14 +444,14 @@ namespace Npgs
         _Status      = AllocateDeviceMemory(AllocationCreateInfo, MemoryRequirements);
     }
 
-    FVulkanDeviceMemory::FVulkanDeviceMemory(VmaAllocator Allocator, VmaAllocation Allocation,
+    FVulkanDeviceMemory::FVulkanDeviceMemory(vk::Device Device, VmaAllocator Allocator, VmaAllocation Allocation,
                                              const VmaAllocationInfo& AllocationInfo, vk::DeviceMemory Handle)
-        : Base(FVulkanCore::GetClassInstance()->GetDevice())
+        : Base(Device)
         , _Allocator(Allocator)
         , _Allocation(Allocation)
         , _AllocationInfo(AllocationInfo)
-        , _PhysicalDeviceProperties(&FVulkanCore::GetClassInstance()->GetPhysicalDeviceProperties())
-        , _PhysicalDeviceMemoryProperties(&FVulkanCore::GetClassInstance()->GetPhysicalDeviceMemoryProperties())
+        , _PhysicalDeviceProperties{}
+        , _PhysicalDeviceMemoryProperties{}
         , _AllocationSize(AllocationInfo.size)
         , _bHostingVma(true)
     {
@@ -489,8 +468,8 @@ namespace Npgs
         , _Allocator(std::exchange(Other._Allocator, nullptr))
         , _Allocation(std::exchange(Other._Allocation, nullptr))
         , _AllocationInfo(std::exchange(Other._AllocationInfo, {}))
-        , _PhysicalDeviceProperties(std::exchange(Other._PhysicalDeviceProperties, nullptr))
-        , _PhysicalDeviceMemoryProperties(std::exchange(Other._PhysicalDeviceMemoryProperties, nullptr))
+        , _PhysicalDeviceProperties(std::exchange(Other._PhysicalDeviceProperties, {}))
+        , _PhysicalDeviceMemoryProperties(std::exchange(Other._PhysicalDeviceMemoryProperties, {}))
         , _AllocationSize(std::exchange(Other._AllocationSize, 0))
         , _MemoryPropertyFlags(std::exchange(Other._MemoryPropertyFlags, {}))
         , _MappedDataMemory(std::exchange(Other._MappedDataMemory, nullptr))
@@ -504,7 +483,7 @@ namespace Npgs
     {
         if (_bHostingVma)
         {
-            if (_bPersistentlyMapped)
+            if (_bPersistentlyMapped && _AllocationInfo.pMappedData != nullptr)
             {
                 vmaUnmapMemory(_Allocator, _Allocation);
             }
@@ -564,8 +543,8 @@ namespace Npgs
             _Allocator                      = std::exchange(Other._Allocator, nullptr);
             _Allocation                     = std::exchange(Other._Allocation, nullptr);
             _AllocationInfo                 = std::exchange(Other._AllocationInfo, {});
-            _PhysicalDeviceProperties       = std::exchange(Other._PhysicalDeviceProperties, nullptr);
-            _PhysicalDeviceMemoryProperties = std::exchange(Other._PhysicalDeviceMemoryProperties, nullptr);
+            _PhysicalDeviceProperties       = std::exchange(Other._PhysicalDeviceProperties, {});
+            _PhysicalDeviceMemoryProperties = std::exchange(Other._PhysicalDeviceMemoryProperties, {});
             _AllocationSize                 = std::exchange(Other._AllocationSize, 0);
             _MemoryPropertyFlags            = std::exchange(Other._MemoryPropertyFlags, {});
             _MappedDataMemory               = std::exchange(Other._MappedDataMemory, nullptr);
@@ -582,6 +561,7 @@ namespace Npgs
         if (_Allocator != nullptr && _Allocation != nullptr)
         {
             VulkanCheck(vmaMapMemory(_Allocator, _Allocation, &Target));
+            vmaGetAllocationInfo(_Allocator, _Allocation, &_AllocationInfo);
             if (Offset > 0)
             {
                 Target = static_cast<std::byte*>(Target) + Offset;
@@ -612,6 +592,7 @@ namespace Npgs
         if (_Allocator != nullptr && _Allocation != nullptr)
         {
             VulkanCheck(vmaMapMemory(_Allocator, _Allocation, &Data));
+            vmaGetAllocationInfo(_Allocator, _Allocation, &_AllocationInfo);
             if (Offset > 0)
             {
                 Data = static_cast<std::byte*>(Data) + Offset;
@@ -649,31 +630,10 @@ namespace Npgs
 
     vk::Result FVulkanDeviceMemory::UnmapMemory(vk::DeviceSize Offset, vk::DeviceSize Size)
     {
-        if (!(_MemoryPropertyFlags & vk::MemoryPropertyFlagBits::eHostCoherent))
-        {
-            if (_Allocator != nullptr && _Allocation != nullptr)
-            {
-                vmaFlushAllocation(_Allocator, _Allocation, Offset, Size);
-            }
-            else
-            {
-                AlignNonCoherentMemoryRange(Offset, Size);
-                vk::MappedMemoryRange MappedMemoryRange(_Handle, Offset, Size);
-                try
-                {
-                    _Device.flushMappedMemoryRanges(MappedMemoryRange);
-                }
-                catch (const vk::SystemError& e)
-                {
-                    NpgsCoreError("Failed to flush mapped memory range: {}", e.what());
-                    return static_cast<vk::Result>(e.code().value());
-                }
-            }
-        }
-
         if (_Allocator != nullptr && _Allocation != nullptr)
         {
             vmaUnmapMemory(_Allocator, _Allocation);
+            vmaGetAllocationInfo(_Allocator, _Allocation, &_AllocationInfo);
         }
         else
         {
@@ -690,20 +650,12 @@ namespace Npgs
         void* Target = nullptr;
         if (!_bPersistentlyMapped || _MappedTargetMemory == nullptr)
         {
-            if (_Allocator != nullptr && _Allocation != nullptr)
+            if (_bPersistentlyMapped)
             {
-                VulkanCheck(vmaMapMemory(_Allocator, _Allocation, &Target));
-                _MappedTargetMemory = Target;
+                NpgsAssert(MapOffset == 0, "when enable persistently mapped, MapOffset must be 0.");
             }
-            else
-            {
-                if (_bPersistentlyMapped)
-                {
-                    NpgsAssert(MapOffset == 0, "when enable persistently mapped, MapOffset must be 0.");
-                }
 
-                VulkanHppCheck(MapMemoryForSubmit(MapOffset, Size, Target));
-            }
+            VulkanHppCheck(MapMemoryForSubmit(MapOffset, Size, Target));
         }
         else
         {
@@ -720,6 +672,8 @@ namespace Npgs
             }
             else
             {
+                // TODO
+                AlignNonCoherentMemoryRange(SubmitOffset, Size);
                 vk::MappedMemoryRange MappedMemoryRange(_Handle, SubmitOffset, Size);
                 try
                 {
@@ -735,15 +689,7 @@ namespace Npgs
 
         if (!_bPersistentlyMapped)
         {
-            if (_Allocator != nullptr && _Allocation != nullptr)
-            {
-                vmaUnmapMemory(_Allocator, _Allocation);
-                return vk::Result::eSuccess;
-            }
-            else
-            {
-                return UnmapMemory(MapOffset, Size);
-            }
+            return UnmapMemory(MapOffset, Size);
         }
 
         return vk::Result::eSuccess;
@@ -754,20 +700,12 @@ namespace Npgs
         void* Data = nullptr;
         if (!_bPersistentlyMapped || _MappedTargetMemory == nullptr)
         {
-            if (_Allocator != nullptr && _Allocation != nullptr)
+            if (_bPersistentlyMapped)
             {
-                VulkanCheck(vmaMapMemory(_Allocator, _Allocation, &Data));
-                _MappedDataMemory = Data;
+                NpgsAssert(MapOffset == 0, "when enable persistently mapped, MapOffset must be 0.");
             }
-            else
-            {
-                if (_bPersistentlyMapped)
-                {
-                    NpgsAssert(MapOffset == 0, "when enable persistently mapped, MapOffset must be 0.");
-                }
 
-                VulkanHppCheck(MapMemoryForFetch(MapOffset, Size, Data));
-            }
+            VulkanHppCheck(MapMemoryForFetch(MapOffset, Size, Data));
         }
         else
         {
@@ -784,6 +722,8 @@ namespace Npgs
             }
             else
             {
+                // TODO
+                AlignNonCoherentMemoryRange(FetchOffset, Size);
                 vk::MappedMemoryRange MappedMemoryRange(_Handle, FetchOffset, Size);
                 try
                 {
@@ -799,15 +739,7 @@ namespace Npgs
 
         if (!_bPersistentlyMapped)
         {
-            if (_Allocator != nullptr && _Allocation != nullptr)
-            {
-                vmaUnmapMemory(_Allocator, _Allocation);
-                return vk::Result::eSuccess;
-            }
-            else
-            {
-                return UnmapMemory(MapOffset, Size);
-            }
+            return UnmapMemory(MapOffset, Size);
         }
 
         return vk::Result::eSuccess;
@@ -815,7 +747,7 @@ namespace Npgs
 
     vk::Result FVulkanDeviceMemory::AllocateDeviceMemory(const vk::MemoryAllocateInfo& AllocateInfo)
     {
-        if (AllocateInfo.memoryTypeIndex >= _PhysicalDeviceMemoryProperties->memoryTypeCount)
+        if (AllocateInfo.memoryTypeIndex >= _PhysicalDeviceMemoryProperties.memoryTypeCount)
         {
             NpgsCoreError("Invalid memory type index: {}.", AllocateInfo.memoryTypeIndex);
             return vk::Result::eErrorMemoryMapFailed;
@@ -831,7 +763,7 @@ namespace Npgs
             return static_cast<vk::Result>(e.code().value());
         }
         _AllocationSize      = AllocateInfo.allocationSize;
-        _MemoryPropertyFlags = _PhysicalDeviceMemoryProperties->memoryTypes[AllocateInfo.memoryTypeIndex].propertyFlags;
+        _MemoryPropertyFlags = _PhysicalDeviceMemoryProperties.memoryTypes[AllocateInfo.memoryTypeIndex].propertyFlags;
 
         NpgsCoreTrace("Device memory allocated successfully.");
         return vk::Result::eSuccess;
@@ -880,7 +812,7 @@ namespace Npgs
 
     vk::DeviceSize FVulkanDeviceMemory::AlignNonCoherentMemoryRange(vk::DeviceSize& Offset, vk::DeviceSize& Size) const
     {
-        vk::DeviceSize NonCoherentAtomSize = _PhysicalDeviceProperties->limits.nonCoherentAtomSize;
+        vk::DeviceSize NonCoherentAtomSize = _PhysicalDeviceProperties.limits.nonCoherentAtomSize;
         vk::DeviceSize OriginalOffset      = Offset;
         vk::DeviceSize RangeBegin          = Offset;
         vk::DeviceSize RangeEnd            = Offset + Size;
@@ -899,31 +831,21 @@ namespace Npgs
 
     // Wrapper for vk::Buffer
     // ----------------------
-    FVulkanBuffer::FVulkanBuffer(const vk::BufferCreateInfo& CreateInfo)
-        : FVulkanBuffer(FVulkanCore::GetClassInstance()->GetDevice(),
-                        FVulkanCore::GetClassInstance()->GetPhysicalDeviceMemoryProperties(),
-                        CreateInfo)
-    {
-    }
-
     FVulkanBuffer::FVulkanBuffer(vk::Device Device, const vk::PhysicalDeviceMemoryProperties& PhysicalDeviceMemoryProperties,
                                  const vk::BufferCreateInfo& CreateInfo)
         : Base(Device)
-        , _PhysicalDeviceMemoryProperties(&PhysicalDeviceMemoryProperties)
+        , _PhysicalDeviceMemoryProperties(PhysicalDeviceMemoryProperties)
         , _Allocator(nullptr)
     {
         _ReleaseInfo = "Buffer destroyed successfully.";
         _Status      = CreateBuffer(CreateInfo);
     }
 
-    FVulkanBuffer::FVulkanBuffer(const VmaAllocationCreateInfo& AllocationCreateInfo, const vk::BufferCreateInfo& CreateInfo)
-        : FVulkanBuffer(FVulkanCore::GetClassInstance()->GetVmaAllocator(), AllocationCreateInfo, CreateInfo)
-    {
-    }
-
-    FVulkanBuffer::FVulkanBuffer(VmaAllocator Allocator, const VmaAllocationCreateInfo& AllocationCreateInfo, const vk::BufferCreateInfo& CreateInfo)
-        : Base(FVulkanCore::GetClassInstance()->GetDevice())
-        , _PhysicalDeviceMemoryProperties(&FVulkanCore::GetClassInstance()->GetPhysicalDeviceMemoryProperties())
+    FVulkanBuffer::FVulkanBuffer(vk::Device Device, VmaAllocator Allocator,
+                                 const VmaAllocationCreateInfo& AllocationCreateInfo,
+                                 const vk::BufferCreateInfo& CreateInfo)
+        : Base(Device)
+        , _PhysicalDeviceMemoryProperties{}
         , _Allocator(Allocator)
     {
         _ReleaseInfo = "Buffer destroyed successfully.";
@@ -943,7 +865,7 @@ namespace Npgs
     vk::MemoryAllocateInfo FVulkanBuffer::CreateMemoryAllocateInfo(vk::MemoryPropertyFlags Flags) const
     {
         vk::MemoryRequirements MemoryRequirements = _Device.getBufferMemoryRequirements(_Handle);
-        std::uint32_t MemoryTypeIndex = GetMemoryTypeIndex(*_PhysicalDeviceMemoryProperties, MemoryRequirements, Flags);
+        std::uint32_t MemoryTypeIndex = GetMemoryTypeIndex(_PhysicalDeviceMemoryProperties, MemoryRequirements, Flags);
         vk::MemoryAllocateInfo MemoryAllocateInfo(MemoryRequirements.size, MemoryTypeIndex);
 
         return MemoryAllocateInfo;
@@ -994,22 +916,11 @@ namespace Npgs
 
     // Wrapper for vk::BufferView
     // --------------------------
-    FVulkanBufferView::FVulkanBufferView(const vk::BufferViewCreateInfo& CreateInfo)
-        : FVulkanBufferView(FVulkanCore::GetClassInstance()->GetDevice(), CreateInfo)
-    {
-    }
-
     FVulkanBufferView::FVulkanBufferView(vk::Device Device, const vk::BufferViewCreateInfo& CreateInfo)
         : Base(Device)
     {
         _ReleaseInfo = "Buffer view destroyed successfully.";
         _Status      = CreateBufferView(CreateInfo);
-    }
-
-    FVulkanBufferView::FVulkanBufferView(const FVulkanBuffer& Buffer, vk::Format Format, vk::DeviceSize Offset,
-                                         vk::DeviceSize Range, vk::BufferViewCreateFlags Flags)
-        : FVulkanBufferView(FVulkanCore::GetClassInstance()->GetDevice(), Buffer, Format, Offset, Range, Flags)
-    {
     }
 
     FVulkanBufferView::FVulkanBufferView(vk::Device Device, const FVulkanBuffer& Buffer, vk::Format Format,
@@ -1043,13 +954,15 @@ namespace Npgs
         return CreateBufferView(CreateInfo);
     }
 
-    // Wrapper for vk::DescriptorSetLayout
-    // -----------------------------------
-    FVulkanDescriptorSetLayout::FVulkanDescriptorSetLayout(const vk::DescriptorSetLayoutCreateInfo& CreateInfo)
-        : FVulkanDescriptorSetLayout(FVulkanCore::GetClassInstance()->GetDevice(), CreateInfo)
+    // Wrapper for vk::DescriptorSet
+    // -----------------------------
+    Npgs::FVulkanDescriptorSet::FVulkanDescriptorSet(vk::Device Device)
+        : _Device(Device)
     {
     }
 
+    // Wrapper for vk::DescriptorSetLayout
+    // -----------------------------------
     FVulkanDescriptorSetLayout::FVulkanDescriptorSetLayout(vk::Device Device, const vk::DescriptorSetLayoutCreateInfo& CreateInfo)
         : Base(Device)
     {
@@ -1087,22 +1000,11 @@ namespace Npgs
 
     // Wrapper for vk::DescriptorPool
     // ------------------------------
-    FVulkanDescriptorPool::FVulkanDescriptorPool(const vk::DescriptorPoolCreateInfo& CreateInfo)
-        : FVulkanDescriptorPool(FVulkanCore::GetClassInstance()->GetDevice(), CreateInfo)
-    {
-    }
-
     FVulkanDescriptorPool::FVulkanDescriptorPool(vk::Device Device, const vk::DescriptorPoolCreateInfo& CreateInfo)
         : Base(Device)
     {
         _ReleaseInfo = "Descriptor pool destroyed successfully.";
         _Status      = CreateDescriptorPool(CreateInfo);
-    }
-
-    FVulkanDescriptorPool::FVulkanDescriptorPool(std::uint32_t MaxSets, const vk::ArrayProxy<vk::DescriptorPoolSize>& PoolSizes,
-                                                 vk::DescriptorPoolCreateFlags Flags)
-        : FVulkanDescriptorPool(FVulkanCore::GetClassInstance()->GetDevice(), MaxSets, PoolSizes, Flags)
-    {
     }
 
     FVulkanDescriptorPool::FVulkanDescriptorPool(vk::Device Device, std::uint32_t MaxSets, const vk::ArrayProxy<vk::DescriptorPoolSize>& PoolSizes,
@@ -1239,21 +1141,11 @@ namespace Npgs
 
     // Wrapper for vk::Fence
     // ---------------------
-    FVulkanFence::FVulkanFence(const vk::FenceCreateInfo& CreateInfo)
-        : FVulkanFence(FVulkanCore::GetClassInstance()->GetDevice(), CreateInfo)
-    {
-    }
-
     FVulkanFence::FVulkanFence(vk::Device Device, const vk::FenceCreateInfo& CreateInfo)
         : Base(Device)
     {
         // _ReleaseInfo = "Fence destroyed successfully.";
         _Status      = CreateFence(CreateInfo);
-    }
-
-    FVulkanFence::FVulkanFence(vk::FenceCreateFlags Flags)
-        : FVulkanFence(FVulkanCore::GetClassInstance()->GetDevice(), Flags)
-    {
     }
 
     FVulkanFence::FVulkanFence(vk::Device Device, vk::FenceCreateFlags Flags)
@@ -1330,11 +1222,6 @@ namespace Npgs
 
     // Wrapper for vk::Framebuffer
     // ---------------------------
-    FVulkanFramebuffer::FVulkanFramebuffer(const vk::FramebufferCreateInfo& CreateInfo)
-        : FVulkanFramebuffer(FVulkanCore::GetClassInstance()->GetDevice(), CreateInfo)
-    {
-    }
-
     FVulkanFramebuffer::FVulkanFramebuffer(vk::Device Device, const vk::FramebufferCreateInfo& CreateInfo)
         : Base(Device)
     {
@@ -1360,31 +1247,21 @@ namespace Npgs
 
     // Wrapper for vk::Image
     // ---------------------
-    FVulkanImage::FVulkanImage(vk::ImageCreateInfo& CreateInfo)
-        : FVulkanImage(FVulkanCore::GetClassInstance()->GetDevice(),
-                       FVulkanCore::GetClassInstance()->GetPhysicalDeviceMemoryProperties(),
-                       CreateInfo)
-    {
-    }
-
     FVulkanImage::FVulkanImage(vk::Device Device, const vk::PhysicalDeviceMemoryProperties& PhysicalDeviceMemoryProperties,
                                const vk::ImageCreateInfo& CreateInfo)
         : Base(Device)
-        , _PhysicalDeviceMemoryProperties(&PhysicalDeviceMemoryProperties)
+        , _PhysicalDeviceMemoryProperties(PhysicalDeviceMemoryProperties)
         , _Allocator(nullptr)
     {
         _ReleaseInfo = "Image destroyed successfully.";
         _Status      = CreateImage(CreateInfo);
     }
 
-    FVulkanImage::FVulkanImage(const VmaAllocationCreateInfo& AllocationCreateInfo, const vk::ImageCreateInfo& CreateInfo)
-        : FVulkanImage(FVulkanCore::GetClassInstance()->GetVmaAllocator(), AllocationCreateInfo, CreateInfo)
-    {
-    }
-
-    FVulkanImage::FVulkanImage(VmaAllocator Allocator, const VmaAllocationCreateInfo& AllocationCreateInfo, const vk::ImageCreateInfo& CreateInfo)
-        : Base(FVulkanCore::GetClassInstance()->GetDevice())
-        , _PhysicalDeviceMemoryProperties(&FVulkanCore::GetClassInstance()->GetPhysicalDeviceMemoryProperties())
+    FVulkanImage::FVulkanImage(vk::Device Device, VmaAllocator Allocator,
+                               const VmaAllocationCreateInfo& AllocationCreateInfo,
+                               const vk::ImageCreateInfo& CreateInfo)
+        : Base(Device)
+        , _PhysicalDeviceMemoryProperties{}
         , _Allocator(Allocator)
     {
         _ReleaseInfo = "Image destroyed successfully.";
@@ -1404,13 +1281,13 @@ namespace Npgs
     vk::MemoryAllocateInfo FVulkanImage::CreateMemoryAllocateInfo(vk::MemoryPropertyFlags Flags) const
     {
         vk::MemoryRequirements MemoryRequirements = _Device.getImageMemoryRequirements(_Handle);
-        std::uint32_t MemoryTypeIndex = GetMemoryTypeIndex(*_PhysicalDeviceMemoryProperties, MemoryRequirements, Flags);
+        std::uint32_t MemoryTypeIndex = GetMemoryTypeIndex(_PhysicalDeviceMemoryProperties, MemoryRequirements, Flags);
 
         if (MemoryTypeIndex == std::numeric_limits<std::uint32_t>::max() &&
             Flags & vk::MemoryPropertyFlagBits::eLazilyAllocated)
         {
             Flags &= ~vk::MemoryPropertyFlagBits::eLazilyAllocated;
-            MemoryTypeIndex = GetMemoryTypeIndex(*_PhysicalDeviceMemoryProperties, MemoryRequirements, Flags);
+            MemoryTypeIndex = GetMemoryTypeIndex(_PhysicalDeviceMemoryProperties, MemoryRequirements, Flags);
         }
 
         vk::MemoryAllocateInfo MemoryAllocateInfo(MemoryRequirements.size, MemoryTypeIndex);
@@ -1463,23 +1340,11 @@ namespace Npgs
 
     // Wrapper for vk::ImageView
     // -------------------------
-    FVulkanImageView::FVulkanImageView(const vk::ImageViewCreateInfo& CreateInfo)
-        : FVulkanImageView(FVulkanCore::GetClassInstance()->GetDevice(), CreateInfo)
-    {
-    }
-
     FVulkanImageView::FVulkanImageView(vk::Device Device, const vk::ImageViewCreateInfo& CreateInfo)
         : Base(Device)
     {
         _ReleaseInfo = "Image view destroyed successfully.";
         _Status      = CreateImageView(CreateInfo);
-    }
-
-    FVulkanImageView::FVulkanImageView(const FVulkanImage& Image, vk::ImageViewType ViewType, vk::Format Format,
-                                       vk::ComponentMapping Components, vk::ImageSubresourceRange SubresourceRange,
-                                       vk::ImageViewCreateFlags Flags)
-        : FVulkanImageView(FVulkanCore::GetClassInstance()->GetDevice(), Image, ViewType, Format, Components, SubresourceRange, Flags)
-    {
     }
 
     FVulkanImageView::FVulkanImageView(vk::Device Device, const FVulkanImage& Image, vk::ImageViewType ViewType,
@@ -1517,21 +1382,11 @@ namespace Npgs
 
     // Wrapper for vk::PipelineCache
     // -----------------------------
-    FVulkanPipelineCache::FVulkanPipelineCache(vk::PipelineCacheCreateFlags Flags)
-        : FVulkanPipelineCache(FVulkanCore::GetClassInstance()->GetDevice(), Flags)
-    {
-    }
-
     FVulkanPipelineCache::FVulkanPipelineCache(vk::Device Device, vk::PipelineCacheCreateFlags Flags)
         : Base(Device)
     {
         _ReleaseInfo = "Pipeline cache destroyed successfully.";
         _Status      = CreatePipelineCache(Flags);
-    }
-
-    FVulkanPipelineCache::FVulkanPipelineCache(vk::PipelineCacheCreateFlags Flags, const vk::ArrayProxy<std::byte>& InitialData)
-        : FVulkanPipelineCache(FVulkanCore::GetClassInstance()->GetDevice(), Flags, InitialData)
-    {
     }
 
     FVulkanPipelineCache::FVulkanPipelineCache(vk::Device Device, vk::PipelineCacheCreateFlags Flags,
@@ -1540,11 +1395,6 @@ namespace Npgs
     {
         _ReleaseInfo = "Pipeline cache destroyed successfully.";
         _Status      = CreatePipelineCache(Flags, InitialData);
-    }
-
-    FVulkanPipelineCache::FVulkanPipelineCache(const vk::PipelineCacheCreateInfo& CreateInfo)
-        : FVulkanPipelineCache(FVulkanCore::GetClassInstance()->GetDevice(), CreateInfo)
-    {
     }
 
     FVulkanPipelineCache::FVulkanPipelineCache(vk::Device Device, const vk::PipelineCacheCreateInfo& CreateInfo)
@@ -1587,22 +1437,12 @@ namespace Npgs
 
     // Wrapper for vk::Pipeline
     // ------------------------
-    FVulkanPipeline::FVulkanPipeline(const vk::GraphicsPipelineCreateInfo& CreateInfo, const FVulkanPipelineCache* Cache)
-        : FVulkanPipeline(FVulkanCore::GetClassInstance()->GetDevice(), CreateInfo, Cache)
-    {
-    }
-
     FVulkanPipeline::FVulkanPipeline(vk::Device Device, const vk::GraphicsPipelineCreateInfo& CreateInfo,
                                      const FVulkanPipelineCache* Cache)
         : Base(Device)
     {
         _ReleaseInfo = "Graphics pipeline destroyed successfully.";
         _Status      = CreateGraphicsPipeline(CreateInfo, Cache);
-    }
-
-    FVulkanPipeline::FVulkanPipeline(const vk::ComputePipelineCreateInfo& CreateInfo, const FVulkanPipelineCache* Cache)
-        : FVulkanPipeline(FVulkanCore::GetClassInstance()->GetDevice(), CreateInfo, Cache)
-    {
     }
 
     FVulkanPipeline::FVulkanPipeline(vk::Device Device, const vk::ComputePipelineCreateInfo& CreateInfo,
@@ -1651,11 +1491,6 @@ namespace Npgs
 
     // Wrapper for vk::PipelineLayout
     // ------------------------------
-    FVulkanPipelineLayout::FVulkanPipelineLayout(const vk::PipelineLayoutCreateInfo& CreateInfo)
-        : FVulkanPipelineLayout(FVulkanCore::GetClassInstance()->GetDevice(), CreateInfo)
-    {
-    }
-
     FVulkanPipelineLayout::FVulkanPipelineLayout(vk::Device Device, const vk::PipelineLayoutCreateInfo& CreateInfo)
         : Base(Device)
     {
@@ -1682,22 +1517,11 @@ namespace Npgs
 
     // Wrapper for vk::QueryPool
     // -------------------------
-    FVulkanQueryPool::FVulkanQueryPool(const vk::QueryPoolCreateInfo& CreateInfo)
-        : FVulkanQueryPool(FVulkanCore::GetClassInstance()->GetDevice(), CreateInfo)
-    {
-    }
-
     FVulkanQueryPool::FVulkanQueryPool(vk::Device Device, const vk::QueryPoolCreateInfo& CreateInfo)
         : Base(Device)
     {
         _ReleaseInfo = "Query pool destroyed successfully.";
         _Status      = CreateQueryPool(CreateInfo);
-    }
-
-    FVulkanQueryPool::FVulkanQueryPool(vk::QueryType QueryType, std::uint32_t QueryCount, vk::QueryPoolCreateFlags Flags,
-                                       vk::QueryPipelineStatisticFlags PipelineStatisticsFlags)
-        : FVulkanQueryPool(FVulkanCore::GetClassInstance()->GetDevice(), QueryType, QueryCount, Flags, PipelineStatisticsFlags)
-    {
     }
 
     FVulkanQueryPool::FVulkanQueryPool(vk::Device Device, vk::QueryType QueryType, std::uint32_t QueryCount,
@@ -1743,11 +1567,6 @@ namespace Npgs
 
     // Wrapper for vk::RenderPass
     // --------------------------
-    FVulkanRenderPass::FVulkanRenderPass(const vk::RenderPassCreateInfo& CreateInfo)
-        : FVulkanRenderPass(FVulkanCore::GetClassInstance()->GetDevice(), CreateInfo)
-    {
-    }
-
     FVulkanRenderPass::FVulkanRenderPass(vk::Device Device, const vk::RenderPassCreateInfo& CreateInfo)
         : Base(Device)
     {
@@ -1781,11 +1600,6 @@ namespace Npgs
 
     // Wrapper for vk::Sampler
     // -----------------------
-    FVulkanSampler::FVulkanSampler(const vk::SamplerCreateInfo& CreateInfo)
-        : FVulkanSampler(FVulkanCore::GetClassInstance()->GetDevice(), CreateInfo)
-    {
-    }
-
     FVulkanSampler::FVulkanSampler(vk::Device Device, const vk::SamplerCreateInfo& CreateInfo)
         : Base(Device)
     {
@@ -1811,21 +1625,11 @@ namespace Npgs
 
     // Wrapper for vk::Semaphore
     // -------------------------
-    FVulkanSemaphore::FVulkanSemaphore(const vk::SemaphoreCreateInfo& CreateInfo)
-        : FVulkanSemaphore(FVulkanCore::GetClassInstance()->GetDevice(), CreateInfo)
-    {
-    }
-
     FVulkanSemaphore::FVulkanSemaphore(vk::Device Device, const vk::SemaphoreCreateInfo& CreateInfo)
         : Base(Device)
     {
         _ReleaseInfo = "Semaphore destroyed successfully.";
         _Status      = CreateSemaphore(CreateInfo);
-    }
-
-    FVulkanSemaphore::FVulkanSemaphore(vk::SemaphoreCreateFlags Flags)
-        : FVulkanSemaphore(FVulkanCore::GetClassInstance()->GetDevice(), Flags)
-    {
     }
 
     FVulkanSemaphore::FVulkanSemaphore(vk::Device Device, vk::SemaphoreCreateFlags Flags)
@@ -1859,11 +1663,6 @@ namespace Npgs
 
     // Wrapper for vk::ShaderModule
     // ----------------------------
-    FVulkanShaderModule::FVulkanShaderModule(const vk::ShaderModuleCreateInfo& CreateInfo)
-        : FVulkanShaderModule(FVulkanCore::GetClassInstance()->GetDevice(), CreateInfo)
-    {
-    }
-
     FVulkanShaderModule::FVulkanShaderModule(vk::Device Device, const vk::ShaderModuleCreateInfo& CreateInfo)
         : Base(Device)
     {
@@ -1889,14 +1688,6 @@ namespace Npgs
     // -------------------
     // Native wrappers end
 
-    FVulkanBufferMemory::FVulkanBufferMemory(const vk::BufferCreateInfo& BufferCreateInfo, vk::MemoryPropertyFlags MemoryPropertyFlags)
-        : FVulkanBufferMemory(FVulkanCore::GetClassInstance()->GetDevice(),
-                              FVulkanCore::GetClassInstance()->GetPhysicalDeviceProperties(),
-                              FVulkanCore::GetClassInstance()->GetPhysicalDeviceMemoryProperties(),
-                              BufferCreateInfo, MemoryPropertyFlags)
-    {
-    }
-
     FVulkanBufferMemory::FVulkanBufferMemory(vk::Device Device, const vk::PhysicalDeviceProperties& PhysicalDeviceProperties,
                                              const vk::PhysicalDeviceMemoryProperties& PhysicalDeviceMemoryProperties,
                                              const vk::BufferCreateInfo& BufferCreateInfo, vk::MemoryPropertyFlags MemoryPropertyFlags)
@@ -1915,26 +1706,15 @@ namespace Npgs
         _bMemoryBound = _Memory->IsValid() && (_Resource->BindMemory(*_Memory) == vk::Result::eSuccess);
     }
 
-    FVulkanBufferMemory::FVulkanBufferMemory(const VmaAllocationCreateInfo& AllocationCreateInfo, const vk::BufferCreateInfo& BufferCreateInfo)
-        : FVulkanBufferMemory(FVulkanCore::GetClassInstance()->GetVmaAllocator(), AllocationCreateInfo, BufferCreateInfo)
+    FVulkanBufferMemory::FVulkanBufferMemory(vk::Device Device, VmaAllocator Allocator,
+                                             const VmaAllocationCreateInfo& AllocationCreateInfo,
+                                             const vk::BufferCreateInfo& BufferCreateInfo)
+        : Base(std::make_unique<FVulkanBuffer>(Device, Allocator, AllocationCreateInfo, BufferCreateInfo), nullptr)
     {
-    }
-
-    FVulkanBufferMemory::FVulkanBufferMemory(VmaAllocator Allocator, const VmaAllocationCreateInfo& AllocationCreateInfo, const vk::BufferCreateInfo& BufferCreateInfo)
-        : Base(std::make_unique<FVulkanBuffer>(Allocator, AllocationCreateInfo, BufferCreateInfo), nullptr)
-    {
+        auto  Allocation     = _Resource->GetAllocation();
         auto& AllocationInfo = _Resource->GetAllocationInfo();
-        _Memory = std::make_unique<FVulkanDeviceMemory>(
-            _Resource->GetAllocator(), _Resource->GetAllocation(), AllocationInfo, AllocationInfo.deviceMemory);
+        _Memory = std::make_unique<FVulkanDeviceMemory>(Device, Allocator, Allocation, AllocationInfo, AllocationInfo.deviceMemory);
         _bMemoryBound = true;
-    }
-
-    FVulkanImageMemory::FVulkanImageMemory(const vk::ImageCreateInfo& ImageCreateInfo, vk::MemoryPropertyFlags MemoryPropertyFlags)
-        : FVulkanImageMemory(FVulkanCore::GetClassInstance()->GetDevice(),
-                             FVulkanCore::GetClassInstance()->GetPhysicalDeviceProperties(),
-                             FVulkanCore::GetClassInstance()->GetPhysicalDeviceMemoryProperties(),
-                             ImageCreateInfo, MemoryPropertyFlags)
-    {
     }
 
     FVulkanImageMemory::FVulkanImageMemory(vk::Device Device, const vk::PhysicalDeviceProperties& PhysicalDeviceProperties,
@@ -1948,17 +1728,14 @@ namespace Npgs
         _bMemoryBound = _Memory->IsValid() && (_Resource->BindMemory(*_Memory) == vk::Result::eSuccess);
     }
 
-    FVulkanImageMemory::FVulkanImageMemory(const VmaAllocationCreateInfo& AllocationCreateInfo, const vk::ImageCreateInfo& ImageCreateInfo)
-        : FVulkanImageMemory(FVulkanCore::GetClassInstance()->GetVmaAllocator(), AllocationCreateInfo, ImageCreateInfo)
+    FVulkanImageMemory::FVulkanImageMemory(vk::Device Device, VmaAllocator Allocator,
+                                           const VmaAllocationCreateInfo& AllocationCreateInfo,
+                                           const vk::ImageCreateInfo& ImageCreateInfo)
+        : Base(std::make_unique<FVulkanImage>(Device, Allocator, AllocationCreateInfo, ImageCreateInfo), nullptr)
     {
-    }
-
-    FVulkanImageMemory::FVulkanImageMemory(VmaAllocator Allocator, const VmaAllocationCreateInfo& AllocationCreateInfo, const vk::ImageCreateInfo& ImageCreateInfo)
-        : Base(std::make_unique<FVulkanImage>(Allocator, AllocationCreateInfo, ImageCreateInfo), nullptr)
-    {
+        auto  Allocation     = _Resource->GetAllocation();
         auto& AllocationInfo = _Resource->GetAllocationInfo();
-        _Memory = std::make_unique<FVulkanDeviceMemory>(
-            _Resource->GetAllocator(), _Resource->GetAllocation(), AllocationInfo, AllocationInfo.deviceMemory);
+        _Memory = std::make_unique<FVulkanDeviceMemory>(Device, Allocator, Allocation, AllocationInfo, AllocationInfo.deviceMemory);
         _bMemoryBound = true;
     }
 } // namespace Npgs

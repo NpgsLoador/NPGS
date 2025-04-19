@@ -9,6 +9,7 @@
 #include <vma/vk_mem_alloc.h>
 #include <vulkan/vulkan.hpp>
 
+#include "Engine/Core/Runtime/Graphics/Vulkan/Context.h"
 #include "Engine/Core/Runtime/Graphics/Vulkan/Wrappers.h"
 
 namespace Npgs
@@ -16,13 +17,9 @@ namespace Npgs
     class FStagingBuffer
     {
     public:
-        FStagingBuffer() = delete;
-        FStagingBuffer(vk::DeviceSize Size);
-        FStagingBuffer(vk::Device Device, const vk::PhysicalDeviceProperties& PhysicalDeviceProperties,
-                       const vk::PhysicalDeviceMemoryProperties& PhysicalDeviceMemoryProperties, vk::DeviceSize Size);
-
-        FStagingBuffer(const VmaAllocationCreateInfo& AllocationCreateInfo, const vk::BufferCreateInfo& BufferCreateInfo);
-        FStagingBuffer(VmaAllocator Allocator, const VmaAllocationCreateInfo& AllocationCreateInfo,
+        FStagingBuffer(FVulkanContext* VulkanContext, vk::DeviceSize Size);
+        FStagingBuffer(FVulkanContext* VulkanContext, VmaAllocator Allocator,
+                       const VmaAllocationCreateInfo* AllocationCreateInfo,
                        const vk::BufferCreateInfo& BufferCreateInfo);
 
         FStagingBuffer(const FStagingBuffer&) = delete;
@@ -57,14 +54,12 @@ namespace Npgs
         void Expand(vk::DeviceSize Size);
 
     private:
-        vk::Device                                _Device;
-        const vk::PhysicalDeviceProperties*       _PhysicalDeviceProperties;
-        const vk::PhysicalDeviceMemoryProperties* _PhysicalDeviceMemoryProperties;
-        std::unique_ptr<FVulkanBufferMemory>      _BufferMemory;
-        std::unique_ptr<FVulkanImage>             _AliasedImage;
-        vk::DeviceSize                            _MemoryUsage;
-        VmaAllocator                              _Allocator;
-        VmaAllocationCreateInfo                   _AllocationCreateInfo;
+        FVulkanContext*                      _VulkanContext;
+        std::unique_ptr<FVulkanBufferMemory> _BufferMemory;
+        std::unique_ptr<FVulkanImage>        _AliasedImage;
+        vk::DeviceSize                       _MemoryUsage;
+        VmaAllocator                         _Allocator;
+        const VmaAllocationCreateInfo*       _AllocationCreateInfo;
     };
 } // namespace Npgs
 

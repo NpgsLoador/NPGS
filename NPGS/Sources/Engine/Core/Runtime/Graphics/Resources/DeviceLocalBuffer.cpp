@@ -8,30 +8,29 @@
 #include <vulkan/vulkan_to_string.hpp>
 
 #include "Engine/Core/Runtime/Graphics/Resources/Pools/StagingBufferPool.h"
-#include "Engine/Core/Runtime/Graphics/Vulkan/Context.h"
-#include "Engine/Core/Runtime/Graphics/Vulkan/Core.h"
+#include "Engine/Core/System/Services/EngineServices.h"
 
 namespace Npgs
 {
-    FDeviceLocalBuffer::FDeviceLocalBuffer(vk::DeviceSize Size, vk::BufferUsageFlags Usage)
-        : _Allocator(nullptr)
+    FDeviceLocalBuffer::FDeviceLocalBuffer(FVulkanContext* VulkanContext, vk::DeviceSize Size, vk::BufferUsageFlags Usage)
+        : _VulkanContext(VulkanContext)
+        , _Allocator(nullptr)
     {
         CreateBuffer(Size, Usage);
     }
 
-    FDeviceLocalBuffer::FDeviceLocalBuffer(const VmaAllocationCreateInfo& AllocationCreateInfo, const vk::BufferCreateInfo& BufferCreateInfo)
-        : FDeviceLocalBuffer(FVulkanCore::GetClassInstance()->GetVmaAllocator(), AllocationCreateInfo, BufferCreateInfo)
-    {
-    }
-
-    FDeviceLocalBuffer::FDeviceLocalBuffer(VmaAllocator Allocator, const VmaAllocationCreateInfo& AllocationCreateInfo, const vk::BufferCreateInfo& BufferCreateInfo)
-        : _Allocator(Allocator)
+    FDeviceLocalBuffer::FDeviceLocalBuffer(FVulkanContext* VulkanContext, VmaAllocator Allocator,
+                                           const VmaAllocationCreateInfo& AllocationCreateInfo,
+                                           const vk::BufferCreateInfo& BufferCreateInfo)
+        : _VulkanContext(VulkanContext)
+        , _Allocator(Allocator)
     {
         CreateBuffer(AllocationCreateInfo, BufferCreateInfo);
     }
 
     FDeviceLocalBuffer::FDeviceLocalBuffer(FDeviceLocalBuffer&& Other) noexcept
-        : _BufferMemory(std::move(Other._BufferMemory))
+        : _VulkanContext(std::exchange(Other._VulkanContext, nullptr))
+        , _BufferMemory(std::move(Other._BufferMemory))
         , _Allocator(std::exchange(Other._Allocator, nullptr))
     {
     }
@@ -40,8 +39,9 @@ namespace Npgs
     {
         if (this != &Other)
         {
-            _BufferMemory = std::move(Other._BufferMemory);
-            _Allocator    = std::exchange(Other._Allocator, nullptr);
+            _VulkanContext = std::exchange(Other._VulkanContext, nullptr);
+            _BufferMemory  = std::move(Other._BufferMemory);
+            _Allocator     = std::exchange(Other._Allocator, nullptr);
         }
 
         return *this;
@@ -55,23 +55,17 @@ namespace Npgs
             return;
         }
 
-        auto* VulkanContext = FVulkanContext::GetClassInstance();
-
-        VmaAllocationCreateInfo StagingCreateInfo{ .usage = VMA_MEMORY_USAGE_CPU_TO_GPU };
-        VmaAllocationCreateInfo* AllocationCreateInfo = _Allocator ? &StagingCreateInfo : nullptr;
-
-        auto* StagingBufferPool = FStagingBufferPool::GetInstance();
-        auto* StagingBuffer     = StagingBufferPool->AcquireBuffer(Size, AllocationCreateInfo);
+        auto* StagingBufferPool = FEngineServices::GetInstance()->GetResourceServices()->GetStagingBufferPool(FStagingBufferPool::EPoolUsage::kSubmit);
+        auto  StagingBuffer     = StagingBufferPool->AcquireBuffer(Size);
         StagingBuffer->SubmitBufferData(MapOffset, TargetOffset, Size, Data);
 
-        auto& TransferCommandBuffer = VulkanContext->GetTransferCommandBuffer();
+        auto& TransferCommandBuffer = _VulkanContext->GetTransferCommandBuffer();
         TransferCommandBuffer.Begin(vk::CommandBufferUsageFlagBits::eOneTimeSubmit);
         vk::BufferCopy Region(0, TargetOffset, Size);
         TransferCommandBuffer->copyBuffer(*StagingBuffer->GetBuffer(), *_BufferMemory->GetResource(), Region);
         TransferCommandBuffer.End();
-        StagingBufferPool->ReleaseBuffer(StagingBuffer);
 
-        VulkanContext->ExecuteGraphicsCommands(TransferCommandBuffer);
+        _VulkanContext->ExecuteGraphicsCommands(TransferCommandBuffer);
     }
 
     void FDeviceLocalBuffer::CopyData(vk::DeviceSize ElementIndex, vk::DeviceSize ElementCount, vk::DeviceSize ElementSize,
@@ -100,16 +94,11 @@ namespace Npgs
             return;
         }
 
-        auto* VulkanContext = FVulkanContext::GetClassInstance();
-
-        VmaAllocationCreateInfo StagingCreateInfo{ .usage = VMA_MEMORY_USAGE_CPU_TO_GPU };
-        VmaAllocationCreateInfo* AllocationCreateInfo = _Allocator ? &StagingCreateInfo : nullptr;
-
-        auto* StagingBufferPool = FStagingBufferPool::GetInstance();
-        auto* StagingBuffer     = StagingBufferPool->AcquireBuffer(DstStride * ElementSize, AllocationCreateInfo);
+        auto* StagingBufferPool = FEngineServices::GetInstance()->GetResourceServices()->GetStagingBufferPool(FStagingBufferPool::EPoolUsage::kSubmit);
+        auto  StagingBuffer     = StagingBufferPool->AcquireBuffer(DstStride * ElementSize);
         StagingBuffer->SubmitBufferData(MapOffset, SrcStride * ElementIndex, SrcStride * ElementSize, Data);
 
-        auto& TransferCommandBuffer = VulkanContext->GetTransferCommandBuffer();
+        auto& TransferCommandBuffer = _VulkanContext->GetTransferCommandBuffer();
         TransferCommandBuffer.Begin(vk::CommandBufferUsageFlagBits::eOneTimeSubmit);
 
         std::vector<vk::BufferCopy> Regions(ElementCount);
@@ -120,9 +109,8 @@ namespace Npgs
 
         TransferCommandBuffer->copyBuffer(*StagingBuffer->GetBuffer(), *_BufferMemory->GetResource(), Regions);
         TransferCommandBuffer.End();
-        StagingBufferPool->ReleaseBuffer(StagingBuffer);
-
-        VulkanContext->ExecuteGraphicsCommands(TransferCommandBuffer);
+        
+        _VulkanContext->ExecuteGraphicsCommands(TransferCommandBuffer);
     }
 
     vk::Result FDeviceLocalBuffer::CreateBuffer(vk::DeviceSize Size, vk::BufferUsageFlags Usage)
@@ -133,10 +121,16 @@ namespace Npgs
             vk::MemoryPropertyFlagBits::eDeviceLocal | vk::MemoryPropertyFlagBits::eHostVisible;
         vk::MemoryPropertyFlags FallbackMemoryFlags  = vk::MemoryPropertyFlagBits::eDeviceLocal;
 
-        _BufferMemory = std::make_unique<FVulkanBufferMemory>(BufferCreateInfo, PreferredMemoryFlags);
+        _BufferMemory = std::make_unique<FVulkanBufferMemory>(
+            _VulkanContext->GetDevice(), _VulkanContext->GetPhysicalDeviceProperties(),
+            _VulkanContext->GetPhysicalDeviceMemoryProperties(), BufferCreateInfo, PreferredMemoryFlags);
+
         if (!_BufferMemory->IsValid())
         {
-            _BufferMemory = std::make_unique<FVulkanBufferMemory>(BufferCreateInfo, FallbackMemoryFlags);
+            _BufferMemory = std::make_unique<FVulkanBufferMemory>(
+                _VulkanContext->GetDevice(), _VulkanContext->GetPhysicalDeviceProperties(),
+                _VulkanContext->GetPhysicalDeviceMemoryProperties(), BufferCreateInfo, FallbackMemoryFlags);
+
             if (!_BufferMemory->IsValid())
             {
                 return vk::Result::eErrorInitializationFailed;
@@ -149,7 +143,7 @@ namespace Npgs
     vk::Result FDeviceLocalBuffer::CreateBuffer(const VmaAllocationCreateInfo& AllocationCreateInfo,
                                                 const vk::BufferCreateInfo& BufferCreateInfo)
     {
-        _BufferMemory = std::make_unique<FVulkanBufferMemory>(_Allocator, AllocationCreateInfo, BufferCreateInfo);
+        _BufferMemory = std::make_unique<FVulkanBufferMemory>(_VulkanContext->GetDevice(), _Allocator, AllocationCreateInfo, BufferCreateInfo);
         if (!_BufferMemory->IsValid())
         {
             return vk::Result::eErrorInitializationFailed;
@@ -160,7 +154,7 @@ namespace Npgs
 
     vk::Result FDeviceLocalBuffer::RecreateBuffer(vk::DeviceSize Size, vk::BufferUsageFlags Usage)
     {
-        FVulkanCore::GetClassInstance()->WaitIdle();
+        _VulkanContext->WaitIdle();
         _BufferMemory.reset();
         return CreateBuffer(Size, Usage);
     }
@@ -168,7 +162,7 @@ namespace Npgs
     vk::Result FDeviceLocalBuffer::RecreateBuffer(const VmaAllocationCreateInfo& AllocationCreateInfo,
                                                   const vk::BufferCreateInfo& BufferCreateInfo)
     {
-        FVulkanCore::GetClassInstance()->WaitIdle();
+        _VulkanContext->WaitIdle();
         _BufferMemory.reset();
         return CreateBuffer(AllocationCreateInfo, BufferCreateInfo);
     }

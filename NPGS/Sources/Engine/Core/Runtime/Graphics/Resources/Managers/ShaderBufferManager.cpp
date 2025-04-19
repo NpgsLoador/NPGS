@@ -5,8 +5,8 @@
 
 namespace Npgs
 {
-    FShaderBufferManager::FShaderBufferManager()
-        : _VulkanContext(FVulkanContext::GetClassInstance())
+    FShaderBufferManager::FShaderBufferManager(FVulkanContext* VulkanContext)
+        : _VulkanContext(VulkanContext)
     {
         VmaAllocatorCreateInfo AllocatorCreateInfo
         {
@@ -23,10 +23,7 @@ namespace Npgs
     {
         _DataBuffers.clear();
         _DescriptorBuffers.clear();
-        if (_Allocator != FVulkanContext::GetClassInstance()->GetVmaAllocator())
-        {
-            vmaDestroyAllocator(_Allocator);
-        }
+        vmaDestroyAllocator(_Allocator);
     }
 
     void FShaderBufferManager::CreateDescriptorBuffer(const FDescriptorBufferCreateInfo& DescriptorBufferCreateInfo,
@@ -53,11 +50,11 @@ namespace Npgs
             if (AllocationCreateInfo != nullptr)
             {
                 vk::BufferCreateInfo BufferCreateInfo({}, BufferSize, BufferUsage);
-                BufferInfo.Buffers.emplace_back(_Allocator, *AllocationCreateInfo, BufferCreateInfo);
+                BufferInfo.Buffers.emplace_back(_VulkanContext, _Allocator, *AllocationCreateInfo, BufferCreateInfo);
             }
             else
             {
-                BufferInfo.Buffers.emplace_back(BufferSize, BufferUsage);
+                BufferInfo.Buffers.emplace_back(_VulkanContext, BufferSize, BufferUsage);
             }
 
             BufferInfo.Buffers[i].CopyData(0, 0, BufferSize, EmptyData.data());
@@ -67,12 +64,6 @@ namespace Npgs
         NpgsCoreTrace("Created descriptor buffer \"{}\" with size {} bytes.", DescriptorBufferCreateInfo.Name, BufferSize);
 
         BindResourceToDescriptorBuffersInternal(DescriptorBufferCreateInfo);
-    }
-
-    FShaderBufferManager* FShaderBufferManager::GetInstance()
-    {
-        static FShaderBufferManager kInstance;
-        return &kInstance;
     }
 
     vk::DeviceSize FShaderBufferManager::CalculateDescriptorBufferSize(const FDescriptorBufferCreateInfo& DescriptorBufferCreateInfo)

@@ -33,6 +33,14 @@ namespace Npgs
         };
 
     public:
+        FImageTracker()                     = default;
+        FImageTracker(const FImageTracker&) = delete;
+        FImageTracker(FImageTracker&&)      = delete;
+        ~FImageTracker()                    = default;
+
+        FImageTracker& operator=(const FImageTracker&) = delete;
+        FImageTracker& operator=(FImageTracker&&)      = delete;
+
         void TrackImage(vk::Image Image, const FImageState& ImageState);
         void TrackImage(vk::Image Image, const FImageMemoryMaskPack& ImageMemoryMaskPack);
         void TrackImage(vk::Image Image, const vk::ImageSubresourceRange& Range, const FImageState& ImageState);
@@ -45,17 +53,6 @@ namespace Npgs
         vk::ImageMemoryBarrier2 CreateBarrier(vk::Image Image, const vk::ImageSubresourceRange& Range, FImageState DstState);
         void Reset(vk::Image Image);
         void ResetAll();
-
-        static FImageTracker* GetInstance();
-
-    private:
-        FImageTracker()                     = default;
-        FImageTracker(const FImageTracker&) = delete;
-        FImageTracker(FImageTracker&&)      = delete;
-        ~FImageTracker()                    = default;
-
-        FImageTracker& operator=(const FImageTracker&) = delete;
-        FImageTracker& operator=(FImageTracker&&)      = delete;
 
     private:
         std::unordered_map<FImageKey, FImageState, FImageHash> _ImageStateMap;

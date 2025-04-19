@@ -19,7 +19,17 @@
 
 namespace Npgs
 {
-    template <typename ResourceType, typename ResourceCreateInfoType>
+    template <typename ResourceType>
+    struct TResourceInfo
+    {
+        std::unique_ptr<ResourceType> Resource;
+        std::size_t LastUsedTimestamp{};
+        std::size_t UsageCount{};
+
+        virtual ~TResourceInfo() = default;
+    };
+
+    template <typename ResourceType, typename ResourceCreateInfoType, typename ResourceInfoType = TResourceInfo<ResourceType>>
     class TResourcePool
     {
     public:
@@ -66,14 +76,24 @@ namespace Npgs
                 return *this;
             }
 
-            ResourceType* operator*()
+            ResourceType* operator->()
             {
                 return _Resource;
             }
 
-            const ResourceType* operator*() const
+            const ResourceType* operator->() const
             {
                 return _Resource;
+            }
+
+            ResourceType& operator*()
+            {
+                return *_Resource;
+            }
+
+            const ResourceType& operator*() const
+            {
+                return *_Resource;
             }
 
         private:
@@ -89,14 +109,6 @@ namespace Npgs
             std::uint32_t PeakResourceDemand;
         };
 
-    protected:
-        struct FResourceInfo
-        {
-            std::unique_ptr<ResourceType> Resource;
-            std::size_t LastUsedTimestamp{};
-            std::size_t UsageCount{};
-        };
-
     public:
         TResourcePool(std::uint32_t MinPoolLimit, std::uint32_t MaxPoolLimit,
                       std::uint32_t PoolReclaimThresholdMs, std::uint32_t MaintenanceIntervalMs)
@@ -105,7 +117,7 @@ namespace Npgs
             , _ResourceReclaimThresholdMs(PoolReclaimThresholdMs)
             , _MaintenanceIntervalMs(MaintenanceIntervalMs)
         {
-            std::thread([this]() -> void { Maintenance(); }).detach();
+            //std::thread([this]() -> void { Maintenance(); }).detach();
         }
 
         TResourcePool(const TResourcePool&) = delete;
@@ -115,19 +127,19 @@ namespace Npgs
         {
             _MaintenanceIntervalMs = std::clamp(_MaintenanceIntervalMs, 0u, 500u);
             _bStopMaintenance.store(true);
-            std::this_thread::sleep_for(std::chrono::milliseconds(_MaintenanceIntervalMs * 2));
+            //std::this_thread::sleep_for(std::chrono::milliseconds(_MaintenanceIntervalMs * 2));
         }
 
         TResourcePool& operator=(const TResourcePool&) = delete;
         TResourcePool& operator=(TResourcePool&&)      = delete;
 
         template <typename Func>
-        requires std::predicate<Func, const FResourceInfo&>
+        requires std::predicate<Func, const std::unique_ptr<ResourceInfoType>&>
         FResourceGuard AcquireResource(const ResourceCreateInfoType& CreateInfo, Func&& Pred)
         {
             std::unique_lock Lock(_Mutex);
 
-            std::vector<typename std::deque<FResourceInfo>::iterator> MatchedResources;
+            std::vector<typename std::deque<std::unique_ptr<ResourceInfoType>>::iterator> MatchedResources;
             for (auto it = _AvailableResources.begin(); it != _AvailableResources.end(); ++it)
             {
                 if (Pred(*it))
@@ -143,16 +155,16 @@ namespace Npgs
                     std::sort(MatchedResources.begin(), MatchedResources.end(),
                     [](const auto& Lhs, const auto& Rhs) -> bool
                     {
-                        return Lhs->UsageCount       != Rhs->UsageCount ?
-                               Lhs->UsageCount        > Rhs->UsageCount :
-                               Lhs->LastUsedTimestamp > Rhs->LastUsedTimestamp;
+                        return (*Lhs)->UsageCount       != (*Rhs)->UsageCount ?
+                               (*Lhs)->UsageCount        > (*Rhs)->UsageCount :
+                               (*Lhs)->LastUsedTimestamp > (*Rhs)->LastUsedTimestamp;
                     });
                 }
 
                 auto BestIt = MatchedResources.front();
-                ResourceType* Resource = BestIt->Resource.release();
-                std::size_t UsageCount = BestIt->UsageCount + 1;
-                _AvailableResources.pop_front();
+                ResourceType* Resource = (*BestIt)->Resource.release();
+                std::size_t UsageCount = (*BestIt)->UsageCount + 1;
+                _AvailableResources.erase(BestIt);
                 ++_BusyResourceCount;
 
                 return FResourceGuard(this, Resource, UsageCount);
@@ -162,7 +174,7 @@ namespace Npgs
             {
                 CreateResource(CreateInfo);
 
-                ResourceType* Resource = _AvailableResources.back().Resource.release();
+                ResourceType* Resource = _AvailableResources.back()->Resource.release();
                 _AvailableResources.pop_back();
                 ++_BusyResourceCount;
                 return FResourceGuard(this, Resource, 1);
@@ -170,7 +182,7 @@ namespace Npgs
 
             constexpr std::uint32_t kMaxWaitTimeMs = 2000;
             if (_Condition.wait_for(Lock, std::chrono::milliseconds(kMaxWaitTimeMs),
-                                    [this, &Pred]() -> bool { return std::any_of(_AvailableResources.begin(), _AvailableResources.end(), Pred); }))
+                [this, &Pred]() -> bool { return std::any_of(_AvailableResources.begin(), _AvailableResources.end(), Pred); }))
             {
                 Lock.unlock();
                 return AcquireResource(CreateInfo, Pred);
@@ -180,10 +192,10 @@ namespace Npgs
             {
                 for (auto it = _AvailableResources.begin(); it != _AvailableResources.end(); ++it)
                 {
-                    if (HandleResourceEmergency(*it, CreateInfo))
+                    if (HandleResourceEmergency(**it, CreateInfo))
                     {
-                        ResourceType* Resource = it->Resource.release();
-                        std::size_t UsageCount = it->UsageCount + 1;
+                        ResourceType* Resource = (*it)->Resource.release();
+                        std::size_t UsageCount = (*it)->UsageCount + 1;
                         _AvailableResources.erase(it);
                         ++_BusyResourceCount;
                         return FResourceGuard(this, Resource, UsageCount);
@@ -255,9 +267,9 @@ namespace Npgs
 
     protected:
         virtual void CreateResource(const ResourceCreateInfoType& CreateInfo) = 0;
-        virtual bool HandleResourceEmergency(FResourceInfo& LowUsageResource, const ResourceCreateInfoType& CreateInfo) = 0;
+        virtual bool HandleResourceEmergency(ResourceInfoType& LowUsageResource, const ResourceCreateInfoType& CreateInfo) = 0;
 
-        virtual void OnReleaseResource(FResourceInfo& ResourceInfo)
+        virtual void OnReleaseResource(ResourceInfoType& ResourceInfo)
         {
             // Default implementation does nothing.
         }
@@ -266,16 +278,14 @@ namespace Npgs
         {
             std::lock_guard Lock(_Mutex);
 
-            FResourceInfo ResourceInfo
-            {
-                .Resource          = std::make_unique<ResourceType>(std::move(*Resource)),
-                .LastUsedTimestamp = GetCurrentTimeMs(),
-                .UsageCount        = UsageCount
-            };
+            auto ResourceInfoPtr = std::make_unique<ResourceInfoType>();
+            ResourceInfoPtr->Resource          = std::make_unique<ResourceType>(std::move(*Resource));
+            ResourceInfoPtr->LastUsedTimestamp = GetCurrentTimeMs();
+            ResourceInfoPtr->UsageCount        = UsageCount;
 
-            OnReleaseResource(ResourceInfo);
+            OnReleaseResource(*ResourceInfoPtr);
 
-            _AvailableResources.push_back(std::move(ResourceInfo));
+            _AvailableResources.push_back(std::move(ResourceInfoPtr));
             _Condition.notify_one();
         }
 
@@ -287,18 +297,18 @@ namespace Npgs
             std::uint32_t TargetCount = std::max(_MinResourceLimit, _PeakResourceDemand.load());
             if (_AvailableResources.size() > TargetCount)
             {
-                std::erase_if(_AvailableResources, [&](const FResourceInfo& ResourceInfo) -> bool
+                std::erase_if(_AvailableResources, [&](const auto& ResourceInfo) -> bool
                 {
-                    return CurrentTimeMs - ResourceInfo.LastUsedTimestamp > _ResourceReclaimThresholdMs;
+                    return CurrentTimeMs - ResourceInfo->LastUsedTimestamp > _ResourceReclaimThresholdMs;
                 });
             }
 
             if (_AvailableResources.size() > TargetCount)
             {
                 std::sort(_AvailableResources.begin(), _AvailableResources.end(),
-                [](const FResourceInfo& Lhs, const FResourceInfo& Rhs) -> bool
+                [](const auto& Lhs, const auto& Rhs) -> bool
                 {
-                    return Lhs.UsageCount > Rhs.UsageCount;
+                    return Lhs->UsageCount > Rhs->UsageCount;
                 });
 
                 _AvailableResources.resize(TargetCount);
@@ -325,17 +335,17 @@ namespace Npgs
         }
 
     protected:
-        std::mutex                 _Mutex;
-        std::condition_variable    _Condition;
-        std::deque<FResourceInfo>  _AvailableResources;
-        std::atomic<std::uint32_t> _BusyResourceCount{};
-        std::atomic<std::uint32_t> _PeakResourceDemand{};
+        std::mutex                                    _Mutex;
+        std::condition_variable                       _Condition;
+        std::deque<std::unique_ptr<ResourceInfoType>> _AvailableResources;
+        std::atomic<std::uint32_t>                    _BusyResourceCount{};
+        std::atomic<std::uint32_t>                    _PeakResourceDemand{};
 
-        std::uint32_t              _MinResourceLimit;
-        std::uint32_t              _MaxResourceLimit;
-        std::uint32_t              _ResourceReclaimThresholdMs;
-        std::uint32_t              _MaintenanceIntervalMs;
+        std::uint32_t                                 _MinResourceLimit;
+        std::uint32_t                                 _MaxResourceLimit;
+        std::uint32_t                                 _ResourceReclaimThresholdMs;
+        std::uint32_t                                 _MaintenanceIntervalMs;
 
-        std::atomic<bool>          _bStopMaintenance{ false };
+        std::atomic<bool>                             _bStopMaintenance{ false };
     };
 } // namespace Npgs

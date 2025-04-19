@@ -13,26 +13,6 @@
 
 #include "Engine/Utils/Logger.h"
 
-// Validation macros
-// -----------------
-#define VulkanCheck(Target) if (VkResult Result = Target; Result != VK_SUCCESS) return static_cast<vk::Result>(Result);
-
-#define VulkanCheckWithMessage(Target, Message)                                       \
-if (VkResult Result = Target; Result != VK_SUCCESS)                                   \
-{                                                                                     \
-    NpgsCoreError("{}: {}", Message, vk::to_string(static_cast<vk::Result>(Result))); \
-    return static_cast<vk::Result>(Result);                                           \
-}
-
-#define VulkanHppCheck(Target) if (vk::Result Result = Target; Result != vk::Result::eSuccess) return Result;
-
-#define VulkanHppCheckWithMessage(Target, Message)              \
-if (vk::Result Result = Target; Result != vk::Result::eSuccess) \
-{                                                               \
-    NpgsCoreError("{}: {}", Message, vk::to_string(Result));    \
-    return Result;                                              \
-}
-
 namespace Npgs
 {
     class FVulkanCore
@@ -46,6 +26,14 @@ namespace Npgs
         };
 
     public:
+        FVulkanCore();
+        FVulkanCore(const FVulkanCore&) = delete;
+        FVulkanCore(FVulkanCore&&)      = delete;
+        ~FVulkanCore();
+
+        FVulkanCore& operator=(const FVulkanCore&) = delete;
+        FVulkanCore& operator=(FVulkanCore&&)      = delete;
+
         void AddCreateDeviceCallback(const std::string& Name, const std::function<void()>& Callback);
         void AddDestroyDeviceCallback(const std::string& Name, const std::function<void()>& Callback);
         void AddCreateSwapchainCallback(const std::string& Name, const std::function<void()>& Callback);
@@ -111,17 +99,7 @@ namespace Npgs
         std::uint32_t GetCurrentImageIndex() const;
         std::uint32_t GetApiVersion() const;
 
-        static FVulkanCore* GetClassInstance();
-
     private:
-        FVulkanCore();
-        FVulkanCore(const FVulkanCore&) = delete;
-        FVulkanCore(FVulkanCore&&)      = delete;
-        ~FVulkanCore();
-
-        FVulkanCore& operator=(const FVulkanCore&) = delete;
-        FVulkanCore& operator=(FVulkanCore&&)      = delete;
-
         void AddElementChecked(const char* Element, std::vector<const char*>& Vector);
 
         vk::Result CheckInstanceLayers();

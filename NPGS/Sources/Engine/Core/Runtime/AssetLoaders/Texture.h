@@ -11,7 +11,7 @@
 #include <vma/vk_mem_alloc.h>
 #include <vulkan/vulkan.hpp>
 
-#include "Engine/Core/Runtime/Graphics/Resources/Resources.h"
+#include "Engine/Core/Runtime/Graphics/Vulkan/Context.h"
 #include "Engine/Core/Runtime/Graphics/Vulkan/Wrappers.h"
 
 namespace Npgs
@@ -59,16 +59,16 @@ namespace Npgs
         FVulkanImageView& GetImageView();
         const FVulkanImageView& GetImageView() const;
 
-        static vk::SamplerCreateInfo CreateDefaultSamplerCreateInfo();
+        static vk::SamplerCreateInfo CreateDefaultSamplerCreateInfo(FVulkanContext* VulkanContext);
 
     protected:
-        FTexture(VmaAllocator Allocator, const VmaAllocationCreateInfo* AllocationCreateInfo);
-        FTexture(const FTexture&)     = delete;
-        FTexture(FTexture&&) noexcept = default;
-        virtual ~FTexture()           = default;
+        FTexture(FVulkanContext* VulkanContext, VmaAllocator Allocator, const VmaAllocationCreateInfo* AllocationCreateInfo);
+        FTexture(const FTexture&) = delete;
+        FTexture(FTexture&& Other) noexcept;
+        virtual ~FTexture() = default;
 
-        FTexture& operator=(const FTexture&)     = delete;
-        FTexture& operator=(FTexture&&) noexcept = default;
+        FTexture& operator=(const FTexture&) = delete;
+        FTexture& operator=(FTexture&& Other) noexcept;
 
         void CreateTexture(const FImageData& ImageData, vk::ImageCreateFlags Flags, vk::ImageType ImageType,
                            vk::ImageViewType ImageViewType, vk::Format InitialFormat, vk::Format FinalFormat,
@@ -110,6 +110,7 @@ namespace Npgs
                              vk::Extent3D Extent, std::uint32_t MipLevels, std::uint32_t ArrayLayers, vk::Filter Filter);
 
     protected:
+        FVulkanContext*                     _VulkanContext;
         std::unique_ptr<FImageLoader>       _ImageLoader;
         std::unique_ptr<FVulkanImageMemory> _ImageMemory;
         std::unique_ptr<FVulkanImageView>   _ImageView;
@@ -123,13 +124,10 @@ namespace Npgs
         using Base = FTexture;
         using Base::Base;
 
-        FTexture2D(std::string_view Filename, vk::Format InitialFormat, vk::Format FinalFormat,
-                   vk::ImageCreateFlags Flags = {}, bool bGenerateMipmaps = true);
-
-        FTexture2D(const VmaAllocationCreateInfo& AllocationCreateInfo, std::string_view Filename, vk::Format InitialFormat,
+        FTexture2D(FVulkanContext* VulkanContext, std::string_view Filename, vk::Format InitialFormat,
                    vk::Format FinalFormat, vk::ImageCreateFlags Flags = {}, bool bGenerateMipmaps = true);
 
-        FTexture2D(VmaAllocator Allocator, const VmaAllocationCreateInfo& AllocationCreateInfo, std::string_view Filename,
+        FTexture2D(FVulkanContext* VulkanContext, VmaAllocator Allocator, const VmaAllocationCreateInfo& AllocationCreateInfo, std::string_view Filename,
                    vk::Format InitialFormat, vk::Format FinalFormat, vk::ImageCreateFlags Flags = {}, bool bGenerateMipmaps = true);
 
         FTexture2D(const FTexture2D&) = delete;
@@ -159,13 +157,10 @@ namespace Npgs
         using Base = FTexture;
         using Base::Base;
 
-        FTextureCube(std::string_view Filename, vk::Format InitialFormat, vk::Format FinalFormat,
-                     vk::ImageCreateFlags Flags = {}, bool bGenerateMipmaps = true);
-
-        FTextureCube(const VmaAllocationCreateInfo& AllocationCreateInfo, std::string_view Filename, vk::Format InitialFormat,
+        FTextureCube(FVulkanContext* VulkanContext, std::string_view Filename, vk::Format InitialFormat,
                      vk::Format FinalFormat, vk::ImageCreateFlags Flags = {}, bool bGenerateMipmaps = true);
 
-        FTextureCube(VmaAllocator Allocator, const VmaAllocationCreateInfo& AllocationCreateInfo, std::string_view Filename,
+        FTextureCube(FVulkanContext* VulkanContext, VmaAllocator Allocator, const VmaAllocationCreateInfo& AllocationCreateInfo, std::string_view Filename,
                      vk::Format InitialFormat, vk::Format FinalFormat, vk::ImageCreateFlags Flags = {}, bool bGenerateMipmaps = true);
 
         FTextureCube(const FTextureCube&) = delete;

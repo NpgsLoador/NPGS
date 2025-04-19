@@ -9,6 +9,7 @@
 #include <vector>
 
 #include <vulkan/vulkan.hpp>
+#include "Engine/Core/Runtime/Graphics/Vulkan/Context.h"
 #include "Engine/Core/Runtime/Graphics/Vulkan/Wrappers.h"
 
 namespace Npgs
@@ -76,7 +77,7 @@ namespace Npgs
         };
 
     public:
-        FShader(const std::vector<std::string>& ShaderFiles, const FResourceInfo& ResourceInfo);
+        FShader(FVulkanContext* VulkanContext, const std::vector<std::string>& ShaderFiles, const FResourceInfo& ResourceInfo);
         FShader(const FShader&) = delete;
         FShader(FShader&& Other) noexcept;
         ~FShader() = default;
@@ -103,6 +104,7 @@ namespace Npgs
         void GenerateDescriptorInfos();
 
     private:
+        FVulkanContext*                                                      _VulkanContext;
         FShaderReflectionInfo                                                _ReflectionInfo;
         std::vector<std::pair<vk::ShaderStageFlagBits, FVulkanShaderModule>> _ShaderModules;
         std::unordered_map<std::string, std::uint32_t>                       _PushConstantOffsetsMap;  // [Name, Offset]

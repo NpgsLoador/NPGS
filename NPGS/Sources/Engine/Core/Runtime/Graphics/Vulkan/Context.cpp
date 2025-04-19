@@ -30,10 +30,9 @@ namespace Npgs
     }
 
     FVulkanContext::FVulkanContext()
-        :
-        _VulkanCore(FVulkanCore::GetClassInstance()),
-        _TransferCommandBuffer(std::make_unique<FVulkanCommandBuffer>()),
-        _PresentCommandBuffer(std::make_unique<FVulkanCommandBuffer>())
+        : _VulkanCore(std::make_unique<FVulkanCore>())
+        , _TransferCommandBuffer(std::make_unique<FVulkanCommandBuffer>())
+        , _PresentCommandBuffer(std::make_unique<FVulkanCommandBuffer>())
     {
         auto InitializeCommandPool = [this]() -> void
         {
@@ -196,9 +195,8 @@ namespace Npgs
         return SubmitCommandBufferToGraphics(SubmitInfo, Fence);
     }
 
-    vk::Result
-        FVulkanContext::SubmitCommandBufferToGraphics(vk::CommandBuffer Buffer, vk::Semaphore WaitSemaphore,
-                                                      vk::Semaphore SignalSemaphore, vk::Fence Fence, vk::PipelineStageFlags Flags) const
+    vk::Result FVulkanContext::SubmitCommandBufferToGraphics(vk::CommandBuffer Buffer, vk::Semaphore WaitSemaphore,
+                                                             vk::Semaphore SignalSemaphore, vk::Fence Fence, vk::PipelineStageFlags Flags) const
     {
         vk::SubmitInfo SubmitInfo = CreateSubmitInfo(Buffer, WaitSemaphore, SignalSemaphore, Flags);
         return SubmitCommandBufferToGraphics(SubmitInfo, Fence);
@@ -263,9 +261,8 @@ namespace Npgs
         return SubmitCommandBufferToCompute(SubmitInfo, Fence);
     }
 
-    vk::Result
-        FVulkanContext::SubmitCommandBufferToCompute(vk::CommandBuffer Buffer, vk::Semaphore WaitSemaphore,
-                                                     vk::Semaphore SignalSemaphore, vk::Fence Fence, vk::PipelineStageFlags Flags) const
+    vk::Result FVulkanContext::SubmitCommandBufferToCompute(vk::CommandBuffer Buffer, vk::Semaphore WaitSemaphore,
+                                                            vk::Semaphore SignalSemaphore, vk::Fence Fence, vk::PipelineStageFlags Flags) const
     {
         vk::SubmitInfo SubmitInfo = CreateSubmitInfo(Buffer, WaitSemaphore, SignalSemaphore, Flags);
         return SubmitCommandBufferToCompute(SubmitInfo, Fence);
@@ -293,12 +290,6 @@ namespace Npgs
         // VulkanHppCheck(PresentCommandBuffer.Begin(vk::CommandBufferUsageFlagBits::eOneTimeSubmit));
         TransferImageOwnershipToPresentImpl(*PresentCommandBuffer);
         return vk::Result::eSuccess;
-    }
-
-    FVulkanContext* FVulkanContext::GetClassInstance()
-    {
-        static FVulkanContext kInstance;
-        return &kInstance;
     }
 
     void FVulkanContext::TransferImageOwnershipToPresentImpl(vk::CommandBuffer PresentCommandBuffer) const

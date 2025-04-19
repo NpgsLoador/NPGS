@@ -9,6 +9,8 @@
 #include <utility>
 #include <vector>
 
+#include "Engine/Core/Runtime/Graphics/Vulkan/Context.h"
+
 namespace Npgs
 {
     enum class EAssetType : std::uint8_t
@@ -48,6 +50,14 @@ namespace Npgs
     class FAssetManager
     {
     public:
+        FAssetManager(FVulkanContext* VulkanContext);
+        FAssetManager(const FAssetManager&) = delete;
+        FAssetManager(FAssetManager&&)      = delete;
+        ~FAssetManager();
+
+        FAssetManager& operator=(const FAssetManager&) = delete;
+        FAssetManager& operator=(FAssetManager&&)      = delete;
+
         template <typename AssetType>
         requires CAssetCompatible<AssetType>
         void AddAsset(const std::string& Name, AssetType&& Asset);
@@ -67,20 +77,11 @@ namespace Npgs
         void RemoveAsset(const std::string& Name);
         void ClearAssets();
 
-        static FAssetManager* GetInstance();
-
-    private:
-        FAssetManager()                     = default;
-        FAssetManager(const FAssetManager&) = delete;
-        FAssetManager(FAssetManager&&)      = delete;
-        ~FAssetManager();
-
-        FAssetManager& operator=(const FAssetManager&) = delete;
-        FAssetManager& operator=(FAssetManager&&)      = delete;
-
     private:
         using FManagedAsset = std::unique_ptr<void, FTypeErasedDeleter>;
+
         std::unordered_map<std::string, FManagedAsset> _Assets;
+        FVulkanContext*                                _VulkanContext;
     };
 
 } // namespace Npgs

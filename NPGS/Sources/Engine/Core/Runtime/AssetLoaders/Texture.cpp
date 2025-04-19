@@ -16,8 +16,7 @@
 #include <stb_image.h>
 
 #include "Engine/Core/Runtime/AssetLoaders/AssetManager.h"
-#include "Engine/Core/Runtime/Graphics/Resources/Managers/ImageTracker.h"
-#include "Engine/Core/Runtime/Graphics/Vulkan/Context.h"
+#include "Engine/Core/System/Services/EngineServices.h"
 #include "Engine/Utils/Logger.h"
 
 namespace Npgs
@@ -406,9 +405,30 @@ namespace Npgs
         return ImageData;
     }
 
-    FTexture::FTexture(VmaAllocator Allocator, const VmaAllocationCreateInfo* AllocationCreateInfo)
-        : _Allocator(Allocator), _AllocationCreateInfo(AllocationCreateInfo)
+    FTexture::FTexture(FVulkanContext* VulkanContext, VmaAllocator Allocator, const VmaAllocationCreateInfo* AllocationCreateInfo)
+        : _VulkanContext(VulkanContext)
+        , _Allocator(Allocator)
+        , _AllocationCreateInfo(AllocationCreateInfo)
     {
+    }
+
+    FTexture::FTexture(FTexture&& Other) noexcept
+        : _VulkanContext(std::exchange(Other._VulkanContext, nullptr))
+        , _Allocator(std::exchange(Other._Allocator, nullptr))
+        , _AllocationCreateInfo(std::exchange(Other._AllocationCreateInfo, {}))
+    {
+    }
+
+    FTexture& FTexture::operator=(FTexture&& Other) noexcept
+    {
+        if (this != &Other)
+        {
+            _VulkanContext        = std::exchange(Other._VulkanContext, nullptr);
+            _Allocator            = std::exchange(Other._Allocator, nullptr);
+            _AllocationCreateInfo = std::exchange(Other._AllocationCreateInfo, {});
+        }
+
+        return *this;
     }
 
     void FTexture::CreateTexture(const FImageData& ImageData, vk::ImageCreateFlags Flags, vk::ImageType ImageType,
@@ -422,11 +442,8 @@ namespace Npgs
                                          vk::ImageViewType ImageViewType, vk::Format InitialFormat, vk::Format FinalFormat,
                                          std::uint32_t ArrayLayers, bool bGenerateMipmaps)
     {
-        VmaAllocationCreateInfo StagingCreateInfo{ .usage = VMA_MEMORY_USAGE_CPU_TO_GPU };
-        VmaAllocationCreateInfo* AllocationCreateInfo = _Allocator ? &StagingCreateInfo : nullptr;
-
-        auto* StagingBufferPool = FStagingBufferPool::GetInstance();
-        auto* StagingBuffer     = StagingBufferPool->AcquireBuffer(ImageData.Size, AllocationCreateInfo);
+        auto* StagingBufferPool = FEngineServices::GetInstance()->GetResourceServices()->GetStagingBufferPool(FStagingBufferPool::EPoolUsage::kSubmit);
+        auto  StagingBuffer     = StagingBufferPool->AcquireBuffer(ImageData.Size);
         StagingBuffer->SubmitBufferData(0, 0, ImageData.Size, ImageData.Data.data());
 
         vk::Extent3D  Extent          = ImageData.Extent;
@@ -517,8 +534,6 @@ namespace Npgs
                 }
             }
         }
-
-        StagingBufferPool->ReleaseBuffer(StagingBuffer);
     }
 
     void FTexture::CreateImageMemory(vk::ImageCreateFlags Flags, vk::ImageType ImageType, vk::Format Format,
@@ -537,11 +552,14 @@ namespace Npgs
 
         if (_Allocator != nullptr)
         {
-            _ImageMemory = std::make_unique<FVulkanImageMemory>(_Allocator, *_AllocationCreateInfo, ImageCreateInfo);
+            _ImageMemory = std::make_unique<FVulkanImageMemory>(
+                _VulkanContext->GetDevice(), _Allocator, *_AllocationCreateInfo, ImageCreateInfo);
         }
         else
         {
-            _ImageMemory = std::make_unique<FVulkanImageMemory>(ImageCreateInfo, vk::MemoryPropertyFlagBits::eDeviceLocal);
+            _ImageMemory = std::make_unique<FVulkanImageMemory>(
+                _VulkanContext->GetDevice(), _VulkanContext->GetPhysicalDeviceProperties(),
+                _VulkanContext->GetPhysicalDeviceMemoryProperties(), ImageCreateInfo, vk::MemoryPropertyFlagBits::eDeviceLocal);
         }
     }
 
@@ -551,7 +569,7 @@ namespace Npgs
         vk::ImageSubresourceRange ImageSubresourceRange(vk::ImageAspectFlagBits::eColor, 0, MipLevels, 0, ArrayLayers);
 
         _ImageView = std::make_unique<FVulkanImageView>(
-            _ImageMemory->GetResource(), ImageViewType, Format, vk::ComponentMapping(), ImageSubresourceRange, Flags);
+            _VulkanContext->GetDevice(), _ImageMemory->GetResource(), ImageViewType, Format, vk::ComponentMapping(), ImageSubresourceRange, Flags);
     }
 
     void FTexture::CopyBlitGenerateTexture(vk::Buffer SrcBuffer, vk::Extent3D Extent, std::uint32_t MipLevels, std::uint32_t ArrayLayers,
@@ -568,15 +586,14 @@ namespace Npgs
             FImageMemoryMaskPack()
         };
 
-        auto* ImageTracker = FImageTracker::GetInstance();
+        auto* ImageTracker = FEngineServices::GetInstance()->GetResourceServices()->GetImageTracker();
         ImageTracker->TrackImage(DstImageSrcBlit, FImageTracker::FImageState());
         ImageTracker->TrackImage(DstImageDstBlit, FImageTracker::FImageState());
 
         bool bGenerateMipmaps = MipLevels > 1;
         bool bNeedBlit        = DstImageSrcBlit != DstImageDstBlit;
 
-        auto* VulkanContext = FVulkanContext::GetClassInstance();
-        auto& CommandBuffer = VulkanContext->GetTransferCommandBuffer();
+        auto& CommandBuffer = _VulkanContext->GetTransferCommandBuffer();
         CommandBuffer.Begin(vk::CommandBufferUsageFlagBits::eOneTimeSubmit);
 
         vk::ImageSubresourceLayers Subresource(vk::ImageAspectFlagBits::eColor, 0, 0, ArrayLayers);
@@ -604,15 +621,14 @@ namespace Npgs
         }
 
         CommandBuffer.End();
-        VulkanContext->ExecuteGraphicsCommands(CommandBuffer);
+        _VulkanContext->ExecuteGraphicsCommands(CommandBuffer);
     }
 
     void FTexture::CopyBlitApplyTexture(vk::Buffer SrcBuffer, vk::Extent3D Extent, std::uint32_t MipLevels,
                                         const std::vector<std::size_t>& LevelOffsets,
                                         std::uint32_t ArrayLayers, vk::Filter Filter, vk::Image DstImage)
     {
-        auto* VulkanContext = FVulkanContext::GetClassInstance();
-        auto& CommandBuffer = VulkanContext->GetTransferCommandBuffer();
+        auto& CommandBuffer = _VulkanContext->GetTransferCommandBuffer();
         CommandBuffer.Begin(vk::CommandBufferUsageFlagBits::eOneTimeSubmit);
 
         FImageMemoryMaskPack PostTransferState(
@@ -621,7 +637,7 @@ namespace Npgs
             vk::ImageLayout::eShaderReadOnlyOptimal
         );
 
-        auto* ImageTracker = FImageTracker::GetInstance();
+        auto* ImageTracker = FEngineServices::GetInstance()->GetResourceServices()->GetImageTracker();
 
         std::vector<vk::BufferImageCopy> Regions;
         for (std::uint32_t MipLevel = 0; MipLevel != MipLevels; ++MipLevel)
@@ -641,7 +657,7 @@ namespace Npgs
         CopyBufferToImage(CommandBuffer, SrcBuffer, DstImage, PostTransferState, Regions);
 
         CommandBuffer.End();
-        VulkanContext->ExecuteGraphicsCommands(CommandBuffer);
+        _VulkanContext->ExecuteGraphicsCommands(CommandBuffer);
     }
 
     void FTexture::BlitGenerateTexture(vk::Extent3D Extent, std::uint32_t MipLevels, std::uint32_t ArrayLayers,
@@ -658,7 +674,7 @@ namespace Npgs
             FImageMemoryMaskPack()
         };
 
-        auto* ImageTracker = FImageTracker::GetInstance();
+        auto* ImageTracker = FEngineServices::GetInstance()->GetResourceServices()->GetImageTracker();
         if (!ImageTracker->IsExisting(SrcImage))
         {
             ImageTracker->TrackImage(SrcImage, FImageTracker::FImageState());
@@ -671,8 +687,7 @@ namespace Npgs
         bool bGenerateMipmaps = MipLevels > 1;
         bool bNeedBlit = SrcImage != DstImage;
 
-        auto* VulkanContext = FVulkanContext::GetClassInstance();
-        auto& CommandBuffer = VulkanContext->GetTransferCommandBuffer();
+        auto& CommandBuffer = _VulkanContext->GetTransferCommandBuffer();
         CommandBuffer.Begin(vk::CommandBufferUsageFlagBits::eOneTimeSubmit);
 
         if (bNeedBlit)
@@ -693,13 +708,13 @@ namespace Npgs
         }
 
         CommandBuffer.End();
-        VulkanContext->ExecuteGraphicsCommands(CommandBuffer);
+        _VulkanContext->ExecuteGraphicsCommands(CommandBuffer);
     }
 
     void FTexture::BlitApplyTexture(vk::Extent3D Extent, std::uint32_t MipLevels, std::uint32_t ArrayLayers,
                                     vk::Filter Filter, vk::Image SrcImage, vk::Image DstImage)
     {
-        auto* ImageTracker = FImageTracker::GetInstance();
+        auto* ImageTracker = FEngineServices::GetInstance()->GetResourceServices()->GetImageTracker();
         if (!ImageTracker->IsExisting(SrcImage))
         {
             ImageTracker->TrackImage(SrcImage, FImageTracker::FImageState());
@@ -709,8 +724,7 @@ namespace Npgs
             ImageTracker->TrackImage(DstImage, FImageTracker::FImageState());
         }
 
-        auto* VulkanContext = FVulkanContext::GetClassInstance();
-        auto& CommandBuffer = VulkanContext->GetTransferCommandBuffer();
+        auto& CommandBuffer = _VulkanContext->GetTransferCommandBuffer();
         CommandBuffer.Begin(vk::CommandBufferUsageFlagBits::eOneTimeSubmit);
 
         std::vector<vk::ImageBlit> Regions;
@@ -733,7 +747,7 @@ namespace Npgs
         BlitImage(CommandBuffer, SrcImage, PostTransferState, DstImage, PostTransferState, Regions, Filter);
 
         CommandBuffer.End();
-        VulkanContext->ExecuteGraphicsCommands(CommandBuffer);
+        _VulkanContext->ExecuteGraphicsCommands(CommandBuffer);
     }
 
     void FTexture::CopyBufferToImage(const FVulkanCommandBuffer& CommandBuffer,
@@ -750,7 +764,7 @@ namespace Npgs
             Region.imageSubresource.layerCount
         );
 
-        auto* ImageTracker = FImageTracker::GetInstance();
+        auto* ImageTracker = FEngineServices::GetInstance()->GetResourceServices()->GetImageTracker();
         auto  ImageState   = ImageTracker->GetImageState(DstImage, ImageSubresourceRange);
 
         vk::ImageMemoryBarrier2 InitDstImageBarrier(
@@ -816,7 +830,7 @@ namespace Npgs
             Region.dstSubresource.layerCount
         );
 
-        auto* ImageTracker = FImageTracker::GetInstance();
+        auto* ImageTracker = FEngineServices::GetInstance()->GetResourceServices()->GetImageTracker();
         auto SrcImageState = ImageTracker->GetImageState(SrcImage, SrcImageSubresourceRange);
         auto DstImageState = ImageTracker->GetImageState(DstImage, DstImageSubresourceRange);
 
@@ -962,7 +976,7 @@ namespace Npgs
                 LastMipRange
             );
 
-            auto* ImageTracker = FImageTracker::GetInstance();
+            auto* ImageTracker = FEngineServices::GetInstance()->GetResourceServices()->GetImageTracker();
             ImageTracker->FlushImageAllStates(Image, FinalState);
 
             std::array FinalBarriers{ PartFinalBarrier, LastFinalBarrier };
@@ -975,23 +989,16 @@ namespace Npgs
         }
     }
 
-    FTexture2D::FTexture2D(std::string_view Filename, vk::Format InitialFormat, vk::Format FinalFormat,
-                           vk::ImageCreateFlags Flags, bool bGenerateMipmaps)
-        : Base(nullptr, nullptr)
+    FTexture2D::FTexture2D(FVulkanContext* VulkanContext, std::string_view Filename, vk::Format InitialFormat,
+                           vk::Format FinalFormat, vk::ImageCreateFlags Flags, bool bGenerateMipmaps)
+        : Base(VulkanContext, nullptr, nullptr)
     {
         CreateTexture(GetAssetFullPath(EAssetType::kTexture, Filename.data()), InitialFormat, FinalFormat, Flags, bGenerateMipmaps);
     }
 
-    FTexture2D::FTexture2D(const VmaAllocationCreateInfo& AllocationCreateInfo, std::string_view Filename,
-                           vk::Format InitialFormat, vk::Format FinalFormat, vk::ImageCreateFlags Flags, bool bGenerateMipmaps)
-        : FTexture2D(FVulkanContext::GetClassInstance()->GetVmaAllocator(),
-                     AllocationCreateInfo, Filename, InitialFormat, FinalFormat, Flags, bGenerateMipmaps)
-    {
-    }
-
-    FTexture2D::FTexture2D(VmaAllocator Allocator, const VmaAllocationCreateInfo& AllocationCreateInfo, std::string_view Filename,
-                           vk::Format InitialFormat, vk::Format FinalFormat, vk::ImageCreateFlags Flags, bool bGenerateMipmaps)
-        : Base(Allocator, &AllocationCreateInfo)
+    FTexture2D::FTexture2D(FVulkanContext* VulkanContext, VmaAllocator Allocator, const VmaAllocationCreateInfo& AllocationCreateInfo,
+                           std::string_view Filename, vk::Format InitialFormat, vk::Format FinalFormat, vk::ImageCreateFlags Flags, bool bGenerateMipmaps)
+        : Base(VulkanContext, Allocator, &AllocationCreateInfo)
     {
         CreateTexture(GetAssetFullPath(EAssetType::kTexture, Filename.data()), InitialFormat, FinalFormat, Flags, bGenerateMipmaps);
     }
@@ -1027,22 +1034,15 @@ namespace Npgs
         Base::CreateTexture(ImageData, Flags, vk::ImageType::e2D, vk::ImageViewType::e2D, InitialFormat, FinalFormat, 1, bGenerateMipmaps);
     }
 
-    FTextureCube::FTextureCube(std::string_view Filename, vk::Format InitialFormat, vk::Format FinalFormat,
-                               vk::ImageCreateFlags Flags, bool bGenerateMipmaps)
-        : FTextureCube(nullptr, {}, Filename, InitialFormat, FinalFormat, Flags, bGenerateMipmaps)
+    FTextureCube::FTextureCube(FVulkanContext* VulkanContext, std::string_view Filename, vk::Format InitialFormat,
+                               vk::Format FinalFormat, vk::ImageCreateFlags Flags, bool bGenerateMipmaps)
+        : FTextureCube(VulkanContext, nullptr, {}, Filename, InitialFormat, FinalFormat, Flags, bGenerateMipmaps)
     {
     }
 
-    FTextureCube::FTextureCube(const VmaAllocationCreateInfo& AllocationCreateInfo, std::string_view Filename,
+    FTextureCube::FTextureCube(FVulkanContext* VulkanContext, VmaAllocator Allocator, const VmaAllocationCreateInfo& AllocationCreateInfo, std::string_view Filename,
                                vk::Format InitialFormat, vk::Format FinalFormat, vk::ImageCreateFlags Flags, bool bGenerateMipmaps)
-        : FTextureCube(FVulkanContext::GetClassInstance()->GetVmaAllocator(),
-                       AllocationCreateInfo, Filename, InitialFormat, FinalFormat, Flags, bGenerateMipmaps)
-    {
-    }
-
-    FTextureCube::FTextureCube(VmaAllocator Allocator, const VmaAllocationCreateInfo& AllocationCreateInfo, std::string_view Filename,
-                               vk::Format InitialFormat, vk::Format FinalFormat, vk::ImageCreateFlags Flags, bool bGenerateMipmaps)
-        : Base(Allocator, &AllocationCreateInfo)
+        : Base(VulkanContext, Allocator, &AllocationCreateInfo)
     {
         std::string FullPath = GetAssetFullPath(EAssetType::kTexture, Filename.data());
         if (std::filesystem::is_directory(FullPath))

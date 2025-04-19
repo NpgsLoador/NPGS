@@ -15,7 +15,6 @@ namespace Npgs
 {
     struct FCommandPoolCreateInfo
     {
-        vk::Device Device;
         vk::CommandPoolCreateFlags Flags;
         std::uint32_t QueueFamilyIndex;
     };
@@ -23,8 +22,9 @@ namespace Npgs
     class FCommandPoolManager : public TResourcePool<FVulkanCommandPool, FCommandPoolCreateInfo>
     {
     public:
-        using Base = TResourcePool<FVulkanCommandPool, FCommandPoolCreateInfo>;
-        using FPoolGuard = Base::FResourceGuard;
+        using Base          = TResourcePool<FVulkanCommandPool, FCommandPoolCreateInfo>;
+        using FPoolGuard    = Base::FResourceGuard;
+        using FResourceInfo = TResourceInfo<FVulkanCommandPool>;
 
     public:
         FCommandPoolManager(std::uint32_t MinPoolLimit, std::uint32_t MaxPoolLimit, std::uint32_t PoolReclaimThresholdMs,

@@ -11,8 +11,12 @@
 #include "Engine/Core/Runtime/AssetLoaders/Texture.h"
 
 #include "Engine/Core/Runtime/Graphics/Buffers/BufferStructs.h"
+#include "Engine/Core/Runtime/Graphics/Resources/Pools/CommandPoolManager.h"
 #include "Engine/Core/Runtime/Graphics/Resources/Pools/ResourcePool.hpp"
-#include "Engine/Core/Runtime/Graphics/Resources/Resources.h"
+#include "Engine/Core/Runtime/Graphics/Resources/Pools/StagingBufferPool.h"
+#include "Engine/Core/Runtime/Graphics/Resources/Attachment.h"
+#include "Engine/Core/Runtime/Graphics/Resources/DeviceLocalBuffer.h"
+#include "Engine/Core/Runtime/Graphics/Resources/StagingBuffer.h"
 #include "Engine/Core/Runtime/Graphics/Resources/Managers/PipelineManager.h"
 #include "Engine/Core/Runtime/Graphics/Resources/Managers/ShaderBufferManager.h"
 #include "Engine/Core/Runtime/Graphics/Vulkan/Context.h"
@@ -24,6 +28,10 @@
 #include "Engine/Core/System/Generators/CivilizationGenerator.h"
 #include "Engine/Core/System/Generators/OrbitalGenerator.h"
 #include "Engine/Core/System/Generators/StellarGenerator.h"
+
+#include "Engine/Core/System/Services/CoreServices.h"
+#include "Engine/Core/System/Services/EngineServices.h"
+#include "Engine/Core/System/Services/ResourceServices.h"
 
 #include "Engine/Core/System/Spatial/Camera.h"
 #include "Engine/Core/System/Spatial/Octree.hpp"

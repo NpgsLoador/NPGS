@@ -28,6 +28,8 @@
 #include <spirv_cross/spirv_reflect.hpp>
 #include <stb_image.h>
 #include <vma/vk_mem_alloc.h>
+
+#define VULKAN_HPP_HANDLES_MOVE_EXCHANGE
 #include <vulkan/vulkan.hpp>
 #include <vulkan/vulkan_format_traits.hpp>
 #include <vulkan/vulkan_to_string.hpp>

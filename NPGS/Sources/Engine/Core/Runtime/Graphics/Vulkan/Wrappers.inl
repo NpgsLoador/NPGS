@@ -95,28 +95,28 @@ namespace Npgs
     // Wrapper for vk::DescriptorSet
     // -----------------------------
     NPGS_INLINE void FVulkanDescriptorSet::Write(const vk::ArrayProxy<vk::DescriptorImageInfo>& ImageInfos, vk::DescriptorType Type,
-                                                 std::uint32_t BindingPoint, std::uint32_t ArrayElement) const
+                                                 std::uint32_t BindingPoint, std::uint32_t ArrayElement)
     {
         vk::WriteDescriptorSet WriteDescriptorSet(_Handle, BindingPoint, ArrayElement, Type, ImageInfos);
         Update(WriteDescriptorSet);
     }
 
     NPGS_INLINE void FVulkanDescriptorSet::Write(const vk::ArrayProxy<vk::DescriptorBufferInfo>& BufferInfos, vk::DescriptorType Type,
-                                                 std::uint32_t BindingPoint, std::uint32_t ArrayElement) const
+                                                 std::uint32_t BindingPoint, std::uint32_t ArrayElement)
     {
         vk::WriteDescriptorSet WriteDescriptorSet(_Handle, BindingPoint, ArrayElement, Type, {}, BufferInfos);
         Update(WriteDescriptorSet);
     }
 
     NPGS_INLINE void FVulkanDescriptorSet::Write(const vk::ArrayProxy<vk::BufferView>& BufferViews, vk::DescriptorType Type,
-                                                 std::uint32_t BindingPoint, std::uint32_t ArrayElement) const
+                                                 std::uint32_t BindingPoint, std::uint32_t ArrayElement)
     {
         vk::WriteDescriptorSet WriteDescriptorSet(_Handle, BindingPoint, ArrayElement, Type, {}, {}, BufferViews);
         Update(WriteDescriptorSet);
     }
 
     NPGS_INLINE void FVulkanDescriptorSet::Write(const vk::ArrayProxy<FVulkanBufferView>& BufferViews, vk::DescriptorType Type,
-                                                 std::uint32_t BindingPoint, std::uint32_t ArrayElement) const
+                                                 std::uint32_t BindingPoint, std::uint32_t ArrayElement)
     {
         std::vector<vk::BufferView> NativeArray;
         NativeArray.reserve(BufferViews.size());
@@ -131,7 +131,7 @@ namespace Npgs
     NPGS_INLINE void FVulkanDescriptorSet::Update(const vk::ArrayProxy<vk::WriteDescriptorSet>& Writes,
                                                   const vk::ArrayProxy<vk::CopyDescriptorSet>& Copies)
     {
-        FVulkanCore::GetClassInstance()->GetDevice().updateDescriptorSets(Writes, Copies);
+        _Device.updateDescriptorSets(Writes, Copies);
     }
 
     // Wrapper for vk::Image
@@ -155,7 +155,7 @@ namespace Npgs
     // -------------------------
     template <typename DataType>
     NPGS_INLINE std::vector<DataType>
-        FVulkanQueryPool::GetResult(std::uint32_t FirstQuery, std::uint32_t QueryCount, std::size_t DataSize, vk::DeviceSize Stride, vk::QueryResultFlags Flags)
+    FVulkanQueryPool::GetResult(std::uint32_t FirstQuery, std::uint32_t QueryCount, std::size_t DataSize, vk::DeviceSize Stride, vk::QueryResultFlags Flags)
     {
         try
         {

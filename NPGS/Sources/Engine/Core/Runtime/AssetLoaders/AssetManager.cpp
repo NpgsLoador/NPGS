@@ -39,15 +39,13 @@ namespace Npgs
         return RootFolderName + AssetFolderName + Filename;
     }
 
+    FAssetManager::FAssetManager(FVulkanContext* VulkanContext)
+        : _VulkanContext(VulkanContext)
+    {
+    }
+
     FAssetManager::~FAssetManager()
     {
         ClearAssets();
     }
-
-    FAssetManager* FAssetManager::GetInstance()
-    {
-        static FAssetManager kInstance;
-        return &kInstance;
-    }
-
 } // namespace Npgs

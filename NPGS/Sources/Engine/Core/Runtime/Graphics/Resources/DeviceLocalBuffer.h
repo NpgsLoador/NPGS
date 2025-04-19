@@ -9,6 +9,7 @@
 #include <vma/vk_mem_alloc.h>
 #include <vulkan/vulkan.hpp>
 
+#include "Engine/Core/Runtime/Graphics/Vulkan/Context.h"
 #include "Engine/Core/Runtime/Graphics/Vulkan/Wrappers.h"
 
 namespace Npgs
@@ -16,10 +17,11 @@ namespace Npgs
     class FDeviceLocalBuffer
     {
     public:
-        FDeviceLocalBuffer() = delete;
-        FDeviceLocalBuffer(vk::DeviceSize Size, vk::BufferUsageFlags Usage);
-        FDeviceLocalBuffer(const VmaAllocationCreateInfo& AllocationCreateInfo, const vk::BufferCreateInfo& BufferCreateInfo);
-        FDeviceLocalBuffer(VmaAllocator Allocator, const VmaAllocationCreateInfo& AllocationCreateInfo, const vk::BufferCreateInfo& BufferCreateInfo);
+        FDeviceLocalBuffer(FVulkanContext* VulkanContext, vk::DeviceSize Size, vk::BufferUsageFlags Usage);
+        FDeviceLocalBuffer(FVulkanContext* VulkanContext, VmaAllocator Allocator,
+                           const VmaAllocationCreateInfo& AllocationCreateInfo,
+                           const vk::BufferCreateInfo& BufferCreateInfo);
+
         FDeviceLocalBuffer(const FDeviceLocalBuffer&) = delete;
         FDeviceLocalBuffer(FDeviceLocalBuffer&& Other) noexcept;
         ~FDeviceLocalBuffer() = default;
@@ -36,13 +38,13 @@ namespace Npgs
                       vk::DeviceSize SrcStride, vk::DeviceSize DstStride, vk::DeviceSize MapOffset, const void* Data) const;
 
         template <typename ContainerType>
-            requires std::is_class_v<ContainerType>
+        requires std::is_class_v<ContainerType>
         void CopyData(const ContainerType& Data) const;
 
         void UpdateData(const FVulkanCommandBuffer& CommandBuffer, vk::DeviceSize Offset, vk::DeviceSize Size, const void* Data) const;
 
         template <typename ContainerType>
-            requires std::is_class_v<ContainerType>
+        requires std::is_class_v<ContainerType>
         void UpdateData(const FVulkanCommandBuffer& CommandBuffer, const ContainerType& Data) const;
 
         void EnablePersistentMapping() const;
@@ -65,6 +67,7 @@ namespace Npgs
                                   const vk::BufferCreateInfo& BufferCreateInfo);
 
     private:
+        FVulkanContext*                      _VulkanContext;
         std::unique_ptr<FVulkanBufferMemory> _BufferMemory;
         VmaAllocator                         _Allocator;
     };
