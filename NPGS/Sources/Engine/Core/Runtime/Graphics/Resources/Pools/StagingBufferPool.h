@@ -38,9 +38,10 @@ namespace Npgs
         using Base = TResourcePool<FStagingBuffer, FStagingBufferCreateInfo, FStagingBufferInfo>;
         using FBufferGuard = Base::FResourceGuard;
 
-        FStagingBufferPool(FVulkanContext* VulkanContext, VmaAllocator Allocator, std::uint32_t MinBufferLimit,
-                           std::uint32_t MaxBufferLimit, std::uint32_t BufferReclaimThresholdMs,
-                           std::uint32_t MaintenanceIntervalMs, EPoolUsage PoolUsage, bool bUsingVma = true);
+        FStagingBufferPool(FVulkanContext* VulkanContext, VmaAllocator Allocator,
+                           std::uint32_t MinAvailableBufferLimit, std::uint32_t MaxAllocatedBufferLimit,
+                           std::uint32_t BufferReclaimThresholdMs, std::uint32_t MaintenanceIntervalMs,
+                           EPoolUsage PoolUsage, bool bUsingVma = true);
 
         FBufferGuard AcquireBuffer(vk::DeviceSize RequestedSize);
 
@@ -72,5 +73,3 @@ namespace Npgs
         };
     };
 } // namespace Npgs
-
-#include "StagingBufferPool.inl"

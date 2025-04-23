@@ -1561,7 +1561,7 @@ namespace Npgs
         _VulkanContext->WaitIdle();
         glfwDestroyWindow(_Window);
         glfwTerminate();
-        FEngineServices::GetInstance()->ShutdownResourceServices();
+        // FEngineServices::GetInstance()->ShutdownResourceServices();
     }
 
     bool FApplication::InitializeWindow()

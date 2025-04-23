@@ -7,18 +7,21 @@
 
 namespace Npgs
 {
-    FStagingBufferPool::FStagingBufferPool(FVulkanContext* VulkanContext, VmaAllocator Allocator, std::uint32_t MinBufferLimit,
-                                           std::uint32_t MaxBufferLimit, std::uint32_t BufferReclaimThresholdMs,
-                                           std::uint32_t MaintenanceIntervalMs, EPoolUsage PoolUsage, bool bUsingVma)
-        : Base(MinBufferLimit, MaxBufferLimit, BufferReclaimThresholdMs, MaintenanceIntervalMs)
+    FStagingBufferPool::FStagingBufferPool(FVulkanContext* VulkanContext, VmaAllocator Allocator,
+                                           std::uint32_t MinAvailableBufferLimit, std::uint32_t MaxAllocatedBufferLimit,
+                                           std::uint32_t BufferReclaimThresholdMs, std::uint32_t MaintenanceIntervalMs,
+                                           EPoolUsage PoolUsage, bool bUsingVma)
+        : Base(MinAvailableBufferLimit, MaxAllocatedBufferLimit, BufferReclaimThresholdMs, MaintenanceIntervalMs)
         , _VulkanContext(VulkanContext)
         , _Allocator(Allocator)
         , _bUsingVma(bUsingVma)
     {
-        _AllocationCreateInfo.usage = PoolUsage == EPoolUsage::kSubmit ? VMA_MEMORY_USAGE_CPU_TO_GPU : VMA_MEMORY_USAGE_GPU_TO_CPU;
+        _AllocationCreateInfo.usage = PoolUsage == EPoolUsage::kSubmit
+                                    ? VMA_MEMORY_USAGE_CPU_TO_GPU
+                                    : VMA_MEMORY_USAGE_GPU_TO_CPU;
 
         std::array<vk::DeviceSize, 3> InitialSizes{ kSizeTiers[0], kSizeTiers[1], kSizeTiers[2] };
-        std::size_t InitialCount = std::min(static_cast<std::size_t>(MinBufferLimit), InitialSizes.size());
+        std::size_t InitialCount = std::min(static_cast<std::size_t>(MinAvailableBufferLimit), InitialSizes.size());
         for (std::size_t i = 0; i != InitialCount; ++i)
         {
             FStagingBufferCreateInfo CreateInfo
@@ -107,15 +110,18 @@ namespace Npgs
     void FStagingBufferPool::OptimizeResourceCount()
     {
         std::size_t CurrentTimeMs = GetCurrentTimeMs();
-        std::uint32_t TargetCount = std::max(_MinResourceLimit, _PeakResourceDemand.load());
+        std::uint32_t TargetCount = std::max(_MinAvailableResourceLimit, _PeakResourceDemand.load());
         std::lock_guard Lock(_Mutex);
 
         constexpr vk::DeviceSize kCompactSizeThreshold = 32ull * 1024 * 1024;
         RemoveOversizedBuffers(kCompactSizeThreshold);
 
-        if (_AvailableResources.size() < _MinResourceLimit)
+        if (_AvailableResources.size() < _MinAvailableResourceLimit &&
+            _AvailableResources.size() + _BusyResourceCount.load() < _MaxAllocatedResourceLimit)
         {
-            std::size_t ExtraCount = _MinResourceLimit - _AvailableResources.size();
+            std::size_t MinExtraCount = _MinAvailableResourceLimit - _AvailableResources.size();
+            std::size_t MaxExtraCount = _MaxAllocatedResourceLimit - _AvailableResources.size() - _BusyResourceCount.load();
+            std::size_t ExtraCount    = std::min(MinExtraCount, MaxExtraCount);
             for (std::size_t i = 0; i != ExtraCount; ++i)
             {
                 FStagingBufferCreateInfo CreateInfo
@@ -129,7 +135,7 @@ namespace Npgs
 
             return;
         }
-        else if (_AvailableResources.size() == _MinResourceLimit)
+        else if (_AvailableResources.size() == _MinAvailableResourceLimit)
         {
             return;
         }
@@ -180,7 +186,7 @@ namespace Npgs
         std::sort(BufferNeedRemove.begin(), BufferNeedRemove.end(), std::greater<std::size_t>{});
         for (std::size_t Index : BufferNeedRemove)
         {
-            if (_AvailableResources.size() < _MinResourceLimit)
+            if (_AvailableResources.size() < TargetCount)
             {
                 break;
             }
@@ -254,7 +260,7 @@ namespace Npgs
             std::sort(NeedRemoveIndices.begin(), NeedRemoveIndices.end(), std::greater<std::size_t>{});
             for (std::size_t Index : NeedRemoveIndices)
             {
-                if (_AvailableResources.size() < _MinResourceLimit)
+                if (_AvailableResources.size() < TargetCount)
                 {
                     break;
                 }

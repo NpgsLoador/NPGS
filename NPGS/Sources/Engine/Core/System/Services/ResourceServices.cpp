@@ -10,22 +10,37 @@ namespace Npgs
         _ShaderBufferManager(std::make_unique<FShaderBufferManager>(_CoreServices->GetVulkanContext())),
 
         _CommandPoolManager(std::make_unique<FCommandPoolManager>(
-            EnableInfo.CommandPoolManagerCreateInfo->MinPoolLimit, EnableInfo.CommandPoolManagerCreateInfo->MaxPoolLimit,
-            EnableInfo.CommandPoolManagerCreateInfo->PoolReclaimThresholdMs, EnableInfo.CommandPoolManagerCreateInfo->MaintenanceIntervalMs,
-            EnableInfo.CommandPoolManagerCreateInfo->Device, EnableInfo.CommandPoolManagerCreateInfo->QueueFamilyIndex)),
+            EnableInfo.CommandPoolManagerCreateInfo->MinAvailablePoolLimit,
+            EnableInfo.CommandPoolManagerCreateInfo->MaxAllocatedPoolLimit,
+            EnableInfo.CommandPoolManagerCreateInfo->PoolReclaimThresholdMs,
+            EnableInfo.CommandPoolManagerCreateInfo->MaintenanceIntervalMs,
+            EnableInfo.CommandPoolManagerCreateInfo->Device,
+            EnableInfo.CommandPoolManagerCreateInfo->QueueFamilyIndex)
+        ),
 
         _StagingBufferPools
         {
             std::make_unique<FStagingBufferPool>(
-                EnableInfo.SubmitStagingBufferPoolCreateInfo->VulkanContext, EnableInfo.SubmitStagingBufferPoolCreateInfo->Allocator,
-                EnableInfo.SubmitStagingBufferPoolCreateInfo->MinBufferLimit, EnableInfo.SubmitStagingBufferPoolCreateInfo->MaxBufferLimit,
-                EnableInfo.SubmitStagingBufferPoolCreateInfo->BufferReclaimThresholdMs, EnableInfo.SubmitStagingBufferPoolCreateInfo->MaintenanceIntervalMs,
-                EnableInfo.SubmitStagingBufferPoolCreateInfo->PoolUsage, EnableInfo.SubmitStagingBufferPoolCreateInfo->bUsingVma),
+                EnableInfo.SubmitStagingBufferPoolCreateInfo->VulkanContext,
+                EnableInfo.SubmitStagingBufferPoolCreateInfo->Allocator,
+                EnableInfo.SubmitStagingBufferPoolCreateInfo->MinAvailableBufferLimit,
+                EnableInfo.SubmitStagingBufferPoolCreateInfo->MaxAllocatedBufferLimit,
+                EnableInfo.SubmitStagingBufferPoolCreateInfo->BufferReclaimThresholdMs,
+                EnableInfo.SubmitStagingBufferPoolCreateInfo->MaintenanceIntervalMs,
+                EnableInfo.SubmitStagingBufferPoolCreateInfo->PoolUsage,
+                EnableInfo.SubmitStagingBufferPoolCreateInfo->bUsingVma
+            ),
+
             std::make_unique<FStagingBufferPool>(
-                EnableInfo.FetchStagingBufferPoolCreateInfo->VulkanContext, EnableInfo.FetchStagingBufferPoolCreateInfo->Allocator,
-                EnableInfo.FetchStagingBufferPoolCreateInfo->MinBufferLimit, EnableInfo.FetchStagingBufferPoolCreateInfo->MaxBufferLimit,
-                EnableInfo.FetchStagingBufferPoolCreateInfo->BufferReclaimThresholdMs, EnableInfo.FetchStagingBufferPoolCreateInfo->MaintenanceIntervalMs,
-                EnableInfo.FetchStagingBufferPoolCreateInfo->PoolUsage, EnableInfo.FetchStagingBufferPoolCreateInfo->bUsingVma),
+                EnableInfo.FetchStagingBufferPoolCreateInfo->VulkanContext,
+                EnableInfo.FetchStagingBufferPoolCreateInfo->Allocator,
+                EnableInfo.FetchStagingBufferPoolCreateInfo->MinAvailableBufferLimit,
+                EnableInfo.FetchStagingBufferPoolCreateInfo->MaxAllocatedBufferLimit,
+                EnableInfo.FetchStagingBufferPoolCreateInfo->BufferReclaimThresholdMs,
+                EnableInfo.FetchStagingBufferPoolCreateInfo->MaintenanceIntervalMs,
+                EnableInfo.FetchStagingBufferPoolCreateInfo->PoolUsage,
+                EnableInfo.FetchStagingBufferPoolCreateInfo->bUsingVma
+            ),
         }
     {
     }

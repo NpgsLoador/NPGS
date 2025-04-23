@@ -110,14 +110,14 @@ namespace Npgs
         };
 
     public:
-        TResourcePool(std::uint32_t MinPoolLimit, std::uint32_t MaxPoolLimit,
+        TResourcePool(std::uint32_t MinAvailablePoolLimit, std::uint32_t MaxAllocatedPoolLimit,
                       std::uint32_t PoolReclaimThresholdMs, std::uint32_t MaintenanceIntervalMs)
-            : _MinResourceLimit(MinPoolLimit)
-            , _MaxResourceLimit(MaxPoolLimit)
+            : _MinAvailableResourceLimit(MinAvailablePoolLimit)
+            , _MaxAllocatedResourceLimit(MaxAllocatedPoolLimit)
             , _ResourceReclaimThresholdMs(PoolReclaimThresholdMs)
             , _MaintenanceIntervalMs(MaintenanceIntervalMs)
         {
-            //std::thread([this]() -> void { Maintenance(); }).detach();
+            std::thread([this]() -> void { Maintenance(); }).detach();
         }
 
         TResourcePool(const TResourcePool&) = delete;
@@ -127,7 +127,7 @@ namespace Npgs
         {
             _MaintenanceIntervalMs = std::clamp(_MaintenanceIntervalMs, 0u, 500u);
             _bStopMaintenance.store(true);
-            //std::this_thread::sleep_for(std::chrono::milliseconds(_MaintenanceIntervalMs * 2));
+            std::this_thread::sleep_for(std::chrono::milliseconds(1000));
         }
 
         TResourcePool& operator=(const TResourcePool&) = delete;
@@ -170,7 +170,7 @@ namespace Npgs
                 return FResourceGuard(this, Resource, UsageCount);
             }
 
-            if (_BusyResourceCount.load() + _AvailableResources.size() < _MaxResourceLimit)
+            if (_BusyResourceCount.load() + _AvailableResources.size() < _MaxAllocatedResourceLimit)
             {
                 CreateResource(CreateInfo);
 
@@ -212,14 +212,14 @@ namespace Npgs
             _AvailableResources.clear();
         }
 
-        void SetMinResourceLimit(std::uint32_t MinResourceLimit)
+        void SetMinAvailableResourceLimit(std::uint32_t MinAvailableResourceLimit)
         {
-            _MinResourceLimit = std::min(MinResourceLimit, _MaxResourceLimit);
+            _MinAvailableResourceLimit = std::min(MinAvailableResourceLimit, _MaxAllocatedResourceLimit);
         }
 
-        void SetMaxResourceLimit(std::uint32_t MaxResourceLimit)
+        void SetMaxAllocatedResourceLimit(std::uint32_t MaxAllocatedResourceLimit)
         {
-            _MaxResourceLimit = std::max(MaxResourceLimit, _MinResourceLimit);
+            _MaxAllocatedResourceLimit = std::max(MaxAllocatedResourceLimit, _MinAvailableResourceLimit);
         }
 
         void SetResourceReclaimThreshold(std::uint32_t ResourceReclaimThresholdMs)
@@ -235,14 +235,14 @@ namespace Npgs
             _MaintenanceIntervalMs = MaintenanceIntervalMs;
         }
 
-        std::uint32_t GetMinResourceLimit() const
+        std::uint32_t GetMinAvailableResourceLimit() const
         {
-            return _MinResourceLimit;
+            return _MinAvailableResourceLimit;
         }
 
-        std::uint32_t GetMaxResourceLimit() const
+        std::uint32_t GetMaxAllocatedResourceLimit() const
         {
-            return _MaxResourceLimit;
+            return _MaxAllocatedResourceLimit;
         }
 
         std::uint32_t GetResourceReclaimThreshold() const
@@ -294,7 +294,7 @@ namespace Npgs
             std::size_t CurrentTimeMs = GetCurrentTimeMs();
             std::lock_guard Lock(_Mutex);
 
-            std::uint32_t TargetCount = std::max(_MinResourceLimit, _PeakResourceDemand.load());
+            std::uint32_t TargetCount = std::max(_MinAvailableResourceLimit, _PeakResourceDemand.load());
             if (_AvailableResources.size() > TargetCount)
             {
                 std::erase_if(_AvailableResources, [&](const auto& ResourceInfo) -> bool
@@ -341,8 +341,8 @@ namespace Npgs
         std::atomic<std::uint32_t>                    _BusyResourceCount{};
         std::atomic<std::uint32_t>                    _PeakResourceDemand{};
 
-        std::uint32_t                                 _MinResourceLimit;
-        std::uint32_t                                 _MaxResourceLimit;
+        std::uint32_t                                 _MinAvailableResourceLimit;
+        std::uint32_t                                 _MaxAllocatedResourceLimit;
         std::uint32_t                                 _ResourceReclaimThresholdMs;
         std::uint32_t                                 _MaintenanceIntervalMs;
 

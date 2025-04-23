@@ -3,11 +3,11 @@
 namespace Npgs
 {
     template <typename Func, typename... Args>
-    inline auto FThreadPool::Submit(Func&& Pred, Args&&... Params)
+    inline auto FThreadPool::Submit(Func&& Pred, Args&&... TaskArgs)
     {
         using ReturnType = std::invoke_result_t<Func, Args...>;
         auto Task = std::make_shared<std::packaged_task<ReturnType()>>(
-            std::bind(std::forward<Func>(Pred), std::forward<Args>(Params)...));
+            std::bind(std::forward<Func>(Pred), std::forward<Args>(TaskArgs)...));
         std::future<ReturnType> Future = Task->get_future();
         {
             std::unique_lock<std::mutex> Mutex(_Mutex);

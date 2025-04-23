@@ -22,8 +22,8 @@ namespace Npgs
         struct FCommandPoolManagerCreateInfo
         {
             vk::Device    Device{};
-            std::uint32_t MinPoolLimit{};
-            std::uint32_t MaxPoolLimit{};
+            std::uint32_t MinAvailablePoolLimit{};
+            std::uint32_t MaxAllocatedPoolLimit{};
             std::uint32_t PoolReclaimThresholdMs{};
             std::uint32_t MaintenanceIntervalMs{};
             std::uint32_t QueueFamilyIndex{};
@@ -33,8 +33,8 @@ namespace Npgs
         {
             FVulkanContext* VulkanContext{ nullptr };
             VmaAllocator    Allocator{ nullptr };
-            std::uint32_t   MinBufferLimit{};
-            std::uint32_t   MaxBufferLimit{};
+            std::uint32_t   MinAvailableBufferLimit{};
+            std::uint32_t   MaxAllocatedBufferLimit{};
             std::uint32_t   BufferReclaimThresholdMs{};
             std::uint32_t   MaintenanceIntervalMs{};
             FStagingBufferPool::EPoolUsage PoolUsage{ FStagingBufferPool::EPoolUsage::kSubmit };

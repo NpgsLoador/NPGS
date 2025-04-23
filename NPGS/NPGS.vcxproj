@@ -357,7 +357,6 @@
     <None Include="Sources\Engine\Core\Runtime\AssetLoaders\Texture.inl" />
     <None Include="Sources\Engine\Core\Runtime\Graphics\Resources\Attachment.inl" />
     <None Include="Sources\Engine\Core\Runtime\Graphics\Resources\DeviceLocalBuffer.inl" />
-    <None Include="Sources\Engine\Core\Runtime\Graphics\Resources\Pools\StagingBufferPool.inl" />
     <None Include="Sources\Engine\Core\Runtime\Graphics\Resources\StagingBuffer.inl" />
     <None Include="Sources\Engine\Core\Runtime\Graphics\Vulkan\Context.inl" />
     <None Include="Sources\Engine\Core\Runtime\Graphics\Vulkan\Core.inl" />

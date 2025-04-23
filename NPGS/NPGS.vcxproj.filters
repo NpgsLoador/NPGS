@@ -99,9 +99,6 @@
     <ClCompile Include="Sources\Engine\Core\Math\TangentSpaceTools.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="Sources\Program\main.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
     <ClCompile Include="Sources\Engine\Core\Runtime\Graphics\Resources\Managers\ImageTracker.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
@@ -133,6 +130,9 @@
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="Sources\Engine\Core\System\Services\ResourceServices.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="Sources\Program\main.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>
@@ -384,9 +384,6 @@
       <Filter>头文件</Filter>
     </None>
     <None Include="Sources\Engine\Shaders\Common\BindlessExtensions.glsl" />
-    <None Include="Sources\Engine\Core\Runtime\Graphics\Resources\Pools\StagingBufferPool.inl">
-      <Filter>头文件</Filter>
-    </None>
     <None Include="Sources\Engine\Core\Runtime\Graphics\Resources\Attachment.inl">
       <Filter>头文件</Filter>
     </None>

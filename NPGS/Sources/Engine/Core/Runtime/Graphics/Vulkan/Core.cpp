@@ -141,18 +141,18 @@ namespace Npgs
 
         if (_GraphicsQueueFamilyIndex != vk::QueueFamilyIgnored)
         {
-            DeviceQueueCreateInfos.emplace_back(vk::DeviceQueueCreateFlags{}, _GraphicsQueueFamilyIndex, 1, &QueuePriority);
+            DeviceQueueCreateInfos.emplace_back(vk::DeviceQueueCreateFlags(), _GraphicsQueueFamilyIndex, 1, &QueuePriority);
         }
         if (_PresentQueueFamilyIndex != vk::QueueFamilyIgnored &&
             _PresentQueueFamilyIndex != _GraphicsQueueFamilyIndex)
         {
-            DeviceQueueCreateInfos.emplace_back(vk::DeviceQueueCreateFlags{}, _PresentQueueFamilyIndex, 1, &QueuePriority);
+            DeviceQueueCreateInfos.emplace_back(vk::DeviceQueueCreateFlags(), _PresentQueueFamilyIndex, 1, &QueuePriority);
         }
         if (_ComputeQueueFamilyIndex != vk::QueueFamilyIgnored &&
             _ComputeQueueFamilyIndex != _GraphicsQueueFamilyIndex &&
             _ComputeQueueFamilyIndex != _PresentQueueFamilyIndex)
         {
-            DeviceQueueCreateInfos.emplace_back(vk::DeviceQueueCreateFlags{}, _ComputeQueueFamilyIndex, 1, &QueuePriority);
+            DeviceQueueCreateInfos.emplace_back(vk::DeviceQueueCreateFlags(), _ComputeQueueFamilyIndex, 1, &QueuePriority);
         }
 
         vk::PhysicalDeviceFeatures2 Features2;
@@ -506,28 +506,7 @@ namespace Npgs
         }
         _SwapchainCreateInfo.setOldSwapchain(_Swapchain);
 
-        try
-        {
-            _GraphicsQueue.waitIdle();
-        }
-        catch (const vk::SystemError& e)
-        {
-            NpgsCoreError("Failed to wait for graphics queue to be idle: {}", e.what());
-            return static_cast<vk::Result>(e.code().value());
-        }
-
-        if (_GraphicsQueueFamilyIndex != _PresentQueueFamilyIndex)
-        {
-            try
-            {
-                _PresentQueue.waitIdle();
-            }
-            catch (const vk::SystemError& e)
-            {
-                NpgsCoreError("Failed to wait for present queue to be idle: {}", e.what());
-                return static_cast<vk::Result>(e.code().value());
-            }
-        }
+        VulkanHppCheck(WaitIdle());
 
         for (auto& Callback : _DestroySwapchainCallbacks)
         {
@@ -563,7 +542,7 @@ namespace Npgs
 
         vk::Result Result;
         while ((Result = _Device.acquireNextImageKHR(_Swapchain, std::numeric_limits<std::uint64_t>::max(),
-                                                    Semaphore, vk::Fence(), &_CurrentImageIndex)) != vk::Result::eSuccess)
+                                                     Semaphore, vk::Fence(), &_CurrentImageIndex)) != vk::Result::eSuccess)
         {
             switch (Result)
             {

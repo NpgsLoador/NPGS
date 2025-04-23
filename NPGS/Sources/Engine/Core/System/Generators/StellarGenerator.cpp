@@ -3,6 +3,7 @@
 #include <cmath>
 #include <algorithm>
 #include <charconv>
+#include <exception>
 #include <filesystem>
 #include <format>
 #include <iomanip>
@@ -13,30 +14,11 @@
 
 #include <glm/glm.hpp>
 
-#include "Engine/Core/Math/NumericConstants.h"
 #include "Engine/Core/Runtime/AssetLoaders/AssetManager.h"
 #include "Engine/Core/Runtime/AssetLoaders/CommaSeparatedValues.hpp"
 #include "Engine/Core/System/Services/EngineServices.h"
 #include "Engine/Utils/Logger.h"
 #include "Engine/Utils/Utils.h"
-
-// Tool macros
-// -----------
-#define GenerateDeathStarPlaceholder(Lifetime)                                                                              \
-Astro::FStellarClass::FSpectralType DeathStarClass                                                                          \
-{                                                                                                                           \
-    .HSpectralClass  = Astro::FStellarClass::ESpectralClass::kSpectral_Unknown,                                             \
-    .MSpectralClass  = Astro::FStellarClass::ESpectralClass::kSpectral_Unknown,                                             \
-    .LuminosityClass = Astro::FStellarClass::ELuminosityClass::kLuminosity_Unknown,                                         \
-    .bIsAmStar       = false,                                                                                               \
-    .SpecialMark     = std::to_underlying(Astro::FStellarClass::ESpecialMark::kCode_Null),                                  \
-    .Subclass        = 0.0f,                                                                                                \
-    .AmSubclass      = 0.0f                                                                                                 \
-};                                                                                                                          \
-Astro::AStar DeathStar;                                                                                                     \
-DeathStar.SetStellarClass(Astro::FStellarClass(Astro::FStellarClass::EStellarType::kDeathStarPlaceholder, DeathStarClass)); \
-DeathStar.SetLifetime(Lifetime);                                                                                            \
-throw DeathStar;
 
 namespace Npgs
 {
@@ -44,6 +26,25 @@ namespace Npgs
     // --------------
     namespace
     {
+        std::unexpected<Astro::AStar> GenerateDeathStarPlaceholder(double Lifetime)
+        {
+            Astro::FStellarClass::FSpectralType DeathStarClass
+            {
+                .HSpectralClass  = Astro::FStellarClass::ESpectralClass::kSpectral_Unknown,
+                .MSpectralClass  = Astro::FStellarClass::ESpectralClass::kSpectral_Unknown,
+                .LuminosityClass = Astro::FStellarClass::ELuminosityClass::kLuminosity_Unknown,
+                .bIsAmStar       = false,
+                .SpecialMark     = std::to_underlying(Astro::FStellarClass::ESpecialMark::kCode_Null),
+                .Subclass        = 0.0f,
+                .AmSubclass      = 0.0f
+            };
+
+            Astro::AStar DeathStar;
+            DeathStar.SetStellarClass(Astro::FStellarClass(Astro::FStellarClass::EStellarType::kDeathStarPlaceholder, DeathStarClass));
+            DeathStar.SetLifetime(Lifetime);
+            return std::unexpected(DeathStar);
+        }
+
         float DefaultAgePdf(glm::vec3, float Age, float UniverseAge)
         {
             float Probability = 0.0f;
@@ -519,20 +520,33 @@ namespace Npgs
         {
             try
             {
-                StarData = GetFullMistData(Properties, false, true);
-            }
-            catch (Astro::AStar& DeathStar)
-            {
-                DeathStar = static_cast<Astro::AStar>(Properties);
-                ProcessDeathStar(EStellarTypeGenerationOption::kRandom, DeathStar);
-                if (DeathStar.GetEvolutionPhase() == Astro::AStar::EEvolutionPhase::kNull)
+                auto ExpectedResult = GetFullMistData(Properties, false, true);
+                if (ExpectedResult.has_value())
                 {
-                    // 如果爆了，削一半质量
-                    Properties.InitialMassSol /= 2;
-                    DeathStar = GenerateStar(Properties);
+                    StarData = ExpectedResult.value();
                 }
+                else
+                {
+                    auto& DeathStar = ExpectedResult.error();
+                    DeathStar.SetAge(Properties.Age);
+                    DeathStar.SetFeH(Properties.FeH);
+                    DeathStar.SetInitialMass(Properties.InitialMassSol * kSolarMass);
+                    DeathStar.SetSingleton(Properties.bIsSingleStar);
+                    ProcessDeathStar(EStellarTypeGenerationOption::kRandom, DeathStar);
+                    if (DeathStar.GetEvolutionPhase() == Astro::AStar::EEvolutionPhase::kNull)
+                    {
+                        // 如果爆了，削一半质量
+                        Properties.InitialMassSol /= 2;
+                        DeathStar = GenerateStar(Properties);
+                    }
 
-                return DeathStar;
+                    return DeathStar;
+                }
+            }
+            catch (const std::exception& e)
+            {
+                NpgsCoreError("Failed to generate star: {}", e.what());
+                return {};
             }
 
             break;
@@ -540,7 +554,16 @@ namespace Npgs
         case EStellarTypeGenerationOption::kGiant:
         {
             Properties.Age = std::numeric_limits<float>::quiet_NaN(); // 使用 NaN，在计算年龄的时候根据寿命赋值一个濒死年龄
-            StarData = GetFullMistData(Properties, false, true);
+            try
+            {
+                StarData = GetFullMistData(Properties, false, true).value();
+            }
+            catch (const std::exception& e)
+            {
+                NpgsCoreError("Failed to generate giant star: {}", e.what());
+                return {};
+            }
+
             break;
         }
         case EStellarTypeGenerationOption::kDeathStar:
@@ -605,7 +628,6 @@ namespace Npgs
 
         Astro::AStar::EEvolutionPhase EvolutionPhase = static_cast<Astro::AStar::EEvolutionPhase>(StarData[_kPhaseIndex]);
 
-        Star.SetInitialMass(Star.GetInitialMass() * kSolarMass);
         Star.SetSingleton(Properties.bIsSingleStar);
         Star.SetAge(Age);
         Star.SetMass(MassSol * kSolarMass);
@@ -770,12 +792,12 @@ namespace Npgs
         return std::pow(10.0f, LogMass);
     }
 
-    FStellarGenerator::FDataArray
+    std::expected<FStellarGenerator::FDataArray, Astro::AStar>
     FStellarGenerator::GetFullMistData(const FBasicProperties& Properties, bool bIsWhiteDwarf, bool bIsSingleWhiteDwarf)
     {
-        float TargetAge  = Properties.Age;
-        float TargetFeH  = Properties.FeH;
-        float TargetMass = Properties.InitialMassSol;
+        float TargetAge     = Properties.Age;
+        float TargetFeH     = Properties.FeH;
+        float TargetMassSol = Properties.InitialMassSol;
 
         std::string PrefixDirectory;
         std::string MassString;
@@ -793,7 +815,7 @@ namespace Npgs
 
             TargetFeH = ClosestFeH;
 
-            MassStream << std::fixed << std::setfill('0') << std::setw(6) << std::setprecision(2) << TargetMass;
+            MassStream << std::fixed << std::setfill('0') << std::setw(6) << std::setprecision(2) << TargetMassSol;
             MassString = MassStream.str() + "0";
 
             std::stringstream FeHStream;
@@ -823,7 +845,7 @@ namespace Npgs
             Masses = _kMassFilesCache[PrefixDirectory];
         }
 
-        auto it = std::lower_bound(Masses.begin(), Masses.end(), TargetMass);
+        auto it = std::lower_bound(Masses.begin(), Masses.end(), TargetMassSol);
         if (it == Masses.end())
         {
             if (!bIsWhiteDwarf)
@@ -839,7 +861,7 @@ namespace Npgs
         float LowerMass = 0.0f;
         float UpperMass = 0.0f;
 
-        if (*it == TargetMass)
+        if (*it == TargetMassSol)
         {
             LowerMass = UpperMass = *it;
         }
@@ -849,7 +871,7 @@ namespace Npgs
             UpperMass = *it;
         }
 
-        float MassCoefficient = (TargetMass - LowerMass) / (UpperMass - LowerMass);
+        float MassCoefficient = (TargetMassSol - LowerMass) / (UpperMass - LowerMass);
 
         MassString.clear();
         MassStream.str("");
@@ -869,14 +891,22 @@ namespace Npgs
 
         Files = std::make_pair(LowerMassFile, UpperMassFile);
 
-        FDataArray Result = InterpolateMistData(Files, TargetAge, TargetMass, MassCoefficient);
-        Result.push_back(TargetFeH); // 加入插值使用的金属丰度，用于计算光谱类型
-
-        return Result;
+        auto ExpectedResult = InterpolateMistData(Files, TargetAge, TargetMassSol, MassCoefficient);
+        if (ExpectedResult.has_value())
+        {
+            FDataArray& Result = ExpectedResult.value();
+            Result.push_back(TargetFeH); // 加入插值使用的金属丰度，用于计算光谱类型
+            return Result;
+        }
+        else
+        {
+            return ExpectedResult;
+        }
     }
 
-    FStellarGenerator::FDataArray
-    FStellarGenerator::InterpolateMistData(const std::pair<std::string, std::string>& Files, double TargetAge, double TargetMass, double MassCoefficient)
+    std::expected<FStellarGenerator::FDataArray, Astro::AStar>
+    FStellarGenerator::InterpolateMistData(const std::pair<std::string, std::string>& Files,
+                                           double TargetAge, double TargetMassSol, double MassCoefficient)
     {
         FDataArray Result;
 
@@ -904,7 +934,13 @@ namespace Npgs
                     UpperPhaseChanges
                 };
 
-                double EvolutionProgress = CalculateEvolutionProgress(PhaseChangePair, TargetAge, MassCoefficient);
+                auto ExpectedResult = CalculateEvolutionProgress(PhaseChangePair, TargetAge, MassCoefficient);
+                if (!ExpectedResult.has_value())
+                {
+                    return std::unexpected(ExpectedResult.error());
+                }
+
+                double EvolutionProgress = ExpectedResult.value();
 
                 double LowerLifetime = PhaseChangePair.first.back()[_kStarAgeIndex];
                 double UpperLifetime = PhaseChangePair.second.back()[_kStarAgeIndex];
@@ -930,10 +966,16 @@ namespace Npgs
 
                 double EvolutionProgress = 0.0;
                 double Lifetime = 0.0;
-                if (TargetMass >= 0.1)
+                if (TargetMassSol >= 0.1)
                 {
                     std::pair<std::vector<FDataArray>, std::vector<FDataArray>> PhaseChangePair{ PhaseChanges, {} };
-                    EvolutionProgress = CalculateEvolutionProgress(PhaseChangePair, TargetAge, MassCoefficient);
+                    auto ExpectedResult = CalculateEvolutionProgress(PhaseChangePair, TargetAge, MassCoefficient);
+                    if (!ExpectedResult.has_value())
+                    {
+                        return std::unexpected(ExpectedResult.error());
+                    }
+
+                    EvolutionProgress = ExpectedResult.value();
                     Lifetime          = PhaseChanges.back()[_kStarAgeIndex];
                     Result            = InterpolateStarData(StarData, EvolutionProgress);
                     Result.push_back(Lifetime);
@@ -943,8 +985,8 @@ namespace Npgs
                     // 外推小质量恒星的数据
                     double OriginalLowerPhaseChangePoint = PhaseChanges[1][_kStarAgeIndex];
                     double OriginalUpperPhaseChangePoint = PhaseChanges[2][_kStarAgeIndex];
-                    double LowerPhaseChangePoint = OriginalLowerPhaseChangePoint * std::pow(TargetMass / 0.1, -1.3);
-                    double UpperPhaseChangePoint = OriginalUpperPhaseChangePoint * std::pow(TargetMass / 0.1, -1.3);
+                    double LowerPhaseChangePoint = OriginalLowerPhaseChangePoint * std::pow(TargetMassSol / 0.1, -1.3);
+                    double UpperPhaseChangePoint = OriginalUpperPhaseChangePoint * std::pow(TargetMassSol / 0.1, -1.3);
                     Lifetime = UpperPhaseChangePoint;
                     if (TargetAge < LowerPhaseChangePoint)
                     {
@@ -956,12 +998,12 @@ namespace Npgs
                     }
                     else if (TargetAge > UpperPhaseChangePoint)
                     {
-                        GenerateDeathStarPlaceholder(Lifetime);
+                        return GenerateDeathStarPlaceholder(Lifetime);
                     }
 
                     Result = InterpolateStarData(StarData, EvolutionProgress);
                     Result.push_back(Lifetime);
-                    ExpandMistData(TargetMass, Result);
+                    ExpandMistData(TargetMassSol, Result);
                 }
             }
         }
@@ -1024,20 +1066,21 @@ namespace Npgs
         return Result;
     }
 
-    double FStellarGenerator::CalculateEvolutionProgress(std::pair<std::vector<FDataArray>, std::vector<FDataArray>>& PhaseChanges,
-                                                         double TargetAge, double MassCoefficient)
+    std::expected<double, Astro::AStar>
+    FStellarGenerator::CalculateEvolutionProgress(std::pair<std::vector<FDataArray>, std::vector<FDataArray>>& PhaseChanges,
+                                                  double TargetAge, double MassCoefficient)
     {
         double Result = 0.0;
         double Phase  = 0.0;
 
         if (PhaseChanges.second.empty()) [[unlikely]]
         {
-            const auto& TimePointResults = FindSurroundingTimePoints(PhaseChanges.first, TargetAge);
+            auto TimePointResults = FindSurroundingTimePoints(PhaseChanges.first, TargetAge);
             Phase = TimePointResults.first;
             const auto& TimePoints = TimePointResults.second;
             if (TargetAge > TimePoints.second)
             {
-                GenerateDeathStarPlaceholder(TimePoints.second);
+                return GenerateDeathStarPlaceholder(TimePoints.second);
             }
 
             Result = (TargetAge - TimePoints.first) / (TimePoints.second - TimePoints.first) + Phase;
@@ -1047,7 +1090,13 @@ namespace Npgs
             if (PhaseChanges.first.size() == PhaseChanges.second.size() &&
                 (*std::prev(PhaseChanges.first.end(), 2))[_kPhaseIndex] == (*std::prev(PhaseChanges.second.end(), 2))[_kPhaseIndex])
             {
-                const auto& TimePointResults = FindSurroundingTimePoints(PhaseChanges, TargetAge, MassCoefficient);
+                auto ExpectedResult = FindSurroundingTimePoints(PhaseChanges, TargetAge, MassCoefficient);
+                if (!ExpectedResult.has_value())
+                {
+                    return std::unexpected(ExpectedResult.error());
+                }
+
+                const auto& TimePointResults = ExpectedResult.value();
 
                 Phase = TimePointResults.first;
                 std::size_t Index = TimePointResults.second;
@@ -1108,7 +1157,13 @@ namespace Npgs
 
                 AlignArrays(PhaseChanges);
 
-                Result = CalculateEvolutionProgress(PhaseChanges, TargetAge, MassCoefficient);
+                auto ExpectedResult = CalculateEvolutionProgress(PhaseChanges, TargetAge, MassCoefficient);
+                if (!ExpectedResult.has_value())
+                {
+                    return std::unexpected(ExpectedResult.error());
+                }
+
+                Result = ExpectedResult.value();
                 double IntegerPart    = 0.0;
                 double FractionalPart = std::modf(Result, &IntegerPart);
                 if (PhaseChanges.second.back()[_kPhaseIndex] == 9 && FractionalPart > 0.99 && Result < 9.0 &&
@@ -1166,7 +1221,7 @@ namespace Npgs
         return { (*LowerTimePoint)[_kXIndex], { (*LowerTimePoint)[_kStarAgeIndex], (*UpperTimePoint)[_kStarAgeIndex] } };
     }
 
-    std::pair<double, std::size_t>
+    std::expected<std::pair<double, std::size_t>, Astro::AStar>
     FStellarGenerator::FindSurroundingTimePoints(const std::pair<std::vector<FDataArray>, std::vector<FDataArray>>& PhaseChanges,
                                                  double TargetAge, double MassCoefficient)
     {
@@ -1185,7 +1240,7 @@ namespace Npgs
         {
             double Lifetime = LowerPhaseChangeTimePoints.back() +
                 (UpperPhaseChangeTimePoints.back() - LowerPhaseChangeTimePoints.back()) * MassCoefficient;
-            GenerateDeathStarPlaceholder(Lifetime);
+            return GenerateDeathStarPlaceholder(Lifetime);
         }
 
         std::vector<std::pair<double, double>> TimePointPairs;
@@ -1760,7 +1815,7 @@ namespace Npgs
     {
         double InputAge     = DeathStar.GetAge();
         float  InputFeH     = DeathStar.GetFeH();
-        float  InputMassSol = DeathStar.GetInitialMass();
+        float  InputMassSol = DeathStar.GetInitialMass() / kSolarMass;
 
         Astro::AStar::EEvolutionPhase       EvolutionPhase{};
         Astro::AStar::EStarFrom             DeathStarFrom{};
@@ -2051,7 +2106,7 @@ namespace Npgs
                 .InitialMassSol = DeathStarMassSol
             };
 
-            FDataArray WhiteDwarfData = GetFullMistData(WhiteDwarfBasicProperties, true, true);
+            FDataArray WhiteDwarfData = GetFullMistData(WhiteDwarfBasicProperties, true, true).value();
 
             StarAge      = static_cast<float>(WhiteDwarfData[_kWdStarAgeIndex]);
             LogR         = static_cast<float>(WhiteDwarfData[_kWdLogRIndex]);
@@ -2141,7 +2196,6 @@ namespace Npgs
         float Theta = _CommonGenerator(_RandomEngine) * 2.0f * Math::kPi;
         float Phi   = _CommonGenerator(_RandomEngine) * Math::kPi;
 
-        DeathStar.SetInitialMass(InputMassSol * kSolarMass);
         DeathStar.SetAge(Age);
         DeathStar.SetMass(MassSol * kSolarMass);
         DeathStar.SetLifetime(-DeathStar.GetLifetime());
@@ -2327,7 +2381,7 @@ namespace Npgs
         StarData.SetSpin(Spin);
     }
 
-    void FStellarGenerator::ExpandMistData(double TargetMass, FDataArray& StarData)
+    void FStellarGenerator::ExpandMistData(double TargetMassSol, FDataArray& StarData)
     {
         double RadiusSol     = std::pow(10.0, StarData[_kLogRIndex]);
         double Teff          = std::pow(10.0, StarData[_kLogTeffIndex]);
@@ -2340,11 +2394,11 @@ namespace Npgs
 
         double LogL = std::log10(LuminositySol);
 
-        StarMass = TargetMass * (StarMass / 0.1);
-        StarMdot = TargetMass * (StarMdot / 0.1);
+        StarMass = TargetMassSol * (StarMass / 0.1);
+        StarMdot = TargetMassSol * (StarMdot / 0.1);
 
-        RadiusSol     = std::pow(10.0, LogR) * std::pow(TargetMass / 0.1, 2.3);
-        LuminositySol = std::pow(10.0, LogL) * std::pow(TargetMass / 0.1, 2.3);
+        RadiusSol     = std::pow(10.0, LogR) * std::pow(TargetMassSol / 0.1, 2.3);
+        LuminositySol = std::pow(10.0, LogL) * std::pow(TargetMassSol / 0.1, 2.3);
 
         Teff    = kSolarTeff * std::pow((LuminositySol / std::pow(RadiusSol, 2.0)), 0.25);
         LogTeff = std::log10(Teff);

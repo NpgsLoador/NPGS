@@ -35,8 +35,8 @@ namespace Npgs
         FResourceServices::FCommandPoolManagerCreateInfo CommandPoolManagerCreateInfo
         {
             .Device                 = _CoreServices->GetVulkanContext()->GetDevice(),
-            .MinPoolLimit           = 2,
-            .MaxPoolLimit           = 128,
+            .MinAvailablePoolLimit  = 2,
+            .MaxAllocatedPoolLimit  = 32,
             .PoolReclaimThresholdMs = 1000,
             .MaintenanceIntervalMs  = 5000,
             .QueueFamilyIndex       = _CoreServices->GetVulkanContext()->GetGraphicsQueueFamilyIndex()
@@ -46,8 +46,8 @@ namespace Npgs
         {
             .VulkanContext            = _CoreServices->GetVulkanContext(),
             .Allocator                = _CoreServices->GetVulkanContext()->GetVmaAllocator(),
-            .MinBufferLimit           = 4,
-            .MaxBufferLimit           = 64,
+            .MinAvailableBufferLimit  = 4,
+            .MaxAllocatedBufferLimit  = 64,
             .BufferReclaimThresholdMs = 1000,
             .MaintenanceIntervalMs    = 5000,
             .PoolUsage                = FStagingBufferPool::EPoolUsage::kSubmit,
@@ -58,8 +58,8 @@ namespace Npgs
         {
             .VulkanContext            = _CoreServices->GetVulkanContext(),
             .Allocator                = _CoreServices->GetVulkanContext()->GetVmaAllocator(),
-            .MinBufferLimit           = 2,
-            .MaxBufferLimit           = 10,
+            .MinAvailableBufferLimit  = 2,
+            .MaxAllocatedBufferLimit  = 10,
             .BufferReclaimThresholdMs = 10000,
             .MaintenanceIntervalMs    = 600000,
             .PoolUsage                = FStagingBufferPool::EPoolUsage::kFetch,

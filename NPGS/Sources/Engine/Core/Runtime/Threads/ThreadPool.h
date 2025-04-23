@@ -26,7 +26,7 @@ namespace Npgs
         FThreadPool& operator=(FThreadPool&&)      = default;
 
         template <typename Func, typename... Args>
-        auto Submit(Func&& Pred, Args&&... Params);
+        auto Submit(Func&& Pred, Args&&... TaskArgs);
 
         void Terminate();
         void SwitchHyperThread();

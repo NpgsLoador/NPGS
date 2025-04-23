@@ -3,6 +3,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <array>
+#include <expected>
 #include <functional>
 #include <limits>
 #include <memory>
@@ -15,6 +16,7 @@
 
 #include <glm/glm.hpp>
 
+#include "Engine/Core/Math/NumericConstants.h"
 #include "Engine/Core/Runtime/AssetLoaders/CommaSeparatedValues.hpp"
 #include "Engine/Core/Types/Entries/Astro/Star.h"
 #include "Engine/Core/Types/Properties/StellarClass.h"
@@ -68,7 +70,7 @@ namespace Npgs
                 Astro::AStar Star;
                 Star.SetAge(Age);
                 Star.SetFeH(FeH);
-                Star.SetInitialMass(InitialMassSol);
+                Star.SetInitialMass(InitialMassSol * kSolarMass);
                 Star.SetSingleton(bIsSingleStar);
 
                 return Star;
@@ -142,18 +144,23 @@ namespace Npgs
         void InitializePdfs();
         float GenerateAge(float MaxPdf);
         float GenerateMass(float MaxPdf, auto& LogMassPdf);
-        FDataArray GetFullMistData(const FBasicProperties& Properties, bool bIsWhiteDwarf, bool bIsSingleWhiteDwarf);
-        FDataArray InterpolateMistData(const std::pair<std::string, std::string>& Files, double TargetAge, double TargetMass, double MassCoefficient);
+        
+        std::expected<FDataArray, Astro::AStar>
+        GetFullMistData(const FBasicProperties& Properties, bool bIsWhiteDwarf, bool bIsSingleWhiteDwarf);
+        
+        std::expected<FDataArray, Astro::AStar>
+        InterpolateMistData(const std::pair<std::string, std::string>& Files, double TargetAge, double TargetMassSol, double MassCoefficient);
+        
         std::vector<FDataArray> FindPhaseChanges(const FMistData* DataSheet);
 
-        double CalculateEvolutionProgress(std::pair<std::vector<FDataArray>, std::vector<FDataArray>>& PhaseChanges,
-                                          double TargetAge, double MassCoefficient);
+        std::expected<double, Astro::AStar>
+        CalculateEvolutionProgress(std::pair<std::vector<FDataArray>, std::vector<FDataArray>>& PhaseChanges, double TargetAge, double MassCoefficient);
 
         std::pair<double, std::pair<double, double>>
-            FindSurroundingTimePoints(const std::vector<FDataArray>& PhaseChanges, double TargetAge);
+        FindSurroundingTimePoints(const std::vector<FDataArray>& PhaseChanges, double TargetAge);
 
-        std::pair<double, std::size_t>
-            FindSurroundingTimePoints(const std::pair<std::vector<FDataArray>, std::vector<FDataArray>>& PhaseChanges, double TargetAge, double MassCoefficient);
+        std::expected<std::pair<double, std::size_t>, Astro::AStar>
+        FindSurroundingTimePoints(const std::pair<std::vector<FDataArray>, std::vector<FDataArray>>& PhaseChanges, double TargetAge, double MassCoefficient);
 
         void AlignArrays(std::pair<std::vector<FDataArray>, std::vector<FDataArray>>& Arrays);
         FDataArray InterpolateHrDiagram(FHrDiagram* Data, double BvColorIndex);
@@ -168,7 +175,7 @@ namespace Npgs
         void ProcessDeathStar(EStellarTypeGenerationOption DeathStarTypeOption, Astro::AStar& DeathStar);
         void GenerateMagnetic(Astro::AStar& StarData);
         void GenerateSpin(Astro::AStar& StarData);
-        void ExpandMistData(double TargetMass, FDataArray& StarData);
+        void ExpandMistData(double TargetMassSol, FDataArray& StarData);
 
     public:
         static const int _kStarAgeIndex;

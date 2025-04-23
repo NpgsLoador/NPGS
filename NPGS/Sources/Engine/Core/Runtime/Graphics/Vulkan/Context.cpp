@@ -227,17 +227,7 @@ namespace Npgs
                                                             vk::Semaphore SignalSemaphore, vk::Fence Fence) const
     {
         vk::SubmitInfo SubmitInfo = CreateSubmitInfo(Buffer, WaitSemaphore, SignalSemaphore, vk::PipelineStageFlagBits::eAllCommands);
-        try
-        {
-            _VulkanCore->GetPresentQueue().submit(SubmitInfo, Fence);
-        }
-        catch (const vk::SystemError& e)
-        {
-            NpgsCoreError("Failed to submit command buffer to present queue: {}", e.what());
-            return static_cast<vk::Result>(e.code().value());
-        }
-
-        return vk::Result::eSuccess;
+        return SubmitCommandBufferToPresent(SubmitInfo, Fence);
     }
 
     vk::Result FVulkanContext::SubmitCommandBufferToCompute(const vk::SubmitInfo& SubmitInfo, vk::Fence Fence) const
