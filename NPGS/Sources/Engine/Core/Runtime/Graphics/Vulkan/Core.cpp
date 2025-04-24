@@ -802,7 +802,7 @@ namespace Npgs
         }
         else
         {
-            NpgsCoreError("Vulkan 1.1+ not available, the application only support Vulkan 1.3+.");
+            NpgsCoreError("Vulkan 1.1+ not available, the application only support Vulkan 1.3+ features. Please update your graphics driver, or replace compatibility hardware.");
             std::exit(EXIT_FAILURE);
         }
 

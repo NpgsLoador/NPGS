@@ -442,7 +442,7 @@ namespace Npgs
                                          vk::ImageViewType ImageViewType, vk::Format InitialFormat, vk::Format FinalFormat,
                                          std::uint32_t ArrayLayers, bool bGenerateMipmaps)
     {
-        auto* StagingBufferPool = FEngineServices::GetInstance()->GetResourceServices()->GetStagingBufferPool(FStagingBufferPool::EPoolUsage::kSubmit);
+        auto* StagingBufferPool = EngineServicesGetResourceServices->GetStagingBufferPool(FStagingBufferPool::EPoolUsage::kSubmit);
         auto  StagingBuffer     = StagingBufferPool->AcquireBuffer(ImageData.Size);
         StagingBuffer->SubmitBufferData(0, 0, ImageData.Size, ImageData.Data.data());
 
@@ -586,7 +586,7 @@ namespace Npgs
             FImageMemoryMaskPack()
         };
 
-        auto* ImageTracker = FEngineServices::GetInstance()->GetResourceServices()->GetImageTracker();
+        auto* ImageTracker = EngineServicesGetResourceServices->GetImageTracker();
         ImageTracker->TrackImage(DstImageSrcBlit, FImageTracker::FImageState());
         ImageTracker->TrackImage(DstImageDstBlit, FImageTracker::FImageState());
 
@@ -637,7 +637,7 @@ namespace Npgs
             vk::ImageLayout::eShaderReadOnlyOptimal
         );
 
-        auto* ImageTracker = FEngineServices::GetInstance()->GetResourceServices()->GetImageTracker();
+        auto* ImageTracker = EngineServicesGetResourceServices->GetImageTracker();
 
         std::vector<vk::BufferImageCopy> Regions;
         for (std::uint32_t MipLevel = 0; MipLevel != MipLevels; ++MipLevel)
@@ -674,7 +674,7 @@ namespace Npgs
             FImageMemoryMaskPack()
         };
 
-        auto* ImageTracker = FEngineServices::GetInstance()->GetResourceServices()->GetImageTracker();
+        auto* ImageTracker = EngineServicesGetResourceServices->GetImageTracker();
         if (!ImageTracker->IsExisting(SrcImage))
         {
             ImageTracker->TrackImage(SrcImage, FImageTracker::FImageState());
@@ -714,7 +714,7 @@ namespace Npgs
     void FTexture::BlitApplyTexture(vk::Extent3D Extent, std::uint32_t MipLevels, std::uint32_t ArrayLayers,
                                     vk::Filter Filter, vk::Image SrcImage, vk::Image DstImage)
     {
-        auto* ImageTracker = FEngineServices::GetInstance()->GetResourceServices()->GetImageTracker();
+        auto* ImageTracker = EngineServicesGetResourceServices->GetImageTracker();
         if (!ImageTracker->IsExisting(SrcImage))
         {
             ImageTracker->TrackImage(SrcImage, FImageTracker::FImageState());
@@ -764,7 +764,7 @@ namespace Npgs
             Region.imageSubresource.layerCount
         );
 
-        auto* ImageTracker = FEngineServices::GetInstance()->GetResourceServices()->GetImageTracker();
+        auto* ImageTracker = EngineServicesGetResourceServices->GetImageTracker();
         auto  ImageState   = ImageTracker->GetImageState(DstImage, ImageSubresourceRange);
 
         vk::ImageMemoryBarrier2 InitDstImageBarrier(
@@ -830,7 +830,7 @@ namespace Npgs
             Region.dstSubresource.layerCount
         );
 
-        auto* ImageTracker = FEngineServices::GetInstance()->GetResourceServices()->GetImageTracker();
+        auto* ImageTracker = EngineServicesGetResourceServices->GetImageTracker();
         auto SrcImageState = ImageTracker->GetImageState(SrcImage, SrcImageSubresourceRange);
         auto DstImageState = ImageTracker->GetImageState(DstImage, DstImageSubresourceRange);
 
@@ -976,7 +976,7 @@ namespace Npgs
                 LastMipRange
             );
 
-            auto* ImageTracker = FEngineServices::GetInstance()->GetResourceServices()->GetImageTracker();
+            auto* ImageTracker = EngineServicesGetResourceServices->GetImageTracker();
             ImageTracker->FlushImageAllStates(Image, FinalState);
 
             std::array FinalBarriers{ PartFinalBarrier, LastFinalBarrier };

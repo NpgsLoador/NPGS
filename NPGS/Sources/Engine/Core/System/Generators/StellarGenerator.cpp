@@ -671,7 +671,7 @@ namespace Npgs
     requires std::is_class_v<CsvType>
     CsvType* FStellarGenerator::LoadCsvAsset(const std::string& Filename, const std::vector<std::string>& Headers)
     {
-        auto* AssetManager = FEngineServices::GetInstance()->GetCoreServices()->GetAssetManager();
+        auto* AssetManager = EngineServicesGetCoreServices->GetAssetManager();
         {
             std::shared_lock Lock(_kCacheMutex);
             auto* Asset = AssetManager->GetAsset<CsvType>(Filename);
@@ -1450,13 +1450,12 @@ namespace Npgs
         SpectralType.bIsAmStar = false;
 
         std::vector<std::pair<int, int>> SpectralSubclassMap;
-        float Subclass = 0.0f;
-
-        float SurfaceH1 = StarData.GetSurfaceH1();
+        float Subclass     = 0.0f;
+        float SurfaceH1    = StarData.GetSurfaceH1();
         float MinSurfaceH1 = Astro::AStar::_kFeHSurfaceH1Map.at(FeH) - 0.01f;
 
         std::function<void(Astro::AStar::EEvolutionPhase)> CalculateSpectralSubclass =
-            [&](Astro::AStar::EEvolutionPhase BasePhase) -> void
+        [&](Astro::AStar::EEvolutionPhase BasePhase) -> void
         {
             std::uint32_t SpectralClass = BasePhase == Astro::AStar::EEvolutionPhase::kWolfRayet ? 11 : 0;
 

@@ -33,8 +33,8 @@ namespace Npgs
 {
     FApplication::FApplication(const vk::Extent2D& WindowSize, const std::string& WindowTitle,
                                bool bEnableVSync, bool bEnableFullscreen, bool bEnableHdr)
-        : _VulkanContext(FEngineServices::GetInstance()->GetCoreServices()->GetVulkanContext())
-        , _ThreadPool(FEngineServices::GetInstance()->GetCoreServices()->GetThreadPool())
+        : _VulkanContext(EngineServicesGetCoreServices->GetVulkanContext())
+        , _ThreadPool(EngineServicesGetCoreServices->GetThreadPool())
         , _WindowTitle(WindowTitle)
         , _WindowSize(WindowSize)
         , _bEnableVSync(bEnableVSync)
@@ -63,9 +63,9 @@ namespace Npgs
         InitializeVerticesData();
         CreatePipelines();
 
-        auto* AssetManager        = FEngineServices::GetInstance()->GetCoreServices()->GetAssetManager();
-        auto* ShaderBufferManager = FEngineServices::GetInstance()->GetResourceServices()->GetShaderBufferManager();
-        auto* PipelineManager     = FEngineServices::GetInstance()->GetResourceServices()->GetPipelineManager();
+        auto* AssetManager        = EngineServicesGetCoreServices->GetAssetManager();
+        auto* ShaderBufferManager = EngineServicesGetResourceServices->GetShaderBufferManager();
+        auto* PipelineManager     = EngineServicesGetResourceServices->GetPipelineManager();
 
         auto* PbrSceneGBufferShader = AssetManager->GetAsset<FShader>("PbrSceneGBufferShader");
         auto* PbrSceneMergeShader   = AssetManager->GetAsset<FShader>("PbrSceneMergeShader");
@@ -979,7 +979,7 @@ namespace Npgs
             .usage = VMA_MEMORY_USAGE_GPU_ONLY
         };
 
-        auto* AssetManager = FEngineServices::GetInstance()->GetCoreServices()->GetAssetManager();
+        auto* AssetManager = EngineServicesGetCoreServices->GetAssetManager();
         AssetManager->AddAsset<FShader>("PbrSceneGBufferShader", PbrSceneGBufferShaderFiles, PbrSceneGBufferResourceInfo);
         AssetManager->AddAsset<FShader>("PbrSceneMergeShader", PbrSceneMergeShaderFiles, PbrSceneMergeResourceInfo);
         AssetManager->AddAsset<FShader>("PbrSceneShader", PbrSceneShaderFiles, PbrSceneResourceInfo);
@@ -1107,7 +1107,7 @@ namespace Npgs
             .requiredFlags = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT | VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT,
         };
 
-        auto* ShaderBufferManager = FEngineServices::GetInstance()->GetResourceServices()->GetShaderBufferManager();
+        auto* ShaderBufferManager = EngineServicesGetResourceServices->GetShaderBufferManager();
         ShaderBufferManager->CreateDataBuffers<FMatrices>(MatricesCreateInfo, &AllocationCreateInfo);
         ShaderBufferManager->CreateDataBuffers<FMvpMatrices>(MvpMatricesCreateInfo, &AllocationCreateInfo);
         ShaderBufferManager->CreateDataBuffers<FLightArgs>(LightArgsCreateInfo, &AllocationCreateInfo);
@@ -1115,7 +1115,7 @@ namespace Npgs
 
     void FApplication::BindDescriptors()
     {
-        auto* AssetManager = FEngineServices::GetInstance()->GetCoreServices()->GetAssetManager();
+        auto* AssetManager = EngineServicesGetCoreServices->GetAssetManager();
 
         auto* PbrSceneGBufferShader = AssetManager->GetAsset<FShader>("PbrSceneGBufferShader");
         auto* PbrSceneMergeShader   = AssetManager->GetAsset<FShader>("PbrSceneMergeShader");
@@ -1133,7 +1133,7 @@ namespace Npgs
         auto* IceLand         = AssetManager->GetAsset<FTexture2D>("IceLand");
         auto* Skybox          = AssetManager->GetAsset<FTextureCube>("Skybox");
 
-        auto* ShaderBufferManager = FEngineServices::GetInstance()->GetResourceServices()->GetShaderBufferManager();
+        auto* ShaderBufferManager = EngineServicesGetResourceServices->GetShaderBufferManager();
 
         auto CreateAttachmentDescriptors = [=]() mutable -> void
         {
@@ -1402,7 +1402,7 @@ namespace Npgs
 #if 0
         // Create height map vertices
         // --------------------------
-        auto* AssetManager = FEngineServices::GetInstance()->GetCoreServices()->GetAssetManager()
+        auto* AssetManager = EngineServicesGetCoreServices->GetAssetManager()
         auto* IceLand      = AssetManager->GetAsset<FTexture2D>("IceLand");
 
         int   ImageWidth  = static_cast<int>(IceLand->GetImageExtent().width);
@@ -1448,7 +1448,7 @@ namespace Npgs
 
     void FApplication::CreatePipelines()
     {
-        auto* PipelineManager = FEngineServices::GetInstance()->GetResourceServices()->GetPipelineManager();
+        auto* PipelineManager = EngineServicesGetResourceServices->GetPipelineManager();
 
         FGraphicsPipelineCreateInfoPack ScenePipelineCreateInfoPack;
         ScenePipelineCreateInfoPack.DynamicStates.push_back(vk::DynamicState::eViewport);

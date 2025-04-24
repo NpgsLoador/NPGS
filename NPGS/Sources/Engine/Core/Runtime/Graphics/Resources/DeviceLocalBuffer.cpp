@@ -55,7 +55,7 @@ namespace Npgs
             return;
         }
 
-        auto* StagingBufferPool = FEngineServices::GetInstance()->GetResourceServices()->GetStagingBufferPool(FStagingBufferPool::EPoolUsage::kSubmit);
+        auto* StagingBufferPool = EngineServicesGetResourceServices->GetStagingBufferPool(FStagingBufferPool::EPoolUsage::kSubmit);
         auto  StagingBuffer     = StagingBufferPool->AcquireBuffer(Size);
         StagingBuffer->SubmitBufferData(MapOffset, TargetOffset, Size, Data);
 
@@ -94,7 +94,7 @@ namespace Npgs
             return;
         }
 
-        auto* StagingBufferPool = FEngineServices::GetInstance()->GetResourceServices()->GetStagingBufferPool(FStagingBufferPool::EPoolUsage::kSubmit);
+        auto* StagingBufferPool = EngineServicesGetResourceServices->GetStagingBufferPool(FStagingBufferPool::EPoolUsage::kSubmit);
         auto  StagingBuffer     = StagingBufferPool->AcquireBuffer(DstStride * ElementSize);
         StagingBuffer->SubmitBufferData(MapOffset, SrcStride * ElementIndex, SrcStride * ElementSize, Data);
 
