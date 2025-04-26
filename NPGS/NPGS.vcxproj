@@ -259,6 +259,7 @@
     <ClCompile Include="Sources\Engine\Core\Runtime\AssetLoaders\Texture.cpp" />
     <ClCompile Include="Sources\Engine\Core\Runtime\Graphics\Resources\Attachment.cpp" />
     <ClCompile Include="Sources\Engine\Core\Runtime\Graphics\Resources\DeviceLocalBuffer.cpp" />
+    <ClCompile Include="Sources\Engine\Core\Runtime\Graphics\Resources\Pools\CommandBufferPool.cpp" />
     <ClCompile Include="Sources\Engine\Core\Runtime\Graphics\Resources\Pools\StagingBufferPool.cpp" />
     <ClCompile Include="Sources\Engine\Core\Runtime\Graphics\Resources\StagingBuffer.cpp" />
     <ClCompile Include="Sources\Engine\Core\Runtime\Graphics\Vulkan\Context.cpp" />
@@ -266,7 +267,6 @@
     <ClCompile Include="Sources\Engine\Core\Runtime\Graphics\Vulkan\ExtFunctionsImpl.cpp" />
     <ClCompile Include="Sources\Engine\Core\Runtime\Graphics\Resources\Managers\ImageTracker.cpp" />
     <ClCompile Include="Sources\Engine\Core\Runtime\Graphics\Resources\Managers\PipelineManager.cpp" />
-    <ClCompile Include="Sources\Engine\Core\Runtime\Graphics\Resources\Pools\CommandPoolManager.cpp" />
     <ClCompile Include="Sources\Engine\Core\Runtime\Graphics\Resources\Managers\ShaderBufferManager.cpp" />
     <ClCompile Include="Sources\Engine\Core\Runtime\Graphics\Vulkan\Wrappers.cpp" />
     <ClCompile Include="Sources\Engine\Core\Runtime\Threads\QueuePool.cpp" />
@@ -311,6 +311,7 @@
     <ClInclude Include="Sources\Engine\Core\Runtime\AssetLoaders\Texture.h" />
     <ClInclude Include="Sources\Engine\Core\Runtime\Graphics\Resources\Attachment.h" />
     <ClInclude Include="Sources\Engine\Core\Runtime\Graphics\Resources\DeviceLocalBuffer.h" />
+    <ClInclude Include="Sources\Engine\Core\Runtime\Graphics\Resources\Pools\CommandBufferPool.h" />
     <ClInclude Include="Sources\Engine\Core\Runtime\Graphics\Resources\Pools\ResourcePool.hpp" />
     <ClInclude Include="Sources\Engine\Core\Runtime\Graphics\Resources\Pools\ResourcePoolBase.hpp" />
     <ClInclude Include="Sources\Engine\Core\Runtime\Graphics\Resources\Pools\StagingBufferPool.h" />
@@ -320,7 +321,6 @@
     <ClInclude Include="Sources\Engine\Core\Runtime\Graphics\Vulkan\ExtFunctionsImpl.h" />
     <ClInclude Include="Sources\Engine\Core\Runtime\Graphics\Resources\Managers\ImageTracker.h" />
     <ClInclude Include="Sources\Engine\Core\Runtime\Graphics\Resources\Managers\PipelineManager.h" />
-    <ClInclude Include="Sources\Engine\Core\Runtime\Graphics\Resources\Pools\CommandPoolManager.h" />
     <ClInclude Include="Sources\Engine\Core\Runtime\Graphics\Resources\Managers\ShaderBufferManager.h" />
     <ClInclude Include="Sources\Engine\Core\Runtime\Graphics\Vulkan\Wrappers.h" />
     <ClInclude Include="Sources\Engine\Core\Runtime\Threads\QueuePool.h" />
@@ -359,12 +359,12 @@
     <None Include="Sources\Engine\Core\Runtime\AssetLoaders\Texture.inl" />
     <None Include="Sources\Engine\Core\Runtime\Graphics\Resources\Attachment.inl" />
     <None Include="Sources\Engine\Core\Runtime\Graphics\Resources\DeviceLocalBuffer.inl" />
+    <None Include="Sources\Engine\Core\Runtime\Graphics\Resources\Pools\CommandBufferPool.inl" />
     <None Include="Sources\Engine\Core\Runtime\Graphics\Resources\StagingBuffer.inl" />
     <None Include="Sources\Engine\Core\Runtime\Graphics\Vulkan\Context.inl" />
     <None Include="Sources\Engine\Core\Runtime\Graphics\Vulkan\Core.inl" />
     <None Include="Sources\Engine\Core\Runtime\Graphics\Resources\Managers\ImageTracker.inl" />
     <None Include="Sources\Engine\Core\Runtime\Graphics\Resources\Managers\PipelineManager.inl" />
-    <None Include="Sources\Engine\Core\Runtime\Graphics\Resources\Pools\CommandPoolManager.inl" />
     <None Include="Sources\Engine\Core\Runtime\Graphics\Resources\Managers\ShaderBufferManager.inl" />
     <None Include="Sources\Engine\Core\Runtime\Graphics\Vulkan\Wrappers.inl" />
     <None Include="Sources\Engine\Core\Runtime\Threads\QueuePool.inl" />

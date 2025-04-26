@@ -11,7 +11,7 @@
 #include "Engine/Core/Runtime/AssetLoaders/Texture.h"
 
 #include "Engine/Core/Runtime/Graphics/Buffers/BufferStructs.h"
-#include "Engine/Core/Runtime/Graphics/Resources/Pools/CommandPoolManager.h"
+#include "Engine/Core/Runtime/Graphics/Resources/Pools/CommandBufferPool.h"
 #include "Engine/Core/Runtime/Graphics/Resources/Pools/ResourcePool.hpp"
 #include "Engine/Core/Runtime/Graphics/Resources/Pools/StagingBufferPool.h"
 #include "Engine/Core/Runtime/Graphics/Resources/Attachment.h"

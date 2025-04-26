@@ -264,7 +264,7 @@ namespace Npgs
 
     // Wrapper for vk::CommandPool
     // ---------------------------
-    FVulkanCommandPool::FVulkanCommandPool(vk::Device Device, vk::CommandPoolCreateInfo& CreateInfo)
+    FVulkanCommandPool::FVulkanCommandPool(vk::Device Device, const vk::CommandPoolCreateInfo& CreateInfo)
         : Base(Device)
     {
         CreateCommandPool(CreateInfo);
@@ -386,7 +386,7 @@ namespace Npgs
         return FreeBuffers(CommandBuffers);
     }
 
-    vk::Result FVulkanCommandPool::CreateCommandPool(vk::CommandPoolCreateInfo& CreateInfo)
+    vk::Result FVulkanCommandPool::CreateCommandPool(const vk::CommandPoolCreateInfo& CreateInfo)
     {
         try
         {

@@ -127,7 +127,7 @@ namespace Npgs
             Semaphores_RenderFinished.emplace_back(_VulkanContext->GetDevice(), vk::SemaphoreCreateFlags());
         }
 
-        const auto& GraphicsCommandPool = _VulkanContext->GetGraphicsCommandPool();
+        FVulkanCommandPool GraphicsCommandPool(_VulkanContext->GetDevice(), _VulkanContext->GetGraphicsQueueFamilyIndex(), vk::CommandPoolCreateFlagBits::eResetCommandBuffer);
 
         GraphicsCommandPool.AllocateBuffers(vk::CommandBufferLevel::ePrimary, CommandBuffers);
         GraphicsCommandPool.AllocateBuffers(vk::CommandBufferLevel::eSecondary, DepthMapCommandBuffers);
@@ -748,7 +748,7 @@ namespace Npgs
         }
 
         _VulkanContext->WaitIdle();
-        _VulkanContext->GetGraphicsCommandPool().FreeBuffers(CommandBuffers);
+        GraphicsCommandPool.FreeBuffers(CommandBuffers);
     }
 
     void FApplication::CreateAttachments()
@@ -1045,22 +1045,22 @@ namespace Npgs
         //     "IceLand", TextureAllocationCreateInfo, "IceLandHeightMapLowRes.png",
         //     vk::Format::eR8G8B8A8Unorm, vk::Format::eR8G8B8A8Unorm, vk::ImageCreateFlags(), false);
 
-        // std::vector<std::future<void>> Futures;
+        std::vector<std::future<void>> Futures;
 
         for (std::size_t i = 0; i != TextureNames.size(); ++i)
         {
-            // Futures.push_back(_ThreadPool->Submit([&, i]() -> void
-            // {
-            AssetManager->AddAsset<FTexture2D>(
-                TextureNames[i], Allocator, TextureAllocationCreateInfo, TextureFiles[i],
-                InitialTextureFormats[i], FinalTextureFormats[i], vk::ImageCreateFlagBits::eMutableFormat, true);
-            // }));
+            Futures.push_back(_ThreadPool->Submit([&, i]() -> void
+            {
+                AssetManager->AddAsset<FTexture2D>(
+                    TextureNames[i], Allocator, TextureAllocationCreateInfo, TextureFiles[i],
+                    InitialTextureFormats[i], FinalTextureFormats[i], vk::ImageCreateFlagBits::eMutableFormat, true);
+            }));
         }
 
-        // for (auto& Future : Futures)
-        // {
-        //     Future.get();
-        // }
+        for (auto& Future : Futures)
+        {
+            Future.get();
+        }
     }
 
     void FApplication::CreateUniformBuffers()

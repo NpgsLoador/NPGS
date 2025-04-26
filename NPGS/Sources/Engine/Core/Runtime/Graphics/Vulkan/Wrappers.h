@@ -420,7 +420,7 @@ namespace Npgs
         {
         }
 
-        TVulkanHandle(vk::Device Device)
+        explicit TVulkanHandle(vk::Device Device)
             : _Device(Device)
             , _Status(vk::Result::eSuccess)
         {
@@ -515,7 +515,7 @@ namespace Npgs
         using Base = TVulkanHandle<vk::CommandPool>;
         using Base::Base;
 
-        FVulkanCommandPool(vk::Device Device, vk::CommandPoolCreateInfo& CreateInfo);
+        FVulkanCommandPool(vk::Device Device, const vk::CommandPoolCreateInfo& CreateInfo);
         FVulkanCommandPool(vk::Device Device, std::uint32_t QueueFamilyIndex, vk::CommandPoolCreateFlags Flags = {});
 
         vk::Result AllocateBuffer(vk::CommandBufferLevel Level, vk::CommandBuffer& Buffer) const;
@@ -528,7 +528,7 @@ namespace Npgs
         vk::Result FreeBuffers(const vk::ArrayProxy<FVulkanCommandBuffer>& Buffers) const;
 
     private:
-        vk::Result CreateCommandPool(vk::CommandPoolCreateInfo& CreateInfo);
+        vk::Result CreateCommandPool(const vk::CommandPoolCreateInfo& CreateInfo);
         vk::Result CreateCommandPool(std::uint32_t QueueFamilyIndex, vk::CommandPoolCreateFlags Flags);
     };
 
@@ -673,7 +673,7 @@ namespace Npgs
         using Base = TVulkanHandleNoDestroy<vk::DescriptorSet>;
         using Base::Base;
 
-        FVulkanDescriptorSet(vk::Device Device);
+        explicit FVulkanDescriptorSet(vk::Device Device);
 
         void Write(const vk::ArrayProxy<vk::DescriptorImageInfo>& ImageInfos, vk::DescriptorType Type,
                    std::uint32_t BindingPoint, std::uint32_t ArrayElement = 0);

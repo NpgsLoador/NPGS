@@ -9,7 +9,6 @@
 #include "Engine/Core/Runtime/Graphics/Resources/Managers/ImageTracker.h"
 #include "Engine/Core/Runtime/Graphics/Resources/Managers/PipelineManager.h"
 #include "Engine/Core/Runtime/Graphics/Resources/Managers/ShaderBufferManager.h"
-#include "Engine/Core/Runtime/Graphics/Resources/Pools/CommandPoolManager.h"
 #include "Engine/Core/Runtime/Graphics/Resources/Pools/StagingBufferPool.h"
 #include "Engine/Core/Runtime/Graphics/Vulkan/Context.h"
 #include "Engine/Core/System/Services/CoreServices.h"
@@ -19,16 +18,6 @@ namespace Npgs
     class FResourceServices
     {
     public:
-        struct FCommandPoolManagerCreateInfo
-        {
-            vk::Device    Device{};
-            std::uint32_t MinAvailablePoolLimit{};
-            std::uint32_t MaxAllocatedPoolLimit{};
-            std::uint32_t PoolReclaimThresholdMs{};
-            std::uint32_t MaintenanceIntervalMs{};
-            std::uint32_t QueueFamilyIndex{};
-        };
-
         struct FStagingBufferPoolCreateInfo
         {
             FVulkanContext* VulkanContext{ nullptr };
@@ -43,7 +32,6 @@ namespace Npgs
 
         struct FResourceServicesEnableInfo
         {
-            FCommandPoolManagerCreateInfo* CommandPoolManagerCreateInfo{ nullptr };
             FStagingBufferPoolCreateInfo*  SubmitStagingBufferPoolCreateInfo{ nullptr };
             FStagingBufferPoolCreateInfo*  FetchStagingBufferPoolCreateInfo{ nullptr };
         };
@@ -60,7 +48,6 @@ namespace Npgs
         FImageTracker* GetImageTracker() const;
         FPipelineManager* GetPipelineManager() const;
         FShaderBufferManager* GetShaderBufferManager() const;
-        FCommandPoolManager* GetCommandPoolManager() const;
         FStagingBufferPool* GetStagingBufferPool(FStagingBufferPool::EPoolUsage PoolUsage) const;
 
     private:
@@ -68,7 +55,6 @@ namespace Npgs
         std::unique_ptr<FImageTracker>                     _ImageTracker;
         std::unique_ptr<FPipelineManager>                  _PipelineManager;
         std::unique_ptr<FShaderBufferManager>              _ShaderBufferManager;
-        std::unique_ptr<FCommandPoolManager>               _CommandPoolManager;
         std::array<std::unique_ptr<FStagingBufferPool>, 2> _StagingBufferPools;
     };
 } // namespace Npgs

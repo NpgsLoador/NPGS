@@ -593,7 +593,8 @@ namespace Npgs
         bool bGenerateMipmaps = MipLevels > 1;
         bool bNeedBlit        = DstImageSrcBlit != DstImageDstBlit;
 
-        auto& CommandBuffer = _VulkanContext->GetTransferCommandBuffer();
+        auto  BufferGuard   = _VulkanContext->GetGraphicsCommandBuffer();
+        auto& CommandBuffer = *BufferGuard;
         CommandBuffer.Begin(vk::CommandBufferUsageFlagBits::eOneTimeSubmit);
 
         vk::ImageSubresourceLayers Subresource(vk::ImageAspectFlagBits::eColor, 0, 0, ArrayLayers);
@@ -628,7 +629,8 @@ namespace Npgs
                                         const std::vector<std::size_t>& LevelOffsets,
                                         std::uint32_t ArrayLayers, vk::Filter Filter, vk::Image DstImage)
     {
-        auto& CommandBuffer = _VulkanContext->GetTransferCommandBuffer();
+        auto  BufferGuard   = _VulkanContext->GetGraphicsCommandBuffer();
+        auto& CommandBuffer = *BufferGuard;
         CommandBuffer.Begin(vk::CommandBufferUsageFlagBits::eOneTimeSubmit);
 
         FImageMemoryMaskPack PostTransferState(
@@ -687,7 +689,8 @@ namespace Npgs
         bool bGenerateMipmaps = MipLevels > 1;
         bool bNeedBlit = SrcImage != DstImage;
 
-        auto& CommandBuffer = _VulkanContext->GetTransferCommandBuffer();
+        auto  BufferGuard   = _VulkanContext->GetGraphicsCommandBuffer();
+        auto& CommandBuffer = *BufferGuard;
         CommandBuffer.Begin(vk::CommandBufferUsageFlagBits::eOneTimeSubmit);
 
         if (bNeedBlit)
@@ -724,7 +727,8 @@ namespace Npgs
             ImageTracker->TrackImage(DstImage, FImageTracker::FImageState());
         }
 
-        auto& CommandBuffer = _VulkanContext->GetTransferCommandBuffer();
+        auto  BufferGuard   = _VulkanContext->GetGraphicsCommandBuffer();
+        auto& CommandBuffer = *BufferGuard;
         CommandBuffer.Begin(vk::CommandBufferUsageFlagBits::eOneTimeSubmit);
 
         std::vector<vk::ImageBlit> Regions;

@@ -102,9 +102,6 @@
     <ClCompile Include="Sources\Engine\Core\Runtime\Graphics\Resources\Managers\ImageTracker.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="Sources\Engine\Core\Runtime\Graphics\Resources\Pools\CommandPoolManager.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
     <ClCompile Include="Sources\Program\Application.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
@@ -136,6 +133,9 @@
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="Sources\Engine\Core\Runtime\Threads\QueuePool.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="Sources\Engine\Core\Runtime\Graphics\Resources\Pools\CommandBufferPool.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>
@@ -260,9 +260,6 @@
     <ClInclude Include="Sources\Engine\Core\Runtime\Graphics\Resources\Managers\ImageTracker.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="Sources\Engine\Core\Runtime\Graphics\Resources\Pools\CommandPoolManager.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
     <ClInclude Include="Sources\Engine\Core\Runtime\Graphics\Resources\Pools\ResourcePoolBase.hpp">
       <Filter>头文件</Filter>
     </ClInclude>
@@ -294,6 +291,9 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="Sources\Engine\Core\Runtime\Threads\QueuePool.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="Sources\Engine\Core\Runtime\Graphics\Resources\Pools\CommandBufferPool.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>
@@ -386,9 +386,6 @@
     <None Include="Sources\Engine\Core\Runtime\Graphics\Resources\Managers\ImageTracker.inl">
       <Filter>头文件</Filter>
     </None>
-    <None Include="Sources\Engine\Core\Runtime\Graphics\Resources\Pools\CommandPoolManager.inl">
-      <Filter>头文件</Filter>
-    </None>
     <None Include="Sources\Engine\Shaders\Common\BindlessExtensions.glsl" />
     <None Include="Sources\Engine\Core\Runtime\Graphics\Resources\Attachment.inl">
       <Filter>头文件</Filter>
@@ -409,6 +406,9 @@
       <Filter>头文件</Filter>
     </None>
     <None Include="Sources\Engine\Core\Runtime\Threads\QueuePool.inl">
+      <Filter>头文件</Filter>
+    </None>
+    <None Include="Sources\Engine\Core\Runtime\Graphics\Resources\Pools\CommandBufferPool.inl">
       <Filter>头文件</Filter>
     </None>
   </ItemGroup>

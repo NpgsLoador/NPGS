@@ -3,6 +3,7 @@
 #include <cstdint>
 #include <functional>
 #include <limits>
+#include <optional>
 #include <string>
 #include <utility>
 #include <vector>
@@ -11,6 +12,7 @@
 #include <vulkan/vulkan.hpp>
 #include <vulkan/vulkan_to_string.hpp>
 
+#include "Engine/Core/Runtime/Threads/QueuePool.h"
 #include "Engine/Utils/Logger.h"
 
 namespace Npgs
@@ -23,6 +25,7 @@ namespace Npgs
             std::uint32_t GraphicsQueueFamilyIndex{ vk::QueueFamilyIgnored };
             std::uint32_t PresentQueueFamilyIndex{ vk::QueueFamilyIgnored };
             std::uint32_t ComputeQueueFamilyIndex{ vk::QueueFamilyIgnored };
+            std::uint32_t TransferQueueFamilyIndex{ vk::QueueFamilyIgnored };
         };
 
     public:
@@ -72,10 +75,11 @@ namespace Npgs
         vk::SurfaceKHR GetSurface() const;
         vk::PhysicalDevice GetPhysicalDevice() const;
         vk::Device GetDevice() const;
+        vk::SwapchainKHR GetSwapchain() const;
+
         vk::Queue GetGraphicsQueue() const;
         vk::Queue GetPresentQueue() const;
         vk::Queue GetComputeQueue() const;
-        vk::SwapchainKHR GetSwapchain() const;
 
         const vk::PhysicalDeviceProperties& GetPhysicalDeviceProperties() const;
         const vk::PhysicalDeviceMemoryProperties& GetPhysicalDeviceMemoryProperties() const;
@@ -92,10 +96,17 @@ namespace Npgs
         vk::Image GetSwapchainImage(std::uint32_t Index) const;
         vk::ImageView GetSwapchainImageView(std::uint32_t Index) const;
 
+        const vk::QueueFamilyProperties& GetGraphicsQueueFamilyProperties() const;
+        const vk::QueueFamilyProperties& GetPresentQueueFamilyProperties() const;
+        const vk::QueueFamilyProperties& GetComputeQueueFamilyProperties() const;
+        const vk::QueueFamilyProperties& GetTransferQueueFamilyProperties() const;
+
+        FQueuePool&   GetQueuePool();
         VmaAllocator  GetVmaAllocator() const;
         std::uint32_t GetGraphicsQueueFamilyIndex() const;
         std::uint32_t GetPresentQueueFamilyIndex() const;
         std::uint32_t GetComputeQueueFamilyIndex() const;
+        std::uint32_t GetTransferQueueFamilyIndex() const;
         std::uint32_t GetCurrentImageIndex() const;
         std::uint32_t GetApiVersion() const;
 
@@ -135,15 +146,19 @@ namespace Npgs
         std::vector<vk::Image>             _SwapchainImages;
         std::vector<vk::ImageView>         _SwapchainImageViews;
 
+        std::vector<vk::QueueFamilyProperties> _QueueFamilyProperties;
+
         vk::Instance                       _Instance;
         vk::DebugUtilsMessengerEXT         _DebugUtilsMessenger;
         vk::SurfaceKHR                     _Surface;
         vk::PhysicalDevice                 _PhysicalDevice;
         vk::Device                         _Device;
+        vk::SwapchainKHR                   _Swapchain;
+
         vk::Queue                          _GraphicsQueue;
         vk::Queue                          _PresentQueue;
         vk::Queue                          _ComputeQueue;
-        vk::SwapchainKHR                   _Swapchain;
+        vk::Queue                          _TransferQueue;
 
         vk::PhysicalDeviceProperties       _PhysicalDeviceProperties;
         vk::PhysicalDeviceMemoryProperties _PhysicalDeviceMemoryProperties;
@@ -151,10 +166,15 @@ namespace Npgs
         vk::SwapchainCreateInfoKHR		   _SwapchainCreateInfo;
         vk::Extent2D                       _SwapchainExtent;
 
+        std::optional<FQueuePool>          _QueuePool; // for stack allocation
+
         VmaAllocator                       _VmaAllocator{ nullptr };
+
         std::uint32_t                      _GraphicsQueueFamilyIndex{ vk::QueueFamilyIgnored };
         std::uint32_t                      _PresentQueueFamilyIndex{ vk::QueueFamilyIgnored };
         std::uint32_t                      _ComputeQueueFamilyIndex{ vk::QueueFamilyIgnored };
+        std::uint32_t                      _TransferQueueFamilyIndex{ vk::QueueFamilyIgnored };
+
         std::uint32_t                      _CurrentImageIndex{ std::numeric_limits<std::uint32_t>::max() };
         std::uint32_t                      _ApiVersion{ vk::ApiVersion14 };
     };

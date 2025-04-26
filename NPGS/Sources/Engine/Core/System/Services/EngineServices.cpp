@@ -32,16 +32,6 @@ namespace Npgs
 
     void FEngineServices::InitializeResourceServices()
     {
-        FResourceServices::FCommandPoolManagerCreateInfo CommandPoolManagerCreateInfo
-        {
-            .Device                 = _CoreServices->GetVulkanContext()->GetDevice(),
-            .MinAvailablePoolLimit  = 2,
-            .MaxAllocatedPoolLimit  = 32,
-            .PoolReclaimThresholdMs = 1000,
-            .MaintenanceIntervalMs  = 5000,
-            .QueueFamilyIndex       = _CoreServices->GetVulkanContext()->GetGraphicsQueueFamilyIndex()
-        };
-
         FResourceServices::FStagingBufferPoolCreateInfo SubmitStagingBufferPoolCreateInfo
         {
             .VulkanContext            = _CoreServices->GetVulkanContext(),
@@ -68,7 +58,6 @@ namespace Npgs
 
         FResourceServices::FResourceServicesEnableInfo ResourceServiceEnableInfo
         {
-            .CommandPoolManagerCreateInfo      = &CommandPoolManagerCreateInfo,
             .SubmitStagingBufferPoolCreateInfo = &SubmitStagingBufferPoolCreateInfo,
             .FetchStagingBufferPoolCreateInfo  = &FetchStagingBufferPoolCreateInfo,
         };

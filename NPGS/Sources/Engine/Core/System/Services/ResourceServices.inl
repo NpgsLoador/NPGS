@@ -19,11 +19,6 @@ namespace Npgs
         return _ShaderBufferManager.get();
     }
 
-    NPGS_INLINE FCommandPoolManager* FResourceServices::GetCommandPoolManager() const
-    {
-        return _CommandPoolManager.get();
-    }
-
     NPGS_INLINE FStagingBufferPool* FResourceServices::GetStagingBufferPool(FStagingBufferPool::EPoolUsage PoolUsage) const
     {
         return _StagingBufferPools[std::to_underlying(PoolUsage)].get();

@@ -59,13 +59,14 @@ namespace Npgs
         auto  StagingBuffer     = StagingBufferPool->AcquireBuffer(Size);
         StagingBuffer->SubmitBufferData(MapOffset, TargetOffset, Size, Data);
 
-        auto& TransferCommandBuffer = _VulkanContext->GetTransferCommandBuffer();
+        auto  BufferGuard = _VulkanContext->GetTransferCommandBuffer();
+        auto& TransferCommandBuffer = *BufferGuard;
         TransferCommandBuffer.Begin(vk::CommandBufferUsageFlagBits::eOneTimeSubmit);
         vk::BufferCopy Region(0, TargetOffset, Size);
         TransferCommandBuffer->copyBuffer(*StagingBuffer->GetBuffer(), *_BufferMemory->GetResource(), Region);
         TransferCommandBuffer.End();
 
-        _VulkanContext->ExecuteGraphicsCommands(TransferCommandBuffer);
+        _VulkanContext->ExecuteTransferCommands(TransferCommandBuffer);
     }
 
     void FDeviceLocalBuffer::CopyData(vk::DeviceSize ElementIndex, vk::DeviceSize ElementCount, vk::DeviceSize ElementSize,
@@ -98,7 +99,8 @@ namespace Npgs
         auto  StagingBuffer     = StagingBufferPool->AcquireBuffer(DstStride * ElementSize);
         StagingBuffer->SubmitBufferData(MapOffset, SrcStride * ElementIndex, SrcStride * ElementSize, Data);
 
-        auto& TransferCommandBuffer = _VulkanContext->GetTransferCommandBuffer();
+        auto  BufferGuard = _VulkanContext->GetTransferCommandBuffer();
+        auto& TransferCommandBuffer = *BufferGuard;
         TransferCommandBuffer.Begin(vk::CommandBufferUsageFlagBits::eOneTimeSubmit);
 
         std::vector<vk::BufferCopy> Regions(ElementCount);
@@ -110,7 +112,7 @@ namespace Npgs
         TransferCommandBuffer->copyBuffer(*StagingBuffer->GetBuffer(), *_BufferMemory->GetResource(), Regions);
         TransferCommandBuffer.End();
         
-        _VulkanContext->ExecuteGraphicsCommands(TransferCommandBuffer);
+        _VulkanContext->ExecuteTransferCommands(TransferCommandBuffer);
     }
 
     vk::Result FDeviceLocalBuffer::CreateBuffer(vk::DeviceSize Size, vk::BufferUsageFlags Usage)

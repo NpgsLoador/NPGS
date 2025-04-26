@@ -2,6 +2,7 @@
 
 #include <cstdint>
 #include <concepts>
+#include <functional>
 #include <memory>
 #include <mutex>
 #include <string>
@@ -41,7 +42,8 @@ namespace Npgs
         }
 
     private:
-        void (*_Deleter)(void*);
+        std::function<void(void*)> _Deleter;
+        // void (*_Deleter)(void*);
     };
 
     template <typename AssetType>

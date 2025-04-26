@@ -121,6 +121,11 @@ namespace Npgs
         return _Device;
     }
 
+    NPGS_INLINE vk::SwapchainKHR FVulkanCore::GetSwapchain() const
+    {
+        return _Swapchain;
+    }
+
     NPGS_INLINE vk::Queue FVulkanCore::GetGraphicsQueue() const
     {
         return _GraphicsQueue;
@@ -134,11 +139,6 @@ namespace Npgs
     NPGS_INLINE vk::Queue FVulkanCore::GetComputeQueue() const
     {
         return _ComputeQueue;
-    }
-
-    NPGS_INLINE vk::SwapchainKHR FVulkanCore::GetSwapchain() const
-    {
-        return _Swapchain;
     }
 
     NPGS_INLINE const vk::PhysicalDeviceProperties& FVulkanCore::GetPhysicalDeviceProperties() const
@@ -201,6 +201,31 @@ namespace Npgs
         return _SwapchainImageViews[Index];
     }
 
+    NPGS_INLINE const vk::QueueFamilyProperties& FVulkanCore::GetGraphicsQueueFamilyProperties() const
+    {
+        return _QueueFamilyProperties[_GraphicsQueueFamilyIndex];
+    }
+
+    NPGS_INLINE const vk::QueueFamilyProperties& FVulkanCore::GetPresentQueueFamilyProperties() const
+    {
+        return _QueueFamilyProperties[_PresentQueueFamilyIndex];
+    }
+
+    NPGS_INLINE const vk::QueueFamilyProperties& FVulkanCore::GetComputeQueueFamilyProperties() const
+    {
+        return _QueueFamilyProperties[_ComputeQueueFamilyIndex];
+    }
+
+    NPGS_INLINE const vk::QueueFamilyProperties& FVulkanCore::GetTransferQueueFamilyProperties() const
+    {
+        return _QueueFamilyProperties[_TransferQueueFamilyIndex];
+    }
+
+    NPGS_INLINE FQueuePool& FVulkanCore::GetQueuePool()
+    {
+        return _QueuePool.value();
+    }
+
     NPGS_INLINE VmaAllocator FVulkanCore::GetVmaAllocator() const
     {
         return _VmaAllocator;
@@ -219,6 +244,11 @@ namespace Npgs
     NPGS_INLINE std::uint32_t FVulkanCore::GetComputeQueueFamilyIndex() const
     {
         return _ComputeQueueFamilyIndex;
+    }
+
+    NPGS_INLINE std::uint32_t FVulkanCore::GetTransferQueueFamilyIndex() const
+    {
+        return _TransferQueueFamilyIndex;
     }
 
     NPGS_INLINE std::uint32_t FVulkanCore::GetCurrentImageIndex() const

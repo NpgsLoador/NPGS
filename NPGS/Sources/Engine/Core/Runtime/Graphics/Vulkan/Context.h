@@ -11,7 +11,7 @@
 #include <vma/vk_mem_alloc.h>
 #include <vulkan/vulkan.hpp>
 
-#include "Engine/Core/Runtime/Graphics/Resources/Pools/CommandPoolManager.h"
+#include "Engine/Core/Runtime/Graphics/Resources/Pools/CommandBufferPool.h"
 #include "Engine/Core/Runtime/Graphics/Vulkan/Core.h"
 #include "Engine/Core/Runtime/Graphics/Vulkan/Wrappers.h"
 
@@ -70,6 +70,8 @@ namespace Npgs
         vk::Result ExecutePresentCommands(const FVulkanCommandBuffer& CommandBuffer) const;
         vk::Result ExecuteComputeCommands(vk::CommandBuffer CommandBuffer) const;
         vk::Result ExecuteComputeCommands(const FVulkanCommandBuffer& CommandBuffer) const;
+        vk::Result ExecuteTransferCommands(vk::CommandBuffer CommandBuffer) const;
+        vk::Result ExecuteTransferCommands(const FVulkanCommandBuffer& CommandBuffer) const;
         vk::Result SubmitCommandBufferToGraphics(const vk::SubmitInfo& SubmitInfo, vk::Fence Fence) const;
         vk::Result SubmitCommandBufferToGraphics(const vk::SubmitInfo& SubmitInfo, const FVulkanFence* Fence) const;
         vk::Result SubmitCommandBufferToGraphics(vk::CommandBuffer Buffer, vk::Fence Fence) const;
@@ -146,11 +148,10 @@ namespace Npgs
         std::uint32_t GetComputeQueueFamilyIndex() const;
         std::uint32_t GetCurrentImageIndex() const;
 
-        const FVulkanCommandBuffer& GetTransferCommandBuffer() const;
-        const FVulkanCommandBuffer& GetPresentCommandBuffer() const;
-        const FVulkanCommandPool& GetGraphicsCommandPool() const;
-        const FVulkanCommandPool& GetPresentCommandPool() const;
-        const FVulkanCommandPool& GetComputeCommandPool() const;
+        FCommandBufferPool::FBufferGuard GetGraphicsCommandBuffer(vk::CommandBufferLevel Level = vk::CommandBufferLevel::ePrimary);
+        FCommandBufferPool::FBufferGuard GetComputeCommandBuffer(vk::CommandBufferLevel Level = vk::CommandBufferLevel::ePrimary);
+        FCommandBufferPool::FBufferGuard GetPresentCommandBuffer(vk::CommandBufferLevel Level = vk::CommandBufferLevel::ePrimary);
+        FCommandBufferPool::FBufferGuard GetTransferCommandBuffer(vk::CommandBufferLevel Level = vk::CommandBufferLevel::ePrimary);
 
         // const vk::FormatProperties& GetFormatProperties(vk::Format Format) const;
 
@@ -161,19 +162,13 @@ namespace Npgs
 
     private:
         std::unique_ptr<FVulkanCore> _VulkanCore;
+        std::shared_ptr<FCommandBufferPool> _GraphicsCommandBufferPool;
+        std::shared_ptr<FCommandBufferPool> _PresentCommandBufferPool;
+        std::shared_ptr<FCommandBufferPool> _ComputeCommandBufferPool;
+        std::shared_ptr<FCommandBufferPool> _TransferCommandBufferPool;
 
         std::vector<std::pair<ECallbackType, std::string>> _AutoRemovedCallbacks;
         // std::array<vk::FormatProperties, magic_enum::enum_count<vk::Format>()> _FormatProperties;
-
-        std::shared_ptr<FCommandPoolManager> _GraphicsCommandPoolManager;
-        std::shared_ptr<FCommandPoolManager> _PresentCommandPoolManager;
-        std::shared_ptr<FCommandPoolManager> _ComputeCommandPoolMangaer;
-
-        std::unique_ptr<FVulkanCommandPool>   _GraphicsCommandPool;
-        std::unique_ptr<FVulkanCommandPool>   _PresentCommandPool;
-        std::unique_ptr<FVulkanCommandPool>   _ComputeCommandPool;
-        std::unique_ptr<FVulkanCommandBuffer> _TransferCommandBuffer;
-        std::unique_ptr<FVulkanCommandBuffer> _PresentCommandBuffer;
     };
 } // namespace Npgs
 

@@ -1,8 +1,15 @@
 #pragma once
 
+#include <cstddef>
+#include <cstdint>
+#include <atomic>
+#include <condition_variable>
+#include <memory>
+#include <mutex>
+#include <queue>
 #include <unordered_map>
-#include <vector>
 
+#include <concurrentqueue/concurrentqueue.h>
 #include <vulkan/vulkan.hpp>
 
 namespace Npgs
@@ -10,7 +17,50 @@ namespace Npgs
     class FQueuePool
     {
     public:
-        FQueuePool()                  = default;
+        struct FQueueInfo
+        {
+            vk::Queue      Queue;
+            vk::QueueFlags QueueFlags;
+        };
+
+        class FQueueGuard
+        {
+        public:
+            FQueueGuard(FQueuePool* Pool, FQueueInfo&& QueueInfo);
+            FQueueGuard(const FQueueGuard&) = delete;
+            FQueueGuard(FQueueGuard&& Other) noexcept;
+            ~FQueueGuard();
+
+            FQueueGuard& operator=(const FQueueGuard&) = delete;
+            FQueueGuard& operator=(FQueueGuard&& Other) noexcept;
+
+            vk::Queue Release();
+
+            vk::Queue* operator->();
+            const vk::Queue* operator->() const;
+            vk::Queue& operator*();
+            const vk::Queue& operator*() const;
+
+        private:
+            FQueuePool* _Pool;
+            FQueueInfo  _QueueInfo;
+        };
+
+    private:
+        struct FQueueFamilyPool
+        {
+            moodycamel::ConcurrentQueue<vk::Queue> Queues;
+            std::atomic<std::size_t> BusyQueueCount{};
+            std::size_t              TotalQueueCount{};
+        };
+
+        struct FQueueHash
+        {
+            std::size_t operator()(vk::QueueFlags QueueFlags) const;
+        };
+
+    public:
+        explicit FQueuePool(vk::Device Device);
         FQueuePool(const FQueuePool&) = delete;
         FQueuePool(FQueuePool&&)      = delete;
         ~FQueuePool()                 = default;
@@ -18,9 +68,18 @@ namespace Npgs
         FQueuePool& operator=(const FQueuePool&) = delete;
         FQueuePool& operator=(FQueuePool&&)      = delete;
 
+        FQueueGuard AcquireQueue(vk::QueueFlags QueueFlags);
+        void Register(vk::QueueFlags QueueFlags, std::uint32_t QueueFamilyIndex, std::uint32_t QueueCount);
+
     private:
-        std::unordered_map<vk::QueueFlagBits, std::uint32_t>      _QueueFamilyIndices;
-        std::unordered_map<std::uint32_t, std::vector<vk::Queue>> _Queues;
+        void ReleaseQueue(FQueueInfo&& QueueInfo);
+
+    private:
+        std::mutex                                                    _Mutex;
+        std::unordered_map<vk::QueueFlags, std::uint32_t, FQueueHash> _QueueFamilyIndices;
+        std::unordered_map<std::uint32_t, FQueueFamilyPool>           _QueueFamilyPools;
+        std::queue<std::shared_ptr<std::condition_variable>>          _WaitQueue;
+        vk::Device                                                    _Device;
     };
 } // namespace Npgs
 
