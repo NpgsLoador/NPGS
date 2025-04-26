@@ -121,24 +121,14 @@ namespace Npgs
         return _Device;
     }
 
+    NPGS_INLINE vk::Queue FVulkanCore::GetQueue(EQueueType QueueType) const
+    {
+        return _Queues.at(QueueType);
+    }
+
     NPGS_INLINE vk::SwapchainKHR FVulkanCore::GetSwapchain() const
     {
         return _Swapchain;
-    }
-
-    NPGS_INLINE vk::Queue FVulkanCore::GetGraphicsQueue() const
-    {
-        return _GraphicsQueue;
-    }
-
-    NPGS_INLINE vk::Queue FVulkanCore::GetPresentQueue() const
-    {
-        return _PresentQueue;
-    }
-
-    NPGS_INLINE vk::Queue FVulkanCore::GetComputeQueue() const
-    {
-        return _ComputeQueue;
     }
 
     NPGS_INLINE const vk::PhysicalDeviceProperties& FVulkanCore::GetPhysicalDeviceProperties() const
@@ -201,24 +191,9 @@ namespace Npgs
         return _SwapchainImageViews[Index];
     }
 
-    NPGS_INLINE const vk::QueueFamilyProperties& FVulkanCore::GetGraphicsQueueFamilyProperties() const
+    NPGS_INLINE const vk::QueueFamilyProperties& FVulkanCore::GetQueueFamilyProperties(EQueueType QueueType) const
     {
-        return _QueueFamilyProperties[_GraphicsQueueFamilyIndex];
-    }
-
-    NPGS_INLINE const vk::QueueFamilyProperties& FVulkanCore::GetPresentQueueFamilyProperties() const
-    {
-        return _QueueFamilyProperties[_PresentQueueFamilyIndex];
-    }
-
-    NPGS_INLINE const vk::QueueFamilyProperties& FVulkanCore::GetComputeQueueFamilyProperties() const
-    {
-        return _QueueFamilyProperties[_ComputeQueueFamilyIndex];
-    }
-
-    NPGS_INLINE const vk::QueueFamilyProperties& FVulkanCore::GetTransferQueueFamilyProperties() const
-    {
-        return _QueueFamilyProperties[_TransferQueueFamilyIndex];
+        return _QueueFamilyProperties.at(_QueueFamilyIndices.at(QueueType));
     }
 
     NPGS_INLINE FQueuePool& FVulkanCore::GetQueuePool()
@@ -231,24 +206,9 @@ namespace Npgs
         return _VmaAllocator;
     }
 
-    NPGS_INLINE std::uint32_t FVulkanCore::GetGraphicsQueueFamilyIndex() const
+    NPGS_INLINE std::uint32_t FVulkanCore::GetQueueFamilyIndex(EQueueType QueueType) const
     {
-        return _GraphicsQueueFamilyIndex;
-    }
-
-    NPGS_INLINE std::uint32_t FVulkanCore::GetPresentQueueFamilyIndex() const
-    {
-        return _PresentQueueFamilyIndex;
-    }
-
-    NPGS_INLINE std::uint32_t FVulkanCore::GetComputeQueueFamilyIndex() const
-    {
-        return _ComputeQueueFamilyIndex;
-    }
-
-    NPGS_INLINE std::uint32_t FVulkanCore::GetTransferQueueFamilyIndex() const
-    {
-        return _TransferQueueFamilyIndex;
+        return _QueueFamilyIndices.at(QueueType);
     }
 
     NPGS_INLINE std::uint32_t FVulkanCore::GetCurrentImageIndex() const

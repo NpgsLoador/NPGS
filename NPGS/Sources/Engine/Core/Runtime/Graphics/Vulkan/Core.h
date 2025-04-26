@@ -5,6 +5,7 @@
 #include <limits>
 #include <optional>
 #include <string>
+#include <unordered_map>
 #include <utility>
 #include <vector>
 
@@ -19,6 +20,15 @@ namespace Npgs
 {
     class FVulkanCore
     {
+    public:
+        enum class EQueueType
+        {
+            kGraphics,
+            kPresent,
+            kCompute,
+            kTransfer
+        };
+
     private:
         struct FQueueFamilyIndicesComplex
         {
@@ -75,11 +85,8 @@ namespace Npgs
         vk::SurfaceKHR GetSurface() const;
         vk::PhysicalDevice GetPhysicalDevice() const;
         vk::Device GetDevice() const;
+        vk::Queue GetQueue(EQueueType) const;
         vk::SwapchainKHR GetSwapchain() const;
-
-        vk::Queue GetGraphicsQueue() const;
-        vk::Queue GetPresentQueue() const;
-        vk::Queue GetComputeQueue() const;
 
         const vk::PhysicalDeviceProperties& GetPhysicalDeviceProperties() const;
         const vk::PhysicalDeviceMemoryProperties& GetPhysicalDeviceMemoryProperties() const;
@@ -96,17 +103,11 @@ namespace Npgs
         vk::Image GetSwapchainImage(std::uint32_t Index) const;
         vk::ImageView GetSwapchainImageView(std::uint32_t Index) const;
 
-        const vk::QueueFamilyProperties& GetGraphicsQueueFamilyProperties() const;
-        const vk::QueueFamilyProperties& GetPresentQueueFamilyProperties() const;
-        const vk::QueueFamilyProperties& GetComputeQueueFamilyProperties() const;
-        const vk::QueueFamilyProperties& GetTransferQueueFamilyProperties() const;
+        const vk::QueueFamilyProperties& GetQueueFamilyProperties(EQueueType QueueType) const;
 
         FQueuePool&   GetQueuePool();
         VmaAllocator  GetVmaAllocator() const;
-        std::uint32_t GetGraphicsQueueFamilyIndex() const;
-        std::uint32_t GetPresentQueueFamilyIndex() const;
-        std::uint32_t GetComputeQueueFamilyIndex() const;
-        std::uint32_t GetTransferQueueFamilyIndex() const;
+        std::uint32_t GetQueueFamilyIndex(EQueueType QueueType) const;
         std::uint32_t GetCurrentImageIndex() const;
         std::uint32_t GetApiVersion() const;
 
@@ -155,11 +156,6 @@ namespace Npgs
         vk::Device                         _Device;
         vk::SwapchainKHR                   _Swapchain;
 
-        vk::Queue                          _GraphicsQueue;
-        vk::Queue                          _PresentQueue;
-        vk::Queue                          _ComputeQueue;
-        vk::Queue                          _TransferQueue;
-
         vk::PhysicalDeviceProperties       _PhysicalDeviceProperties;
         vk::PhysicalDeviceMemoryProperties _PhysicalDeviceMemoryProperties;
         vk::HdrMetadataEXT                 _HdrMetadata;
@@ -170,10 +166,8 @@ namespace Npgs
 
         VmaAllocator                       _VmaAllocator{ nullptr };
 
-        std::uint32_t                      _GraphicsQueueFamilyIndex{ vk::QueueFamilyIgnored };
-        std::uint32_t                      _PresentQueueFamilyIndex{ vk::QueueFamilyIgnored };
-        std::uint32_t                      _ComputeQueueFamilyIndex{ vk::QueueFamilyIgnored };
-        std::uint32_t                      _TransferQueueFamilyIndex{ vk::QueueFamilyIgnored };
+        std::unordered_map<EQueueType, vk::Queue>     _Queues;
+        std::unordered_map<EQueueType, std::uint32_t> _QueueFamilyIndices;
 
         std::uint32_t                      _CurrentImageIndex{ std::numeric_limits<std::uint32_t>::max() };
         std::uint32_t                      _ApiVersion{ vk::ApiVersion14 };

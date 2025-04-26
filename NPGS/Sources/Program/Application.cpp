@@ -127,7 +127,9 @@ namespace Npgs
             Semaphores_RenderFinished.emplace_back(_VulkanContext->GetDevice(), vk::SemaphoreCreateFlags());
         }
 
-        FVulkanCommandPool GraphicsCommandPool(_VulkanContext->GetDevice(), _VulkanContext->GetGraphicsQueueFamilyIndex(), vk::CommandPoolCreateFlagBits::eResetCommandBuffer);
+        FVulkanCommandPool GraphicsCommandPool(
+            _VulkanContext->GetDevice(), _VulkanContext->GetQueueFamilyIndex(FVulkanContext::EQueueType::kGraphics),
+            vk::CommandPoolCreateFlagBits::eResetCommandBuffer);
 
         GraphicsCommandPool.AllocateBuffers(vk::CommandBufferLevel::ePrimary, CommandBuffers);
         GraphicsCommandPool.AllocateBuffers(vk::CommandBufferLevel::eSecondary, DepthMapCommandBuffers);
@@ -734,8 +736,13 @@ namespace Npgs
             CurrentBuffer->pipelineBarrier2(FinalDependencyInfo);
             CurrentBuffer.End();
 
-            _VulkanContext->SubmitCommandBufferToGraphics(*CurrentBuffer, *Semaphores_ImageAvailable[CurrentFrame],
-                                                          *Semaphores_RenderFinished[CurrentFrame], *InFlightFences[CurrentFrame]);
+            _VulkanContext->SubmitCommandBuffer(FVulkanContext::EQueueType::kGraphics,
+                                                *CurrentBuffer,
+                                                *Semaphores_ImageAvailable[CurrentFrame],
+                                                *Semaphores_RenderFinished[CurrentFrame],
+                                                *InFlightFences[CurrentFrame],
+                                                vk::PipelineStageFlagBits::eColorAttachmentOutput);
+            
             _VulkanContext->PresentImage(*Semaphores_RenderFinished[CurrentFrame]);
 
             CurrentFrame = (CurrentFrame + 1) % Config::Graphics::kMaxFrameInFlight;

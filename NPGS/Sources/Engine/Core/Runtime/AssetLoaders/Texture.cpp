@@ -593,7 +593,7 @@ namespace Npgs
         bool bGenerateMipmaps = MipLevels > 1;
         bool bNeedBlit        = DstImageSrcBlit != DstImageDstBlit;
 
-        auto  BufferGuard   = _VulkanContext->GetGraphicsCommandBuffer();
+        auto  BufferGuard   = _VulkanContext->AcquireCommandBuffer(FVulkanContext::EQueueType::kGraphics);
         auto& CommandBuffer = *BufferGuard;
         CommandBuffer.Begin(vk::CommandBufferUsageFlagBits::eOneTimeSubmit);
 
@@ -622,14 +622,14 @@ namespace Npgs
         }
 
         CommandBuffer.End();
-        _VulkanContext->ExecuteGraphicsCommands(CommandBuffer);
+        _VulkanContext->ExecuteCommands(FVulkanContext::EQueueType::kGraphics, CommandBuffer);
     }
 
     void FTexture::CopyBlitApplyTexture(vk::Buffer SrcBuffer, vk::Extent3D Extent, std::uint32_t MipLevels,
                                         const std::vector<std::size_t>& LevelOffsets,
                                         std::uint32_t ArrayLayers, vk::Filter Filter, vk::Image DstImage)
     {
-        auto  BufferGuard   = _VulkanContext->GetGraphicsCommandBuffer();
+        auto  BufferGuard   = _VulkanContext->AcquireCommandBuffer(FVulkanContext::EQueueType::kGraphics);
         auto& CommandBuffer = *BufferGuard;
         CommandBuffer.Begin(vk::CommandBufferUsageFlagBits::eOneTimeSubmit);
 
@@ -659,7 +659,7 @@ namespace Npgs
         CopyBufferToImage(CommandBuffer, SrcBuffer, DstImage, PostTransferState, Regions);
 
         CommandBuffer.End();
-        _VulkanContext->ExecuteGraphicsCommands(CommandBuffer);
+        _VulkanContext->ExecuteCommands(FVulkanContext::EQueueType::kGraphics, CommandBuffer);
     }
 
     void FTexture::BlitGenerateTexture(vk::Extent3D Extent, std::uint32_t MipLevels, std::uint32_t ArrayLayers,
@@ -689,7 +689,7 @@ namespace Npgs
         bool bGenerateMipmaps = MipLevels > 1;
         bool bNeedBlit = SrcImage != DstImage;
 
-        auto  BufferGuard   = _VulkanContext->GetGraphicsCommandBuffer();
+        auto  BufferGuard   = _VulkanContext->AcquireCommandBuffer(FVulkanContext::EQueueType::kGraphics);
         auto& CommandBuffer = *BufferGuard;
         CommandBuffer.Begin(vk::CommandBufferUsageFlagBits::eOneTimeSubmit);
 
@@ -711,7 +711,7 @@ namespace Npgs
         }
 
         CommandBuffer.End();
-        _VulkanContext->ExecuteGraphicsCommands(CommandBuffer);
+        _VulkanContext->ExecuteCommands(FVulkanContext::EQueueType::kGraphics, CommandBuffer);
     }
 
     void FTexture::BlitApplyTexture(vk::Extent3D Extent, std::uint32_t MipLevels, std::uint32_t ArrayLayers,
@@ -727,7 +727,7 @@ namespace Npgs
             ImageTracker->TrackImage(DstImage, FImageTracker::FImageState());
         }
 
-        auto  BufferGuard   = _VulkanContext->GetGraphicsCommandBuffer();
+        auto  BufferGuard   = _VulkanContext->AcquireCommandBuffer(FVulkanContext::EQueueType::kGraphics);
         auto& CommandBuffer = *BufferGuard;
         CommandBuffer.Begin(vk::CommandBufferUsageFlagBits::eOneTimeSubmit);
 
@@ -751,7 +751,7 @@ namespace Npgs
         BlitImage(CommandBuffer, SrcImage, PostTransferState, DstImage, PostTransferState, Regions, Filter);
 
         CommandBuffer.End();
-        _VulkanContext->ExecuteGraphicsCommands(CommandBuffer);
+        _VulkanContext->ExecuteCommands(FVulkanContext::EQueueType::kGraphics, CommandBuffer);
     }
 
     void FTexture::CopyBufferToImage(const FVulkanCommandBuffer& CommandBuffer,

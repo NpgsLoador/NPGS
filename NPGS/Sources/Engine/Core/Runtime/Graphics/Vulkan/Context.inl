@@ -114,95 +114,32 @@ namespace Npgs
         return _VulkanCore->RecreateSwapchain();
     }
 
-    NPGS_INLINE vk::Result FVulkanContext::ExecuteGraphicsCommands(const FVulkanCommandBuffer& CommandBuffer) const
+    NPGS_INLINE vk::Result FVulkanContext::ExecuteCommands(EQueueType QueueType, const FVulkanCommandBuffer& CommandBuffer) const
     {
-        return ExecuteGraphicsCommands(*CommandBuffer);
-    }
-
-    NPGS_INLINE vk::Result FVulkanContext::ExecutePresentCommands(const FVulkanCommandBuffer& CommandBuffer) const
-    {
-        return ExecutePresentCommands(*CommandBuffer);
-    }
-
-    NPGS_INLINE vk::Result FVulkanContext::ExecuteComputeCommands(const FVulkanCommandBuffer& CommandBuffer) const
-    {
-        return ExecuteComputeCommands(*CommandBuffer);
-    }
-
-    NPGS_INLINE vk::Result FVulkanContext::ExecuteTransferCommands(const FVulkanCommandBuffer& CommandBuffer) const
-    {
-        return ExecuteTransferCommands(*CommandBuffer);
+        return ExecuteCommands(QueueType, *CommandBuffer);
     }
 
     NPGS_INLINE vk::Result
-    FVulkanContext::SubmitCommandBufferToGraphics(const vk::SubmitInfo& SubmitInfo, const FVulkanFence* Fence) const
+    FVulkanContext::SubmitCommandBuffer(EQueueType QueueType, const vk::SubmitInfo& SubmitInfo, const FVulkanFence* Fence) const
     {
-        return SubmitCommandBufferToGraphics(SubmitInfo, Fence ? **Fence : vk::Fence());
+        return SubmitCommandBuffer(QueueType, SubmitInfo, Fence ? **Fence : vk::Fence());
     }
 
     NPGS_INLINE vk::Result
-    FVulkanContext::SubmitCommandBufferToGraphics(const FVulkanCommandBuffer& Buffer, const FVulkanFence* Fence) const
+    FVulkanContext::SubmitCommandBuffer(EQueueType QueueType, const FVulkanCommandBuffer& Buffer, const FVulkanFence* Fence) const
     {
-        return SubmitCommandBufferToGraphics(*Buffer, Fence ? **Fence : vk::Fence());
+        return SubmitCommandBuffer(QueueType, *Buffer, Fence ? **Fence : vk::Fence());
     }
 
     NPGS_INLINE vk::Result
-    FVulkanContext::SubmitCommandBufferToGraphics(const FVulkanCommandBuffer& Buffer,
-                                                      const FVulkanSemaphore*     WaitSemaphore,
-                                                      const FVulkanSemaphore*     SignalSemaphore,
-                                                      const FVulkanFence*         Fence,
-                                                      vk::PipelineStageFlags      Flags) const
+    FVulkanContext::SubmitCommandBuffer(EQueueType QueueType, const FVulkanCommandBuffer& Buffer, const FVulkanSemaphore* WaitSemaphore,
+                                        const FVulkanSemaphore* SignalSemaphore, const FVulkanFence* Fence, vk::PipelineStageFlags Flags) const
     {
-        return SubmitCommandBufferToGraphics(*Buffer, WaitSemaphore ? **WaitSemaphore : vk::Semaphore(),
-                                             SignalSemaphore ? **SignalSemaphore : vk::Semaphore(),
-                                             Fence ? **Fence : vk::Fence(), Flags);
-    }
-
-    NPGS_INLINE vk::Result
-    FVulkanContext::SubmitCommandBufferToPresent(const vk::SubmitInfo& SubmitInfo, const FVulkanFence* Fence) const
-    {
-        return SubmitCommandBufferToPresent(SubmitInfo, Fence ? **Fence : vk::Fence());
-    }
-
-    NPGS_INLINE vk::Result
-    FVulkanContext::SubmitCommandBufferToPresent(const FVulkanCommandBuffer& Buffer, const FVulkanFence* Fence) const
-    {
-        return SubmitCommandBufferToPresent(*Buffer, **Fence);
-    }
-
-    NPGS_INLINE vk::Result
-    FVulkanContext::SubmitCommandBufferToPresent(const FVulkanCommandBuffer& Buffer,
-                                                 const FVulkanSemaphore*     WaitSemaphore,
-                                                 const FVulkanSemaphore*     SignalSemaphore,
-                                                 const FVulkanFence*         Fence) const
-    {
-        SubmitCommandBufferToPresent(*Buffer, WaitSemaphore ? **WaitSemaphore : vk::Semaphore(),
-                                     SignalSemaphore ? **SignalSemaphore : vk::Semaphore(),
-                                     Fence ? **Fence : vk::Fence());
-    }
-
-    NPGS_INLINE vk::Result
-    FVulkanContext::SubmitCommandBufferToCompute(const vk::SubmitInfo& SubmitInfo, const FVulkanFence* Fence) const
-    {
-        return SubmitCommandBufferToCompute(SubmitInfo, Fence ? **Fence : vk::Fence());
-    }
-
-    NPGS_INLINE vk::Result
-    FVulkanContext::SubmitCommandBufferToCompute(const FVulkanCommandBuffer& Buffer, const FVulkanFence* Fence) const
-    {
-        return SubmitCommandBufferToCompute(*Buffer, **Fence);
-    }
-
-    NPGS_INLINE vk::Result
-    FVulkanContext::SubmitCommandBufferToCompute(const FVulkanCommandBuffer& Buffer,
-                                                 const FVulkanSemaphore*     WaitSemaphore,
-                                                 const FVulkanSemaphore*     SignalSemaphore,
-                                                 const FVulkanFence*         Fence,
-                                                 vk::PipelineStageFlags      Flags) const
-    {
-        return SubmitCommandBufferToCompute(*Buffer, WaitSemaphore ? **WaitSemaphore : vk::Semaphore(),
-                                            SignalSemaphore ? **SignalSemaphore : vk::Semaphore(),
-                                            Fence ? **Fence : vk::Fence(), Flags);
+        return SubmitCommandBuffer(QueueType, *Buffer,
+                                   WaitSemaphore   ? **WaitSemaphore   : vk::Semaphore(),
+                                   SignalSemaphore ? **SignalSemaphore : vk::Semaphore(),
+                                   Fence           ? **Fence           : vk::Fence(),
+                                   Flags);
     }
 
     NPGS_INLINE vk::Result FVulkanContext::SwapImage(vk::Semaphore Semaphore)
@@ -253,21 +190,6 @@ namespace Npgs
     NPGS_INLINE vk::Device FVulkanContext::GetDevice() const
     {
         return _VulkanCore->GetDevice();
-    }
-
-    NPGS_INLINE vk::Queue FVulkanContext::GetGraphicsQueue() const
-    {
-        return _VulkanCore->GetGraphicsQueue();
-    }
-
-    NPGS_INLINE vk::Queue FVulkanContext::GetPresentQueue() const
-    {
-        return _VulkanCore->GetPresentQueue();
-    }
-
-    NPGS_INLINE vk::Queue FVulkanContext::GetComputeQueue() const
-    {
-        return _VulkanCore->GetComputeQueue();
     }
 
     NPGS_INLINE vk::SwapchainKHR FVulkanContext::GetSwapchain() const
@@ -355,19 +277,9 @@ namespace Npgs
         return _VulkanCore->GetSwapchainImageView(Index);
     }
 
-    NPGS_INLINE std::uint32_t FVulkanContext::GetGraphicsQueueFamilyIndex() const
+    NPGS_INLINE std::uint32_t FVulkanContext::GetQueueFamilyIndex(EQueueType QueueType) const
     {
-        return _VulkanCore->GetGraphicsQueueFamilyIndex();
-    }
-
-    NPGS_INLINE std::uint32_t FVulkanContext::GetPresentQueueFamilyIndex() const
-    {
-        return _VulkanCore->GetPresentQueueFamilyIndex();
-    }
-
-    NPGS_INLINE std::uint32_t FVulkanContext::GetComputeQueueFamilyIndex() const
-    {
-        return _VulkanCore->GetComputeQueueFamilyIndex();
+        return _VulkanCore->GetQueueFamilyIndex(QueueType);
     }
 
     NPGS_INLINE std::uint32_t FVulkanContext::GetCurrentImageIndex() const
@@ -375,24 +287,9 @@ namespace Npgs
         return _VulkanCore->GetCurrentImageIndex();
     }
 
-    NPGS_INLINE FCommandBufferPool::FBufferGuard FVulkanContext::GetGraphicsCommandBuffer(vk::CommandBufferLevel Level)
+    NPGS_INLINE FCommandBufferPool::FBufferGuard FVulkanContext::AcquireCommandBuffer(EQueueType QueueType, vk::CommandBufferLevel Level)
     {
-        return std::move(_GraphicsCommandBufferPool->AcquireBuffer(Level));
-    }
-
-    NPGS_INLINE FCommandBufferPool::FBufferGuard FVulkanContext::GetComputeCommandBuffer(vk::CommandBufferLevel Level)
-    {
-        return std::move(_ComputeCommandBufferPool->AcquireBuffer(Level));
-    }
-
-    NPGS_INLINE FCommandBufferPool::FBufferGuard FVulkanContext::GetPresentCommandBuffer(vk::CommandBufferLevel Level)
-    {
-        return std::move(_PresentCommandBufferPool->AcquireBuffer(Level));
-    }
-
-    NPGS_INLINE FCommandBufferPool::FBufferGuard FVulkanContext::GetTransferCommandBuffer(vk::CommandBufferLevel Level)
-    {
-        return std::move(_TransferCommandBufferPool->AcquireBuffer(Level));
+        return std::move(_CommandBufferPools.at(_VulkanCore->GetQueueFamilyIndex(QueueType))->AcquireBuffer(Level));
     }
 
     // NPGS_INLINE const vk::FormatProperties& FVulkanContext::GetFormatProperties(vk::Format Format) const

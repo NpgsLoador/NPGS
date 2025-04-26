@@ -5,6 +5,7 @@
 #include <functional>
 #include <memory>
 #include <string>
+#include <unordered_map>
 #include <utility>
 
 // #include <magic_enum/magic_enum.hpp>
@@ -27,6 +28,8 @@ namespace Npgs
             kCreateDevice,
             kDestroyDevice
         };
+
+        using EQueueType = FVulkanCore::EQueueType;
 
     public:
         FVulkanContext();
@@ -64,48 +67,19 @@ namespace Npgs
         vk::Result CreateSwapchain(vk::Extent2D Extent, bool bLimitFps, bool bEnableHdr, vk::SwapchainCreateFlagsKHR Flags = {});
         vk::Result RecreateSwapchain();
 
-        vk::Result ExecuteGraphicsCommands(vk::CommandBuffer CommandBuffer) const;
-        vk::Result ExecuteGraphicsCommands(const FVulkanCommandBuffer& CommandBuffer) const;
-        vk::Result ExecutePresentCommands(vk::CommandBuffer CommandBuffer) const;
-        vk::Result ExecutePresentCommands(const FVulkanCommandBuffer& CommandBuffer) const;
-        vk::Result ExecuteComputeCommands(vk::CommandBuffer CommandBuffer) const;
-        vk::Result ExecuteComputeCommands(const FVulkanCommandBuffer& CommandBuffer) const;
-        vk::Result ExecuteTransferCommands(vk::CommandBuffer CommandBuffer) const;
-        vk::Result ExecuteTransferCommands(const FVulkanCommandBuffer& CommandBuffer) const;
-        vk::Result SubmitCommandBufferToGraphics(const vk::SubmitInfo& SubmitInfo, vk::Fence Fence) const;
-        vk::Result SubmitCommandBufferToGraphics(const vk::SubmitInfo& SubmitInfo, const FVulkanFence* Fence) const;
-        vk::Result SubmitCommandBufferToGraphics(vk::CommandBuffer Buffer, vk::Fence Fence) const;
-        vk::Result SubmitCommandBufferToGraphics(const FVulkanCommandBuffer& Buffer, const FVulkanFence* Fence) const;
+        vk::Result ExecuteCommands(EQueueType QueueType, vk::CommandBuffer CommandBuffer) const;
+        vk::Result ExecuteCommands(EQueueType QueueType, const FVulkanCommandBuffer& CommandBuffer) const;
 
-        vk::Result SubmitCommandBufferToGraphics(vk::CommandBuffer Buffer, vk::Semaphore WaitSemaphore, vk::Semaphore SignalSemaphore,
-                                                 vk::Fence Fence, vk::PipelineStageFlags Flags = vk::PipelineStageFlagBits::eColorAttachmentOutput) const;
+        vk::Result SubmitCommandBuffer(EQueueType QueueType, const vk::SubmitInfo& SubmitInfo, vk::Fence Fence) const;
+        vk::Result SubmitCommandBuffer(EQueueType QueueType, const vk::SubmitInfo& SubmitInfo, const FVulkanFence* Fence) const;
+        vk::Result SubmitCommandBuffer(EQueueType QueueType, vk::CommandBuffer Buffer, vk::Fence Fence) const;
+        vk::Result SubmitCommandBuffer(EQueueType QueueType, const FVulkanCommandBuffer& Buffer, const FVulkanFence* Fence) const;
 
-        vk::Result SubmitCommandBufferToGraphics(const FVulkanCommandBuffer& Buffer, const FVulkanSemaphore* WaitSemaphore,
-                                                 const FVulkanSemaphore* SignalSemaphore, const FVulkanFence* Fence,
-                                                 vk::PipelineStageFlags Flags = vk::PipelineStageFlagBits::eColorAttachmentOutput) const;
+        vk::Result SubmitCommandBuffer(EQueueType QueueType, vk::CommandBuffer Buffer, vk::Semaphore WaitSemaphore,
+                                       vk::Semaphore SignalSemaphore, vk::Fence Fence, vk::PipelineStageFlags Flags) const;
 
-        vk::Result SubmitCommandBufferToPresent(const vk::SubmitInfo& SubmitInfo, vk::Fence Fence) const;
-        vk::Result SubmitCommandBufferToPresent(const vk::SubmitInfo& SubmitInfo, const FVulkanFence* Fence) const;
-        vk::Result SubmitCommandBufferToPresent(vk::CommandBuffer Buffer, vk::Fence Fence) const;
-        vk::Result SubmitCommandBufferToPresent(const FVulkanCommandBuffer& Buffer, const FVulkanFence* Fence) const;
-
-        vk::Result SubmitCommandBufferToPresent(vk::CommandBuffer Buffer, vk::Semaphore WaitSemaphore,
-                                                vk::Semaphore SignalSemaphore, vk::Fence Fence) const;
-
-        vk::Result SubmitCommandBufferToPresent(const FVulkanCommandBuffer& Buffer, const FVulkanSemaphore* WaitSemaphore,
-                                                const FVulkanSemaphore* SignalSemaphore, const FVulkanFence* Fence) const;
-
-        vk::Result SubmitCommandBufferToCompute(const vk::SubmitInfo& SubmitInfo, vk::Fence Fence) const;
-        vk::Result SubmitCommandBufferToCompute(const vk::SubmitInfo& SubmitInfo, const FVulkanFence* Fence) const;
-        vk::Result SubmitCommandBufferToCompute(vk::CommandBuffer Buffer, vk::Fence Fence) const;
-        vk::Result SubmitCommandBufferToCompute(const FVulkanCommandBuffer& Buffer, const FVulkanFence* Fence) const;
-
-        vk::Result SubmitCommandBufferToCompute(vk::CommandBuffer Buffer, vk::Semaphore WaitSemaphore, vk::Semaphore SignalSemaphore,
-                                                vk::Fence Fence, vk::PipelineStageFlags Flags = vk::PipelineStageFlagBits::eComputeShader) const;
-
-        vk::Result SubmitCommandBufferToCompute(const FVulkanCommandBuffer& Buffer, const FVulkanSemaphore* WaitSemaphore,
-                                                const FVulkanSemaphore* SignalSemaphore, const FVulkanFence* Fence,
-                                                vk::PipelineStageFlags Flags = vk::PipelineStageFlagBits::eComputeShader) const;
+        vk::Result SubmitCommandBuffer(EQueueType QueueType, const FVulkanCommandBuffer& Buffer, const FVulkanSemaphore* WaitSemaphore,
+                                       const FVulkanSemaphore* SignalSemaphore, const FVulkanFence* Fence, vk::PipelineStageFlags Flags) const;
 
         vk::Result TransferImageOwnershipToPresent(vk::CommandBuffer PresentCommandBuffer) const;
         vk::Result TransferImageOwnershipToPresent(const FVulkanCommandBuffer& PresentCommandBuffer) const;
@@ -121,9 +95,6 @@ namespace Npgs
         vk::SurfaceKHR GetSurface() const;
         vk::PhysicalDevice GetPhysicalDevice() const;
         vk::Device GetDevice() const;
-        vk::Queue GetGraphicsQueue() const;
-        vk::Queue GetPresentQueue() const;
-        vk::Queue GetComputeQueue() const;
         vk::SwapchainKHR GetSwapchain() const;
         VmaAllocator GetVmaAllocator() const;
 
@@ -143,15 +114,10 @@ namespace Npgs
         vk::Image GetSwapchainImage(std::uint32_t Index) const;
         vk::ImageView GetSwapchainImageView(std::uint32_t Index) const;
 
-        std::uint32_t GetGraphicsQueueFamilyIndex() const;
-        std::uint32_t GetPresentQueueFamilyIndex() const;
-        std::uint32_t GetComputeQueueFamilyIndex() const;
+        std::uint32_t GetQueueFamilyIndex(EQueueType QueueType) const;
         std::uint32_t GetCurrentImageIndex() const;
 
-        FCommandBufferPool::FBufferGuard GetGraphicsCommandBuffer(vk::CommandBufferLevel Level = vk::CommandBufferLevel::ePrimary);
-        FCommandBufferPool::FBufferGuard GetComputeCommandBuffer(vk::CommandBufferLevel Level = vk::CommandBufferLevel::ePrimary);
-        FCommandBufferPool::FBufferGuard GetPresentCommandBuffer(vk::CommandBufferLevel Level = vk::CommandBufferLevel::ePrimary);
-        FCommandBufferPool::FBufferGuard GetTransferCommandBuffer(vk::CommandBufferLevel Level = vk::CommandBufferLevel::ePrimary);
+        FCommandBufferPool::FBufferGuard AcquireCommandBuffer(EQueueType QueueType, vk::CommandBufferLevel Level = vk::CommandBufferLevel::ePrimary);
 
         // const vk::FormatProperties& GetFormatProperties(vk::Format Format) const;
 
@@ -161,13 +127,9 @@ namespace Npgs
         void TransferImageOwnershipToPresentImpl(vk::CommandBuffer PresentCommandBuffer) const;
 
     private:
-        std::unique_ptr<FVulkanCore> _VulkanCore;
-        std::shared_ptr<FCommandBufferPool> _GraphicsCommandBufferPool;
-        std::shared_ptr<FCommandBufferPool> _PresentCommandBufferPool;
-        std::shared_ptr<FCommandBufferPool> _ComputeCommandBufferPool;
-        std::shared_ptr<FCommandBufferPool> _TransferCommandBufferPool;
-
-        std::vector<std::pair<ECallbackType, std::string>> _AutoRemovedCallbacks;
+        std::unique_ptr<FVulkanCore>                                           _VulkanCore;
+        std::unordered_map<std::uint32_t, std::shared_ptr<FCommandBufferPool>> _CommandBufferPools;
+        std::vector<std::pair<ECallbackType, std::string>>                     _AutoRemovedCallbacks;
         // std::array<vk::FormatProperties, magic_enum::enum_count<vk::Format>()> _FormatProperties;
     };
 } // namespace Npgs

@@ -140,35 +140,35 @@ namespace Npgs
         std::vector<float> QueuePriorities;
         std::vector<vk::DeviceQueueCreateInfo> DeviceQueueCreateInfos;
 
-        if (_GraphicsQueueFamilyIndex != vk::QueueFamilyIgnored)
+        if (_QueueFamilyIndices.at(EQueueType::kGraphics) != vk::QueueFamilyIgnored)
         {
-            const auto& QueueFamilyProperties = _QueueFamilyProperties[_GraphicsQueueFamilyIndex];
+            const auto& QueueFamilyProperties = _QueueFamilyProperties[_QueueFamilyIndices.at(EQueueType::kGraphics)];
             QueuePriorities.assign(QueueFamilyProperties.queueCount, QueuePriority);
-            DeviceQueueCreateInfos.emplace_back(vk::DeviceQueueCreateFlags(), _GraphicsQueueFamilyIndex, QueuePriorities);
+            DeviceQueueCreateInfos.emplace_back(vk::DeviceQueueCreateFlags(), _QueueFamilyIndices.at(EQueueType::kGraphics), QueuePriorities);
         }
-        if (_PresentQueueFamilyIndex != vk::QueueFamilyIgnored &&
-            _PresentQueueFamilyIndex != _GraphicsQueueFamilyIndex)
+        if (_QueueFamilyIndices.at(EQueueType::kPresent) != vk::QueueFamilyIgnored &&
+            _QueueFamilyIndices.at(EQueueType::kPresent) != _QueueFamilyIndices.at(EQueueType::kGraphics))
         {
-            const auto& QueueFamilyProperties = _QueueFamilyProperties[_PresentQueueFamilyIndex];
+            const auto& QueueFamilyProperties = _QueueFamilyProperties[_QueueFamilyIndices.at(EQueueType::kPresent)];
             QueuePriorities.clear();
             QueuePriorities.assign(QueueFamilyProperties.queueCount, QueuePriority);
-            DeviceQueueCreateInfos.emplace_back(vk::DeviceQueueCreateFlags(), _PresentQueueFamilyIndex, QueuePriorities);
+            DeviceQueueCreateInfos.emplace_back(vk::DeviceQueueCreateFlags(), _QueueFamilyIndices.at(EQueueType::kPresent), QueuePriorities);
         }
-        if (_ComputeQueueFamilyIndex != vk::QueueFamilyIgnored &&
-            _ComputeQueueFamilyIndex != _GraphicsQueueFamilyIndex &&
-            _ComputeQueueFamilyIndex != _PresentQueueFamilyIndex)
+        if (_QueueFamilyIndices.at(EQueueType::kCompute) != vk::QueueFamilyIgnored &&
+            _QueueFamilyIndices.at(EQueueType::kCompute) != _QueueFamilyIndices.at(EQueueType::kGraphics) &&
+            _QueueFamilyIndices.at(EQueueType::kCompute) != _QueueFamilyIndices.at(EQueueType::kPresent))
         {
-            const auto& QueueFamilyProperties = _QueueFamilyProperties[_ComputeQueueFamilyIndex];
+            const auto& QueueFamilyProperties = _QueueFamilyProperties[_QueueFamilyIndices.at(EQueueType::kCompute)];
             QueuePriorities.clear();
             QueuePriorities.assign(QueueFamilyProperties.queueCount, QueuePriority);
-            DeviceQueueCreateInfos.emplace_back(vk::DeviceQueueCreateFlags(), _ComputeQueueFamilyIndex, QueuePriorities);
+            DeviceQueueCreateInfos.emplace_back(vk::DeviceQueueCreateFlags(), _QueueFamilyIndices.at(EQueueType::kCompute), QueuePriorities);
         }
-        if (_TransferQueueFamilyIndex != _GraphicsQueueFamilyIndex)
+        if (_QueueFamilyIndices.at(EQueueType::kTransfer) != _QueueFamilyIndices.at(EQueueType::kGraphics))
         {
-            const auto& QueueFamilyProperties = _QueueFamilyProperties[_TransferQueueFamilyIndex];
+            const auto& QueueFamilyProperties = _QueueFamilyProperties[_QueueFamilyIndices.at(EQueueType::kTransfer)];
             QueuePriorities.clear();
             QueuePriorities.assign(QueueFamilyProperties.queueCount, QueuePriority);
-            DeviceQueueCreateInfos.emplace_back(vk::DeviceQueueCreateFlags(), _TransferQueueFamilyIndex, QueuePriorities);
+            DeviceQueueCreateInfos.emplace_back(vk::DeviceQueueCreateFlags(), _QueueFamilyIndices.at(EQueueType::kTransfer), QueuePriorities);
         }
 
         vk::PhysicalDeviceFeatures2 Features2;
@@ -233,34 +233,37 @@ namespace Npgs
         }
 
         // 常驻队列，用于渲染循环频繁提交
-        if (_GraphicsQueueFamilyIndex != vk::QueueFamilyIgnored)
+        if (_QueueFamilyIndices.at(EQueueType::kGraphics) != vk::QueueFamilyIgnored)
         {
-            _GraphicsQueue = _QueuePool->AcquireQueue(_QueueFamilyProperties[_GraphicsQueueFamilyIndex].queueFlags).Release();
+            _Queues[EQueueType::kGraphics] =
+                _QueuePool->AcquireQueue(_QueueFamilyProperties[_QueueFamilyIndices.at(EQueueType::kGraphics)].queueFlags).Release();
         }
-        if (_PresentQueueFamilyIndex != vk::QueueFamilyIgnored)
+        if (_QueueFamilyIndices.at(EQueueType::kPresent) != vk::QueueFamilyIgnored)
         {
-            if (_GraphicsQueueFamilyIndex == _PresentQueueFamilyIndex)
+            if (_QueueFamilyIndices.at(EQueueType::kGraphics) == _QueueFamilyIndices.at(EQueueType::kPresent))
             {
-                _PresentQueue = _GraphicsQueue;
+                _Queues[EQueueType::kPresent] = _Queues[EQueueType::kGraphics];
             }
             else
             {
-                _PresentQueue = _QueuePool->AcquireQueue(_QueueFamilyProperties[_PresentQueueFamilyIndex].queueFlags).Release();
+                _Queues[EQueueType::kPresent] =
+                    _QueuePool->AcquireQueue(_QueueFamilyProperties[_QueueFamilyIndices.at(EQueueType::kPresent)].queueFlags).Release();
             }
         }
-        if (_ComputeQueueFamilyIndex != vk::QueueFamilyIgnored)
+        if (_QueueFamilyIndices.at(EQueueType::kCompute) != vk::QueueFamilyIgnored)
         {
-            if (_ComputeQueueFamilyIndex == _GraphicsQueueFamilyIndex)
+            if (_QueueFamilyIndices.at(EQueueType::kCompute) == _QueueFamilyIndices.at(EQueueType::kGraphics))
             {
-                _ComputeQueue = _GraphicsQueue;
+                _Queues[EQueueType::kCompute] = _Queues[EQueueType::kGraphics];
             }
-            else if (_ComputeQueueFamilyIndex == _PresentQueueFamilyIndex)
+            else if (_QueueFamilyIndices.at(EQueueType::kCompute) == _QueueFamilyIndices.at(EQueueType::kPresent))
             {
-                _ComputeQueue = _PresentQueue;
+                _Queues[EQueueType::kCompute] = _Queues[EQueueType::kPresent];
             }
             else
             {
-                _ComputeQueue = _QueuePool->AcquireQueue(_QueueFamilyProperties[_ComputeQueueFamilyIndex].queueFlags).Release();
+                _Queues[EQueueType::kCompute] =
+                    _QueuePool->AcquireQueue(_QueueFamilyProperties[_QueueFamilyIndices.at(EQueueType::kCompute)].queueFlags).Release();
             }
         }
 
@@ -607,7 +610,7 @@ namespace Npgs
     {
         try
         {
-            vk::Result Result = _PresentQueue.presentKHR(PresentInfo);
+            vk::Result Result = _Queues.at(EQueueType::kPresent).presentKHR(PresentInfo);
             switch (Result)
             {
             case vk::Result::eSuccess:
@@ -1053,18 +1056,18 @@ namespace Npgs
 
             TransferQueueFamilyIndex = Indices.TransferQueueFamilyIndex & kNotFound;
 
-            _GraphicsQueueFamilyIndex = bEnableGraphicsQueue ? GraphicsQueueFamilyIndex : vk::QueueFamilyIgnored;
-            _PresentQueueFamilyIndex  = _Surface             ? PresentQueueFamilyIndex  : vk::QueueFamilyIgnored;
-            _ComputeQueueFamilyIndex  = bEnableComputeQueue  ? ComputeQueueFamilyIndex  : vk::QueueFamilyIgnored;
+            _QueueFamilyIndices[EQueueType::kGraphics] = bEnableGraphicsQueue ? GraphicsQueueFamilyIndex : vk::QueueFamilyIgnored;
+            _QueueFamilyIndices[EQueueType::kPresent]  = _Surface             ? PresentQueueFamilyIndex  : vk::QueueFamilyIgnored;
+            _QueueFamilyIndices[EQueueType::kCompute]  = bEnableComputeQueue  ? ComputeQueueFamilyIndex  : vk::QueueFamilyIgnored;
         }
         else // 如果已经找到了，直接设置索引
         {
-            _GraphicsQueueFamilyIndex = bEnableGraphicsQueue ? GraphicsQueueFamilyIndex : vk::QueueFamilyIgnored;
-            _PresentQueueFamilyIndex  = _Surface             ? PresentQueueFamilyIndex  : vk::QueueFamilyIgnored;
-            _ComputeQueueFamilyIndex  = bEnableComputeQueue  ? ComputeQueueFamilyIndex  : vk::QueueFamilyIgnored;
+            _QueueFamilyIndices[EQueueType::kGraphics] = bEnableGraphicsQueue ? GraphicsQueueFamilyIndex : vk::QueueFamilyIgnored;
+            _QueueFamilyIndices[EQueueType::kPresent] = _Surface             ? PresentQueueFamilyIndex  : vk::QueueFamilyIgnored;
+            _QueueFamilyIndices[EQueueType::kCompute] = bEnableComputeQueue  ? ComputeQueueFamilyIndex  : vk::QueueFamilyIgnored;
         }
 
-        _TransferQueueFamilyIndex = TransferQueueFamilyIndex;
+        _QueueFamilyIndices[EQueueType::kTransfer] = TransferQueueFamilyIndex;
         _PhysicalDevice = _AvailablePhysicalDevices[Index];
         return vk::Result::eSuccess;
     }

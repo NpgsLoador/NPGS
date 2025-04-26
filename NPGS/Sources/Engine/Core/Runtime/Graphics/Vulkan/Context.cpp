@@ -34,47 +34,49 @@ namespace Npgs
     {
         auto InitializeCommandPool = [this]() -> void
         {
-            if (_VulkanCore->GetGraphicsQueueFamilyIndex() != vk::QueueFamilyIgnored)
+            if (_VulkanCore->GetQueueFamilyIndex(EQueueType::kGraphics) != vk::QueueFamilyIgnored)
             {
-                _GraphicsCommandBufferPool = std::make_shared<FCommandBufferPool>(
-                    8, 32, 5000, 60000, _VulkanCore->GetDevice(), _VulkanCore->GetGraphicsQueueFamilyIndex());
+                _CommandBufferPools[_VulkanCore->GetQueueFamilyIndex(EQueueType::kGraphics)] = std::make_shared<FCommandBufferPool>(
+                    8, 32, 5000, 60000, _VulkanCore->GetDevice(), _VulkanCore->GetQueueFamilyIndex(EQueueType::kGraphics));
             }
-            if (_VulkanCore->GetComputeQueueFamilyIndex() != vk::QueueFamilyIgnored)
+            if (_VulkanCore->GetQueueFamilyIndex(EQueueType::kCompute) != vk::QueueFamilyIgnored)
             {
-                if (_VulkanCore->GetComputeQueueFamilyIndex() != _VulkanCore->GetGraphicsQueueFamilyIndex())
+                if (_VulkanCore->GetQueueFamilyIndex(EQueueType::kCompute) != _VulkanCore->GetQueueFamilyIndex(EQueueType::kGraphics))
                 {
-                    _ComputeCommandBufferPool = std::make_shared<FCommandBufferPool>(
-                        4, 16, 5000, 60000, _VulkanCore->GetDevice(), _VulkanCore->GetComputeQueueFamilyIndex());
+                    _CommandBufferPools[_VulkanCore->GetQueueFamilyIndex(EQueueType::kCompute)] = std::make_shared<FCommandBufferPool>(
+                        4, 16, 5000, 60000, _VulkanCore->GetDevice(), _VulkanCore->GetQueueFamilyIndex(EQueueType::kCompute));
                 }
                 else
                 {
-                    _ComputeCommandBufferPool = _GraphicsCommandBufferPool;
+                    _CommandBufferPools[_VulkanCore->GetQueueFamilyIndex(EQueueType::kCompute)] =
+                        _CommandBufferPools[_VulkanCore->GetQueueFamilyIndex(EQueueType::kGraphics)];
                 }
             }
-            if (_VulkanCore->GetPresentQueueFamilyIndex() != vk::QueueFamilyIgnored &&
-                _VulkanCore->GetPresentQueueFamilyIndex() != _VulkanCore->GetGraphicsQueueFamilyIndex() &&
+            if (_VulkanCore->GetQueueFamilyIndex(EQueueType::kPresent) != vk::QueueFamilyIgnored &&
+                _VulkanCore->GetQueueFamilyIndex(EQueueType::kPresent) != _VulkanCore->GetQueueFamilyIndex(EQueueType::kGraphics) &&
                 _VulkanCore->GetSwapchainCreateInfo().imageSharingMode == vk::SharingMode::eExclusive)
             {
-                if (_VulkanCore->GetPresentQueueFamilyIndex() != _VulkanCore->GetGraphicsQueueFamilyIndex())
+                if (_VulkanCore->GetQueueFamilyIndex(EQueueType::kPresent) != _VulkanCore->GetQueueFamilyIndex(EQueueType::kGraphics))
                 {
-                    _PresentCommandBufferPool = std::make_shared<FCommandBufferPool>(
-                        2, 8, 5000, 60000, _VulkanCore->GetDevice(), _VulkanCore->GetPresentQueueFamilyIndex());
+                    _CommandBufferPools[_VulkanCore->GetQueueFamilyIndex(EQueueType::kPresent)] = std::make_shared<FCommandBufferPool>(
+                        2, 8, 5000, 60000, _VulkanCore->GetDevice(), _VulkanCore->GetQueueFamilyIndex(EQueueType::kPresent));
                 }
                 else
                 {
-                    _PresentCommandBufferPool = _GraphicsCommandBufferPool;
+                    _CommandBufferPools[_VulkanCore->GetQueueFamilyIndex(EQueueType::kPresent)] =
+                        _CommandBufferPools[_VulkanCore->GetQueueFamilyIndex(EQueueType::kGraphics)];
                 }
             }
-            if (_VulkanCore->GetTransferQueueFamilyIndex() != vk::QueueFamilyIgnored)
+            if (_VulkanCore->GetQueueFamilyIndex(EQueueType::kTransfer) != vk::QueueFamilyIgnored)
             {
-                if (_VulkanCore->GetTransferQueueFamilyIndex() != _VulkanCore->GetGraphicsQueueFamilyIndex())
+                if (_VulkanCore->GetQueueFamilyIndex(EQueueType::kTransfer) != _VulkanCore->GetQueueFamilyIndex(EQueueType::kGraphics))
                 {
-                    _TransferCommandBufferPool = std::make_shared<FCommandBufferPool>(
-                        2, 8, 5000, 60000, _VulkanCore->GetDevice(), _VulkanCore->GetTransferQueueFamilyIndex());
+                    _CommandBufferPools[_VulkanCore->GetQueueFamilyIndex(EQueueType::kTransfer)] = std::make_shared<FCommandBufferPool>(
+                        2, 8, 5000, 60000, _VulkanCore->GetDevice(), _VulkanCore->GetQueueFamilyIndex(EQueueType::kTransfer));
                 }
                 else
                 {
-                    _TransferCommandBufferPool = _GraphicsCommandBufferPool;
+                    _CommandBufferPools[_VulkanCore->GetQueueFamilyIndex(EQueueType::kTransfer)] = _CommandBufferPools[_VulkanCore->GetQueueFamilyIndex(EQueueType::kGraphics)];
                 }
             }
         };
@@ -145,10 +147,10 @@ namespace Npgs
         }
     }
 
-    vk::Result FVulkanContext::ExecuteGraphicsCommands(vk::CommandBuffer CommandBuffer) const
+    vk::Result FVulkanContext::ExecuteCommands(EQueueType QueueType, vk::CommandBuffer CommandBuffer) const
     {
         FVulkanFence Fence(_VulkanCore->GetDevice());
-        auto Queue = _VulkanCore->GetQueuePool().AcquireQueue(_VulkanCore->GetGraphicsQueueFamilyProperties().queueFlags);
+        auto Queue = _VulkanCore->GetQueuePool().AcquireQueue(_VulkanCore->GetQueueFamilyProperties(QueueType).queueFlags);
         vk::SubmitInfo SubmitInfo({}, {}, CommandBuffer, {});
         try
         {
@@ -157,152 +159,39 @@ namespace Npgs
         }
         catch (const vk::SystemError& e)
         {
-            NpgsCoreError("Failed to execute graphics command: {}", e.what());
+            NpgsCoreError("Failed to execute command: {}", e.what());
             return static_cast<vk::Result>(e.code().value());
         }
 
         return vk::Result::eSuccess;
     }
 
-    vk::Result FVulkanContext::ExecutePresentCommands(vk::CommandBuffer CommandBuffer) const
-    {
-        FVulkanFence Fence(_VulkanCore->GetDevice());
-        auto Queue = _VulkanCore->GetQueuePool().AcquireQueue(_VulkanCore->GetPresentQueueFamilyProperties().queueFlags);
-        vk::SubmitInfo SubmitInfo({}, {}, CommandBuffer, {});
-        try
-        {
-            Queue->submit(SubmitInfo, *Fence);
-            Fence.Wait();
-        }
-        catch (const vk::SystemError& e)
-        {
-            NpgsCoreError("Failed to execute present command: {}", e.what());
-            return static_cast<vk::Result>(e.code().value());
-        }
-
-        return vk::Result::eSuccess;
-    }
-
-    vk::Result FVulkanContext::ExecuteComputeCommands(vk::CommandBuffer CommandBuffer) const
-    {
-        FVulkanFence Fence(_VulkanCore->GetDevice());
-        auto Queue = _VulkanCore->GetQueuePool().AcquireQueue(_VulkanCore->GetComputeQueueFamilyProperties().queueFlags);
-        vk::SubmitInfo SubmitInfo({}, {}, CommandBuffer, {});
-        try
-        {
-            Queue->submit(SubmitInfo, *Fence);
-            Fence.Wait();
-        }
-        catch (const vk::SystemError& e)
-        {
-            NpgsCoreError("Failed to execute compute command: {}", e.what());
-            return static_cast<vk::Result>(e.code().value());
-        }
-
-        return vk::Result::eSuccess;
-    }
-
-    vk::Result FVulkanContext::ExecuteTransferCommands(vk::CommandBuffer CommandBuffer) const
-    {
-        FVulkanFence Fence(_VulkanCore->GetDevice());
-        auto Queue = _VulkanCore->GetQueuePool().AcquireQueue(_VulkanCore->GetTransferQueueFamilyProperties().queueFlags);
-        vk::SubmitInfo SubmitInfo({}, {}, CommandBuffer, {});
-        try
-        {
-            Queue->submit(SubmitInfo, *Fence);
-            Fence.Wait();
-        }
-        catch (const vk::SystemError& e)
-        {
-            NpgsCoreError("Failed to execute transfer command: {}", e.what());
-            return static_cast<vk::Result>(e.code().value());
-        }
-
-        return vk::Result::eSuccess;
-    }
-
-    vk::Result FVulkanContext::SubmitCommandBufferToGraphics(const vk::SubmitInfo& SubmitInfo, vk::Fence Fence) const
+    vk::Result FVulkanContext::SubmitCommandBuffer(EQueueType QueueType, const vk::SubmitInfo& SubmitInfo, vk::Fence Fence) const
     {
         try
         {
-            _VulkanCore->GetGraphicsQueue().submit(SubmitInfo, Fence);
+            _VulkanCore->GetQueue(QueueType).submit(SubmitInfo, Fence);
         }
         catch (const vk::SystemError& e)
         {
-            NpgsCoreError("Failed to submit command buffer to graphics queue: {}", e.what());
+            NpgsCoreError("Failed to submit command buffer to queue: {}", e.what());
             return static_cast<vk::Result>(e.code().value());
         }
 
         return vk::Result::eSuccess;
     }
 
-    vk::Result FVulkanContext::SubmitCommandBufferToGraphics(vk::CommandBuffer Buffer, vk::Fence Fence) const
+    vk::Result FVulkanContext::SubmitCommandBuffer(EQueueType QueueType, vk::CommandBuffer Buffer, vk::Fence Fence) const
     {
         vk::SubmitInfo SubmitInfo({}, {}, Buffer, {});
-        return SubmitCommandBufferToGraphics(SubmitInfo, Fence);
+        return SubmitCommandBuffer(QueueType, SubmitInfo, Fence);
     }
 
-    vk::Result FVulkanContext::SubmitCommandBufferToGraphics(vk::CommandBuffer Buffer, vk::Semaphore WaitSemaphore,
-                                                             vk::Semaphore SignalSemaphore, vk::Fence Fence, vk::PipelineStageFlags Flags) const
+    vk::Result FVulkanContext::SubmitCommandBuffer(EQueueType QueueType, vk::CommandBuffer Buffer, vk::Semaphore WaitSemaphore,
+                                                   vk::Semaphore SignalSemaphore, vk::Fence Fence, vk::PipelineStageFlags Flags) const
     {
         vk::SubmitInfo SubmitInfo = CreateSubmitInfo(Buffer, WaitSemaphore, SignalSemaphore, Flags);
-        return SubmitCommandBufferToGraphics(SubmitInfo, Fence);
-    }
-
-    vk::Result FVulkanContext::SubmitCommandBufferToPresent(const vk::SubmitInfo& SubmitInfo, vk::Fence Fence) const
-    {
-        try
-        {
-            _VulkanCore->GetPresentQueue().submit(SubmitInfo, Fence);
-        }
-        catch (const vk::SystemError& e)
-        {
-            NpgsCoreError("Failed to submit command buffer to present queue: {}", e.what());
-            return static_cast<vk::Result>(e.code().value());
-        }
-
-        return vk::Result::eSuccess;
-    }
-
-    vk::Result FVulkanContext::SubmitCommandBufferToPresent(vk::CommandBuffer Buffer, vk::Fence Fence) const
-    {
-        vk::SubmitInfo SubmitInfo({}, {}, Buffer, {});
-        return SubmitCommandBufferToPresent(SubmitInfo, Fence);
-    }
-
-    vk::Result FVulkanContext::SubmitCommandBufferToPresent(vk::CommandBuffer Buffer, vk::Semaphore WaitSemaphore,
-                                                            vk::Semaphore SignalSemaphore, vk::Fence Fence) const
-    {
-        vk::SubmitInfo SubmitInfo = CreateSubmitInfo(Buffer, WaitSemaphore, SignalSemaphore, vk::PipelineStageFlagBits::eAllCommands);
-        return SubmitCommandBufferToPresent(SubmitInfo, Fence);
-    }
-
-    vk::Result FVulkanContext::SubmitCommandBufferToCompute(const vk::SubmitInfo& SubmitInfo, vk::Fence Fence) const
-    {
-        try
-        {
-            _VulkanCore->GetComputeQueue().submit(SubmitInfo, Fence);
-        }
-        catch (const vk::SystemError& e)
-        {
-            NpgsCoreError("Failed to submit command buffer to compute queue: {}", e.what());
-            return static_cast<vk::Result>(e.code().value());
-        }
-
-        return vk::Result::eSuccess;
-    }
-
-    vk::Result FVulkanContext::SubmitCommandBufferToCompute(vk::CommandBuffer Buffer, vk::Fence Fence) const
-    {
-        vk::SubmitInfo SubmitInfo({}, {}, Buffer, {});
-        return SubmitCommandBufferToCompute(SubmitInfo, Fence);
-    }
-
-    vk::Result FVulkanContext::SubmitCommandBufferToCompute(vk::CommandBuffer Buffer, vk::Semaphore WaitSemaphore,
-                                                            vk::Semaphore SignalSemaphore, vk::Fence Fence, vk::PipelineStageFlags Flags) const
-    {
-        vk::SubmitInfo SubmitInfo = CreateSubmitInfo(Buffer, WaitSemaphore, SignalSemaphore, Flags);
-        return SubmitCommandBufferToCompute(SubmitInfo, Fence);
+        return SubmitCommandBuffer(QueueType, SubmitInfo, Fence);
     }
 
     vk::Result FVulkanContext::TransferImageOwnershipToPresent(vk::CommandBuffer PresentCommandBuffer) const
@@ -338,8 +227,8 @@ namespace Npgs
             vk::AccessFlagBits2::eNone,
             vk::ImageLayout::eColorAttachmentOptimal,
             vk::ImageLayout::ePresentSrcKHR,
-            _VulkanCore->GetGraphicsQueueFamilyIndex(),
-            _VulkanCore->GetPresentQueueFamilyIndex(),
+            _VulkanCore->GetQueueFamilyIndex(EQueueType::kGraphics),
+            _VulkanCore->GetQueueFamilyIndex(EQueueType::kPresent),
             _VulkanCore->GetSwapchainImage(_VulkanCore->GetCurrentImageIndex()),
             vk::ImageSubresourceRange(vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1)
         );
