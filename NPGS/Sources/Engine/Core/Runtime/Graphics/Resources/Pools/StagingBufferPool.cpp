@@ -7,12 +7,13 @@
 
 namespace Npgs
 {
-    FStagingBufferPool::FStagingBufferPool(FVulkanContext* VulkanContext, VmaAllocator Allocator,
+    FStagingBufferPool::FStagingBufferPool(vk::PhysicalDevice PhysicalDevice, vk::Device Device, VmaAllocator Allocator,
                                            std::uint32_t MinAvailableBufferLimit, std::uint32_t MaxAllocatedBufferLimit,
                                            std::uint32_t BufferReclaimThresholdMs, std::uint32_t MaintenanceIntervalMs,
                                            EPoolUsage PoolUsage, bool bUsingVma)
         : Base(MinAvailableBufferLimit, MaxAllocatedBufferLimit, BufferReclaimThresholdMs, MaintenanceIntervalMs)
-        , _VulkanContext(VulkanContext)
+        , _PhysicalDevice(PhysicalDevice)
+        , _Device(Device)
         , _Allocator(Allocator)
         , _bUsingVma(bUsingVma)
     {
@@ -54,12 +55,13 @@ namespace Npgs
         if (CreateInfo.AllocationCreateInfo != nullptr)
         {
             vk::BufferCreateInfo BufferCreateInfo({}, AlignedSize, vk::BufferUsageFlagBits::eTransferSrc | vk::BufferUsageFlagBits::eTransferDst);
-            BufferInfoPtr->Resource = std::make_unique<FStagingBuffer>(_VulkanContext, _Allocator, &_AllocationCreateInfo, BufferCreateInfo);
+            BufferInfoPtr->Resource = std::make_unique<FStagingBuffer>(
+                _PhysicalDevice, _Device, _Allocator, &_AllocationCreateInfo, BufferCreateInfo);
             BufferInfoPtr->bAllocatedByVma = true;
         }
         else
         {
-            BufferInfoPtr->Resource = std::make_unique<FStagingBuffer>(_VulkanContext, AlignedSize);
+            BufferInfoPtr->Resource = std::make_unique<FStagingBuffer>(_PhysicalDevice, _Device, AlignedSize);
             BufferInfoPtr->bAllocatedByVma = false;
         }
 

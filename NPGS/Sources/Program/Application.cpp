@@ -755,7 +755,7 @@ namespace Npgs
         }
 
         _VulkanContext->WaitIdle();
-        GraphicsCommandPool.FreeBuffers(CommandBuffers);
+        // GraphicsCommandPool.FreeBuffers(CommandBuffers);
     }
 
     void FApplication::CreateAttachments()

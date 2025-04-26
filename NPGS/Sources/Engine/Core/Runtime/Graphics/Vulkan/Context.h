@@ -1,7 +1,7 @@
 #pragma once
 
-// #include <array>
 #include <cstdint>
+#include <array>
 #include <functional>
 #include <memory>
 #include <string>
@@ -13,6 +13,7 @@
 #include <vulkan/vulkan.hpp>
 
 #include "Engine/Core/Runtime/Graphics/Resources/Pools/CommandBufferPool.h"
+#include "Engine/Core/Runtime/Graphics/Resources/Pools/StagingBufferPool.h"
 #include "Engine/Core/Runtime/Graphics/Vulkan/Core.h"
 #include "Engine/Core/Runtime/Graphics/Vulkan/Wrappers.h"
 
@@ -117,7 +118,11 @@ namespace Npgs
         std::uint32_t GetQueueFamilyIndex(EQueueType QueueType) const;
         std::uint32_t GetCurrentImageIndex() const;
 
-        FCommandBufferPool::FBufferGuard AcquireCommandBuffer(EQueueType QueueType, vk::CommandBufferLevel Level = vk::CommandBufferLevel::ePrimary);
+        FCommandBufferPool::FBufferGuard AcquireCommandBuffer(
+            EQueueType QueueType, vk::CommandBufferLevel Level = vk::CommandBufferLevel::ePrimary);
+
+        FStagingBufferPool::FBufferGuard AcquireStagingBuffer(
+            std::size_t Size, FStagingBufferPool::EPoolUsage Usage = FStagingBufferPool::EPoolUsage::kSubmit);
 
         // const vk::FormatProperties& GetFormatProperties(vk::Format Format) const;
 
@@ -129,6 +134,7 @@ namespace Npgs
     private:
         std::unique_ptr<FVulkanCore>                                           _VulkanCore;
         std::unordered_map<std::uint32_t, std::shared_ptr<FCommandBufferPool>> _CommandBufferPools;
+        std::array<std::unique_ptr<FStagingBufferPool>, 2>                     _StagingBufferPools;
         std::vector<std::pair<ECallbackType, std::string>>                     _AutoRemovedCallbacks;
         // std::array<vk::FormatProperties, magic_enum::enum_count<vk::Format>()> _FormatProperties;
     };

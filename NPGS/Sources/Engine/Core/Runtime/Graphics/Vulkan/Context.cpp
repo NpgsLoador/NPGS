@@ -49,7 +49,7 @@ namespace Npgs
                 else
                 {
                     _CommandBufferPools[_VulkanCore->GetQueueFamilyIndex(EQueueType::kCompute)] =
-                        _CommandBufferPools[_VulkanCore->GetQueueFamilyIndex(EQueueType::kGraphics)];
+                        _CommandBufferPools.at(_VulkanCore->GetQueueFamilyIndex(EQueueType::kGraphics));
                 }
             }
             if (_VulkanCore->GetQueueFamilyIndex(EQueueType::kPresent) != vk::QueueFamilyIgnored &&
@@ -64,7 +64,7 @@ namespace Npgs
                 else
                 {
                     _CommandBufferPools[_VulkanCore->GetQueueFamilyIndex(EQueueType::kPresent)] =
-                        _CommandBufferPools[_VulkanCore->GetQueueFamilyIndex(EQueueType::kGraphics)];
+                        _CommandBufferPools.at(_VulkanCore->GetQueueFamilyIndex(EQueueType::kGraphics));
                 }
             }
             if (_VulkanCore->GetQueueFamilyIndex(EQueueType::kTransfer) != vk::QueueFamilyIgnored)
@@ -76,9 +76,18 @@ namespace Npgs
                 }
                 else
                 {
-                    _CommandBufferPools[_VulkanCore->GetQueueFamilyIndex(EQueueType::kTransfer)] = _CommandBufferPools[_VulkanCore->GetQueueFamilyIndex(EQueueType::kGraphics)];
+                    _CommandBufferPools[_VulkanCore->GetQueueFamilyIndex(EQueueType::kTransfer)] =
+                        _CommandBufferPools.at(_VulkanCore->GetQueueFamilyIndex(EQueueType::kGraphics));
                 }
             }
+
+            _StagingBufferPools[std::to_underlying(FStagingBufferPool::EPoolUsage::kSubmit)] = std::make_unique<FStagingBufferPool>(
+                _VulkanCore->GetPhysicalDevice(), _VulkanCore->GetDevice(), _VulkanCore->GetVmaAllocator(),
+                4, 64, 1000, 5000, FStagingBufferPool::EPoolUsage::kSubmit, true);
+
+            _StagingBufferPools[std::to_underlying(FStagingBufferPool::EPoolUsage::kFetch)] = std::make_unique<FStagingBufferPool>(
+                _VulkanCore->GetPhysicalDevice(), _VulkanCore->GetDevice(), _VulkanCore->GetVmaAllocator(),
+                2, 8, 10000, 60000, FStagingBufferPool::EPoolUsage::kFetch, true);
         };
 
         // auto InitializeFormatProperties = [this]() -> void

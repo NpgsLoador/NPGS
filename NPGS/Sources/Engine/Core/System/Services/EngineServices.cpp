@@ -32,37 +32,7 @@ namespace Npgs
 
     void FEngineServices::InitializeResourceServices()
     {
-        FResourceServices::FStagingBufferPoolCreateInfo SubmitStagingBufferPoolCreateInfo
-        {
-            .VulkanContext            = _CoreServices->GetVulkanContext(),
-            .Allocator                = _CoreServices->GetVulkanContext()->GetVmaAllocator(),
-            .MinAvailableBufferLimit  = 4,
-            .MaxAllocatedBufferLimit  = 64,
-            .BufferReclaimThresholdMs = 1000,
-            .MaintenanceIntervalMs    = 5000,
-            .PoolUsage                = FStagingBufferPool::EPoolUsage::kSubmit,
-            .bUsingVma                = true
-        };
-
-        FResourceServices::FStagingBufferPoolCreateInfo FetchStagingBufferPoolCreateInfo
-        {
-            .VulkanContext            = _CoreServices->GetVulkanContext(),
-            .Allocator                = _CoreServices->GetVulkanContext()->GetVmaAllocator(),
-            .MinAvailableBufferLimit  = 2,
-            .MaxAllocatedBufferLimit  = 10,
-            .BufferReclaimThresholdMs = 10000,
-            .MaintenanceIntervalMs    = 600000,
-            .PoolUsage                = FStagingBufferPool::EPoolUsage::kFetch,
-            .bUsingVma                = true
-        };
-
-        FResourceServices::FResourceServicesEnableInfo ResourceServiceEnableInfo
-        {
-            .SubmitStagingBufferPoolCreateInfo = &SubmitStagingBufferPoolCreateInfo,
-            .FetchStagingBufferPoolCreateInfo  = &FetchStagingBufferPoolCreateInfo,
-        };
-
-        _ResourceServices = std::make_unique<FResourceServices>(*_CoreServices, ResourceServiceEnableInfo);
+        _ResourceServices = std::make_unique<FResourceServices>(*_CoreServices);
     }
 
     void FEngineServices::ShutdownCoreServices()

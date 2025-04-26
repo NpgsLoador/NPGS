@@ -287,9 +287,16 @@ namespace Npgs
         return _VulkanCore->GetCurrentImageIndex();
     }
 
-    NPGS_INLINE FCommandBufferPool::FBufferGuard FVulkanContext::AcquireCommandBuffer(EQueueType QueueType, vk::CommandBufferLevel Level)
+    NPGS_INLINE FCommandBufferPool::FBufferGuard
+    FVulkanContext::AcquireCommandBuffer(EQueueType QueueType, vk::CommandBufferLevel Level)
     {
         return std::move(_CommandBufferPools.at(_VulkanCore->GetQueueFamilyIndex(QueueType))->AcquireBuffer(Level));
+    }
+
+    NPGS_INLINE FStagingBufferPool::FBufferGuard
+    FVulkanContext::AcquireStagingBuffer(std::size_t Size, FStagingBufferPool::EPoolUsage Usage)
+    {
+        return std::move(_StagingBufferPools[std::to_underlying(Usage)]->AcquireBuffer(Size));
     }
 
     // NPGS_INLINE const vk::FormatProperties& FVulkanContext::GetFormatProperties(vk::Format Format) const

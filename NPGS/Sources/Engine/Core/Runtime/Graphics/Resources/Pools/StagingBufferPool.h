@@ -9,7 +9,6 @@
 
 #include "Engine/Core/Runtime/Graphics/Resources/Pools/ResourcePool.hpp"
 #include "Engine/Core/Runtime/Graphics/Resources/StagingBuffer.h"
-#include "Engine/Core/Runtime/Graphics/Vulkan/Context.h"
 
 namespace Npgs
 {
@@ -30,15 +29,15 @@ namespace Npgs
     public:
         enum class EPoolUsage : std::uint8_t
         {
-            kSubmit,
-            kFetch
+            kSubmit = 0,
+            kFetch  = 1
         };
 
     public:
         using Base = TResourcePool<FStagingBuffer, FStagingBufferCreateInfo, FStagingBufferInfo>;
         using FBufferGuard = Base::FResourceGuard;
 
-        FStagingBufferPool(FVulkanContext* VulkanContext, VmaAllocator Allocator,
+        FStagingBufferPool(vk::PhysicalDevice PhysicalDevice, vk::Device Device, VmaAllocator Allocator,
                            std::uint32_t MinAvailableBufferLimit, std::uint32_t MaxAllocatedBufferLimit,
                            std::uint32_t BufferReclaimThresholdMs, std::uint32_t MaintenanceIntervalMs,
                            EPoolUsage PoolUsage, bool bUsingVma = true);
@@ -54,7 +53,8 @@ namespace Npgs
         vk::DeviceSize AlignSize(vk::DeviceSize RequestedSize);
 
     private:
-        FVulkanContext*         _VulkanContext;
+        vk::PhysicalDevice      _PhysicalDevice;
+        vk::Device              _Device;
         VmaAllocator            _Allocator;
         VmaAllocationCreateInfo _AllocationCreateInfo;
         bool                    _bUsingVma{ true };

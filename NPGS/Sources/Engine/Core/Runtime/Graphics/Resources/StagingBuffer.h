@@ -9,7 +9,6 @@
 #include <vma/vk_mem_alloc.h>
 #include <vulkan/vulkan.hpp>
 
-#include "Engine/Core/Runtime/Graphics/Vulkan/Context.h"
 #include "Engine/Core/Runtime/Graphics/Vulkan/Wrappers.h"
 
 namespace Npgs
@@ -17,10 +16,9 @@ namespace Npgs
     class FStagingBuffer
     {
     public:
-        FStagingBuffer(FVulkanContext* VulkanContext, vk::DeviceSize Size);
-        FStagingBuffer(FVulkanContext* VulkanContext, VmaAllocator Allocator,
-                       const VmaAllocationCreateInfo* AllocationCreateInfo,
-                       const vk::BufferCreateInfo& BufferCreateInfo);
+        FStagingBuffer(vk::PhysicalDevice PhysicalDevice, vk::Device Device, vk::DeviceSize Size);
+        FStagingBuffer(vk::PhysicalDevice, vk::Device Device, VmaAllocator Allocator,
+                       const VmaAllocationCreateInfo* AllocationCreateInfo, const vk::BufferCreateInfo& BufferCreateInfo);
 
         FStagingBuffer(const FStagingBuffer&) = delete;
         FStagingBuffer(FStagingBuffer&& Other) noexcept;
@@ -54,7 +52,8 @@ namespace Npgs
         void Expand(vk::DeviceSize Size);
 
     private:
-        FVulkanContext*                      _VulkanContext;
+        vk::PhysicalDevice                   _PhysicalDevice;
+        vk::Device                           _Device;
         std::unique_ptr<FVulkanBufferMemory> _BufferMemory;
         std::unique_ptr<FVulkanImage>        _AliasedImage;
         vk::DeviceSize                       _MemoryUsage;

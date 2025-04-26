@@ -442,8 +442,7 @@ namespace Npgs
                                          vk::ImageViewType ImageViewType, vk::Format InitialFormat, vk::Format FinalFormat,
                                          std::uint32_t ArrayLayers, bool bGenerateMipmaps)
     {
-        auto* StagingBufferPool = EngineServicesGetResourceServices->GetStagingBufferPool(FStagingBufferPool::EPoolUsage::kSubmit);
-        auto  StagingBuffer     = StagingBufferPool->AcquireBuffer(ImageData.Size);
+        auto StagingBuffer = _VulkanContext->AcquireStagingBuffer(ImageData.Size);
         StagingBuffer->SubmitBufferData(0, 0, ImageData.Size, ImageData.Data.data());
 
         vk::Extent3D  Extent          = ImageData.Extent;

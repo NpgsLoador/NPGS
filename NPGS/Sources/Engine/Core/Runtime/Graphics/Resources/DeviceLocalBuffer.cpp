@@ -55,8 +55,7 @@ namespace Npgs
             return;
         }
 
-        auto* StagingBufferPool = EngineServicesGetResourceServices->GetStagingBufferPool(FStagingBufferPool::EPoolUsage::kSubmit);
-        auto  StagingBuffer     = StagingBufferPool->AcquireBuffer(Size);
+        auto StagingBuffer = _VulkanContext->AcquireStagingBuffer(Size);
         StagingBuffer->SubmitBufferData(MapOffset, TargetOffset, Size, Data);
 
         auto  BufferGuard = _VulkanContext->AcquireCommandBuffer(FVulkanContext::EQueueType::kTransfer);
@@ -95,8 +94,7 @@ namespace Npgs
             return;
         }
 
-        auto* StagingBufferPool = EngineServicesGetResourceServices->GetStagingBufferPool(FStagingBufferPool::EPoolUsage::kSubmit);
-        auto  StagingBuffer     = StagingBufferPool->AcquireBuffer(DstStride * ElementSize);
+        auto StagingBuffer     = _VulkanContext->AcquireStagingBuffer(DstStride * ElementSize);
         StagingBuffer->SubmitBufferData(MapOffset, SrcStride * ElementIndex, SrcStride * ElementSize, Data);
 
         auto  BufferGuard = _VulkanContext->AcquireCommandBuffer(FVulkanContext::EQueueType::kTransfer);
