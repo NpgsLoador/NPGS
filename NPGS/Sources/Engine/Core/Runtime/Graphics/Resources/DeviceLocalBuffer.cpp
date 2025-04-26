@@ -5,8 +5,6 @@
 #include <utility>
 #include <vector>
 
-#include <vulkan/vulkan_to_string.hpp>
-
 #include "Engine/Core/Runtime/Graphics/Resources/Pools/StagingBufferPool.h"
 #include "Engine/Core/System/Services/EngineServices.h"
 
@@ -81,9 +79,8 @@ namespace Npgs
 
             for (std::size_t i = 0; i != ElementCount; ++i)
             {
-                std::copy(static_cast<const std::byte*>(Data) + SrcStride * (i + ElementIndex),
-                          static_cast<const std::byte*>(Data) + SrcStride * (i + ElementIndex) + ElementSize,
-                          static_cast<std::byte*>(Target)     + DstStride * (i + ElementIndex));
+                std::copy_n(static_cast<const std::byte*>(Data) + SrcStride * (i + ElementIndex), ElementSize,
+                            static_cast<std::byte*>(Target)     + DstStride * (i + ElementIndex));
             }
 
             if (!_BufferMemory->GetMemory().IsPereistentlyMapped())
@@ -94,7 +91,7 @@ namespace Npgs
             return;
         }
 
-        auto StagingBuffer     = _VulkanContext->AcquireStagingBuffer(DstStride * ElementSize);
+        auto StagingBuffer = _VulkanContext->AcquireStagingBuffer(DstStride * ElementSize);
         StagingBuffer->SubmitBufferData(MapOffset, SrcStride * ElementIndex, SrcStride * ElementSize, Data);
 
         auto  BufferGuard = _VulkanContext->AcquireCommandBuffer(FVulkanContext::EQueueType::kTransfer);

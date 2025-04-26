@@ -118,7 +118,7 @@ namespace Npgs
         ImageData.Size   = static_cast<vk::DeviceSize>(Width) * Height * FormatInfo.PixelSize;
         ImageData.Extent = vk::Extent3D(Width, Height, 1);
         ImageData.Data.resize(ImageData.Size);
-        std::copy(static_cast<std::byte*>(PixelData), static_cast<std::byte*>(PixelData) + ImageData.Size, ImageData.Data.data());
+        std::copy_n(static_cast<std::byte*>(PixelData), ImageData.Size, ImageData.Data.data());
 
         return ImageData;
     }
@@ -153,7 +153,7 @@ namespace Npgs
         }
 
         ImageData.Data.resize(Size);
-        std::copy(static_cast<std::byte*>(PixelData), static_cast<std::byte*>(PixelData) + Size, ImageData.Data.data());
+        std::copy_n(static_cast<std::byte*>(PixelData), Size, ImageData.Data.data());
 
         return ImageData;
     }
@@ -189,9 +189,7 @@ namespace Npgs
 
                 ImageData.Size = static_cast<vk::DeviceSize>(Width) * Height * FormatInfo.PixelSize;
                 ImageData.Data.resize(ImageData.Size);
-                std::copy(reinterpret_cast<std::byte*>(Pixels.data()),
-                          reinterpret_cast<std::byte*>(Pixels.data()) + ImageData.Size,
-                          ImageData.Data.data());
+                std::copy_n(reinterpret_cast<std::byte*>(Pixels.data()), ImageData.Size, ImageData.Data.data());
             }
             else if (TileDesc.mode == Imf::MIPMAP_LEVELS)
             {
@@ -225,13 +223,11 @@ namespace Npgs
                     InputFile.readTiles(0, InputFile.numXTiles(MipLevel) - 1, 0, InputFile.numYTiles(MipLevel) - 1, MipLevel, MipLevel);
 
                     LevelPixels.resize(TotalSize);
-                    std::copy(Pixels.begin(), Pixels.end(), LevelPixels.begin() + LevelOffsets[MipLevel]);
+                    std::ranges::copy(Pixels, LevelPixels.begin() + LevelOffsets[MipLevel]);
                 }
 
                 ImageData.LevelOffsets = std::move(LevelOffsets);
-                std::copy(reinterpret_cast<std::byte*>(Pixels.data()),
-                          reinterpret_cast<std::byte*>(Pixels.data()) + ImageData.Size,
-                          ImageData.Data.data());
+                std::copy_n(reinterpret_cast<std::byte*>(Pixels.data()), ImageData.Size, ImageData.Data.data());
             }
         }
         else
@@ -248,9 +244,7 @@ namespace Npgs
             ImageData.Extent = vk::Extent3D(Width, Height, 1);
             ImageData.Size   = static_cast<vk::DeviceSize>(Width) * Height * FormatInfo.PixelSize;
             ImageData.Data.resize(ImageData.Size);
-            std::copy(reinterpret_cast<std::byte*>(Pixels.data()),
-                      reinterpret_cast<std::byte*>(Pixels.data()) + ImageData.Size,
-                      ImageData.Data.data());
+            std::copy_n(reinterpret_cast<std::byte*>(Pixels.data()), ImageData.Size, ImageData.Data.data());
         }
 
         return ImageData;
@@ -275,9 +269,7 @@ namespace Npgs
         ImageData.Data.resize(ImageData.Size);
         if (Channels == 4)
         {
-            std::copy(reinterpret_cast<std::byte*>(PixelData),
-                      reinterpret_cast<std::byte*>(PixelData) + ImageData.Size,
-                      ImageData.Data.data());
+            std::copy_n(reinterpret_cast<std::byte*>(PixelData), ImageData.Size, ImageData.Data.data());
         }
         else
         {
@@ -340,7 +332,7 @@ namespace Npgs
             }
 
             ImageData.Data.resize(Size);
-            std::copy(static_cast<std::byte*>(PixelData), static_cast<std::byte*>(PixelData) + Size, ImageData.Data.data());
+            std::copy_n(static_cast<std::byte*>(PixelData), Size, ImageData.Data.data());
 
             return ImageData;
         }
@@ -400,7 +392,7 @@ namespace Npgs
         }
 
         ImageData.Data.resize(Size);
-        std::copy(reinterpret_cast<std::byte*>(PixelData), reinterpret_cast<std::byte*>(PixelData) + Size, ImageData.Data.data());
+        std::copy_n(reinterpret_cast<std::byte*>(PixelData), Size, ImageData.Data.data());
 
         return ImageData;
     }

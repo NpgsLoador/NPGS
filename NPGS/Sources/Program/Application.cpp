@@ -1028,14 +1028,30 @@ namespace Npgs
             vk::Format::eBc6HUfloatBlock
         };
 
-#if !defined(_DEBUG)
-        // TextureFiles =
-        // {
-        //     "CliffSide/cliff_side_disp_4k.exr",
-        //     "CliffSide/cliff_side_diff_4k.exr",
-        //     "CliffSide/cliff_side_nor_dx_4k.exr",
-        //     "CliffSide/cliff_side_arm_4k.exr"
-        // };
+#if !defined(_DEBUG) && 0
+        TextureFiles =
+        {
+            "CliffSide/cliff_side_disp_4k.exr",
+            "CliffSide/cliff_side_diff_4k.exr",
+            "CliffSide/cliff_side_nor_dx_4k.exr",
+            "CliffSide/cliff_side_arm_4k.exr"
+        };
+
+        InitialTextureFormats =
+        {
+            vk::Format::eR16G16B16A16Sfloat,
+            vk::Format::eR16G16B16A16Sfloat,
+            vk::Format::eR16G16B16A16Sfloat,
+            vk::Format::eR16G16B16A16Sfloat
+        };
+
+        FinalTextureFormats =
+        {
+            vk::Format::eR16G16B16A16Sfloat,
+            vk::Format::eR16G16B16A16Sfloat,
+            vk::Format::eR16G16B16A16Sfloat,
+            vk::Format::eR16G16B16A16Sfloat
+        };
 #endif
 
         auto Allocator = _VulkanContext->GetVmaAllocator();

@@ -168,7 +168,7 @@ namespace Npgs
 
         if (Format == vk::Format::eUndefined)
         {
-            RawDataType = FFormatInfo::ERawDataType::kOther;
+            RawDataType = ERawDataType::kOther;
         }
         else
         {
@@ -177,15 +177,15 @@ namespace Npgs
                 Util::Equal(NumericFormat, "SNORM")   || Util::Equal(NumericFormat, "UNORM") ||
                 Util::Equal(NumericFormat, "SSCALED") || Util::Equal(NumericFormat, "USCALED"))
             {
-                RawDataType = FFormatInfo::ERawDataType::kInteger;
+                RawDataType = ERawDataType::kInteger;
             }
             else if (Util::Equal(NumericFormat, "SFLOAT") || Util::Equal(NumericFormat, "UFLOAT"))
             {
-                RawDataType = FFormatInfo::ERawDataType::kFloatingPoint;
+                RawDataType = ERawDataType::kFloatingPoint;
             }
             else
             {
-                RawDataType = FFormatInfo::ERawDataType::kInteger;
+                RawDataType = ERawDataType::kInteger;
             }
         }
     }
@@ -662,7 +662,7 @@ namespace Npgs
             Target = _MappedTargetMemory;
         }
 
-        std::copy(static_cast<const std::byte*>(Data), static_cast<const std::byte*>(Data) + Size, static_cast<std::byte*>(Target) + SubmitOffset);
+        std::copy_n(static_cast<const std::byte*>(Data), Size, static_cast<std::byte*>(Target) + SubmitOffset);
 
         if (!(_MemoryPropertyFlags & vk::MemoryPropertyFlagBits::eHostCoherent))
         {
@@ -712,7 +712,7 @@ namespace Npgs
             Data = _MappedDataMemory;
         }
 
-        std::copy(static_cast<const std::byte*>(Data) + FetchOffset, static_cast<const std::byte*>(Data) + FetchOffset + Size, static_cast<std::byte*>(Target));
+        std::copy_n(static_cast<const std::byte*>(Data) + FetchOffset, Size, static_cast<std::byte*>(Target));
 
         if (!(_MemoryPropertyFlags & vk::MemoryPropertyFlagBits::eHostCoherent))
         {
