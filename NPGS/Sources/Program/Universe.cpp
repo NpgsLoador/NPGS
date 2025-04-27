@@ -42,7 +42,7 @@ namespace Npgs
             Seeds[i] = SeedGenerator_(RandomEngine_);
         }
 
-        std::shuffle(Seeds.begin(), Seeds.end(), RandomEngine_);
+        std::ranges::shuffle(Seeds, RandomEngine_);
         std::seed_seq SeedSequence(Seeds.begin(), Seeds.end());
         RandomEngine_.seed(SeedSequence);
     }
@@ -604,7 +604,7 @@ namespace Npgs
                     Seeds[i] = SeedGenerator_(RandomEngine_);
                 }
 
-                std::shuffle(Seeds.begin(), Seeds.end(), RandomEngine_);
+                std::ranges::shuffle(Seeds, RandomEngine_);
                 std::seed_seq SeedSequence(Seeds.begin(), Seeds.end());
 
                 FStellarGenerator::FGenerationInfo GenerationInfo
@@ -699,7 +699,7 @@ namespace Npgs
 
         NpgsCoreInfo("Linking positions in octree to stellar systems...");
         StellarSystems_.reserve(StarCount_);
-        std::shuffle(Stars.begin(), Stars.end(), RandomEngine_);
+        std::ranges::shuffle(Stars, RandomEngine_);
         std::vector<glm::vec3> Slots;
         OctreeLinkToStellarSystems(Stars, Slots);
 
@@ -707,7 +707,7 @@ namespace Npgs
         GenerateBinaryStars(MaxThread);
 
         NpgsCoreInfo("Sorting...");
-        std::sort(Slots.begin(), Slots.end(), [](glm::vec3 Point1, glm::vec3 Point2)
+        std::ranges::sort(Slots, [](glm::vec3 Point1, glm::vec3 Point2)
         {
             return glm::length(Point1) < glm::length(Point2);
         });
@@ -718,7 +718,7 @@ namespace Npgs
         for (auto& System : StellarSystems_)
         {
             glm::vec3 Position = System.GetBaryPosition();
-            auto it = std::lower_bound(Slots.begin(), Slots.end(), Position, [](glm::vec3 Point1, glm::vec3 Point2) -> bool
+            auto it = std::ranges::lower_bound(Slots, Position, [](glm::vec3 Point1, glm::vec3 Point2) -> bool
             {
                 return glm::length(Point1) < glm::length(Point2);
             });
@@ -730,8 +730,7 @@ namespace Npgs
             auto& Stars = System.StarsData();
             if (Stars.size() > 1)
             {
-                std::sort(Stars.begin(), Stars.end(),
-                [](const std::unique_ptr<Astro::AStar>& Star1, std::unique_ptr<Astro::AStar>& Star2) -> bool
+                std::ranges::sort(Stars, [](const std::unique_ptr<Astro::AStar>& Star1, std::unique_ptr<Astro::AStar>& Star2) -> bool
                 {
                     return Star1->GetMass() > Star2->GetMass();
                 });
@@ -759,7 +758,7 @@ namespace Npgs
             {
                 auto& Points = Node.GetPoints();
                 return Node.GetLink([](void*) -> bool { return true; }) != nullptr &&
-                    std::find(Points.begin(), Points.end(), glm::vec3(0.0f)) != Points.end();
+                    std::ranges::find(Points, glm::vec3(0.0f)) != Points.end();
             }
             else
             {
@@ -798,7 +797,7 @@ namespace Npgs
                 Seeds[i] = SeedGenerator_(RandomEngine_);
             }
 
-            std::shuffle(Seeds.begin(), Seeds.end(), RandomEngine_);
+            std::ranges::shuffle(Seeds, RandomEngine_);
             std::seed_seq SeedSequence(Seeds.begin(), Seeds.end());
 
             FOrbitalGenerator::FGenerationInfo GenerationInfo;
@@ -878,7 +877,7 @@ namespace Npgs
         {
             LeafNodes.clear();
             Octree_->Traverse(CollectLeafNodes);
-            std::shuffle(LeafNodes.begin(), LeafNodes.end(), RandomEngine_); // 打乱叶子节点，保证随机性
+            std::ranges::shuffle(LeafNodes, RandomEngine_); // 打乱叶子节点，保证随机性
 
             // 删除或收回叶子节点，直到格子数量等于目标数量
             if (ValidLeafCount < SampleCount)
@@ -978,7 +977,7 @@ namespace Npgs
                 Seeds[i] = SeedGenerator_(RandomEngine_);
             }
 
-            std::shuffle(Seeds.begin(), Seeds.end(), RandomEngine_);
+            std::ranges::shuffle(Seeds, RandomEngine_);
             std::seed_seq SeedSequence(Seeds.begin(), Seeds.end());
 
             FStellarGenerator::FGenerationInfo GenerationInfo

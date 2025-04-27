@@ -90,7 +90,7 @@ namespace Npgs
     {
         std::vector<std::uint32_t> Seeds((*GenerationInfo.SeedSequence).size());
         GenerationInfo.SeedSequence->param(Seeds.begin());
-        std::shuffle(Seeds.begin(), Seeds.end(), RandomEngine_);
+        std::ranges::shuffle(Seeds, RandomEngine_);
         std::seed_seq ShuffledSeeds(Seeds.begin(), Seeds.end());
 
         FCivilizationGenerator::FGenerationInfo CivilizationGenerationInfo

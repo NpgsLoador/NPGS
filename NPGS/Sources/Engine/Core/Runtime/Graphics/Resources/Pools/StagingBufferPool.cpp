@@ -160,7 +160,7 @@ namespace Npgs
                 continue;
             }
 
-            std::sort(Indices.begin(), Indices.end(), [&](std::size_t Lhs, std::size_t Rhs) -> bool
+            std::ranges::sort(Indices, [&](std::size_t Lhs, std::size_t Rhs) -> bool
             {
                 const auto& BufferA = *AvailableResources_[Lhs];
                 const auto& BufferB = *AvailableResources_[Rhs];
@@ -185,7 +185,7 @@ namespace Npgs
             }
         }
 
-        std::sort(BufferNeedRemove.begin(), BufferNeedRemove.end(), std::greater<std::size_t>{});
+        std::ranges::sort(BufferNeedRemove, std::greater<std::size_t>{});
         for (std::size_t Index : BufferNeedRemove)
         {
             if (AvailableResources_.size() < TargetCount)
@@ -225,7 +225,7 @@ namespace Npgs
                 IndexedBuffers.emplace_back(BufferInfo.Size, i);
             }
 
-            std::sort(IndexedBuffers.begin(), IndexedBuffers.end(), [&](const auto& Lhs, const auto& Rhs) -> bool
+            std::ranges::sort(IndexedBuffers, [&](const auto& Lhs, const auto& Rhs) -> bool
             {
                 if (Lhs.first != Rhs.first)
                 {
@@ -259,7 +259,7 @@ namespace Npgs
                 }
             }
 
-            std::sort(NeedRemoveIndices.begin(), NeedRemoveIndices.end(), std::greater<std::size_t>{});
+            std::ranges::sort(NeedRemoveIndices, std::greater<std::size_t>{});
             for (std::size_t Index : NeedRemoveIndices)
             {
                 if (AvailableResources_.size() < TargetCount)
@@ -294,7 +294,7 @@ namespace Npgs
             }
         }
 
-        std::sort(NeedRemoveIndices.begin(), NeedRemoveIndices.end(), std::greater<std::size_t>{});
+        std::ranges::sort(NeedRemoveIndices, std::greater<std::size_t>{});
         for (std::size_t Index : NeedRemoveIndices)
         {
             AvailableResources_.erase(AvailableResources_.begin() + Index);
@@ -303,7 +303,7 @@ namespace Npgs
 
     vk::DeviceSize FStagingBufferPool::AlignSize(vk::DeviceSize RequestedSize)
     {
-        auto it = std::lower_bound(kSizeTiers.begin(), kSizeTiers.end(), RequestedSize);
+        auto it = std::ranges::lower_bound(kSizeTiers, RequestedSize);
         if (it != kSizeTiers.end())
         {
             return *it;

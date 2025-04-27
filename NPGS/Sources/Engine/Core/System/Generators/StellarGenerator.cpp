@@ -808,7 +808,7 @@ namespace Npgs
         {
             const std::array kPresetFeH{ -4.0f, -3.0f, -2.0f, -1.5f, -1.0f, -0.5f, 0.0f, 0.5f };
 
-            float ClosestFeH = *std::min_element(kPresetFeH.begin(), kPresetFeH.end(), [TargetFeH](float Lhs, float Rhs) -> bool
+            float ClosestFeH = *std::ranges::min_element(kPresetFeH, [TargetFeH](float Lhs, float Rhs) -> bool
             {
                 return std::abs(Lhs - TargetFeH) < std::abs(Rhs - TargetFeH);
             });
@@ -845,7 +845,7 @@ namespace Npgs
             Masses = kMassFilesCache_[PrefixDirectory];
         }
 
-        auto it = std::lower_bound(Masses.begin(), Masses.end(), TargetMassSol);
+        auto it = std::ranges::lower_bound(Masses, TargetMassSol);
         if (it == Masses.end())
         {
             if (!bIsWhiteDwarf)

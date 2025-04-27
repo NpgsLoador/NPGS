@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cmath>
+#include <algorithm>
 #include <array>
 #include <concepts>
 #include <functional>
@@ -120,7 +121,7 @@ namespace Npgs
 
         void DeletePoint(glm::vec3 Point)
         {
-            auto it = std::find(Points_.begin(), Points_.end(), Point);
+            auto it = std::ranges::find(Points_, Point);
             if (it != Points_.end())
             {
                 Points_.erase(it);
@@ -373,7 +374,7 @@ namespace Npgs
                 if (Node->IsLeafNode())
                 {
                     auto& Points = Node->GetPoints();
-                    auto it = std::find(Points.begin(), Points.end(), Point);
+                    auto it = std::ranges::find(Points, Point);
                     if (it != Points.end())
                     {
                         Points.erase(it);

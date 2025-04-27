@@ -86,7 +86,7 @@ namespace Npgs
 
             if (!bSorted)
             {
-                std::sort(Data_.begin(), Data_.end(), [&](const FRowArray& Lhs, const FRowArray& Rhs) -> bool
+                std::ranges::sort(Data_, [&](const FRowArray& Lhs, const FRowArray& Rhs) -> bool
                 {
                     return Comparator(Lhs[DataIndex], Rhs[DataIndex]);
                 });

@@ -152,8 +152,7 @@ namespace Npgs
             {
                 if (MatchedResources.size() > 1)
                 {
-                    std::sort(MatchedResources.begin(), MatchedResources.end(),
-                    [](const auto& Lhs, const auto& Rhs) -> bool
+                    std::ranges::sort(MatchedResources, [](const auto& Lhs, const auto& Rhs) -> bool
                     {
                         return (*Lhs)->UsageCount       != (*Rhs)->UsageCount ?
                                (*Lhs)->UsageCount        > (*Rhs)->UsageCount :
@@ -182,7 +181,7 @@ namespace Npgs
 
             constexpr std::uint32_t kMaxWaitTimeMs = 2000;
             if (Condition_.wait_for(Lock, std::chrono::milliseconds(kMaxWaitTimeMs),
-                [this, &Pred]() -> bool { return std::any_of(AvailableResources_.begin(), AvailableResources_.end(), Pred); }))
+                [this, &Pred]() -> bool { return std::ranges::any_of(AvailableResources_, Pred); }))
             {
                 Lock.unlock();
                 return AcquireResource(CreateInfo, Pred);
@@ -305,8 +304,7 @@ namespace Npgs
 
             if (AvailableResources_.size() > TargetCount)
             {
-                std::sort(AvailableResources_.begin(), AvailableResources_.end(),
-                [](const auto& Lhs, const auto& Rhs) -> bool
+                std::ranges::sort(AvailableResources_, [](const auto& Lhs, const auto& Rhs) -> bool
                 {
                     return Lhs->UsageCount > Rhs->UsageCount;
                 });
