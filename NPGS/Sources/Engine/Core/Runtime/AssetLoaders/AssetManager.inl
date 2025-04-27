@@ -1,5 +1,3 @@
-#include "AssetManager.h"
-
 #include "Engine/Core/Base/Base.h"
 
 namespace Npgs
@@ -8,7 +6,7 @@ namespace Npgs
     requires CAssetCompatible<AssetType>
     inline void FAssetManager::AddAsset(const std::string& Name, AssetType&& Asset)
     {
-        _Assets.emplace(Name, FManagedAsset(
+        Assets_.emplace(Name, FManagedAsset(
             static_cast<void*>(new AssetType(std::move(Asset))),
             FTypeErasedDeleter(static_cast<AssetType*>(nullptr))
         ));
@@ -18,8 +16,8 @@ namespace Npgs
     requires CAssetCompatible<AssetType>
     inline void FAssetManager::AddAsset(const std::string& Name, Args&&... ConstructArgs)
     {
-        _Assets.emplace(Name, FManagedAsset(
-            static_cast<void*>(new AssetType(_VulkanContext, std::forward<Args>(ConstructArgs)...)),
+        Assets_.emplace(Name, FManagedAsset(
+            static_cast<void*>(new AssetType(VulkanContext_, std::forward<Args>(ConstructArgs)...)),
             FTypeErasedDeleter(static_cast<AssetType*>(nullptr))
         ));
     }
@@ -28,7 +26,7 @@ namespace Npgs
     requires CAssetCompatible<AssetType>
     inline AssetType* FAssetManager::GetAsset(const std::string& Name)
     {
-        if (auto it = _Assets.find(Name); it != _Assets.end())
+        if (auto it = Assets_.find(Name); it != Assets_.end())
         {
             return static_cast<AssetType*>(it->second.get());
         }
@@ -41,7 +39,7 @@ namespace Npgs
     inline std::vector<AssetType*> FAssetManager::GetAssets()
     {
         std::vector<AssetType*> Result;
-        for (const auto& [Name, Asset] : _Assets)
+        for (const auto& [Name, Asset] : Assets_)
         {
             if (auto* AssetPtr = dynamic_cast<AssetType*>(Asset.get()))
             {
@@ -54,12 +52,12 @@ namespace Npgs
 
     NPGS_INLINE void FAssetManager::RemoveAsset(const std::string& Name)
     {
-        _Assets.erase(Name);
+        Assets_.erase(Name);
     }
 
     NPGS_INLINE void FAssetManager::ClearAssets()
     {
-        _Assets.clear();
+        Assets_.clear();
     }
 
 } // namespace Npgs

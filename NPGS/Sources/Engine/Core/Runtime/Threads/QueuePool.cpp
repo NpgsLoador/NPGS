@@ -4,28 +4,27 @@
 #include <utility>
 
 #include <vulkan/vulkan_to_string.hpp>
-
 #include "Engine/Utils/Logger.h"
 
 namespace Npgs
 {
     FQueuePool::FQueueGuard::FQueueGuard(FQueuePool* Pool, FQueueInfo&& QueueInfo)
-        : _Pool(Pool)
-        , _QueueInfo(std::exchange(QueueInfo, {}))
+        : Pool_(Pool)
+        , QueueInfo_(std::exchange(QueueInfo, {}))
     {
     }
 
     FQueuePool::FQueueGuard::FQueueGuard(FQueueGuard&& Other) noexcept
-        : _Pool(std::exchange(Other._Pool, nullptr))
-        , _QueueInfo(std::exchange(Other._QueueInfo, {}))
+        : Pool_(std::exchange(Other.Pool_, nullptr))
+        , QueueInfo_(std::exchange(Other.QueueInfo_, {}))
     {
     }
 
     FQueuePool::FQueueGuard::~FQueueGuard()
     {
-        if (_Pool != nullptr && _QueueInfo.Queue)
+        if (Pool_ != nullptr && QueueInfo_.Queue)
         {
-            _Pool->ReleaseQueue(std::move(_QueueInfo));
+            Pool_->ReleaseQueue(std::move(QueueInfo_));
         }
     }
 
@@ -33,8 +32,8 @@ namespace Npgs
     {
         if (this != &Other)
         {
-            _Pool      = std::exchange(Other._Pool, nullptr);
-            _QueueInfo = std::exchange(Other._QueueInfo, {});
+            Pool_      = std::exchange(Other.Pool_, nullptr);
+            QueueInfo_ = std::exchange(Other.QueueInfo_, {});
         }
 
         return *this;
@@ -42,19 +41,19 @@ namespace Npgs
 
     vk::Queue FQueuePool::FQueueGuard::Release()
     {
-        _Pool = nullptr;
-        return _QueueInfo.Queue;
+        Pool_ = nullptr;
+        return QueueInfo_.Queue;
     }
 
     FQueuePool::FQueuePool(vk::Device Device)
-        : _Device(Device)
+        : Device_(Device)
     {
     }
 
     FQueuePool::FQueueGuard FQueuePool::AcquireQueue(vk::QueueFlags QueueFlags)
     {
-        std::uint32_t Index = _QueueFamilyIndices.at(QueueFlags);
-        auto& Pool = _QueueFamilyPools.at(Index);
+        std::uint32_t Index = QueueFamilyIndices_.at(QueueFlags);
+        auto& Pool = QueueFamilyPools_.at(Index);
 
         vk::Queue Queue;
         if (Pool.Queues.try_dequeue(Queue))
@@ -63,11 +62,11 @@ namespace Npgs
             return FQueueGuard(this, { Queue, QueueFlags });
         }
 
-        std::unique_lock Lock(_Mutex);
+        std::unique_lock Lock(Mutex_);
         if (Pool.BusyQueueCount.load() >= Pool.TotalQueueCount)
         {
             auto CurrentThread = std::make_shared<std::condition_variable>();
-            _WaitQueue.push(CurrentThread);
+            WaitQueue_.push(CurrentThread);
 
             CurrentThread->wait(Lock, [this, &Pool, &Queue]() -> bool { return Pool.Queues.try_dequeue(Queue); });
 
@@ -80,33 +79,33 @@ namespace Npgs
 
     void FQueuePool::Register(vk::QueueFlags QueueFlags, std::uint32_t QueueFamilyIndex, std::uint32_t QueueCount)
     {
-        if (_QueueFamilyIndices.find(QueueFlags) != _QueueFamilyIndices.end())
+        if (QueueFamilyIndices_.find(QueueFlags) != QueueFamilyIndices_.end())
         {
             NpgsCoreWarn("Queue family {} already registered: {}", QueueFamilyIndex, vk::to_string(QueueFlags));
             return;
         }
 
-        _QueueFamilyIndices[QueueFlags] = QueueFamilyIndex;
-        auto& Pool = _QueueFamilyPools[QueueFamilyIndex];
+        QueueFamilyIndices_[QueueFlags] = QueueFamilyIndex;
+        auto& Pool = QueueFamilyPools_[QueueFamilyIndex];
         Pool.TotalQueueCount = QueueCount;
         for (std::uint32_t i = 0; i != QueueCount; ++i)
         {
-            vk::Queue Queue = _Device.getQueue(QueueFamilyIndex, i);
+            vk::Queue Queue = Device_.getQueue(QueueFamilyIndex, i);
             Pool.Queues.enqueue(std::move(Queue));
         }
     }
 
     void FQueuePool::ReleaseQueue(FQueueInfo&& QueueInfo)
     {
-        std::uint32_t Index = _QueueFamilyIndices.at(QueueInfo.QueueFlags);
-        auto& Pool = _QueueFamilyPools.at(Index);
+        std::uint32_t Index = QueueFamilyIndices_.at(QueueInfo.QueueFlags);
+        auto& Pool = QueueFamilyPools_.at(Index);
 
         if (Pool.Queues.try_enqueue(QueueInfo.Queue))
         {
-            if (!_WaitQueue.empty())
+            if (!WaitQueue_.empty())
             {
-                auto TopThread = _WaitQueue.front();
-                _WaitQueue.pop();
+                auto TopThread = WaitQueue_.front();
+                WaitQueue_.pop();
                 TopThread->notify_one();
             }
             --Pool.BusyQueueCount;

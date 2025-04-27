@@ -1,14 +1,14 @@
-#include "EngineServices.h"
+#include "Engine/Core/Base/Base.h"
 
 namespace Npgs
 {
     NPGS_INLINE FCoreServices* Npgs::FEngineServices::GetCoreServices() const
     {
-        return _CoreServices.get();
+        return CoreServices_.get();
     }
 
     NPGS_INLINE FResourceServices* Npgs::FEngineServices::GetResourceServices() const
     {
-        return _ResourceServices.get();
+        return ResourceServices_.get();
     }
 } // namespace Npgs

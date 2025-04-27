@@ -59,32 +59,32 @@ namespace Npgs
         void UpdateVectors();
 
     private:
-        EMode _Mode{ EMode::kFree };
+        EMode Mode_{ EMode::kFree };
 
         // Camera status parameters
-        glm::quat _Orientation{ 1.0f, 0.0f, 0.0f, 0.0f };
-        glm::vec3 _Position;
-        glm::vec3 _Front;
-        glm::vec3 _Up;
-        glm::vec3 _Right;
-        glm::vec3 _WorldUp;
+        glm::quat Orientation_{ 1.0f, 0.0f, 0.0f, 0.0f };
+        glm::vec3 Position_;
+        glm::vec3 Front_;
+        glm::vec3 Up_;
+        glm::vec3 Right_;
+        glm::vec3 WorldUp_;
 
-        glm::vec3 _OrbitTarget{};
-        glm::vec3 _OrbitAxis{};
-        glm::vec2 _PrevOffset{};
-        glm::vec2 _TargetOffset{};
-        glm::vec2 _OrbitalVelocity{};
+        glm::vec3 OrbitTarget_{};
+        glm::vec3 OrbitAxis_{};
+        glm::vec2 PrevOffset_{};
+        glm::vec2 TargetOffset_{};
+        glm::vec2 OrbitalVelocity_{};
 
-        float _InertiaDecay{ 0.5f };
-        float _VelocityThreshold{ 0.001f };
+        float InertiaDecay_{ 0.5f };
+        float VelocityThreshold_{ 0.001f };
 
-        float _Sensitivity;
-        float _Speed;
-        float _Zoom;
-        float _SmoothCoefficient;
-        float _OrbitRadius{};
+        float Sensitivity_;
+        float Speed_;
+        float Zoom_;
+        float SmoothCoefficient_;
+        float OrbitRadius_{};
 
-        bool _bCameraAligned{ false };
+        bool bCameraAligned_{ false };
     };
 } // namespace Npgs
 

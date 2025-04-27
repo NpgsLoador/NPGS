@@ -52,13 +52,13 @@ namespace Npgs
         void Expand(vk::DeviceSize Size);
 
     private:
-        vk::PhysicalDevice                   _PhysicalDevice;
-        vk::Device                           _Device;
-        std::unique_ptr<FVulkanBufferMemory> _BufferMemory;
-        std::unique_ptr<FVulkanImage>        _AliasedImage;
-        vk::DeviceSize                       _MemoryUsage;
-        VmaAllocator                         _Allocator;
-        const VmaAllocationCreateInfo*       _AllocationCreateInfo;
+        vk::PhysicalDevice                   PhysicalDevice_;
+        vk::Device                           Device_;
+        std::unique_ptr<FVulkanBufferMemory> BufferMemory_;
+        std::unique_ptr<FVulkanImage>        AliasedImage_;
+        vk::DeviceSize                       MemoryUsage_;
+        VmaAllocator                         Allocator_;
+        const VmaAllocationCreateInfo*       AllocationCreateInfo_;
     };
 } // namespace Npgs
 

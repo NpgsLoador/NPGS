@@ -97,8 +97,8 @@ namespace Npgs
     // ---------------------------------
     FStellarGenerator::FStellarGenerator(const FGenerationInfo& GenerationInfo)
         :
-        _RandomEngine(*GenerationInfo.SeedSequence),
-        _MagneticGenerators
+        RandomEngine_(*GenerationInfo.SeedSequence),
+        MagneticGenerators_
         {
             Util::TUniformRealDistribution<>(std::log10(500.0f), std::log10(3000.0f)),
             Util::TUniformRealDistribution<>(1.0f, 3.0f),
@@ -110,7 +110,7 @@ namespace Npgs
             Util::TUniformRealDistribution<>(1e9f, 1e11f)
         },
 
-        _FeHGenerators
+        FeHGenerators_
         {
             std::make_unique<Util::TLogNormalDistribution<>>(-0.3f, 0.5f),
             std::make_unique<Util::TNormalDistribution<>>(-0.3f, 0.15f),
@@ -118,125 +118,125 @@ namespace Npgs
             std::make_unique<Util::TNormalDistribution<>>(0.05f, 0.16f)
         },
 
-        _SpinGenerators
+        SpinGenerators_
         {
             Util::TUniformRealDistribution<>(3.0f, 5.0f),
             Util::TUniformRealDistribution<>(0.001f, 0.998f)
         },
 
-        _AgeGenerator(GenerationInfo.AgeLowerLimit, GenerationInfo.AgeUpperLimit),
-        _CommonGenerator(0.0f, 1.0f),
+        AgeGenerator_(GenerationInfo.AgeLowerLimit, GenerationInfo.AgeUpperLimit),
+        CommonGenerator_(0.0f, 1.0f),
 
-        _LogMassGenerator(GenerationInfo.StellarTypeOption == FStellarGenerator::EStellarTypeGenerationOption::kMergeStar
+        LogMassGenerator_(GenerationInfo.StellarTypeOption == FStellarGenerator::EStellarTypeGenerationOption::kMergeStar
                           ? std::make_unique<Util::TUniformRealDistribution<>>(0.0f, 1.0f)
                           : std::make_unique<Util::TUniformRealDistribution<>>(std::log10(GenerationInfo.MassLowerLimit), std::log10(GenerationInfo.MassUpperLimit))),
 
-        _MassPdfs(GenerationInfo.MassPdfs),
-        _MassMaxPdfs(GenerationInfo.MassMaxPdfs),
-        _AgeMaxPdf(GenerationInfo.AgeMaxPdf),
-        _AgePdf(GenerationInfo.AgePdf),
-        _UniverseAge(GenerationInfo.UniverseAge),
-        _AgeLowerLimit(GenerationInfo.AgeLowerLimit),
-        _AgeUpperLimit(GenerationInfo.AgeUpperLimit),
-        _FeHLowerLimit(GenerationInfo.FeHLowerLimit),
-        _FeHUpperLimit(GenerationInfo.FeHUpperLimit),
-        _MassLowerLimit(GenerationInfo.MassLowerLimit),
-        _MassUpperLimit(GenerationInfo.MassUpperLimit),
-        _CoilTemperatureLimit(GenerationInfo.CoilTemperatureLimit),
-        _dEpdM(GenerationInfo.dEpdM),
+        MassPdfs_(GenerationInfo.MassPdfs),
+        MassMaxPdfs_(GenerationInfo.MassMaxPdfs),
+        AgeMaxPdf_(GenerationInfo.AgeMaxPdf),
+        AgePdf_(GenerationInfo.AgePdf),
+        UniverseAge_(GenerationInfo.UniverseAge),
+        AgeLowerLimit_(GenerationInfo.AgeLowerLimit),
+        AgeUpperLimit_(GenerationInfo.AgeUpperLimit),
+        FeHLowerLimit_(GenerationInfo.FeHLowerLimit),
+        FeHUpperLimit_(GenerationInfo.FeHUpperLimit),
+        MassLowerLimit_(GenerationInfo.MassLowerLimit),
+        MassUpperLimit_(GenerationInfo.MassUpperLimit),
+        CoilTemperatureLimit_(GenerationInfo.CoilTemperatureLimit),
+        dEpdM_(GenerationInfo.dEpdM),
 
-        _AgeDistribution(GenerationInfo.AgeDistribution),
-        _FeHDistribution(GenerationInfo.FeHDistribution),
-        _MassDistribution(GenerationInfo.MassDistribution),
-        _StellarTypeOption(GenerationInfo.StellarTypeOption),
-        _MultiplicityOption(GenerationInfo.MultiplicityOption)
+        AgeDistribution_(GenerationInfo.AgeDistribution),
+        FeHDistribution_(GenerationInfo.FeHDistribution),
+        MassDistribution_(GenerationInfo.MassDistribution),
+        StellarTypeOption_(GenerationInfo.StellarTypeOption),
+        MultiplicityOption_(GenerationInfo.MultiplicityOption)
     {
         InitializeMistData();
         InitializePdfs();
     }
 
     FStellarGenerator::FStellarGenerator(const FStellarGenerator& Other)
-        : _RandomEngine(Other._RandomEngine)
-        , _MagneticGenerators(Other._MagneticGenerators)
-        , _SpinGenerators(Other._SpinGenerators)
-        , _AgeGenerator(Other._AgeGenerator)
-        , _CommonGenerator(Other._CommonGenerator)
-        , _MassPdfs(Other._MassPdfs)
-        , _MassMaxPdfs(Other._MassMaxPdfs)
-        , _AgeMaxPdf(Other._AgeMaxPdf)
-        , _AgePdf(Other._AgePdf)
-        , _UniverseAge(Other._UniverseAge)
-        , _AgeLowerLimit(Other._AgeLowerLimit)
-        , _AgeUpperLimit(Other._AgeUpperLimit)
-        , _FeHLowerLimit(Other._FeHLowerLimit)
-        , _FeHUpperLimit(Other._FeHUpperLimit)
-        , _MassLowerLimit(Other._MassLowerLimit)
-        , _MassUpperLimit(Other._MassUpperLimit)
-        , _CoilTemperatureLimit(Other._CoilTemperatureLimit)
-        , _dEpdM(Other._dEpdM)
-        , _AgeDistribution(Other._AgeDistribution)
-        , _FeHDistribution(Other._FeHDistribution)
-        , _MassDistribution(Other._MassDistribution)
-        , _StellarTypeOption(Other._StellarTypeOption)
-        , _MultiplicityOption(Other._MultiplicityOption)
+        : RandomEngine_(Other.RandomEngine_)
+        , MagneticGenerators_(Other.MagneticGenerators_)
+        , SpinGenerators_(Other.SpinGenerators_)
+        , AgeGenerator_(Other.AgeGenerator_)
+        , CommonGenerator_(Other.CommonGenerator_)
+        , MassPdfs_(Other.MassPdfs_)
+        , MassMaxPdfs_(Other.MassMaxPdfs_)
+        , AgeMaxPdf_(Other.AgeMaxPdf_)
+        , AgePdf_(Other.AgePdf_)
+        , UniverseAge_(Other.UniverseAge_)
+        , AgeLowerLimit_(Other.AgeLowerLimit_)
+        , AgeUpperLimit_(Other.AgeUpperLimit_)
+        , FeHLowerLimit_(Other.FeHLowerLimit_)
+        , FeHUpperLimit_(Other.FeHUpperLimit_)
+        , MassLowerLimit_(Other.MassLowerLimit_)
+        , MassUpperLimit_(Other.MassUpperLimit_)
+        , CoilTemperatureLimit_(Other.CoilTemperatureLimit_)
+        , dEpdM_(Other.dEpdM_)
+        , AgeDistribution_(Other.AgeDistribution_)
+        , FeHDistribution_(Other.FeHDistribution_)
+        , MassDistribution_(Other.MassDistribution_)
+        , StellarTypeOption_(Other.StellarTypeOption_)
+        , MultiplicityOption_(Other.MultiplicityOption_)
     {
-        if (Other._LogMassGenerator != nullptr)
+        if (Other.LogMassGenerator_ != nullptr)
         {
-            _LogMassGenerator = std::make_unique<Util::TUniformRealDistribution<>>(
-                std::log10(Other._MassLowerLimit), std::log10(Other._MassUpperLimit));
+            LogMassGenerator_ = std::make_unique<Util::TUniformRealDistribution<>>(
+                std::log10(Other.MassLowerLimit_), std::log10(Other.MassUpperLimit_));
         }
 
-        if (Other._FeHGenerators[0] != nullptr)
+        if (Other.FeHGenerators_[0] != nullptr)
         {
-            auto* LogNormal = dynamic_cast<Util::TLogNormalDistribution<>*>(Other._FeHGenerators[0].get());
-            _FeHGenerators[0] = std::make_unique<Util::TLogNormalDistribution<>>(*LogNormal);
+            auto* LogNormal = dynamic_cast<Util::TLogNormalDistribution<>*>(Other.FeHGenerators_[0].get());
+            FeHGenerators_[0] = std::make_unique<Util::TLogNormalDistribution<>>(*LogNormal);
         }
 
-        if (Other._FeHGenerators[1] != nullptr)
+        if (Other.FeHGenerators_[1] != nullptr)
         {
-            auto* Normal = dynamic_cast<Util::TNormalDistribution<>*>(Other._FeHGenerators[1].get());
-            _FeHGenerators[1] = std::make_unique<Util::TNormalDistribution<>>(*Normal);
+            auto* Normal = dynamic_cast<Util::TNormalDistribution<>*>(Other.FeHGenerators_[1].get());
+            FeHGenerators_[1] = std::make_unique<Util::TNormalDistribution<>>(*Normal);
         }
 
-        if (Other._FeHGenerators[2] != nullptr)
+        if (Other.FeHGenerators_[2] != nullptr)
         {
-            auto* Normal = dynamic_cast<Util::TNormalDistribution<>*>(Other._FeHGenerators[2].get());
-            _FeHGenerators[2] = std::make_unique<Util::TNormalDistribution<>>(*Normal);
+            auto* Normal = dynamic_cast<Util::TNormalDistribution<>*>(Other.FeHGenerators_[2].get());
+            FeHGenerators_[2] = std::make_unique<Util::TNormalDistribution<>>(*Normal);
         }
 
-        if (Other._FeHGenerators[3] != nullptr)
+        if (Other.FeHGenerators_[3] != nullptr)
         {
-            auto* Normal = dynamic_cast<Util::TNormalDistribution<>*>(Other._FeHGenerators[3].get());
-            _FeHGenerators[3] = std::make_unique<Util::TNormalDistribution<>>(*Normal);
+            auto* Normal = dynamic_cast<Util::TNormalDistribution<>*>(Other.FeHGenerators_[3].get());
+            FeHGenerators_[3] = std::make_unique<Util::TNormalDistribution<>>(*Normal);
         }
     }
 
     FStellarGenerator::FStellarGenerator(FStellarGenerator&& Other) noexcept
-        : _RandomEngine(std::move(Other._RandomEngine))
-        , _MagneticGenerators(std::move(Other._MagneticGenerators))
-        , _FeHGenerators(std::move(Other._FeHGenerators))
-        , _SpinGenerators(std::move(Other._SpinGenerators))
-        , _AgeGenerator(std::move(Other._AgeGenerator))
-        , _CommonGenerator(std::move(Other._CommonGenerator))
-        , _LogMassGenerator(std::move(Other._LogMassGenerator))
-        , _MassPdfs(std::move(Other._MassPdfs))
-        , _MassMaxPdfs(std::move(Other._MassMaxPdfs))
-        , _AgeMaxPdf(std::move(Other._AgeMaxPdf))
-        , _AgePdf(std::move(Other._AgePdf))
-        , _UniverseAge(std::exchange(Other._UniverseAge, 0.0f))
-        , _AgeLowerLimit(std::exchange(Other._AgeLowerLimit, 0.0f))
-        , _AgeUpperLimit(std::exchange(Other._AgeUpperLimit, 0.0f))
-        , _FeHLowerLimit(std::exchange(Other._FeHLowerLimit, 0.0f))
-        , _FeHUpperLimit(std::exchange(Other._FeHUpperLimit, 0.0f))
-        , _MassLowerLimit(std::exchange(Other._MassLowerLimit, 0.0f))
-        , _MassUpperLimit(std::exchange(Other._MassUpperLimit, 0.0f))
-        , _CoilTemperatureLimit(std::exchange(Other._CoilTemperatureLimit, 0.0f))
-        , _dEpdM(std::exchange(Other._dEpdM, 0.0f))
-        , _AgeDistribution(std::exchange(Other._AgeDistribution, {}))
-        , _FeHDistribution(std::exchange(Other._FeHDistribution, {}))
-        , _MassDistribution(std::exchange(Other._MassDistribution, {}))
-        , _StellarTypeOption(std::exchange(Other._StellarTypeOption, {}))
-        , _MultiplicityOption(std::exchange(Other._MultiplicityOption, {}))
+        : RandomEngine_(std::move(Other.RandomEngine_))
+        , MagneticGenerators_(std::move(Other.MagneticGenerators_))
+        , FeHGenerators_(std::move(Other.FeHGenerators_))
+        , SpinGenerators_(std::move(Other.SpinGenerators_))
+        , AgeGenerator_(std::move(Other.AgeGenerator_))
+        , CommonGenerator_(std::move(Other.CommonGenerator_))
+        , LogMassGenerator_(std::move(Other.LogMassGenerator_))
+        , MassPdfs_(std::move(Other.MassPdfs_))
+        , MassMaxPdfs_(std::move(Other.MassMaxPdfs_))
+        , AgeMaxPdf_(std::move(Other.AgeMaxPdf_))
+        , AgePdf_(std::move(Other.AgePdf_))
+        , UniverseAge_(std::exchange(Other.UniverseAge_, 0.0f))
+        , AgeLowerLimit_(std::exchange(Other.AgeLowerLimit_, 0.0f))
+        , AgeUpperLimit_(std::exchange(Other.AgeUpperLimit_, 0.0f))
+        , FeHLowerLimit_(std::exchange(Other.FeHLowerLimit_, 0.0f))
+        , FeHUpperLimit_(std::exchange(Other.FeHUpperLimit_, 0.0f))
+        , MassLowerLimit_(std::exchange(Other.MassLowerLimit_, 0.0f))
+        , MassUpperLimit_(std::exchange(Other.MassUpperLimit_, 0.0f))
+        , CoilTemperatureLimit_(std::exchange(Other.CoilTemperatureLimit_, 0.0f))
+        , dEpdM_(std::exchange(Other.dEpdM_, 0.0f))
+        , AgeDistribution_(std::exchange(Other.AgeDistribution_, {}))
+        , FeHDistribution_(std::exchange(Other.FeHDistribution_, {}))
+        , MassDistribution_(std::exchange(Other.MassDistribution_, {}))
+        , StellarTypeOption_(std::exchange(Other.StellarTypeOption_, {}))
+        , MultiplicityOption_(std::exchange(Other.MultiplicityOption_, {}))
     {
     }
 
@@ -244,55 +244,55 @@ namespace Npgs
     {
         if (this != &Other)
         {
-            _RandomEngine         = Other._RandomEngine;
-            _MagneticGenerators   = Other._MagneticGenerators;
-            _SpinGenerators       = Other._SpinGenerators;
-            _AgeGenerator         = Other._AgeGenerator;
-            _CommonGenerator      = Other._CommonGenerator;
-            _MassPdfs             = Other._MassPdfs;
-            _MassMaxPdfs          = Other._MassMaxPdfs;
-            _AgeMaxPdf            = Other._AgeMaxPdf;
-            _AgePdf               = Other._AgePdf;
-            _UniverseAge          = Other._UniverseAge;
-            _AgeLowerLimit        = Other._AgeLowerLimit;
-            _AgeUpperLimit        = Other._AgeUpperLimit;
-            _FeHLowerLimit        = Other._FeHLowerLimit;
-            _FeHUpperLimit        = Other._FeHUpperLimit;
-            _MassLowerLimit       = Other._MassLowerLimit;
-            _MassUpperLimit       = Other._MassUpperLimit;
-            _CoilTemperatureLimit = Other._CoilTemperatureLimit;
-            _dEpdM                = Other._dEpdM;
-            _AgeDistribution      = Other._AgeDistribution;
-            _FeHDistribution      = Other._FeHDistribution;
-            _MassDistribution     = Other._MassDistribution;
-            _StellarTypeOption    = Other._StellarTypeOption;
-            _MultiplicityOption   = Other._MultiplicityOption;
-            _LogMassGenerator     = Other._LogMassGenerator
-                                  ? std::make_unique<Util::TUniformRealDistribution<>>(std::log10(Other._MassLowerLimit), std::log10(Other._MassUpperLimit))
+            RandomEngine_         = Other.RandomEngine_;
+            MagneticGenerators_   = Other.MagneticGenerators_;
+            SpinGenerators_       = Other.SpinGenerators_;
+            AgeGenerator_         = Other.AgeGenerator_;
+            CommonGenerator_      = Other.CommonGenerator_;
+            MassPdfs_             = Other.MassPdfs_;
+            MassMaxPdfs_          = Other.MassMaxPdfs_;
+            AgeMaxPdf_            = Other.AgeMaxPdf_;
+            AgePdf_               = Other.AgePdf_;
+            UniverseAge_          = Other.UniverseAge_;
+            AgeLowerLimit_        = Other.AgeLowerLimit_;
+            AgeUpperLimit_        = Other.AgeUpperLimit_;
+            FeHLowerLimit_        = Other.FeHLowerLimit_;
+            FeHUpperLimit_        = Other.FeHUpperLimit_;
+            MassLowerLimit_       = Other.MassLowerLimit_;
+            MassUpperLimit_       = Other.MassUpperLimit_;
+            CoilTemperatureLimit_ = Other.CoilTemperatureLimit_;
+            dEpdM_                = Other.dEpdM_;
+            AgeDistribution_      = Other.AgeDistribution_;
+            FeHDistribution_      = Other.FeHDistribution_;
+            MassDistribution_     = Other.MassDistribution_;
+            StellarTypeOption_    = Other.StellarTypeOption_;
+            MultiplicityOption_   = Other.MultiplicityOption_;
+            LogMassGenerator_     = Other.LogMassGenerator_
+                                  ? std::make_unique<Util::TUniformRealDistribution<>>(std::log10(Other.MassLowerLimit_), std::log10(Other.MassUpperLimit_))
                                   : nullptr;
 
-            if (Other._FeHGenerators[0] != nullptr)
+            if (Other.FeHGenerators_[0] != nullptr)
             {
-                auto* LogNormal = dynamic_cast<Util::TLogNormalDistribution<>*>(Other._FeHGenerators[0].get());
-                _FeHGenerators[0] = std::make_unique<Util::TLogNormalDistribution<>>(*LogNormal);
+                auto* LogNormal = dynamic_cast<Util::TLogNormalDistribution<>*>(Other.FeHGenerators_[0].get());
+                FeHGenerators_[0] = std::make_unique<Util::TLogNormalDistribution<>>(*LogNormal);
             }
 
-            if (Other._FeHGenerators[1] != nullptr)
+            if (Other.FeHGenerators_[1] != nullptr)
             {
-                auto* Normal = dynamic_cast<Util::TNormalDistribution<>*>(Other._FeHGenerators[1].get());
-                _FeHGenerators[1] = std::make_unique<Util::TNormalDistribution<>>(*Normal);
+                auto* Normal = dynamic_cast<Util::TNormalDistribution<>*>(Other.FeHGenerators_[1].get());
+                FeHGenerators_[1] = std::make_unique<Util::TNormalDistribution<>>(*Normal);
             }
 
-            if (Other._FeHGenerators[2] != nullptr)
+            if (Other.FeHGenerators_[2] != nullptr)
             {
-                auto* Normal = dynamic_cast<Util::TNormalDistribution<>*>(Other._FeHGenerators[2].get());
-                _FeHGenerators[2] = std::make_unique<Util::TNormalDistribution<>>(*Normal);
+                auto* Normal = dynamic_cast<Util::TNormalDistribution<>*>(Other.FeHGenerators_[2].get());
+                FeHGenerators_[2] = std::make_unique<Util::TNormalDistribution<>>(*Normal);
             }
 
-            if (Other._FeHGenerators[3] != nullptr)
+            if (Other.FeHGenerators_[3] != nullptr)
             {
-                auto* Normal = dynamic_cast<Util::TNormalDistribution<>*>(Other._FeHGenerators[3].get());
-                _FeHGenerators[3] = std::make_unique<Util::TNormalDistribution<>>(*Normal);
+                auto* Normal = dynamic_cast<Util::TNormalDistribution<>*>(Other.FeHGenerators_[3].get());
+                FeHGenerators_[3] = std::make_unique<Util::TNormalDistribution<>>(*Normal);
             }
         }
 
@@ -303,31 +303,31 @@ namespace Npgs
     {
         if (this != &Other)
         {
-            _RandomEngine         = std::move(Other._RandomEngine);
-            _MagneticGenerators   = std::move(Other._MagneticGenerators);
-            _FeHGenerators        = std::move(Other._FeHGenerators);
-            _SpinGenerators       = std::move(Other._SpinGenerators);
-            _AgeGenerator         = std::move(Other._AgeGenerator);
-            _CommonGenerator      = std::move(Other._CommonGenerator);
-            _LogMassGenerator     = std::move(Other._LogMassGenerator);
-            _MassPdfs             = std::move(Other._MassPdfs);
-            _MassMaxPdfs          = std::move(Other._MassMaxPdfs);
-            _AgeMaxPdf            = std::move(Other._AgeMaxPdf);
-            _AgePdf               = std::move(Other._AgePdf);
-            _UniverseAge          = std::exchange(Other._UniverseAge, 0.0f);
-            _AgeLowerLimit        = std::exchange(Other._AgeLowerLimit, 0.0f);
-            _AgeUpperLimit        = std::exchange(Other._AgeUpperLimit, 0.0f);
-            _FeHLowerLimit        = std::exchange(Other._FeHLowerLimit, 0.0f);
-            _FeHUpperLimit        = std::exchange(Other._FeHUpperLimit, 0.0f);
-            _MassLowerLimit       = std::exchange(Other._MassLowerLimit, 0.0f);
-            _MassUpperLimit       = std::exchange(Other._MassUpperLimit, 0.0f);
-            _CoilTemperatureLimit = std::exchange(Other._CoilTemperatureLimit, 0.0f);
-            _dEpdM                = std::exchange(Other._dEpdM, 0.0f);
-            _AgeDistribution      = std::exchange(Other._AgeDistribution, {});
-            _FeHDistribution      = std::exchange(Other._FeHDistribution, {});
-            _MassDistribution     = std::exchange(Other._MassDistribution, {});
-            _StellarTypeOption    = std::exchange(Other._StellarTypeOption, {});
-            _MultiplicityOption   = std::exchange(Other._MultiplicityOption, {});
+            RandomEngine_         = std::move(Other.RandomEngine_);
+            MagneticGenerators_   = std::move(Other.MagneticGenerators_);
+            FeHGenerators_        = std::move(Other.FeHGenerators_);
+            SpinGenerators_       = std::move(Other.SpinGenerators_);
+            AgeGenerator_         = std::move(Other.AgeGenerator_);
+            CommonGenerator_      = std::move(Other.CommonGenerator_);
+            LogMassGenerator_     = std::move(Other.LogMassGenerator_);
+            MassPdfs_             = std::move(Other.MassPdfs_);
+            MassMaxPdfs_          = std::move(Other.MassMaxPdfs_);
+            AgeMaxPdf_            = std::move(Other.AgeMaxPdf_);
+            AgePdf_               = std::move(Other.AgePdf_);
+            UniverseAge_          = std::exchange(Other.UniverseAge_, 0.0f);
+            AgeLowerLimit_        = std::exchange(Other.AgeLowerLimit_, 0.0f);
+            AgeUpperLimit_        = std::exchange(Other.AgeUpperLimit_, 0.0f);
+            FeHLowerLimit_        = std::exchange(Other.FeHLowerLimit_, 0.0f);
+            FeHUpperLimit_        = std::exchange(Other.FeHUpperLimit_, 0.0f);
+            MassLowerLimit_       = std::exchange(Other.MassLowerLimit_, 0.0f);
+            MassUpperLimit_       = std::exchange(Other.MassUpperLimit_, 0.0f);
+            CoilTemperatureLimit_ = std::exchange(Other.CoilTemperatureLimit_, 0.0f);
+            dEpdM_                = std::exchange(Other.dEpdM_, 0.0f);
+            AgeDistribution_      = std::exchange(Other.AgeDistribution_, {});
+            FeHDistribution_      = std::exchange(Other.FeHDistribution_, {});
+            MassDistribution_     = std::exchange(Other.MassDistribution_, {});
+            StellarTypeOption_    = std::exchange(Other.StellarTypeOption_, {});
+            MultiplicityOption_   = std::exchange(Other.MultiplicityOption_, {});
         }
 
         return *this;
@@ -336,26 +336,26 @@ namespace Npgs
     FStellarGenerator::FBasicProperties FStellarGenerator::GenerateBasicProperties(float Age, float FeH)
     {
         FBasicProperties Properties{};
-        Properties.StellarTypeOption = _StellarTypeOption;
+        Properties.StellarTypeOption = StellarTypeOption_;
 
         // 生成 3 个基本参数
         if (std::isnan(Age)) // 非有效数值，使用分布生成随机值
         {
-            switch (_AgeDistribution)
+            switch (AgeDistribution_)
             {
             case EGenerationDistribution::kFromPdf:
             {
-                glm::vec2 MaxPdf = _AgeMaxPdf;
-                if (!(_AgeLowerLimit < _UniverseAge - 1.38e10f + _AgeMaxPdf.x &&
-                      _AgeUpperLimit > _UniverseAge - 1.38e10f + _AgeMaxPdf.x))
+                glm::vec2 MaxPdf = AgeMaxPdf_;
+                if (!(AgeLowerLimit_ < UniverseAge_ - 1.38e10f + AgeMaxPdf_.x &&
+                      AgeUpperLimit_ > UniverseAge_ - 1.38e10f + AgeMaxPdf_.x))
                 {
-                    if (_AgeLowerLimit > _UniverseAge - 1.38e10f + _AgeMaxPdf.x)
+                    if (AgeLowerLimit_ > UniverseAge_ - 1.38e10f + AgeMaxPdf_.x)
                     {
-                        MaxPdf.y = _AgePdf(glm::vec3(), _AgeLowerLimit, _UniverseAge / 1e9f);
+                        MaxPdf.y = AgePdf_(glm::vec3(), AgeLowerLimit_, UniverseAge_ / 1e9f);
                     }
-                    else if (_AgeUpperLimit < _UniverseAge - 1.38e10f + _AgeMaxPdf.x)
+                    else if (AgeUpperLimit_ < UniverseAge_ - 1.38e10f + AgeMaxPdf_.x)
                     {
-                        MaxPdf.y = _AgePdf(glm::vec3(), _AgeUpperLimit, _UniverseAge / 1e9f);
+                        MaxPdf.y = AgePdf_(glm::vec3(), AgeUpperLimit_, UniverseAge_ / 1e9f);
                     }
                 }
                 Properties.Age = GenerateAge(MaxPdf.y);
@@ -363,14 +363,14 @@ namespace Npgs
             }
             case EGenerationDistribution::kUniform:
             {
-                Properties.Age = _AgeLowerLimit + _CommonGenerator(_RandomEngine) * (_AgeUpperLimit - _AgeLowerLimit);
+                Properties.Age = AgeLowerLimit_ + CommonGenerator_(RandomEngine_) * (AgeUpperLimit_ - AgeLowerLimit_);
                 break;
             }
             case EGenerationDistribution::kUniformByExponent:
             {
-                float Random      = _CommonGenerator(_RandomEngine);
-                float LogAgeLower = std::log10(_AgeLowerLimit);
-                float LogAgeUpper = std::log10(_AgeUpperLimit);
+                float Random      = CommonGenerator_(RandomEngine_);
+                float LogAgeLower = std::log10(AgeLowerLimit_);
+                float LogAgeUpper = std::log10(AgeUpperLimit_);
                 Properties.Age    = std::pow(10.0f, LogAgeLower + Random * (LogAgeUpper - LogAgeLower));
                 break;
             }
@@ -387,34 +387,34 @@ namespace Npgs
         {
             Util::TDistribution<>* FeHGenerator = nullptr;
 
-            float FeHLowerLimit = _FeHLowerLimit;
-            float FeHUpperLimit = _FeHUpperLimit;
+            float FeHLowerLimit = FeHLowerLimit_;
+            float FeHUpperLimit = FeHUpperLimit_;
 
             // 不同的年龄使用不同的分布
-            if (Properties.Age > _UniverseAge - 1.38e10f + 8e9f)
+            if (Properties.Age > UniverseAge_ - 1.38e10f + 8e9f)
             {
-                FeHGenerator  = _FeHGenerators[0].get();
-                FeHLowerLimit = -_FeHUpperLimit; // 对数分布，但是是反的
-                FeHUpperLimit = -_FeHLowerLimit;
+                FeHGenerator  = FeHGenerators_[0].get();
+                FeHLowerLimit = -FeHUpperLimit_; // 对数分布，但是是反的
+                FeHUpperLimit = -FeHLowerLimit_;
             }
-            else if (Properties.Age > _UniverseAge - 1.38e10f + 6e9f)
+            else if (Properties.Age > UniverseAge_ - 1.38e10f + 6e9f)
             {
-                FeHGenerator = _FeHGenerators[1].get();
+                FeHGenerator = FeHGenerators_[1].get();
             }
-            else if (Properties.Age > _UniverseAge - 1.38e10f + 4e9f)
+            else if (Properties.Age > UniverseAge_ - 1.38e10f + 4e9f)
             {
-                FeHGenerator = _FeHGenerators[2].get();
+                FeHGenerator = FeHGenerators_[2].get();
             }
             else
             {
-                FeHGenerator = _FeHGenerators[3].get();
+                FeHGenerator = FeHGenerators_[3].get();
             }
 
             do {
-                FeH = (*FeHGenerator)(_RandomEngine);
+                FeH = (*FeHGenerator)(RandomEngine_);
             } while (FeH > FeHUpperLimit || FeH < FeHLowerLimit);
 
-            if (Properties.Age > _UniverseAge - 1.38e10 + 8e9)
+            if (Properties.Age > UniverseAge_ - 1.38e10 + 8e9)
             {
                 FeH *= -1.0f; // 把对数分布反过来
             }
@@ -422,10 +422,10 @@ namespace Npgs
 
         Properties.FeH = FeH;
 
-        if (_MultiplicityOption != EMultiplicityGenerationOption::kBinarySecondStar)
+        if (MultiplicityOption_ != EMultiplicityGenerationOption::kBinarySecondStar)
         {
             Util::TBernoulliDistribution<> BinaryProbability(0.45 - 0.07 * std::pow(10, FeH));
-            if (BinaryProbability(_RandomEngine))
+            if (BinaryProbability(RandomEngine_))
             {
                 Properties.MultiplicityOption = EMultiplicityGenerationOption::kBinaryFirstStar;
                 Properties.bIsSingleStar      = false;
@@ -437,37 +437,37 @@ namespace Npgs
             Properties.bIsSingleStar      = false;
         }
 
-        if (_MassLowerLimit == 0.0f && _MassUpperLimit == 0.0f)
+        if (MassLowerLimit_ == 0.0f && MassUpperLimit_ == 0.0f)
         {
             Properties.InitialMassSol = 0.0f;
         }
         else
         {
-            switch (_MassDistribution)
+            switch (MassDistribution_)
             {
             case EGenerationDistribution::kFromPdf: {
                 glm::vec2 MaxPdf{};
-                float LogMassLower = std::log10(_MassLowerLimit);
-                float LogMassUpper = std::log10(_MassUpperLimit);
+                float LogMassLower = std::log10(MassLowerLimit_);
+                float LogMassUpper = std::log10(MassUpperLimit_);
                 std::function<float(float)> LogMassPdf = nullptr;
 
                 if (Properties.MultiplicityOption != EMultiplicityGenerationOption::kBinarySecondStar)
                 {
                     if (Properties.MultiplicityOption == EMultiplicityGenerationOption::kBinaryFirstStar)
                     {
-                        LogMassPdf = _MassPdfs[1];
-                        MaxPdf     = _MassMaxPdfs[1];
+                        LogMassPdf = MassPdfs_[1];
+                        MaxPdf     = MassMaxPdfs_[1];
                     }
                     else
                     {
-                        LogMassPdf = _MassPdfs[0];
-                        MaxPdf     = _MassMaxPdfs[0];
+                        LogMassPdf = MassPdfs_[0];
+                        MaxPdf     = MassMaxPdfs_[0];
                     }
                 }
                 else
                 {
-                    LogMassPdf = _MassPdfs[1];
-                    MaxPdf     = _MassMaxPdfs[1];
+                    LogMassPdf = MassPdfs_[1];
+                    MaxPdf     = MassMaxPdfs_[1];
                 }
 
                 if (!(LogMassLower < MaxPdf.x && LogMassUpper > MaxPdf.x))
@@ -487,7 +487,7 @@ namespace Npgs
                 break;
             }
             case EGenerationDistribution::kUniform: {
-                Properties.InitialMassSol = _MassLowerLimit + _CommonGenerator(_RandomEngine) * (_MassUpperLimit - _MassLowerLimit);
+                Properties.InitialMassSol = MassLowerLimit_ + CommonGenerator_(RandomEngine_) * (MassUpperLimit_ - MassLowerLimit_);
                 break;
             }
             default:
@@ -600,18 +600,18 @@ namespace Npgs
             return {};
         }
 
-        double Lifetime          = StarData[_kLifetimeIndex];
-        double EvolutionProgress = StarData[_kXIndex];
-        float  Age               = static_cast<float>(StarData[_kStarAgeIndex]);
-        float  RadiusSol         = static_cast<float>(std::pow(10.0, StarData[_kLogRIndex]));
-        float  MassSol           = static_cast<float>(StarData[_kStarMassIndex]);
-        float  Teff              = static_cast<float>(std::pow(10.0, StarData[_kLogTeffIndex]));
-        float  SurfaceZ          = static_cast<float>(std::pow(10.0, StarData[_kLogSurfZIndex]));
-        float  SurfaceH1         = static_cast<float>(StarData[_kSurfaceH1Index]);
-        float  SurfaceHe3        = static_cast<float>(StarData[_kSurfaceHe3Index]);
-        float  CoreTemp          = static_cast<float>(std::pow(10.0, StarData[_kLogCenterTIndex]));
-        float  CoreDensity       = static_cast<float>(std::pow(10.0, StarData[_kLogCenterRhoIndex]));
-        float  MassLossRate      = static_cast<float>(StarData[_kStarMdotIndex]);
+        double Lifetime          = StarData[kLifetimeIndex_];
+        double EvolutionProgress = StarData[kXIndex_];
+        float  Age               = static_cast<float>(StarData[kStarAgeIndex_]);
+        float  RadiusSol         = static_cast<float>(std::pow(10.0, StarData[kLogRIndex_]));
+        float  MassSol           = static_cast<float>(StarData[kStarMassIndex_]);
+        float  Teff              = static_cast<float>(std::pow(10.0, StarData[kLogTeffIndex_]));
+        float  SurfaceZ          = static_cast<float>(std::pow(10.0, StarData[kLogSurfZIndex_]));
+        float  SurfaceH1         = static_cast<float>(StarData[kSurfaceH1Index_]);
+        float  SurfaceHe3        = static_cast<float>(StarData[kSurfaceHe3Index_]);
+        float  CoreTemp          = static_cast<float>(std::pow(10.0, StarData[kLogCenterTIndex_]));
+        float  CoreDensity       = static_cast<float>(std::pow(10.0, StarData[kLogCenterRhoIndex_]));
+        float  MassLossRate      = static_cast<float>(StarData[kStarMdotIndex_]);
 
         float LuminositySol  = std::pow(RadiusSol, 2.0f) * std::pow((Teff / kSolarTeff), 4.0f);
         float EscapeVelocity = std::sqrt((2.0f * kGravityConstant * MassSol * kSolarMass) / (RadiusSol * kSolarRadius));
@@ -623,10 +623,10 @@ namespace Npgs
         float SurfaceEnergeticNuclide = (SurfaceH1 * 0.00002f + SurfaceHe3);
         float SurfaceVolatiles = 1.0f - SurfaceZ - SurfaceEnergeticNuclide;
 
-        float Theta = _CommonGenerator(_RandomEngine) * 2.0f * Math::kPi;
-        float Phi   = _CommonGenerator(_RandomEngine) * Math::kPi;
+        float Theta = CommonGenerator_(RandomEngine_) * 2.0f * Math::kPi;
+        float Phi   = CommonGenerator_(RandomEngine_) * Math::kPi;
 
-        Astro::AStar::EEvolutionPhase EvolutionPhase = static_cast<Astro::AStar::EEvolutionPhase>(StarData[_kPhaseIndex]);
+        Astro::AStar::EEvolutionPhase EvolutionPhase = static_cast<Astro::AStar::EEvolutionPhase>(StarData[kPhaseIndex_]);
 
         Star.SetSingleton(Properties.bIsSingleStar);
         Star.SetAge(Age);
@@ -658,8 +658,8 @@ namespace Npgs
         float  MagneticField = Star.GetMagneticField();
 
         float MinCoilMass = static_cast<float>(std::max(
-            6.6156e14  * std::pow(MagneticField, 2.0f) * std::pow(Luminosity, 1.5) * std::pow(_CoilTemperatureLimit, -6.0f) * std::pow(_dEpdM, -1.0f),
-            2.34865e29 * std::pow(MagneticField, 2.0f) * std::pow(Luminosity, 2.0) * std::pow(_CoilTemperatureLimit, -8.0f) * std::pow(Mass,   -1.0)
+            6.6156e14  * std::pow(MagneticField, 2.0f) * std::pow(Luminosity, 1.5) * std::pow(CoilTemperatureLimit_, -6.0f) * std::pow(dEpdM_, -1.0f),
+            2.34865e29 * std::pow(MagneticField, 2.0f) * std::pow(Luminosity, 2.0) * std::pow(CoilTemperatureLimit_, -8.0f) * std::pow(Mass,   -1.0)
         ));
 
         Star.SetMinCoilMass(MinCoilMass);
@@ -673,7 +673,7 @@ namespace Npgs
     {
         auto* AssetManager = EngineServicesGetCoreServices->GetAssetManager();
         {
-            std::shared_lock Lock(_kCacheMutex);
+            std::shared_lock Lock(kCacheMutex_);
             auto* Asset = AssetManager->GetAsset<CsvType>(Filename);
             if (Asset != nullptr)
             {
@@ -681,7 +681,7 @@ namespace Npgs
             }
         }
 
-        std::unique_lock Lock(_kCacheMutex);
+        std::unique_lock Lock(kCacheMutex_);
         AssetManager->AddAsset<CsvType>(Filename, CsvType(Filename, Headers));
 
         return AssetManager->GetAsset<CsvType>(Filename);
@@ -689,7 +689,7 @@ namespace Npgs
 
     void FStellarGenerator::InitializeMistData()
     {
-        if (_kbMistDataInitiated)
+        if (kbMistDataInitiated_)
         {
             return;
         }
@@ -723,39 +723,39 @@ namespace Npgs
 
                 if (PrefixDirectory.find("WhiteDwarfs") != std::string::npos)
                 {
-                    LoadCsvAsset<FWdMistData>(PrefixDirectory + "/" + Filename, _kWdMistHeaders);
+                    LoadCsvAsset<FWdMistData>(PrefixDirectory + "/" + Filename, kWdMistHeaders_);
                 }
                 else
                 {
-                    LoadCsvAsset<FMistData>(PrefixDirectory + "/" + Filename, _kMistHeaders);
+                    LoadCsvAsset<FMistData>(PrefixDirectory + "/" + Filename, kMistHeaders_);
                 }
             }
 
-            _kMassFilesCache.emplace(PrefixDirectory, Masses);
+            kMassFilesCache_.emplace(PrefixDirectory, Masses);
             Masses.clear();
         }
 
-        _kbMistDataInitiated = true;
+        kbMistDataInitiated_ = true;
     }
 
     void FStellarGenerator::InitializePdfs()
     {
-        if (_AgePdf == nullptr)
+        if (AgePdf_ == nullptr)
         {
-            _AgePdf = DefaultAgePdf;
-            _AgeMaxPdf = glm::vec2(8e9, 2.7f);
+            AgePdf_ = DefaultAgePdf;
+            AgeMaxPdf_ = glm::vec2(8e9, 2.7f);
         }
 
-        if (_MassPdfs[0] == nullptr)
+        if (MassPdfs_[0] == nullptr)
         {
-            _MassPdfs[0] = DefaultLogMassPdfSingleStar;
-            _MassMaxPdfs[0] = glm::vec2(std::log10(0.1f), 0.158f);
+            MassPdfs_[0] = DefaultLogMassPdfSingleStar;
+            MassMaxPdfs_[0] = glm::vec2(std::log10(0.1f), 0.158f);
         }
 
-        if (_MassPdfs[1] == nullptr)
+        if (MassPdfs_[1] == nullptr)
         {
-            _MassPdfs[1] = DefaultLogMassPdfBinaryStar;
-            _MassMaxPdfs[1] = glm::vec2(std::log10(0.22f), 0.086);
+            MassPdfs_[1] = DefaultLogMassPdfBinaryStar;
+            MassMaxPdfs_[1] = glm::vec2(std::log10(0.22f), 0.086);
         }
     }
 
@@ -764,9 +764,9 @@ namespace Npgs
         float Age = 0.0f;
         float Probability = 0.0f;
         do {
-            Age = _AgeGenerator(_RandomEngine);
-            Probability = DefaultAgePdf(glm::vec3(), Age / 1e9f, _UniverseAge / 1e9f);
-        } while (_CommonGenerator(_RandomEngine) * MaxPdf > Probability);
+            Age = AgeGenerator_(RandomEngine_);
+            Probability = DefaultAgePdf(glm::vec3(), Age / 1e9f, UniverseAge_ / 1e9f);
+        } while (CommonGenerator_(RandomEngine_) * MaxPdf > Probability);
 
         return Age;
     }
@@ -776,8 +776,8 @@ namespace Npgs
         float LogMass = 0.0f;
         float Probability = 0.0f;
 
-        float LogMassLower = std::log10(_MassLowerLimit);
-        float LogMassUpper = std::log10(_MassUpperLimit);
+        float LogMassLower = std::log10(MassLowerLimit_);
+        float LogMassUpper = std::log10(MassUpperLimit_);
 
         if (LogMassUpper >= std::log10(300.0f))
         {
@@ -785,9 +785,9 @@ namespace Npgs
         }
 
         do {
-            LogMass = (*_LogMassGenerator)(_RandomEngine);
+            LogMass = (*LogMassGenerator_)(RandomEngine_);
             Probability = LogMassPdf(LogMass);
-        } while ((LogMass < LogMassLower || LogMass > LogMassUpper) || _CommonGenerator(_RandomEngine) * MaxPdf > Probability);
+        } while ((LogMass < LogMassLower || LogMass > LogMassUpper) || CommonGenerator_(RandomEngine_) * MaxPdf > Probability);
 
         return std::pow(10.0f, LogMass);
     }
@@ -841,8 +841,8 @@ namespace Npgs
 
         std::vector<float> Masses;
         {
-            std::shared_lock Lock(_kCacheMutex);
-            Masses = _kMassFilesCache[PrefixDirectory];
+            std::shared_lock Lock(kCacheMutex_);
+            Masses = kMassFilesCache_[PrefixDirectory];
         }
 
         auto it = std::lower_bound(Masses.begin(), Masses.end(), TargetMassSol);
@@ -914,16 +914,16 @@ namespace Npgs
         {
             if (Files.first != Files.second) [[likely]]
             {
-                FMistData* LowerData = LoadCsvAsset<FMistData>(Files.first,  _kMistHeaders);
-                FMistData* UpperData = LoadCsvAsset<FMistData>(Files.second, _kMistHeaders);
+                FMistData* LowerData = LoadCsvAsset<FMistData>(Files.first,  kMistHeaders_);
+                FMistData* UpperData = LoadCsvAsset<FMistData>(Files.second, kMistHeaders_);
 
                 auto LowerPhaseChanges = FindPhaseChanges(LowerData);
                 auto UpperPhaseChanges = FindPhaseChanges(UpperData);
 
                 if (std::isnan(TargetAge)) // 年龄为 NaN 在这里代表要生成濒死恒星
                 {
-                    double LowerLifetime = LowerPhaseChanges.back()[_kStarAgeIndex];
-                    double UpperLifetime = UpperPhaseChanges.back()[_kStarAgeIndex];
+                    double LowerLifetime = LowerPhaseChanges.back()[kStarAgeIndex_];
+                    double UpperLifetime = UpperPhaseChanges.back()[kStarAgeIndex_];
                     double Lifetime = LowerLifetime + (UpperLifetime - LowerLifetime) * MassCoefficient;
                     TargetAge = Lifetime - 500000;
                 }
@@ -942,8 +942,8 @@ namespace Npgs
 
                 double EvolutionProgress = ExpectedResult.value();
 
-                double LowerLifetime = PhaseChangePair.first.back()[_kStarAgeIndex];
-                double UpperLifetime = PhaseChangePair.second.back()[_kStarAgeIndex];
+                double LowerLifetime = PhaseChangePair.first.back()[kStarAgeIndex_];
+                double UpperLifetime = PhaseChangePair.second.back()[kStarAgeIndex_];
 
                 FDataArray LowerRows = InterpolateStarData(LowerData, EvolutionProgress);
                 FDataArray UpperRows = InterpolateStarData(UpperData, EvolutionProgress);
@@ -955,12 +955,12 @@ namespace Npgs
             }
             else [[unlikely]]
             {
-                FMistData* StarData = LoadCsvAsset<FMistData>(Files.first, _kMistHeaders);
+                FMistData* StarData = LoadCsvAsset<FMistData>(Files.first, kMistHeaders_);
                 auto PhaseChanges = FindPhaseChanges(StarData);
 
                 if (std::isnan(TargetAge))
                 {
-                    double Lifetime = PhaseChanges.back()[_kStarAgeIndex];
+                    double Lifetime = PhaseChanges.back()[kStarAgeIndex_];
                     TargetAge = Lifetime - 500000;
                 }
 
@@ -976,15 +976,15 @@ namespace Npgs
                     }
 
                     EvolutionProgress = ExpectedResult.value();
-                    Lifetime          = PhaseChanges.back()[_kStarAgeIndex];
+                    Lifetime          = PhaseChanges.back()[kStarAgeIndex_];
                     Result            = InterpolateStarData(StarData, EvolutionProgress);
                     Result.push_back(Lifetime);
                 }
                 else
                 {
                     // 外推小质量恒星的数据
-                    double OriginalLowerPhaseChangePoint = PhaseChanges[1][_kStarAgeIndex];
-                    double OriginalUpperPhaseChangePoint = PhaseChanges[2][_kStarAgeIndex];
+                    double OriginalLowerPhaseChangePoint = PhaseChanges[1][kStarAgeIndex_];
+                    double OriginalUpperPhaseChangePoint = PhaseChanges[2][kStarAgeIndex_];
                     double LowerPhaseChangePoint = OriginalLowerPhaseChangePoint * std::pow(TargetMassSol / 0.1, -1.3);
                     double UpperPhaseChangePoint = OriginalUpperPhaseChangePoint * std::pow(TargetMassSol / 0.1, -1.3);
                     Lifetime = UpperPhaseChangePoint;
@@ -1011,8 +1011,8 @@ namespace Npgs
         {
             if (Files.first != Files.second) [[likely]]
             {
-                FWdMistData* LowerData = LoadCsvAsset<FWdMistData>(Files.first,  _kWdMistHeaders);
-                FWdMistData* UpperData = LoadCsvAsset<FWdMistData>(Files.second, _kWdMistHeaders);
+                FWdMistData* LowerData = LoadCsvAsset<FWdMistData>(Files.first,  kWdMistHeaders_);
+                FWdMistData* UpperData = LoadCsvAsset<FWdMistData>(Files.second, kWdMistHeaders_);
 
                 FDataArray LowerRows = InterpolateStarData(LowerData, TargetAge);
                 FDataArray UpperRows = InterpolateStarData(UpperData, TargetAge);
@@ -1021,7 +1021,7 @@ namespace Npgs
             }
             else [[unlikely]]
             {
-                FWdMistData* StarData = LoadCsvAsset<FWdMistData>(Files.first, _kWdMistHeaders);
+                FWdMistData* StarData = LoadCsvAsset<FWdMistData>(Files.first, kWdMistHeaders_);
                 Result = InterpolateStarData(StarData, TargetAge);
             }
         }
@@ -1033,10 +1033,10 @@ namespace Npgs
     {
         std::vector<FDataArray> Result;
         {
-            std::shared_lock Lock(_kCacheMutex);
-            if (_kPhaseChangesCache.contains(DataSheet))
+            std::shared_lock Lock(kCacheMutex_);
+            if (kPhaseChangesCache_.contains(DataSheet))
             {
-                return _kPhaseChangesCache[DataSheet];
+                return kPhaseChangesCache_[DataSheet];
             }
         }
 
@@ -1044,22 +1044,22 @@ namespace Npgs
         int CurrentPhase = -2;
         for (const auto& Row : *CsvData)
         {
-            if (Row[_kPhaseIndex] != CurrentPhase || Row[_kXIndex] == 10.0)
+            if (Row[kPhaseIndex_] != CurrentPhase || Row[kXIndex_] == 10.0)
             {
-                CurrentPhase = static_cast<int>(Row[_kPhaseIndex]);
+                CurrentPhase = static_cast<int>(Row[kPhaseIndex_]);
                 Result.push_back(Row);
             }
         }
 
         {
-            std::unique_lock Lock(_kCacheMutex);
-            if (!_kPhaseChangesCache.contains(DataSheet))
+            std::unique_lock Lock(kCacheMutex_);
+            if (!kPhaseChangesCache_.contains(DataSheet))
             {
-                _kPhaseChangesCache.emplace(DataSheet, Result);
+                kPhaseChangesCache_.emplace(DataSheet, Result);
             }
             else
             {
-                Result = _kPhaseChangesCache[DataSheet];
+                Result = kPhaseChangesCache_[DataSheet];
             }
         }
 
@@ -1088,7 +1088,7 @@ namespace Npgs
         else [[likely]]
         {
             if (PhaseChanges.first.size() == PhaseChanges.second.size() &&
-                (*std::prev(PhaseChanges.first.end(), 2))[_kPhaseIndex] == (*std::prev(PhaseChanges.second.end(), 2))[_kPhaseIndex])
+                (*std::prev(PhaseChanges.first.end(), 2))[kPhaseIndex_] == (*std::prev(PhaseChanges.second.end(), 2))[kPhaseIndex_])
             {
                 auto ExpectedResult = FindSurroundingTimePoints(PhaseChanges, TargetAge, MassCoefficient);
                 if (!ExpectedResult.has_value())
@@ -1105,14 +1105,14 @@ namespace Npgs
                 {
                     std::pair<double, double> LowerTimePoints
                     {
-                        PhaseChanges.first[Index][_kStarAgeIndex],
-                        PhaseChanges.first[Index + 1][_kStarAgeIndex]
+                        PhaseChanges.first[Index][kStarAgeIndex_],
+                        PhaseChanges.first[Index + 1][kStarAgeIndex_]
                     };
 
                     std::pair<double, double> UpperTimePoints
                     {
-                        PhaseChanges.second[Index][_kStarAgeIndex],
-                        PhaseChanges.second[Index + 1][_kStarAgeIndex]
+                        PhaseChanges.second[Index][kStarAgeIndex_],
+                        PhaseChanges.second[Index + 1][kStarAgeIndex_]
                     };
 
                     const auto& [LowerLowerTimePoint, LowerUpperTimePoint] = LowerTimePoints;
@@ -1123,7 +1123,7 @@ namespace Npgs
 
                     Result = (TargetAge - LowerTimePoint) / (UpperTimePoint - LowerTimePoint) + Phase;
 
-                    if (Result > PhaseChanges.first.back()[_kPhaseIndex] + 1)
+                    if (Result > PhaseChanges.first.back()[kPhaseIndex_] + 1)
                     {
                         return 0.0;
                     }
@@ -1135,24 +1135,24 @@ namespace Npgs
             }
             else
             {
-                if (PhaseChanges.first.back()[_kPhaseIndex] == PhaseChanges.second.back()[_kPhaseIndex])
+                if (PhaseChanges.first.back()[kPhaseIndex_] == PhaseChanges.second.back()[kPhaseIndex_])
                 {
                     double FirstDiscardTimePoint = 0.0;
-                    double FirstCommonTimePoint  = (*std::prev(PhaseChanges.first.end(), 2))[_kStarAgeIndex];
+                    double FirstCommonTimePoint  = (*std::prev(PhaseChanges.first.end(), 2))[kStarAgeIndex_];
 
                     std::size_t MinSize = std::min(PhaseChanges.first.size(), PhaseChanges.second.size());
                     for (std::size_t i = 0; i != MinSize - 1; ++i)
                     {
-                        if (PhaseChanges.first[i][_kPhaseIndex] != PhaseChanges.second[i][_kPhaseIndex])
+                        if (PhaseChanges.first[i][kPhaseIndex_] != PhaseChanges.second[i][kPhaseIndex_])
                         {
-                            FirstDiscardTimePoint = PhaseChanges.first[i][_kStarAgeIndex];
+                            FirstDiscardTimePoint = PhaseChanges.first[i][kStarAgeIndex_];
                             break;
                         }
                     }
 
                     double DeltaTimePoint = FirstCommonTimePoint - FirstDiscardTimePoint;
-                    (*std::prev(PhaseChanges.first.end(), 2))[_kStarAgeIndex] -= DeltaTimePoint;
-                    PhaseChanges.first.back()[_kStarAgeIndex] -= DeltaTimePoint;
+                    (*std::prev(PhaseChanges.first.end(), 2))[kStarAgeIndex_] -= DeltaTimePoint;
+                    PhaseChanges.first.back()[kStarAgeIndex_] -= DeltaTimePoint;
                 }
 
                 AlignArrays(PhaseChanges);
@@ -1166,8 +1166,8 @@ namespace Npgs
                 Result = ExpectedResult.value();
                 double IntegerPart    = 0.0;
                 double FractionalPart = std::modf(Result, &IntegerPart);
-                if (PhaseChanges.second.back()[_kPhaseIndex] == 9 && FractionalPart > 0.99 && Result < 9.0 &&
-                    IntegerPart >= (*std::prev(PhaseChanges.first.end(), 3))[_kPhaseIndex])
+                if (PhaseChanges.second.back()[kPhaseIndex_] == 9 && FractionalPart > 0.99 && Result < 9.0 &&
+                    IntegerPart >= (*std::prev(PhaseChanges.first.end(), 3))[kPhaseIndex_])
                 {
                     Result = 9.0;
                 }
@@ -1183,7 +1183,7 @@ namespace Npgs
         std::vector<FDataArray>::const_iterator LowerTimePoint;
         std::vector<FDataArray>::const_iterator UpperTimePoint;
 
-        if (PhaseChanges.size() != 2 || PhaseChanges.front()[_kPhaseIndex] != PhaseChanges.back()[_kPhaseIndex])
+        if (PhaseChanges.size() != 2 || PhaseChanges.front()[kPhaseIndex_] != PhaseChanges.back()[kPhaseIndex_])
         {
             LowerTimePoint = std::lower_bound(PhaseChanges.begin(), PhaseChanges.end(), TargetAge,
             [](const FDataArray& Lhs, double Rhs) -> bool
@@ -1218,7 +1218,7 @@ namespace Npgs
         }
 
         // return std::make_pair(LowerTimePoint->back(), std::make_pair(LowerTimePoint->front(), UpperTimePoint->front()));
-        return { (*LowerTimePoint)[_kXIndex], { (*LowerTimePoint)[_kStarAgeIndex], (*UpperTimePoint)[_kStarAgeIndex] } };
+        return { (*LowerTimePoint)[kXIndex_], { (*LowerTimePoint)[kStarAgeIndex_], (*UpperTimePoint)[kStarAgeIndex_] } };
     }
 
     std::expected<std::pair<double, std::size_t>, Astro::AStar>
@@ -1229,8 +1229,8 @@ namespace Npgs
         FDataArray UpperPhaseChangeTimePoints;
         for (std::size_t i = 0; i != PhaseChanges.first.size(); ++i)
         {
-            LowerPhaseChangeTimePoints.push_back(PhaseChanges.first[i][_kStarAgeIndex]);
-            UpperPhaseChangeTimePoints.push_back(PhaseChanges.second[i][_kStarAgeIndex]);
+            LowerPhaseChangeTimePoints.push_back(PhaseChanges.first[i][kStarAgeIndex_]);
+            UpperPhaseChangeTimePoints.push_back(PhaseChanges.second[i][kStarAgeIndex_]);
         }
 
         FDataArray PhaseChangeTimePoints =
@@ -1246,7 +1246,7 @@ namespace Npgs
         std::vector<std::pair<double, double>> TimePointPairs;
         for (std::size_t i = 0; i != PhaseChanges.first.size(); ++i)
         {
-            TimePointPairs.emplace_back(PhaseChanges.first[i][_kPhaseIndex], PhaseChangeTimePoints[i]);
+            TimePointPairs.emplace_back(PhaseChanges.first[i][kPhaseIndex_], PhaseChangeTimePoints[i]);
         }
 
         std::pair<double, std::size_t> Result;
@@ -1265,30 +1265,30 @@ namespace Npgs
 
     void FStellarGenerator::AlignArrays(std::pair<std::vector<FDataArray>, std::vector<FDataArray>>& Arrays)
     {
-        if (Arrays.first.back()[_kPhaseIndex] != 9 && Arrays.second.back()[_kPhaseIndex] != 9)
+        if (Arrays.first.back()[kPhaseIndex_] != 9 && Arrays.second.back()[kPhaseIndex_] != 9)
         {
             std::size_t MinSize = std::min(Arrays.first.size(), Arrays.second.size());
             Arrays.first.resize(MinSize);
             Arrays.second.resize(MinSize);
         }
-        else if (Arrays.first.back()[_kPhaseIndex] != 9 && Arrays.second.back()[_kPhaseIndex] == 9)
+        else if (Arrays.first.back()[kPhaseIndex_] != 9 && Arrays.second.back()[kPhaseIndex_] == 9)
         {
             if (Arrays.first.size() + 1 == Arrays.second.size())
             {
                 Arrays.second.pop_back();
-                Arrays.second.back()[_kPhaseIndex] = Arrays.first.back()[_kPhaseIndex];
-                Arrays.second.back()[_kXIndex] = Arrays.first.back()[_kXIndex];
+                Arrays.second.back()[kPhaseIndex_] = Arrays.first.back()[kPhaseIndex_];
+                Arrays.second.back()[kXIndex_] = Arrays.first.back()[kXIndex_];
             }
             else
             {
                 std::size_t MinSize = std::min(Arrays.first.size(), Arrays.second.size());
                 Arrays.first.resize(MinSize - 1);
                 Arrays.second.resize(MinSize - 1);
-                Arrays.second.back()[_kPhaseIndex] = Arrays.first.back()[_kPhaseIndex];
-                Arrays.second.back()[_kXIndex] = Arrays.first.back()[_kXIndex];
+                Arrays.second.back()[kPhaseIndex_] = Arrays.first.back()[kPhaseIndex_];
+                Arrays.second.back()[kXIndex_] = Arrays.first.back()[kXIndex_];
             }
         }
-        else if (Arrays.first.back()[_kPhaseIndex] == 9 && Arrays.second.back()[_kPhaseIndex] == 9)
+        else if (Arrays.first.back()[kPhaseIndex_] == 9 && Arrays.second.back()[kPhaseIndex_] == 9)
         {
             FDataArray LastArray1 = Arrays.first.back();
             FDataArray LastArray2 = Arrays.second.back();
@@ -1349,12 +1349,12 @@ namespace Npgs
     FStellarGenerator::FDataArray
     FStellarGenerator::InterpolateStarData(FStellarGenerator::FMistData* Data, double EvolutionProgress)
     {
-        return InterpolateStarData(Data, EvolutionProgress, "x", FStellarGenerator::_kXIndex, false);
+        return InterpolateStarData(Data, EvolutionProgress, "x", FStellarGenerator::kXIndex_, false);
     }
 
     FStellarGenerator::FDataArray FStellarGenerator::InterpolateStarData(FStellarGenerator::FWdMistData* Data, double TargetAge)
     {
-        return InterpolateStarData(Data, TargetAge, "star_age", FStellarGenerator::_kWdStarAgeIndex, true);
+        return InterpolateStarData(Data, TargetAge, "star_age", FStellarGenerator::kWdStarAgeIndex_, true);
     }
 
     FStellarGenerator::FDataArray
@@ -1434,7 +1434,7 @@ namespace Npgs
 
         if (!bIsWhiteDwarf)
         {
-            Result[FStellarGenerator::_kPhaseIndex] = DataArrays.first[FStellarGenerator::_kPhaseIndex];
+            Result[FStellarGenerator::kPhaseIndex_] = DataArrays.first[FStellarGenerator::kPhaseIndex_];
         }
 
         return Result;
@@ -1452,7 +1452,7 @@ namespace Npgs
         std::vector<std::pair<int, int>> SpectralSubclassMap;
         float Subclass     = 0.0f;
         float SurfaceH1    = StarData.GetSurfaceH1();
-        float MinSurfaceH1 = Astro::AStar::_kFeHSurfaceH1Map.at(FeH) - 0.01f;
+        float MinSurfaceH1 = Astro::AStar::kFeHSurfaceH1Map_.at(FeH) - 0.01f;
 
         std::function<void(Astro::AStar::EEvolutionPhase)> CalculateSpectralSubclass =
         [&](Astro::AStar::EEvolutionPhase BasePhase) -> void
@@ -1474,7 +1474,7 @@ namespace Npgs
                     }
                 }
 
-                const auto& InitialMap = Astro::AStar::_kInitialCommonMap;
+                const auto& InitialMap = Astro::AStar::kInitialCommonMap_;
                 for (auto it = InitialMap.begin(); it != InitialMap.end() - 1; ++it)
                 {
                     ++SpectralClass;
@@ -1499,23 +1499,23 @@ namespace Npgs
                     if (SurfaceH1 >= 0.2f)
                     {
                         // 根据表面氢质量分数来判断处于的 WR 阶段
-                        SpectralSubclassMap = Astro::AStar::_kSpectralSubclassMap_WNxh;
+                        SpectralSubclassMap = Astro::AStar::kSpectralSubclassMap_WNxh_;
                         SpectralClass = 13;
                         SpectralType.SpecialMark = std::to_underlying(Astro::FStellarClass::ESpecialMark::kCode_h);
                     }
                     else if (SurfaceH1 >= 0.1f)
                     {
-                        SpectralSubclassMap = Astro::AStar::_kSpectralSubclassMap_WN;
+                        SpectralSubclassMap = Astro::AStar::kSpectralSubclassMap_WN_;
                         SpectralClass = 13;
                     }
                     else if (SurfaceH1 < 0.1f && SurfaceH1 > 0.05f)
                     {
-                        SpectralSubclassMap = Astro::AStar::_kSpectralSubclassMap_WC;
+                        SpectralSubclassMap = Astro::AStar::kSpectralSubclassMap_WC_;
                         SpectralClass = 12;
                     }
                     else
                     {
-                        SpectralSubclassMap = Astro::AStar::_kSpectralSubclassMap_WO;
+                        SpectralSubclassMap = Astro::AStar::kSpectralSubclassMap_WO_;
                         SpectralClass = 14;
                     }
                 }
@@ -1711,7 +1711,7 @@ namespace Npgs
         }
 
         std::string HrDiagramDataFilePath = GetAssetFullPath(EAssetType::kDataTable, "StellarParameters/H-R Diagram/H-R Diagram.csv");
-        FHrDiagram* HrDiagramData         = LoadCsvAsset<FHrDiagram>(HrDiagramDataFilePath, _kHrDiagramHeaders);
+        FHrDiagram* HrDiagramData         = LoadCsvAsset<FHrDiagram>(HrDiagramDataFilePath, kHrDiagramHeaders_);
 
         float Teff         = StarData.GetTeff();
         float BvColorIndex = 0.0f;
@@ -2040,16 +2040,16 @@ namespace Npgs
             float MergeStarProbability = 0.1f * static_cast<int>(DeathStar.IsSingleStar());
             MergeStarProbability *= static_cast<int>(DeathStarTypeOption != EStellarTypeGenerationOption::kDeathStar);
             Util::TBernoulliDistribution MergeProbability(MergeStarProbability);
-            if (DeathStarTypeOption == EStellarTypeGenerationOption::kMergeStar || MergeProbability(_RandomEngine))
+            if (DeathStarTypeOption == EStellarTypeGenerationOption::kMergeStar || MergeProbability(RandomEngine_))
             {
                 DeathStar.SetSingleton(true);
                 DeathStarFrom = Astro::AStar::EStarFrom::kWhiteDwarfMerge;
                 Util::TBernoulliDistribution BlackHoleProbability(0.114514);
                 float MassSol = 0.0f;
-                if (BlackHoleProbability(_RandomEngine))
+                if (BlackHoleProbability(RandomEngine_))
                 {
                     Util::TUniformRealDistribution<> MassDistribution(2.6f, 2.76f);
-                    MassSol        = MassDistribution(_RandomEngine);
+                    MassSol        = MassDistribution(RandomEngine_);
                     EvolutionPhase = Astro::AStar::EEvolutionPhase::kStellarBlackHole;
                     DeathStarType  = Astro::FStellarClass::EStellarType::kBlackHole;
                     DeathStarClass =
@@ -2066,7 +2066,7 @@ namespace Npgs
                 else
                 {
                     Util::TUniformRealDistribution<> MassDistribution(1.38f, 2.18072f);
-                    MassSol        = MassDistribution(_RandomEngine);
+                    MassSol        = MassDistribution(RandomEngine_);
                     EvolutionPhase = Astro::AStar::EEvolutionPhase::kNeutronStar;
                     DeathStarType  = Astro::FStellarClass::EStellarType::kNeutronStar;
                     DeathStarClass =
@@ -2107,11 +2107,11 @@ namespace Npgs
 
             FDataArray WhiteDwarfData = GetFullMistData(WhiteDwarfBasicProperties, true, true).value();
 
-            StarAge      = static_cast<float>(WhiteDwarfData[_kWdStarAgeIndex]);
-            LogR         = static_cast<float>(WhiteDwarfData[_kWdLogRIndex]);
-            LogTeff      = static_cast<float>(WhiteDwarfData[_kWdLogTeffIndex]);
-            LogCenterT   = static_cast<float>(WhiteDwarfData[_kWdLogCenterTIndex]);
-            LogCenterRho = static_cast<float>(WhiteDwarfData[_kWdLogCenterRhoIndex]);
+            StarAge      = static_cast<float>(WhiteDwarfData[kWdStarAgeIndex_]);
+            LogR         = static_cast<float>(WhiteDwarfData[kWdLogRIndex_]);
+            LogTeff      = static_cast<float>(WhiteDwarfData[kWdLogTeffIndex_]);
+            LogCenterT   = static_cast<float>(WhiteDwarfData[kWdLogCenterTIndex_]);
+            LogCenterRho = static_cast<float>(WhiteDwarfData[kWdLogCenterRhoIndex_]);
 
             if (DeathStarMassSol < 0.2f || DeathStarMassSol > 1.3f)
             {
@@ -2192,8 +2192,8 @@ namespace Npgs
         float LuminositySol  = std::pow(RadiusSol, 2.0f) * std::pow((Teff / kSolarTeff), 4.0f);
         float EscapeVelocity = std::sqrt((2.0f * kGravityConstant * MassSol * kSolarMass) / (RadiusSol * kSolarRadius));
 
-        float Theta = _CommonGenerator(_RandomEngine) * 2.0f * Math::kPi;
-        float Phi   = _CommonGenerator(_RandomEngine) * Math::kPi;
+        float Theta = CommonGenerator_(RandomEngine_) * 2.0f * Math::kPi;
+        float Phi   = CommonGenerator_(RandomEngine_) * Math::kPi;
 
         DeathStar.SetAge(Age);
         DeathStar.SetMass(MassSol * kSolarMass);
@@ -2234,15 +2234,15 @@ namespace Npgs
         {
             if (MassSol >= 0.075f && MassSol < 0.33f)
             {
-                MagneticGenerator = &_MagneticGenerators[0];
+                MagneticGenerator = &MagneticGenerators_[0];
             }
             else if (MassSol >= 0.33f && MassSol < 0.6f)
             {
-                MagneticGenerator = &_MagneticGenerators[1];
+                MagneticGenerator = &MagneticGenerators_[1];
             }
             else if (MassSol >= 0.6f && MassSol < 1.5f)
             {
-                MagneticGenerator = &_MagneticGenerators[2];
+                MagneticGenerator = &MagneticGenerators_[2];
             }
             else if (MassSol >= 1.5f && MassSol < 20.0f)
             {
@@ -2252,41 +2252,41 @@ namespace Npgs
                      SpectralType.HSpectralClass == Astro::FStellarClass::ESpectralClass::kSpectral_B))
                 {
                     Util::TBernoulliDistribution ProbabilityGenerator(0.15); //  p 星的概率
-                    if (ProbabilityGenerator(_RandomEngine))
+                    if (ProbabilityGenerator(RandomEngine_))
                     {
-                        MagneticGenerator = &_MagneticGenerators[3];
+                        MagneticGenerator = &MagneticGenerators_[3];
                         SpectralType.SpecialMark |= std::to_underlying(Astro::FStellarClass::ESpecialMark::kCode_p);
                         StarData.SetStellarClass(Astro::FStellarClass(Astro::FStellarClass::EStellarType::kNormalStar, SpectralType));
                     }
                     else
                     {
-                        MagneticGenerator = &_MagneticGenerators[4];
+                        MagneticGenerator = &MagneticGenerators_[4];
                     }
                 }
                 else
                 {
-                    MagneticGenerator = &_MagneticGenerators[4];
+                    MagneticGenerator = &MagneticGenerators_[4];
                 }
             }
             else
             {
-                MagneticGenerator = &_MagneticGenerators[5];
+                MagneticGenerator = &MagneticGenerators_[5];
             }
 
-            MagneticField = std::pow(10.0f, (*MagneticGenerator)(_RandomEngine)) / 10000;
+            MagneticField = std::pow(10.0f, (*MagneticGenerator)(RandomEngine_)) / 10000;
 
             break;
         }
         case Astro::FStellarClass::EStellarType::kWhiteDwarf:
         {
-            MagneticGenerator = &_MagneticGenerators[6];
-            MagneticField = std::pow(10.0f, (*MagneticGenerator)(_RandomEngine));
+            MagneticGenerator = &MagneticGenerators_[6];
+            MagneticField = std::pow(10.0f, (*MagneticGenerator)(RandomEngine_));
             break;
         }
         case Astro::FStellarClass::EStellarType::kNeutronStar:
         {
-            MagneticGenerator = &_MagneticGenerators[7];
-            MagneticField = (*MagneticGenerator)(_RandomEngine) /
+            MagneticGenerator = &MagneticGenerators_[7];
+            MagneticField = (*MagneticGenerator)(RandomEngine_) /
                 static_cast<float>(std::pow((0.034f * StarData.GetAge() / 1e4f), 1.17f) + 0.84f);
             break;
         }
@@ -2320,7 +2320,7 @@ namespace Npgs
         {
         case Astro::FStellarClass::EStellarType::kNormalStar:
         {
-            float Base = 1.0f + _CommonGenerator(_RandomEngine);
+            float Base = 1.0f + CommonGenerator_(RandomEngine_);
             if (StarData.GetStellarClass().Data().SpecialMark & std::to_underlying(Astro::FStellarClass::ESpecialMark::kCode_p))
             {
                 Base *= 10;
@@ -2351,8 +2351,8 @@ namespace Npgs
         }
         case Astro::FStellarClass::EStellarType::kWhiteDwarf:
         {
-            SpinGenerator = &_SpinGenerators[0];
-            Spin = std::pow(10.0f, (*SpinGenerator)(_RandomEngine));
+            SpinGenerator = &SpinGenerators_[0];
+            Spin = std::pow(10.0f, (*SpinGenerator)(RandomEngine_));
             break;
         }
         case Astro::FStellarClass::EStellarType::kNeutronStar:
@@ -2362,8 +2362,8 @@ namespace Npgs
         }
         case Astro::FStellarClass::EStellarType::kBlackHole: // 此处表示无量纲自旋参数，而非自转时间
         {
-            SpinGenerator = &_SpinGenerators[1];
-            Spin = (*SpinGenerator)(_RandomEngine);
+            SpinGenerator = &SpinGenerators_[1];
+            Spin = (*SpinGenerator)(RandomEngine_);
             break;
         }
         default:
@@ -2382,14 +2382,14 @@ namespace Npgs
 
     void FStellarGenerator::ExpandMistData(double TargetMassSol, FDataArray& StarData)
     {
-        double RadiusSol     = std::pow(10.0, StarData[_kLogRIndex]);
-        double Teff          = std::pow(10.0, StarData[_kLogTeffIndex]);
+        double RadiusSol     = std::pow(10.0, StarData[kLogRIndex_]);
+        double Teff          = std::pow(10.0, StarData[kLogTeffIndex_]);
         double LuminositySol = std::pow(RadiusSol, 2.0) * std::pow((Teff / kSolarTeff), 4.0);
 
-        double& StarMass = StarData[_kStarMassIndex];
-        double& StarMdot = StarData[_kStarMdotIndex];
-        double& LogR     = StarData[_kLogRIndex];
-        double& LogTeff  = StarData[_kLogTeffIndex];
+        double& StarMass = StarData[kStarMassIndex_];
+        double& StarMdot = StarData[kStarMdotIndex_];
+        double& LogR     = StarData[kLogRIndex_];
+        double& LogTeff  = StarData[kLogTeffIndex_];
 
         double LogL = std::log10(LuminositySol);
 
@@ -2404,40 +2404,40 @@ namespace Npgs
         LogR    = std::log10(RadiusSol);
     }
 
-    const int FStellarGenerator::_kStarAgeIndex        = 0;
-    const int FStellarGenerator::_kStarMassIndex       = 1;
-    const int FStellarGenerator::_kStarMdotIndex       = 2;
-    const int FStellarGenerator::_kLogTeffIndex        = 3;
-    const int FStellarGenerator::_kLogRIndex           = 4;
-    const int FStellarGenerator::_kLogSurfZIndex       = 5;
-    const int FStellarGenerator::_kSurfaceH1Index      = 6;
-    const int FStellarGenerator::_kSurfaceHe3Index     = 7;
-    const int FStellarGenerator::_kLogCenterTIndex     = 8;
-    const int FStellarGenerator::_kLogCenterRhoIndex   = 9;
-    const int FStellarGenerator::_kPhaseIndex          = 10;
-    const int FStellarGenerator::_kXIndex              = 11;
-    const int FStellarGenerator::_kLifetimeIndex       = 12;
+    const int FStellarGenerator::kStarAgeIndex_        = 0;
+    const int FStellarGenerator::kStarMassIndex_       = 1;
+    const int FStellarGenerator::kStarMdotIndex_       = 2;
+    const int FStellarGenerator::kLogTeffIndex_        = 3;
+    const int FStellarGenerator::kLogRIndex_           = 4;
+    const int FStellarGenerator::kLogSurfZIndex_       = 5;
+    const int FStellarGenerator::kSurfaceH1Index_      = 6;
+    const int FStellarGenerator::kSurfaceHe3Index_     = 7;
+    const int FStellarGenerator::kLogCenterTIndex_     = 8;
+    const int FStellarGenerator::kLogCenterRhoIndex_   = 9;
+    const int FStellarGenerator::kPhaseIndex_          = 10;
+    const int FStellarGenerator::kXIndex_              = 11;
+    const int FStellarGenerator::kLifetimeIndex_       = 12;
 
-    const int FStellarGenerator::_kWdStarAgeIndex      = 0;
-    const int FStellarGenerator::_kWdLogRIndex         = 1;
-    const int FStellarGenerator::_kWdLogTeffIndex      = 2;
-    const int FStellarGenerator::_kWdLogCenterTIndex   = 3;
-    const int FStellarGenerator::_kWdLogCenterRhoIndex = 4;
+    const int FStellarGenerator::kWdStarAgeIndex_      = 0;
+    const int FStellarGenerator::kWdLogRIndex_         = 1;
+    const int FStellarGenerator::kWdLogTeffIndex_      = 2;
+    const int FStellarGenerator::kWdLogCenterTIndex_   = 3;
+    const int FStellarGenerator::kWdLogCenterRhoIndex_ = 4;
 
-    const std::vector<std::string> FStellarGenerator::_kMistHeaders
+    const std::vector<std::string> FStellarGenerator::kMistHeaders_
     {
         "star_age", "star_mass", "star_mdot", "log_Teff", "log_R", "log_surf_z",
         "surface_h1", "surface_he3", "log_center_T", "log_center_Rho", "phase", "x"
     };
 
-    const std::vector<std::string> FStellarGenerator::_kWdMistHeaders
+    const std::vector<std::string> FStellarGenerator::kWdMistHeaders_
     {
         "star_age", "log_R", "log_Teff", "log_center_T", "log_center_Rho"
     };
 
-    const std::vector<std::string> FStellarGenerator::_kHrDiagramHeaders{ "B-V", "Ia", "Ib", "II", "III", "IV", "V" };
-    std::unordered_map<std::string, std::vector<float>> FStellarGenerator::_kMassFilesCache;
-    std::unordered_map<const FStellarGenerator::FMistData*, std::vector<FStellarGenerator::FDataArray>> FStellarGenerator::_kPhaseChangesCache;
-    std::shared_mutex FStellarGenerator::_kCacheMutex;
-    bool FStellarGenerator::_kbMistDataInitiated = false;
+    const std::vector<std::string> FStellarGenerator::kHrDiagramHeaders_{ "B-V", "Ia", "Ib", "II", "III", "IV", "V" };
+    std::unordered_map<std::string, std::vector<float>> FStellarGenerator::kMassFilesCache_;
+    std::unordered_map<const FStellarGenerator::FMistData*, std::vector<FStellarGenerator::FDataArray>> FStellarGenerator::kPhaseChangesCache_;
+    std::shared_mutex FStellarGenerator::kCacheMutex_;
+    bool FStellarGenerator::kbMistDataInitiated_ = false;
 } // namespace Npgs

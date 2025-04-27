@@ -31,10 +31,10 @@ namespace Npgs
         FShaderBufferManager* GetShaderBufferManager() const;
 
     private:
-        const FCoreServices*                  _CoreServices;
-        std::unique_ptr<FImageTracker>        _ImageTracker;
-        std::unique_ptr<FPipelineManager>     _PipelineManager;
-        std::unique_ptr<FShaderBufferManager> _ShaderBufferManager;
+        const FCoreServices*                  CoreServices_;
+        std::unique_ptr<FImageTracker>        ImageTracker_;
+        std::unique_ptr<FPipelineManager>     PipelineManager_;
+        std::unique_ptr<FShaderBufferManager> ShaderBufferManager_;
     };
 } // namespace Npgs
 

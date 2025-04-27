@@ -39,8 +39,8 @@ namespace Npgs
         bool HandleResourceEmergency(FCommandBufferInfo& LowUsageResource, const FCommandBufferCreateInfo& CreateInfo) override;
 
     private:
-        std::uint32_t _QueueFamilyIndex;
-        FVulkanCommandPool _CommandPool;
+        std::uint32_t QueueFamilyIndex_;
+        FVulkanCommandPool CommandPool_;
     };
 } // namespace Npgs
 

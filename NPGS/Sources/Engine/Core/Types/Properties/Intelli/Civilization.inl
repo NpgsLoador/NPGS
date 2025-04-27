@@ -1,242 +1,240 @@
-#include "Civilization.h"
-
 #include "Engine/Core/Base/Base.h"
 
 namespace Npgs::Intelli
 {
     NPGS_INLINE FStandard& FStandard::SetOrganismBiomass(float OrganismBiomass)
     {
-        _LifeProperties.OrganismBiomass = boost::multiprecision::uint128_t(OrganismBiomass);
+        LifeProperties_.OrganismBiomass = boost::multiprecision::uint128_t(OrganismBiomass);
         return *this;
     }
 
     NPGS_INLINE FStandard& FStandard::SetOrganismBiomass(const boost::multiprecision::uint128_t& OrganismBiomass)
     {
-        _LifeProperties.OrganismBiomass = OrganismBiomass;
+        LifeProperties_.OrganismBiomass = OrganismBiomass;
         return *this;
     }
 
     NPGS_INLINE FStandard& FStandard::SetOrganismUsedPower(float OrganismUsedPower)
     {
-        _LifeProperties.OrganismUsedPower = OrganismUsedPower;
+        LifeProperties_.OrganismUsedPower = OrganismUsedPower;
         return *this;
     }
 
     NPGS_INLINE FStandard& FStandard::SetLifePhase(ELifePhase Phase)
     {
-        _LifeProperties.Phase = Phase;
+        LifeProperties_.Phase = Phase;
         return *this;
     }
 
     NPGS_INLINE FStandard& FStandard::SetAtrificalStructureMass(float AtrificalStructureMass)
     {
-        _CivilizationProperties.AtrificalStructureMass = boost::multiprecision::uint128_t(AtrificalStructureMass);
+        CivilizationProperties_.AtrificalStructureMass = boost::multiprecision::uint128_t(AtrificalStructureMass);
         return *this;
     }
 
     NPGS_INLINE FStandard& FStandard::SetAtrificalStructureMass(const boost::multiprecision::uint128_t& AtrificalStructureMass)
     {
-        _CivilizationProperties.AtrificalStructureMass = AtrificalStructureMass;
+        CivilizationProperties_.AtrificalStructureMass = AtrificalStructureMass;
         return *this;
     }
 
     NPGS_INLINE FStandard& FStandard::SetCitizenBiomass(float CitizenBiomass)
     {
-        _CivilizationProperties.CitizenBiomass = boost::multiprecision::uint128_t(CitizenBiomass);
+        CivilizationProperties_.CitizenBiomass = boost::multiprecision::uint128_t(CitizenBiomass);
         return *this;
     }
 
     NPGS_INLINE FStandard& FStandard::SetCitizenBiomass(const boost::multiprecision::uint128_t& CitizenBiomass)
     {
-        _CivilizationProperties.CitizenBiomass = CitizenBiomass;
+        CivilizationProperties_.CitizenBiomass = CitizenBiomass;
         return *this;
     }
 
     NPGS_INLINE FStandard& FStandard::SetUseableEnergeticNuclide(float UseableEnergeticNuclide)
     {
-        _CivilizationProperties.UseableEnergeticNuclide = boost::multiprecision::uint128_t(UseableEnergeticNuclide);
+        CivilizationProperties_.UseableEnergeticNuclide = boost::multiprecision::uint128_t(UseableEnergeticNuclide);
         return *this;
     }
 
     NPGS_INLINE FStandard& FStandard::SetUseableEnergeticNuclide(const boost::multiprecision::uint128_t& UseableEnergeticNuclide)
     {
-        _CivilizationProperties.UseableEnergeticNuclide = UseableEnergeticNuclide;
+        CivilizationProperties_.UseableEnergeticNuclide = UseableEnergeticNuclide;
         return *this;
     }
 
     NPGS_INLINE FStandard& FStandard::SetOrbitAssetsMass(float OrbitAssetsMass)
     {
-        _CivilizationProperties.OrbitAssetsMass = boost::multiprecision::uint128_t(OrbitAssetsMass);
+        CivilizationProperties_.OrbitAssetsMass = boost::multiprecision::uint128_t(OrbitAssetsMass);
         return *this;
     }
 
     NPGS_INLINE FStandard& FStandard::SetOrbitAssetsMass(const boost::multiprecision::uint128_t& OrbitAssetsMass)
     {
-        _CivilizationProperties.OrbitAssetsMass = OrbitAssetsMass;
+        CivilizationProperties_.OrbitAssetsMass = OrbitAssetsMass;
         return *this;
     }
 
     NPGS_INLINE FStandard& FStandard::SetGeneralintelligenceCount(std::uint64_t GeneralintelligenceCount)
     {
-        _CivilizationProperties.GeneralintelligenceCount = GeneralintelligenceCount;
+        CivilizationProperties_.GeneralintelligenceCount = GeneralintelligenceCount;
         return *this;
     }
 
     NPGS_INLINE FStandard& FStandard::SetGeneralIntelligenceAverageSynapseActivationCount(float GeneralIntelligenceAverageSynapseActivationCount)
     {
-        _CivilizationProperties.GeneralIntelligenceAverageSynapseActivationCount = GeneralIntelligenceAverageSynapseActivationCount;
+        CivilizationProperties_.GeneralIntelligenceAverageSynapseActivationCount = GeneralIntelligenceAverageSynapseActivationCount;
         return *this;
     }
 
     NPGS_INLINE FStandard& FStandard::SetGeneralIntelligenceSynapseCount(float GeneralIntelligenceSynapseCount)
     {
-        _CivilizationProperties.GeneralIntelligenceSynapseCount = GeneralIntelligenceSynapseCount;
+        CivilizationProperties_.GeneralIntelligenceSynapseCount = GeneralIntelligenceSynapseCount;
         return *this;
     }
 
     NPGS_INLINE FStandard& FStandard::SetGeneralIntelligenceAverageLifetime(float GeneralIntelligenceAverageLifetime)
     {
-        _CivilizationProperties.GeneralIntelligenceAverageLifetime = GeneralIntelligenceAverageLifetime;
+        CivilizationProperties_.GeneralIntelligenceAverageLifetime = GeneralIntelligenceAverageLifetime;
         return *this;
     }
 
     NPGS_INLINE FStandard& FStandard::SetCitizenUsedPower(float CitizenUsedPower)
     {
-        _CivilizationProperties.CitizenUsedPower = CitizenUsedPower;
+        CivilizationProperties_.CitizenUsedPower = CitizenUsedPower;
         return *this;
     }
 
     NPGS_INLINE FStandard& FStandard::SetCivilizationProgress(float CivilizationProgress)
     {
-        _CivilizationProperties.CivilizationProgress = CivilizationProgress;
+        CivilizationProperties_.CivilizationProgress = CivilizationProgress;
         return *this;
     }
 
     NPGS_INLINE FStandard& FStandard::SetStoragedHistoryDataSize(float StoragedHistoryDataSize)
     {
-        _CivilizationProperties.StoragedHistoryDataSize = StoragedHistoryDataSize;
+        CivilizationProperties_.StoragedHistoryDataSize = StoragedHistoryDataSize;
         return *this;
     }
 
     NPGS_INLINE FStandard& FStandard::SetTeamworkCoefficient(float TeamworkCoefficient)
     {
-        _CivilizationProperties.TeamworkCoefficient = TeamworkCoefficient;
+        CivilizationProperties_.TeamworkCoefficient = TeamworkCoefficient;
         return *this;
     }
 
     NPGS_INLINE FStandard& FStandard::SetIsIndependentIndividual(bool bIsIndependentIndividual)
     {
-        _CivilizationProperties.bIsIndependentIndividual = bIsIndependentIndividual;
+        CivilizationProperties_.bIsIndependentIndividual = bIsIndependentIndividual;
         return *this;
     }
 
     NPGS_INLINE const boost::multiprecision::uint128_t& FStandard::GetOrganismBiomass() const
     {
-        return _LifeProperties.OrganismBiomass;
+        return LifeProperties_.OrganismBiomass;
     }
 
     NPGS_INLINE float FStandard::GetOrganismUsedPower() const
     {
-        return _LifeProperties.OrganismUsedPower;
+        return LifeProperties_.OrganismUsedPower;
     }
 
     NPGS_INLINE FStandard::ELifePhase FStandard::GetLifePhase() const
     {
-        return _LifeProperties.Phase;
+        return LifeProperties_.Phase;
     }
 
     template <typename DigitalType>
     NPGS_INLINE DigitalType FStandard::GetOrganismBiomassDigital() const
     {
-        return _LifeProperties.OrganismBiomass.convert_to<DigitalType>();
+        return LifeProperties_.OrganismBiomass.convert_to<DigitalType>();
     }
 
     NPGS_INLINE const boost::multiprecision::uint128_t& FStandard::GetAtrificalStructureMass() const
     {
-        return _CivilizationProperties.AtrificalStructureMass;
+        return CivilizationProperties_.AtrificalStructureMass;
     }
 
     NPGS_INLINE const boost::multiprecision::uint128_t& FStandard::GetCitizenBiomass() const
     {
-        return _CivilizationProperties.CitizenBiomass;
+        return CivilizationProperties_.CitizenBiomass;
     }
 
     NPGS_INLINE const boost::multiprecision::uint128_t& FStandard::GetUseableEnergeticNuclide() const
     {
-        return _CivilizationProperties.UseableEnergeticNuclide;
+        return CivilizationProperties_.UseableEnergeticNuclide;
     }
 
     NPGS_INLINE const boost::multiprecision::uint128_t& FStandard::GetOrbitAssetsMass() const
     {
-        return _CivilizationProperties.OrbitAssetsMass;
+        return CivilizationProperties_.OrbitAssetsMass;
     }
 
     NPGS_INLINE std::uint64_t FStandard::GetGeneralintelligenceCount() const
     {
-        return _CivilizationProperties.GeneralintelligenceCount;
+        return CivilizationProperties_.GeneralintelligenceCount;
     }
 
     NPGS_INLINE float FStandard::GetGeneralIntelligenceAverageSynapseActivationCount() const
     {
-        return _CivilizationProperties.GeneralIntelligenceAverageSynapseActivationCount;
+        return CivilizationProperties_.GeneralIntelligenceAverageSynapseActivationCount;
     }
 
     NPGS_INLINE float FStandard::GetGeneralIntelligenceSynapseCount() const
     {
-        return _CivilizationProperties.GeneralIntelligenceSynapseCount;
+        return CivilizationProperties_.GeneralIntelligenceSynapseCount;
     }
 
     NPGS_INLINE float FStandard::GetGeneralIntelligenceAverageLifetime() const
     {
-        return _CivilizationProperties.GeneralIntelligenceAverageLifetime;
+        return CivilizationProperties_.GeneralIntelligenceAverageLifetime;
     }
 
     NPGS_INLINE float FStandard::GetCitizenUsedPower() const
     {
-        return _CivilizationProperties.CitizenUsedPower;
+        return CivilizationProperties_.CitizenUsedPower;
     }
 
     NPGS_INLINE float FStandard::GetCivilizationProgress() const
     {
-        return _CivilizationProperties.CivilizationProgress;
+        return CivilizationProperties_.CivilizationProgress;
     }
 
     NPGS_INLINE float FStandard::GetStoragedHistoryDataSize() const
     {
-        return _CivilizationProperties.StoragedHistoryDataSize;
+        return CivilizationProperties_.StoragedHistoryDataSize;
     }
 
     NPGS_INLINE float FStandard::GetTeamworkCoefficient() const
     {
-        return _CivilizationProperties.TeamworkCoefficient;
+        return CivilizationProperties_.TeamworkCoefficient;
     }
 
     NPGS_INLINE bool FStandard::IsIndependentIndividual() const
     {
-        return _CivilizationProperties.bIsIndependentIndividual;
+        return CivilizationProperties_.bIsIndependentIndividual;
     }
 
     template <typename DigitalType>
     NPGS_INLINE DigitalType FStandard::GetAtrificalStructureMassDigital() const
     {
-        return _CivilizationProperties.AtrificalStructureMass.convert_to<DigitalType>();
+        return CivilizationProperties_.AtrificalStructureMass.convert_to<DigitalType>();
     }
 
     template <typename DigitalType>
     NPGS_INLINE DigitalType FStandard::GetCitizenBiomassDigital() const
     {
-        return _CivilizationProperties.CitizenBiomass.convert_to<DigitalType>();
+        return CivilizationProperties_.CitizenBiomass.convert_to<DigitalType>();
     }
 
     template <typename DigitalType>
     NPGS_INLINE DigitalType FStandard::GetUseableEnergeticNuclideDigital() const
     {
-        return _CivilizationProperties.UseableEnergeticNuclide.convert_to<DigitalType>();
+        return CivilizationProperties_.UseableEnergeticNuclide.convert_to<DigitalType>();
     }
 
     template <typename DigitalType>
     NPGS_INLINE DigitalType FStandard::GetOrbitAssetsMassDigital() const
     {
-        return _CivilizationProperties.OrbitAssetsMass.convert_to<DigitalType>();
+        return CivilizationProperties_.OrbitAssetsMass.convert_to<DigitalType>();
     }
 } // namespace Npgs::Intelli

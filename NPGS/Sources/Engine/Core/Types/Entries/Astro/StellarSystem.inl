@@ -16,25 +16,25 @@ namespace Npgs::Astro
                       std::is_same_v<ObjectType, Intelli::AArtifact>,
                       "Invalid object type for SetObject");
 
-        _Object = Object;
+        Object_ = Object;
 
         if constexpr (std::is_same_v<ObjectType, FBaryCenter>)
-            _Type = EObjectType::kBaryCenter;
+            Type_ = EObjectType::kBaryCenter;
         else if constexpr (std::is_same_v<ObjectType, AStar>)
-            _Type = EObjectType::kStar;
+            Type_ = EObjectType::kStar;
         else if constexpr (std::is_same_v<ObjectType, APlanet>)
-            _Type = EObjectType::kPlanet;
+            Type_ = EObjectType::kPlanet;
         else if constexpr (std::is_same_v<ObjectType, AAsteroidCluster>)
-            _Type = EObjectType::kAsteroidCluster;
+            Type_ = EObjectType::kAsteroidCluster;
         else if constexpr (std::is_same_v<ObjectType, Intelli::AArtifact>)
-            _Type = EObjectType::kArtifactCluster;
+            Type_ = EObjectType::kArtifactCluster;
 
         return *this;
     }
 
     NPGS_INLINE FOrbit::EObjectType FOrbit::FOrbitalObject::GetObjectType() const
     {
-        return _Type;
+        return Type_;
     }
 
     template <typename ObjectType>
@@ -48,205 +48,205 @@ namespace Npgs::Astro
                       std::is_same_v<ObjectType, Intelli::AArtifact>,
                       "Invalid object type for SetObject");
 
-        return std::get<ObjectType*>(_Object);
+        return std::get<ObjectType*>(Object_);
     }
 
     NPGS_INLINE FOrbit::FOrbitalDetails& FOrbit::FOrbitalDetails::SetHostOrbit(FOrbit* HostFOrbit)
     {
-        _HostOrbit = HostFOrbit;
+        HostOrbit_ = HostFOrbit;
         return *this;
     }
 
     NPGS_INLINE FOrbit::FOrbitalDetails& FOrbit::FOrbitalDetails::SetInitialTrueAnomaly(float InitialTrueAnomaly)
     {
-        _InitialTrueAnomaly = InitialTrueAnomaly;
+        InitialTrueAnomaly_ = InitialTrueAnomaly;
         return *this;
     }
 
     NPGS_INLINE FOrbit* FOrbit::FOrbitalDetails::GetHostOrbit()
     {
-        return _HostOrbit;
+        return HostOrbit_;
     }
 
     NPGS_INLINE FOrbit::FOrbitalObject& FOrbit::FOrbitalDetails::GetOrbitalObject()
     {
-        return _Object;
+        return Object_;
     }
 
     NPGS_INLINE float FOrbit::FOrbitalDetails::GetInitialTrueAnomaly() const
     {
-        return _InitialTrueAnomaly;
+        return InitialTrueAnomaly_;
     }
 
     NPGS_INLINE std::vector<FOrbit*>& FOrbit::FOrbitalDetails::DirectOrbitsData()
     {
-        return _DirectOrbits;
+        return DirectOrbits_;
     }
 
     NPGS_INLINE FOrbit& FOrbit::SetSemiMajorAxis(float SemiMajorAxis)
     {
-        _OrbitElements.SemiMajorAxis = SemiMajorAxis;
+        OrbitElements_.SemiMajorAxis = SemiMajorAxis;
         return *this;
     }
 
     NPGS_INLINE FOrbit& FOrbit::SetEccentricity(float Eccentricity)
     {
-        _OrbitElements.Eccentricity = Eccentricity;
+        OrbitElements_.Eccentricity = Eccentricity;
         return *this;
     }
 
     NPGS_INLINE FOrbit& FOrbit::SetInclination(float Inclination)
     {
-        _OrbitElements.Inclination = Inclination;
+        OrbitElements_.Inclination = Inclination;
         return *this;
     }
 
     NPGS_INLINE FOrbit& FOrbit::SetLongitudeOfAscendingNode(float LongitudeOfAscendingNode)
     {
-        _OrbitElements.LongitudeOfAscendingNode = LongitudeOfAscendingNode;
+        OrbitElements_.LongitudeOfAscendingNode = LongitudeOfAscendingNode;
         return *this;
     }
 
     NPGS_INLINE FOrbit& FOrbit::SetArgumentOfPeriapsis(float ArgumentOfPeriapsis)
     {
-        _OrbitElements.ArgumentOfPeriapsis = ArgumentOfPeriapsis;
+        OrbitElements_.ArgumentOfPeriapsis = ArgumentOfPeriapsis;
         return *this;
     }
 
     NPGS_INLINE FOrbit& FOrbit::SetTrueAnomaly(float TrueAnomaly)
     {
-        _OrbitElements.TrueAnomaly = TrueAnomaly;
+        OrbitElements_.TrueAnomaly = TrueAnomaly;
         return *this;
     }
 
     NPGS_INLINE FOrbit& FOrbit::SetNormal(glm::vec2 Normal)
     {
-        _Normal = Normal;
+        Normal_ = Normal;
         return *this;
     }
 
     NPGS_INLINE FOrbit& FOrbit::SetPeriod(float Period)
     {
-        _Period = Period;
+        Period_ = Period;
         return *this;
     }
 
     NPGS_INLINE float FOrbit::GetSemiMajorAxis() const
     {
-        return _OrbitElements.SemiMajorAxis;
+        return OrbitElements_.SemiMajorAxis;
     }
 
     NPGS_INLINE float FOrbit::GetEccentricity() const
     {
-        return _OrbitElements.Eccentricity;
+        return OrbitElements_.Eccentricity;
     }
 
     NPGS_INLINE float FOrbit::GetInclination() const
     {
-        return _OrbitElements.Inclination;
+        return OrbitElements_.Inclination;
     }
 
     NPGS_INLINE float FOrbit::GetLongitudeOfAscendingNode() const
     {
-        return _OrbitElements.LongitudeOfAscendingNode;
+        return OrbitElements_.LongitudeOfAscendingNode;
     }
 
     NPGS_INLINE float FOrbit::GetArgumentOfPeriapsis() const
     {
-        return _OrbitElements.ArgumentOfPeriapsis;
+        return OrbitElements_.ArgumentOfPeriapsis;
     }
 
     NPGS_INLINE float FOrbit::GetTrueAnomaly() const
     {
-        return _OrbitElements.TrueAnomaly;
+        return OrbitElements_.TrueAnomaly;
     }
 
     NPGS_INLINE const FOrbit::FOrbitalObject& FOrbit::GetParent() const
     {
-        return _Parent;
+        return Parent_;
     }
 
     NPGS_INLINE glm::vec2 FOrbit::GetNormal() const
     {
-        return _Normal;
+        return Normal_;
     }
 
     NPGS_INLINE float FOrbit::GetPeriod() const
     {
-        return _Period;
+        return Period_;
     }
 
     NPGS_INLINE std::vector<FOrbit::FOrbitalDetails>& FOrbit::ObjectsData()
     {
-        return _Objects;
+        return Objects_;
     }
 
     NPGS_INLINE FStellarSystem& FStellarSystem::SetBaryPosition(glm::vec3 Position)
     {
-        _SystemBary.Position = Position;
+        SystemBary_.Position = Position;
         return *this;
     }
 
     NPGS_INLINE FStellarSystem& FStellarSystem::SetBaryNormal(glm::vec2 Normal)
     {
-        _SystemBary.Normal = Normal;
+        SystemBary_.Normal = Normal;
         return *this;
     }
 
     NPGS_INLINE FStellarSystem& FStellarSystem::SetBaryDistanceRank(std::size_t DistanceRank)
     {
-        _SystemBary.DistanceRank = DistanceRank;
+        SystemBary_.DistanceRank = DistanceRank;
         return *this;
     }
 
     NPGS_INLINE FStellarSystem& FStellarSystem::SetBaryName(const std::string& Name)
     {
-        _SystemBary.Name = Name;
+        SystemBary_.Name = Name;
         return *this;
     }
 
     NPGS_INLINE glm::vec3 FStellarSystem::GetBaryPosition() const
     {
-        return _SystemBary.Position;
+        return SystemBary_.Position;
     }
 
     NPGS_INLINE glm::vec2 FStellarSystem::GetBaryNormal() const
     {
-        return _SystemBary.Normal;
+        return SystemBary_.Normal;
     }
 
     NPGS_INLINE std::size_t FStellarSystem::GetBaryDistanceRank() const
     {
-        return _SystemBary.DistanceRank;
+        return SystemBary_.DistanceRank;
     }
 
     NPGS_INLINE const std::string& FStellarSystem::GetBaryName() const
     {
-        return _SystemBary.Name;
+        return SystemBary_.Name;
     }
 
     NPGS_INLINE FBaryCenter* FStellarSystem::GetBaryCenter()
     {
-        return &_SystemBary;
+        return &SystemBary_;
     }
 
     NPGS_INLINE std::vector<std::unique_ptr<Astro::AStar>>& FStellarSystem::StarsData()
     {
-        return _Stars;
+        return Stars_;
     }
 
     NPGS_INLINE std::vector<std::unique_ptr<Astro::APlanet>>& FStellarSystem::PlanetsData()
     {
-        return _Planets;
+        return Planets_;
     }
 
     NPGS_INLINE std::vector<std::unique_ptr<Astro::AAsteroidCluster>>& FStellarSystem::AsteroidClustersData()
     {
-        return _AsteroidClusters;
+        return AsteroidClusters_;
     }
 
     NPGS_INLINE std::vector<std::unique_ptr<FOrbit>>& FStellarSystem::OrbitsData()
     {
-        return _Orbits;
+        return Orbits_;
     }
 } // namespace Npgs::Astro

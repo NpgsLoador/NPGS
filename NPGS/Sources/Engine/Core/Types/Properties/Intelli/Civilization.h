@@ -117,19 +117,19 @@ namespace Npgs::Intelli
         DigitalType GetOrbitAssetsMassDigital() const;
 
     public:
-        static const float _kNull;
-        static const float _kInitialGeneralIntelligence;
-        static const float _kUrgesellschaft;
-        static const float _kEarlyIndustrielle;
-        static const float _kSteamAge;
-        static const float _kElectricAge;
-        static const float _kAtomicAge;
-        static const float _kDigitalAge;
-        static const float _kEarlyAsiAge;
+        static const float kNull_;
+        static const float kInitialGeneralIntelligence_;
+        static const float kUrgesellschaft_;
+        static const float kEarlyIndustrielle_;
+        static const float kSteamAge_;
+        static const float kElectricAge_;
+        static const float kAtomicAge_;
+        static const float kDigitalAge_;
+        static const float kEarlyAsiAge_;
 
     private:
-        FCivilizationProperties _CivilizationProperties;
-        FLifeProperties         _LifeProperties;
+        FCivilizationProperties CivilizationProperties_;
+        FLifeProperties         LifeProperties_;
     };
 
     class FAdvanced : public INpgsObject

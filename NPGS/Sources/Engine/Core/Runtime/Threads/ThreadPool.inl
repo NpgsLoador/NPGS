@@ -1,4 +1,4 @@
-#include "ThreadPool.h"
+#include "Engine/Core/Base/Base.h"
 
 namespace Npgs
 {
@@ -10,21 +10,21 @@ namespace Npgs
             std::bind(std::forward<Func>(Pred), std::forward<Args>(TaskArgs)...));
         std::future<ReturnType> Future = Task->get_future();
         {
-            std::unique_lock<std::mutex> Mutex(_Mutex);
-            _Tasks.emplace([Task]() -> void { (*Task)(); });
+            std::unique_lock<std::mutex> Mutex(Mutex_);
+            Tasks_.emplace([Task]() -> void { (*Task)(); });
         }
-        _Condition.notify_one();
+        Condition_.notify_one();
         return Future;
     }
 
     NPGS_INLINE void FThreadPool::SwitchHyperThread()
     {
-        _HyperThreadIndex = 1 - _HyperThreadIndex;
+        HyperThreadIndex_ = 1 - HyperThreadIndex_;
     }
 
     NPGS_INLINE int FThreadPool::GetMaxThreadCount() const
     {
-        return _MaxThreadCount;
+        return MaxThreadCount_;
     }
 
     template <typename DataType, typename ResultType>

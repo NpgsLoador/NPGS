@@ -3,8 +3,8 @@
 namespace Npgs
 {
     FEngineServices::FEngineServices()
-        : _CoreServices(nullptr)
-        , _ResourceServices(nullptr)
+        : CoreServices_(nullptr)
+        , ResourceServices_(nullptr)
     {
     }
 
@@ -27,22 +27,22 @@ namespace Npgs
             .ThreadPoolCreateInfo = &ThreadPoolCreateInfo
         };
 
-        _CoreServices = std::make_unique<FCoreServices>(CoreServiceEnableInfo);
+        CoreServices_ = std::make_unique<FCoreServices>(CoreServiceEnableInfo);
     }
 
     void FEngineServices::InitializeResourceServices()
     {
-        _ResourceServices = std::make_unique<FResourceServices>(*_CoreServices);
+        ResourceServices_ = std::make_unique<FResourceServices>(*CoreServices_);
     }
 
     void FEngineServices::ShutdownCoreServices()
     {
-        _CoreServices.reset();
+        CoreServices_.reset();
     }
 
     void FEngineServices::ShutdownResourceServices()
     {
-        _ResourceServices.reset();
+        ResourceServices_.reset();
     }
 
     FEngineServices* FEngineServices::GetInstance()

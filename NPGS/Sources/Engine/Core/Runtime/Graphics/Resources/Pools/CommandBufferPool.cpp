@@ -6,8 +6,8 @@ namespace Npgs
                                            std::uint32_t PoolReclaimThresholdMs, std::uint32_t MaintenanceIntervalMs,
                                            vk::Device Device, std::uint32_t QueueFamilyIndex)
         : Base(MinAvailableBufferLimit, MaxAllocatedBufferLimit, PoolReclaimThresholdMs, MaintenanceIntervalMs)
-        , _QueueFamilyIndex(QueueFamilyIndex)
-        , _CommandPool(Device, _QueueFamilyIndex, vk::CommandPoolCreateFlagBits::eResetCommandBuffer)
+        , QueueFamilyIndex_(QueueFamilyIndex)
+        , CommandPool_(Device, QueueFamilyIndex_, vk::CommandPoolCreateFlagBits::eResetCommandBuffer)
     {
     }
 } // namespace Npgs/

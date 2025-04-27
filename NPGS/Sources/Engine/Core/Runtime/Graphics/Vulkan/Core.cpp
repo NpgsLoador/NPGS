@@ -17,70 +17,70 @@ namespace Npgs
 
     FVulkanCore::~FVulkanCore()
     {
-        if (_Instance)
+        if (Instance_)
         {
-            if (_Device)
+            if (Device_)
             {
                 WaitIdle();
-                if (_VmaAllocator)
+                if (VmaAllocator_)
                 {
-                    vmaDestroyAllocator(_VmaAllocator);
-                    _VmaAllocator = nullptr;
+                    vmaDestroyAllocator(VmaAllocator_);
+                    VmaAllocator_ = nullptr;
                     NpgsCoreInfo("Destroyed VMA allocator.");
                 }
 
-                if (_Swapchain)
+                if (Swapchain_)
                 {
-                    for (auto& Callback : _DestroySwapchainCallbacks)
+                    for (auto& Callback : DestroySwapchainCallbacks_)
                     {
                         Callback.second();
                     }
-                    for (auto& ImageView : _SwapchainImageViews)
+                    for (auto& ImageView : SwapchainImageViews_)
                     {
                         if (ImageView)
                         {
-                            _Device.destroyImageView(ImageView);
+                            Device_.destroyImageView(ImageView);
                         }
                     }
-                    _SwapchainImageViews.clear();
+                    SwapchainImageViews_.clear();
                     NpgsCoreInfo("Destroyed image views.");
-                    _Device.destroySwapchainKHR(_Swapchain);
+                    Device_.destroySwapchainKHR(Swapchain_);
                     NpgsCoreInfo("Destroyed swapchain.");
                 }
 
-                for (auto& Callback : _DestroyDeviceCallbacks)
+                for (auto& Callback : DestroyDeviceCallbacks_)
                 {
                     Callback.second();
                 }
-                _Device.destroy();
+                Device_.destroy();
                 NpgsCoreInfo("Destroyed logical device.");
             }
 
-            if (_Surface)
+            if (Surface_)
             {
-                _Instance.destroySurfaceKHR(_Surface);
+                Instance_.destroySurfaceKHR(Surface_);
                 NpgsCoreInfo("Destroyed surface.");
             }
 
-            if (_DebugUtilsMessenger)
+            if (DebugUtilsMessenger_)
             {
-                _Instance.destroyDebugUtilsMessengerEXT(_DebugUtilsMessenger);
+                Instance_.destroyDebugUtilsMessengerEXT(DebugUtilsMessenger_);
                 NpgsCoreInfo("Destroyed debug messenger.");
             }
 
-            _CreateSwapchainCallbacks.clear();
-            _DestroySwapchainCallbacks.clear();
-            _CreateDeviceCallbacks.clear();
-            _DestroyDeviceCallbacks.clear();
+            CreateSwapchainCallbacks_.clear();
+            DestroySwapchainCallbacks_.clear();
+            CreateDeviceCallbacks_.clear();
+            DestroyDeviceCallbacks_.clear();
 
-            _DebugUtilsMessenger = vk::DebugUtilsMessengerEXT();
-            _Surface             = vk::SurfaceKHR();
-            _PhysicalDevice      = vk::PhysicalDevice();
-            _Device              = vk::Device();
-            _Swapchain           = vk::SwapchainKHR();
-            _SwapchainCreateInfo = vk::SwapchainCreateInfoKHR();
+            DebugUtilsMessenger_ = vk::DebugUtilsMessengerEXT();
+            Surface_             = vk::SurfaceKHR();
+            PhysicalDevice_      = vk::PhysicalDevice();
+            Device_              = vk::Device();
+            Swapchain_           = vk::SwapchainKHR();
+            SwapchainCreateInfo_ = vk::SwapchainCreateInfoKHR();
 
-            _Instance.destroy();
+            Instance_.destroy();
             NpgsCoreInfo("Destroyed Vulkan instance.");
         }
     }
@@ -97,16 +97,16 @@ namespace Npgs
     #pragma warning(push)
     #pragma warning(disable: 4996) // for deprecated api
         vk::ApplicationInfo ApplicationInfo("Von-Neumann in Galaxy Simulator", vk::makeVersion(1, 0, 0),
-                                            "No Engine", vk::makeVersion(1, 0, 0), _ApiVersion);
+                                            "No Engine", vk::makeVersion(1, 0, 0), ApiVersion_);
     #pragma warning(pop)
-        vk::InstanceCreateInfo InstanceCreateInfo(Flags, &ApplicationInfo, _InstanceLayers, _InstanceExtensions);
+        vk::InstanceCreateInfo InstanceCreateInfo(Flags, &ApplicationInfo, InstanceLayers_, InstanceExtensions_);
 
         VulkanHppCheck(CheckInstanceLayers());
         VulkanHppCheck(CheckInstanceExtensions());
 
         try
         {
-            _Instance = vk::createInstance(InstanceCreateInfo);
+            Instance_ = vk::createInstance(InstanceCreateInfo);
         }
         catch (const vk::SystemError& e)
         {
@@ -140,35 +140,35 @@ namespace Npgs
         std::vector<float> QueuePriorities;
         std::vector<vk::DeviceQueueCreateInfo> DeviceQueueCreateInfos;
 
-        if (_QueueFamilyIndices.at(EQueueType::kGraphics) != vk::QueueFamilyIgnored)
+        if (QueueFamilyIndices_.at(EQueueType::kGraphics) != vk::QueueFamilyIgnored)
         {
-            const auto& QueueFamilyProperties = _QueueFamilyProperties[_QueueFamilyIndices.at(EQueueType::kGraphics)];
+            const auto& QueueFamilyProperties = QueueFamilyProperties_[QueueFamilyIndices_.at(EQueueType::kGraphics)];
             QueuePriorities.assign(QueueFamilyProperties.queueCount, QueuePriority);
-            DeviceQueueCreateInfos.emplace_back(vk::DeviceQueueCreateFlags(), _QueueFamilyIndices.at(EQueueType::kGraphics), QueuePriorities);
+            DeviceQueueCreateInfos.emplace_back(vk::DeviceQueueCreateFlags(), QueueFamilyIndices_.at(EQueueType::kGraphics), QueuePriorities);
         }
-        if (_QueueFamilyIndices.at(EQueueType::kPresent) != vk::QueueFamilyIgnored &&
-            _QueueFamilyIndices.at(EQueueType::kPresent) != _QueueFamilyIndices.at(EQueueType::kGraphics))
+        if (QueueFamilyIndices_.at(EQueueType::kPresent) != vk::QueueFamilyIgnored &&
+            QueueFamilyIndices_.at(EQueueType::kPresent) != QueueFamilyIndices_.at(EQueueType::kGraphics))
         {
-            const auto& QueueFamilyProperties = _QueueFamilyProperties[_QueueFamilyIndices.at(EQueueType::kPresent)];
+            const auto& QueueFamilyProperties = QueueFamilyProperties_[QueueFamilyIndices_.at(EQueueType::kPresent)];
             QueuePriorities.clear();
             QueuePriorities.assign(QueueFamilyProperties.queueCount, QueuePriority);
-            DeviceQueueCreateInfos.emplace_back(vk::DeviceQueueCreateFlags(), _QueueFamilyIndices.at(EQueueType::kPresent), QueuePriorities);
+            DeviceQueueCreateInfos.emplace_back(vk::DeviceQueueCreateFlags(), QueueFamilyIndices_.at(EQueueType::kPresent), QueuePriorities);
         }
-        if (_QueueFamilyIndices.at(EQueueType::kCompute) != vk::QueueFamilyIgnored &&
-            _QueueFamilyIndices.at(EQueueType::kCompute) != _QueueFamilyIndices.at(EQueueType::kGraphics) &&
-            _QueueFamilyIndices.at(EQueueType::kCompute) != _QueueFamilyIndices.at(EQueueType::kPresent))
+        if (QueueFamilyIndices_.at(EQueueType::kCompute) != vk::QueueFamilyIgnored &&
+            QueueFamilyIndices_.at(EQueueType::kCompute) != QueueFamilyIndices_.at(EQueueType::kGraphics) &&
+            QueueFamilyIndices_.at(EQueueType::kCompute) != QueueFamilyIndices_.at(EQueueType::kPresent))
         {
-            const auto& QueueFamilyProperties = _QueueFamilyProperties[_QueueFamilyIndices.at(EQueueType::kCompute)];
+            const auto& QueueFamilyProperties = QueueFamilyProperties_[QueueFamilyIndices_.at(EQueueType::kCompute)];
             QueuePriorities.clear();
             QueuePriorities.assign(QueueFamilyProperties.queueCount, QueuePriority);
-            DeviceQueueCreateInfos.emplace_back(vk::DeviceQueueCreateFlags(), _QueueFamilyIndices.at(EQueueType::kCompute), QueuePriorities);
+            DeviceQueueCreateInfos.emplace_back(vk::DeviceQueueCreateFlags(), QueueFamilyIndices_.at(EQueueType::kCompute), QueuePriorities);
         }
-        if (_QueueFamilyIndices.at(EQueueType::kTransfer) != _QueueFamilyIndices.at(EQueueType::kGraphics))
+        if (QueueFamilyIndices_.at(EQueueType::kTransfer) != QueueFamilyIndices_.at(EQueueType::kGraphics))
         {
-            const auto& QueueFamilyProperties = _QueueFamilyProperties[_QueueFamilyIndices.at(EQueueType::kTransfer)];
+            const auto& QueueFamilyProperties = QueueFamilyProperties_[QueueFamilyIndices_.at(EQueueType::kTransfer)];
             QueuePriorities.clear();
             QueuePriorities.assign(QueueFamilyProperties.queueCount, QueuePriority);
-            DeviceQueueCreateInfos.emplace_back(vk::DeviceQueueCreateFlags(), _QueueFamilyIndices.at(EQueueType::kTransfer), QueuePriorities);
+            DeviceQueueCreateInfos.emplace_back(vk::DeviceQueueCreateFlags(), QueueFamilyIndices_.at(EQueueType::kTransfer), QueuePriorities);
         }
 
         vk::PhysicalDeviceFeatures2 Features2;
@@ -187,37 +187,37 @@ namespace Npgs
         Features14.setPNext(&CustomBorderColorFeatures);
         CustomBorderColorFeatures.setPNext(&DescriptorBufferFeatures);
 
-        _PhysicalDevice.getFeatures2(&Features2);
+        PhysicalDevice_.getFeatures2(&Features2);
 
         void* pNext = &CustomBorderColorFeatures;
         vk::PhysicalDeviceFeatures PhysicalDeviceFeatures = Features2.features;
 
-        if (_ApiVersion >= vk::ApiVersion11)
+        if (ApiVersion_ >= vk::ApiVersion11)
         {
             Features11.setPNext(pNext);
             pNext = &Features11;
         }
-        if (_ApiVersion >= vk::ApiVersion12)
+        if (ApiVersion_ >= vk::ApiVersion12)
         {
             Features12.setPNext(pNext);
             pNext = &Features12;
         }
-        if (_ApiVersion >= vk::ApiVersion13)
+        if (ApiVersion_ >= vk::ApiVersion13)
         {
             Features13.setPNext(pNext);
             pNext = &Features13;
         }
-        if (_ApiVersion >= vk::ApiVersion14)
+        if (ApiVersion_ >= vk::ApiVersion14)
         {
             Features14.setPNext(pNext);
             pNext = &Features14;
         }
 
-        vk::DeviceCreateInfo DeviceCreateInfo(Flags, DeviceQueueCreateInfos, {}, _DeviceExtensions, &PhysicalDeviceFeatures, pNext);
+        vk::DeviceCreateInfo DeviceCreateInfo(Flags, DeviceQueueCreateInfos, {}, DeviceExtensions_, &PhysicalDeviceFeatures, pNext);
 
         try
         {
-            _Device = _PhysicalDevice.createDevice(DeviceCreateInfo);
+            Device_ = PhysicalDevice_.createDevice(DeviceCreateInfo);
         }
         catch (const vk::SystemError& e)
         {
@@ -225,54 +225,54 @@ namespace Npgs
             return static_cast<vk::Result>(e.code().value());
         }
 
-        _QueuePool.emplace(_Device);
+        QueuePool_.emplace(Device_);
         for (const auto& DeviceQueueCreateInfo : DeviceQueueCreateInfos)
         {
-            const auto& QueueFamilyProperties = _QueueFamilyProperties[DeviceQueueCreateInfo.queueFamilyIndex];
-            _QueuePool->Register(QueueFamilyProperties.queueFlags, DeviceQueueCreateInfo.queueFamilyIndex, DeviceQueueCreateInfo.queueCount);
+            const auto& QueueFamilyProperties = QueueFamilyProperties_[DeviceQueueCreateInfo.queueFamilyIndex];
+            QueuePool_->Register(QueueFamilyProperties.queueFlags, DeviceQueueCreateInfo.queueFamilyIndex, DeviceQueueCreateInfo.queueCount);
         }
 
         // 常驻队列，用于渲染循环频繁提交
-        if (_QueueFamilyIndices.at(EQueueType::kGraphics) != vk::QueueFamilyIgnored)
+        if (QueueFamilyIndices_.at(EQueueType::kGraphics) != vk::QueueFamilyIgnored)
         {
-            _Queues[EQueueType::kGraphics] =
-                _QueuePool->AcquireQueue(_QueueFamilyProperties[_QueueFamilyIndices.at(EQueueType::kGraphics)].queueFlags).Release();
+            Queues_[EQueueType::kGraphics] = QueuePool_->AcquireQueue(
+                QueueFamilyProperties_[QueueFamilyIndices_.at(EQueueType::kGraphics)].queueFlags).Release();
         }
-        if (_QueueFamilyIndices.at(EQueueType::kPresent) != vk::QueueFamilyIgnored)
+        if (QueueFamilyIndices_.at(EQueueType::kPresent) != vk::QueueFamilyIgnored)
         {
-            if (_QueueFamilyIndices.at(EQueueType::kGraphics) == _QueueFamilyIndices.at(EQueueType::kPresent))
+            if (QueueFamilyIndices_.at(EQueueType::kGraphics) == QueueFamilyIndices_.at(EQueueType::kPresent))
             {
-                _Queues[EQueueType::kPresent] = _Queues[EQueueType::kGraphics];
+                Queues_[EQueueType::kPresent] = Queues_[EQueueType::kGraphics];
             }
             else
             {
-                _Queues[EQueueType::kPresent] =
-                    _QueuePool->AcquireQueue(_QueueFamilyProperties[_QueueFamilyIndices.at(EQueueType::kPresent)].queueFlags).Release();
+                Queues_[EQueueType::kPresent] = QueuePool_->AcquireQueue(
+                    QueueFamilyProperties_[QueueFamilyIndices_.at(EQueueType::kPresent)].queueFlags).Release();
             }
         }
-        if (_QueueFamilyIndices.at(EQueueType::kCompute) != vk::QueueFamilyIgnored)
+        if (QueueFamilyIndices_.at(EQueueType::kCompute) != vk::QueueFamilyIgnored)
         {
-            if (_QueueFamilyIndices.at(EQueueType::kCompute) == _QueueFamilyIndices.at(EQueueType::kGraphics))
+            if (QueueFamilyIndices_.at(EQueueType::kCompute) == QueueFamilyIndices_.at(EQueueType::kGraphics))
             {
-                _Queues[EQueueType::kCompute] = _Queues[EQueueType::kGraphics];
+                Queues_[EQueueType::kCompute] = Queues_[EQueueType::kGraphics];
             }
-            else if (_QueueFamilyIndices.at(EQueueType::kCompute) == _QueueFamilyIndices.at(EQueueType::kPresent))
+            else if (QueueFamilyIndices_.at(EQueueType::kCompute) == QueueFamilyIndices_.at(EQueueType::kPresent))
             {
-                _Queues[EQueueType::kCompute] = _Queues[EQueueType::kPresent];
+                Queues_[EQueueType::kCompute] = Queues_[EQueueType::kPresent];
             }
             else
             {
-                _Queues[EQueueType::kCompute] =
-                    _QueuePool->AcquireQueue(_QueueFamilyProperties[_QueueFamilyIndices.at(EQueueType::kCompute)].queueFlags).Release();
+                Queues_[EQueueType::kCompute] = QueuePool_->AcquireQueue(
+                    QueueFamilyProperties_[QueueFamilyIndices_.at(EQueueType::kCompute)].queueFlags).Release();
             }
         }
 
-        _PhysicalDeviceProperties       = _PhysicalDevice.getProperties();
-        _PhysicalDeviceMemoryProperties = _PhysicalDevice.getMemoryProperties();
+        PhysicalDeviceProperties_       = PhysicalDevice_.getProperties();
+        PhysicalDeviceMemoryProperties_ = PhysicalDevice_.getMemoryProperties();
         NpgsCoreInfo("Logical device created successfully.");
-        NpgsCoreInfo("Renderer: {}", _PhysicalDeviceProperties.deviceName.data());
+        NpgsCoreInfo("Renderer: {}", PhysicalDeviceProperties_.deviceName.data());
 
-        for (auto& Callback : _CreateDeviceCallbacks)
+        for (auto& Callback : CreateDeviceCallbacks_)
         {
             Callback.second();
         }
@@ -287,34 +287,34 @@ namespace Npgs
     {
         VulkanHppCheck(WaitIdle());
 
-        if (_Swapchain)
+        if (Swapchain_)
         {
-            for (auto& Callback : _DestroySwapchainCallbacks)
+            for (auto& Callback : DestroySwapchainCallbacks_)
             {
                 Callback.second();
             }
-            for (auto& ImageView : _SwapchainImageViews)
+            for (auto& ImageView : SwapchainImageViews_)
             {
                 if (ImageView)
                 {
-                    _Device.destroyImageView(ImageView);
+                    Device_.destroyImageView(ImageView);
                 }
             }
-            _SwapchainImageViews.clear();
+            SwapchainImageViews_.clear();
 
-            _Device.destroySwapchainKHR(_Swapchain);
-            _Swapchain           = vk::SwapchainKHR();
-            _SwapchainCreateInfo = vk::SwapchainCreateInfoKHR();
+            Device_.destroySwapchainKHR(Swapchain_);
+            Swapchain_           = vk::SwapchainKHR();
+            SwapchainCreateInfo_ = vk::SwapchainCreateInfoKHR();
         }
 
-        for (auto& Callback : _DestroyDeviceCallbacks)
+        for (auto& Callback : DestroyDeviceCallbacks_)
         {
             Callback.second();
         }
-        if (_Device)
+        if (Device_)
         {
-            _Device.destroy();
-            _Device = vk::Device();
+            Device_.destroy();
+            Device_ = vk::Device();
         }
 
         return CreateDevice(PhysicalDeviceIndex, Flags);
@@ -325,11 +325,11 @@ namespace Npgs
         bool bFormatAvailable = false;
         if (SurfaceFormat.format == vk::Format::eUndefined)
         {
-            for (const auto& AvailableSurfaceFormat : _AvailableSurfaceFormats)
+            for (const auto& AvailableSurfaceFormat : AvailableSurfaceFormats_)
             {
                 if (AvailableSurfaceFormat.colorSpace == SurfaceFormat.colorSpace)
                 {
-                    _SwapchainCreateInfo.setImageFormat(AvailableSurfaceFormat.format)
+                    SwapchainCreateInfo_.setImageFormat(AvailableSurfaceFormat.format)
                                         .setImageColorSpace(AvailableSurfaceFormat.colorSpace);
                     bFormatAvailable = true;
                     break;
@@ -338,12 +338,12 @@ namespace Npgs
         }
         else
         {
-            for (const auto& AvailableSurfaceFormat : _AvailableSurfaceFormats)
+            for (const auto& AvailableSurfaceFormat : AvailableSurfaceFormats_)
             {
                 if (AvailableSurfaceFormat.format     == SurfaceFormat.format &&
                     AvailableSurfaceFormat.colorSpace == SurfaceFormat.colorSpace)
                 {
-                    _SwapchainCreateInfo.setImageFormat(AvailableSurfaceFormat.format)
+                    SwapchainCreateInfo_.setImageFormat(AvailableSurfaceFormat.format)
                                         .setImageColorSpace(AvailableSurfaceFormat.colorSpace);
                     bFormatAvailable = true;
                     break;
@@ -356,7 +356,7 @@ namespace Npgs
             return vk::Result::eErrorFormatNotSupported;
         }
 
-        if (_Swapchain)
+        if (Swapchain_)
         {
             return RecreateSwapchain();
         }
@@ -371,7 +371,7 @@ namespace Npgs
         vk::SurfaceCapabilitiesKHR SurfaceCapabilities;
         try
         {
-            SurfaceCapabilities = _PhysicalDevice.getSurfaceCapabilitiesKHR(_Surface);
+            SurfaceCapabilities = PhysicalDevice_.getSurfaceCapabilitiesKHR(Surface_);
         }
         catch (const vk::SystemError& e)
         {
@@ -393,12 +393,12 @@ namespace Npgs
         {
             SwapchainExtent = SurfaceCapabilities.currentExtent;
         }
-        _SwapchainExtent = SwapchainExtent;
+        SwapchainExtent_ = SwapchainExtent;
 
         std::uint32_t MinImageCount =
             SurfaceCapabilities.minImageCount + (SurfaceCapabilities.maxImageCount > SurfaceCapabilities.minImageCount);
-        _SwapchainCreateInfo.setFlags(Flags)
-                            .setSurface(_Surface)
+        SwapchainCreateInfo_.setFlags(Flags)
+                            .setSurface(Surface_)
                             .setMinImageCount(MinImageCount)
                             .setImageExtent(SwapchainExtent)
                             .setImageArrayLayers(1)
@@ -409,7 +409,7 @@ namespace Npgs
         // 设置图像格式
         if (SurfaceCapabilities.supportedCompositeAlpha & vk::CompositeAlphaFlagBitsKHR::eInherit) // 优先使用继承模式
         {
-            _SwapchainCreateInfo.setCompositeAlpha(vk::CompositeAlphaFlagBitsKHR::eInherit);
+            SwapchainCreateInfo_.setCompositeAlpha(vk::CompositeAlphaFlagBitsKHR::eInherit);
         }
         else
         {
@@ -425,20 +425,20 @@ namespace Npgs
             {
                 if (SurfaceCapabilities.supportedCompositeAlpha & CompositeAlphaFlag)
                 {
-                    _SwapchainCreateInfo.setCompositeAlpha(CompositeAlphaFlag);
+                    SwapchainCreateInfo_.setCompositeAlpha(CompositeAlphaFlag);
                     break;
                 }
             }
         }
 
-        _SwapchainCreateInfo.setImageUsage(vk::ImageUsageFlagBits::eColorAttachment);
+        SwapchainCreateInfo_.setImageUsage(vk::ImageUsageFlagBits::eColorAttachment);
         if (SurfaceCapabilities.supportedUsageFlags & vk::ImageUsageFlagBits::eTransferSrc)
         {
-            _SwapchainCreateInfo.setImageUsage(_SwapchainCreateInfo.imageUsage | vk::ImageUsageFlagBits::eTransferSrc);
+            SwapchainCreateInfo_.setImageUsage(SwapchainCreateInfo_.imageUsage | vk::ImageUsageFlagBits::eTransferSrc);
         }
         if (SurfaceCapabilities.supportedUsageFlags & vk::ImageUsageFlagBits::eTransferDst)
         {
-            _SwapchainCreateInfo.setImageUsage(_SwapchainCreateInfo.imageUsage | vk::ImageUsageFlagBits::eTransferDst);
+            SwapchainCreateInfo_.setImageUsage(SwapchainCreateInfo_.imageUsage | vk::ImageUsageFlagBits::eTransferDst);
         }
         else
         {
@@ -447,7 +447,7 @@ namespace Npgs
         }
 
         // 2.设置 Swapchain 像素格式和色彩空间
-        if (_AvailableSurfaceFormats.empty())
+        if (AvailableSurfaceFormats_.empty())
         {
             VulkanHppCheck(ObtainPhysicalDeviceSurfaceFormats());
         }
@@ -462,21 +462,21 @@ namespace Npgs
             if (kVkSetHdrMetadataExt == nullptr)
             {
                 SurfaceFormats.clear();
-                _HdrMetadata = vk::HdrMetadataEXT();
+                HdrMetadata_ = vk::HdrMetadataEXT();
             }
         }
 
         SurfaceFormats.emplace_back(vk::Format::eR8G8B8A8Srgb, vk::ColorSpaceKHR::eSrgbNonlinear);
         SurfaceFormats.emplace_back(vk::Format::eB8G8R8A8Srgb, vk::ColorSpaceKHR::eSrgbNonlinear);
 
-        if (_SwapchainCreateInfo.imageFormat == vk::Format::eUndefined)
+        if (SwapchainCreateInfo_.imageFormat == vk::Format::eUndefined)
         {
             for (const auto& SurfaceFormat : SurfaceFormats)
             {
                 if (SetSurfaceFormat(SurfaceFormat) != vk::Result::eSuccess)
                 {
-                    _SwapchainCreateInfo.setImageFormat(_AvailableSurfaceFormats[0].format)
-                                        .setImageColorSpace(_AvailableSurfaceFormats[0].colorSpace);
+                    SwapchainCreateInfo_.setImageFormat(AvailableSurfaceFormats_[0].format)
+                                        .setImageColorSpace(AvailableSurfaceFormats_[0].colorSpace);
                     NpgsCoreWarn("Failed to select a four-component unsigned normalized surface format.");
                 }
                 else
@@ -490,7 +490,7 @@ namespace Npgs
         std::vector<vk::PresentModeKHR> SurfacePresentModes;
         try
         {
-            SurfacePresentModes = _PhysicalDevice.getSurfacePresentModesKHR(_Surface);
+            SurfacePresentModes = PhysicalDevice_.getSurfacePresentModesKHR(Surface_);
         }
         catch (const vk::SystemError& e)
         {
@@ -500,7 +500,7 @@ namespace Npgs
 
         if (bLimitFps)
         {
-            _SwapchainCreateInfo.setPresentMode(vk::PresentModeKHR::eFifo);
+            SwapchainCreateInfo_.setPresentMode(vk::PresentModeKHR::eFifo);
         }
         else
         {
@@ -508,7 +508,7 @@ namespace Npgs
             {
                 if (SurfacePresentMode == vk::PresentModeKHR::eMailbox)
                 {
-                    _SwapchainCreateInfo.setPresentMode(vk::PresentModeKHR::eMailbox);
+                    SwapchainCreateInfo_.setPresentMode(vk::PresentModeKHR::eMailbox);
                     break;
                 }
             }
@@ -516,7 +516,7 @@ namespace Npgs
 
         VulkanHppCheck(CreateSwapchainInternal());
 
-        for (auto& Callback : _CreateSwapchainCallbacks)
+        for (auto& Callback : CreateSwapchainCallbacks_)
         {
             Callback.second();
         }
@@ -530,7 +530,7 @@ namespace Npgs
         vk::SurfaceCapabilitiesKHR SurfaceCapabilities;
         try
         {
-            SurfaceCapabilities = _PhysicalDevice.getSurfaceCapabilitiesKHR(_Surface);
+            SurfaceCapabilities = PhysicalDevice_.getSurfaceCapabilitiesKHR(Surface_);
         }
         catch (const vk::SystemError& e)
         {
@@ -542,32 +542,32 @@ namespace Npgs
         {
             return vk::Result::eSuboptimalKHR;
         }
-        _SwapchainCreateInfo.setImageExtent(SurfaceCapabilities.currentExtent);
+        SwapchainCreateInfo_.setImageExtent(SurfaceCapabilities.currentExtent);
 
-        if (_SwapchainCreateInfo.oldSwapchain)
+        if (SwapchainCreateInfo_.oldSwapchain)
         {
-            _Device.destroySwapchainKHR(_SwapchainCreateInfo.oldSwapchain);
+            Device_.destroySwapchainKHR(SwapchainCreateInfo_.oldSwapchain);
         }
-        _SwapchainCreateInfo.setOldSwapchain(_Swapchain);
+        SwapchainCreateInfo_.setOldSwapchain(Swapchain_);
 
         VulkanHppCheck(WaitIdle());
 
-        for (auto& Callback : _DestroySwapchainCallbacks)
+        for (auto& Callback : DestroySwapchainCallbacks_)
         {
             Callback.second();
         }
-        for (auto& ImageView : _SwapchainImageViews)
+        for (auto& ImageView : SwapchainImageViews_)
         {
             if (ImageView)
             {
-                _Device.destroyImageView(ImageView);
+                Device_.destroyImageView(ImageView);
             }
         }
-        _SwapchainImageViews.clear();
+        SwapchainImageViews_.clear();
 
         VulkanHppCheck(CreateSwapchainInternal());
 
-        for (auto& Callback : _CreateSwapchainCallbacks)
+        for (auto& Callback : CreateSwapchainCallbacks_)
         {
             Callback.second();
         }
@@ -578,15 +578,15 @@ namespace Npgs
 
     vk::Result FVulkanCore::SwapImage(vk::Semaphore Semaphore)
     {
-        if (_SwapchainCreateInfo.oldSwapchain && _SwapchainCreateInfo.oldSwapchain != _Swapchain) [[unlikely]]
+        if (SwapchainCreateInfo_.oldSwapchain && SwapchainCreateInfo_.oldSwapchain != Swapchain_) [[unlikely]]
         {
-            _Device.destroySwapchainKHR(_SwapchainCreateInfo.oldSwapchain);
-            _SwapchainCreateInfo.setOldSwapchain(vk::SwapchainKHR());
+            Device_.destroySwapchainKHR(SwapchainCreateInfo_.oldSwapchain);
+            SwapchainCreateInfo_.setOldSwapchain(vk::SwapchainKHR());
         }
 
         vk::Result Result;
-        while ((Result = _Device.acquireNextImageKHR(_Swapchain, std::numeric_limits<std::uint64_t>::max(),
-                                                     Semaphore, vk::Fence(), &_CurrentImageIndex)) != vk::Result::eSuccess)
+        while ((Result = Device_.acquireNextImageKHR(Swapchain_, std::numeric_limits<std::uint64_t>::max(),
+                                                     Semaphore, vk::Fence(), &CurrentImageIndex_)) != vk::Result::eSuccess)
         {
             switch (Result)
             {
@@ -610,7 +610,7 @@ namespace Npgs
     {
         try
         {
-            vk::Result Result = _Queues.at(EQueueType::kPresent).presentKHR(PresentInfo);
+            vk::Result Result = Queues_.at(EQueueType::kPresent).presentKHR(PresentInfo);
             switch (Result)
             {
             case vk::Result::eSuccess:
@@ -641,11 +641,11 @@ namespace Npgs
         vk::PresentInfoKHR PresentInfo;
         if (Semaphore)
         {
-            PresentInfo = vk::PresentInfoKHR(Semaphore, _Swapchain, _CurrentImageIndex);
+            PresentInfo = vk::PresentInfoKHR(Semaphore, Swapchain_, CurrentImageIndex_);
         }
         else
         {
-            PresentInfo = vk::PresentInfoKHR({}, _Swapchain, _CurrentImageIndex);
+            PresentInfo = vk::PresentInfoKHR({}, Swapchain_, CurrentImageIndex_);
         }
         return PresentImage(PresentInfo);
     }
@@ -654,7 +654,7 @@ namespace Npgs
     {
         try
         {
-            _Device.waitIdle();
+            Device_.waitIdle();
         }
         catch (const vk::SystemError& e)
         {
@@ -693,11 +693,11 @@ namespace Npgs
 
         if (AvailableLayers.empty())
         {
-            _InstanceLayers.clear();
+            InstanceLayers_.clear();
             return vk::Result::eSuccess;
         }
 
-        for (const char*& RequestedLayer : _InstanceLayers)
+        for (const char*& RequestedLayer : InstanceLayers_)
         {
             bool bLayerFound = false;
             for (const auto& AvailableLayer : AvailableLayers)
@@ -714,7 +714,7 @@ namespace Npgs
             }
         }
 
-        std::erase_if(_InstanceLayers, [](const char* Layer) -> bool
+        std::erase_if(InstanceLayers_, [](const char* Layer) -> bool
         {
             return Layer == nullptr;
         });
@@ -735,7 +735,7 @@ namespace Npgs
             return static_cast<vk::Result>(e.code().value());
         }
 
-        for (const char* Layer : _InstanceLayers)
+        for (const char* Layer : InstanceLayers_)
         {
             if (Layer == nullptr)
             {
@@ -757,11 +757,11 @@ namespace Npgs
 
         if (AvailableExtensions.empty())
         {
-            _InstanceExtensions.clear();
+            InstanceExtensions_.clear();
             return vk::Result::eSuccess;
         }
 
-        for (const char*& RequestedExtension : _InstanceExtensions)
+        for (const char*& RequestedExtension : InstanceExtensions_)
         {
             bool bExtensionFound = false;
             for (const auto& AvailableExtension : AvailableExtensions)
@@ -778,7 +778,7 @@ namespace Npgs
             }
         }
 
-        std::erase_if(_InstanceExtensions, [](const char* Extension) -> bool
+        std::erase_if(InstanceExtensions_, [](const char* Extension) -> bool
         {
             return Extension == nullptr;
         });
@@ -791,7 +791,7 @@ namespace Npgs
         std::vector<vk::ExtensionProperties> AvailableExtensions;
         try
         {
-            AvailableExtensions = _PhysicalDevice.enumerateDeviceExtensionProperties();
+            AvailableExtensions = PhysicalDevice_.enumerateDeviceExtensionProperties();
         }
         catch (const vk::SystemError& e)
         {
@@ -801,11 +801,11 @@ namespace Npgs
 
         if (AvailableExtensions.empty())
         {
-            _DeviceExtensions.clear();
+            DeviceExtensions_.clear();
             return vk::Result::eSuccess;
         }
 
-        for (const char*& RequestedExtension : _DeviceExtensions)
+        for (const char*& RequestedExtension : DeviceExtensions_)
         {
             bool bExtensionFound = false;
             for (const auto& AvailableExtension : AvailableExtensions)
@@ -822,7 +822,7 @@ namespace Npgs
             }
         }
 
-        std::erase_if(_DeviceExtensions, [](const char* Extension) -> bool
+        std::erase_if(DeviceExtensions_, [](const char* Extension) -> bool
         {
             return Extension == nullptr;
         });
@@ -836,7 +836,7 @@ namespace Npgs
         {
             try
             {
-                _ApiVersion = vk::enumerateInstanceVersion();
+                ApiVersion_ = vk::enumerateInstanceVersion();
             }
             catch (const vk::SystemError& e)
             {
@@ -852,7 +852,7 @@ namespace Npgs
 
     #pragma warning(push)
     #pragma warning(disable: 4996) // for deprecated api
-        NpgsCoreInfo("Vulkan API version: {}.{}.{}", vk::versionMajor(_ApiVersion), vk::versionMinor(_ApiVersion), vk::versionPatch(_ApiVersion));
+        NpgsCoreInfo("Vulkan API version: {}.{}.{}", vk::versionMajor(ApiVersion_), vk::versionMinor(ApiVersion_), vk::versionPatch(ApiVersion_));
     #pragma warning(pop)
         return vk::Result::eSuccess;
     }
@@ -861,7 +861,7 @@ namespace Npgs
     {
     #ifdef _DEBUG
         kVkCreateDebugUtilsMessengerExt =
-            reinterpret_cast<PFN_vkCreateDebugUtilsMessengerEXT>(_Instance.getProcAddr("vkCreateDebugUtilsMessengerEXT"));
+            reinterpret_cast<PFN_vkCreateDebugUtilsMessengerEXT>(Instance_.getProcAddr("vkCreateDebugUtilsMessengerEXT"));
         if (kVkCreateDebugUtilsMessengerExt == nullptr)
         {
             NpgsCoreError("Failed to get vkCreateDebugUtilsMessengerEXT function pointer.");
@@ -869,7 +869,7 @@ namespace Npgs
         }
 
         kVkDestroyDebugUtilsMessengerExt =
-            reinterpret_cast<PFN_vkDestroyDebugUtilsMessengerEXT>(_Instance.getProcAddr("vkDestroyDebugUtilsMessengerEXT"));
+            reinterpret_cast<PFN_vkDestroyDebugUtilsMessengerEXT>(Instance_.getProcAddr("vkDestroyDebugUtilsMessengerEXT"));
         if (vkDestroyDebugUtilsMessengerEXT == nullptr)
         {
             NpgsCoreError("Failed to get vkDestroyDebugUtilsMessengerEXT function pointer.");
@@ -877,7 +877,7 @@ namespace Npgs
         }
     #endif // _DEBUG
 
-        kVkSetHdrMetadataExt = reinterpret_cast<PFN_vkSetHdrMetadataEXT>(_Instance.getProcAddr("vkSetHdrMetadataEXT"));
+        kVkSetHdrMetadataExt = reinterpret_cast<PFN_vkSetHdrMetadataEXT>(Instance_.getProcAddr("vkSetHdrMetadataEXT"));
         if (kVkSetHdrMetadataExt == nullptr)
         {
             NpgsCoreWarn("Failed to get vkSetHdrMetadataEXT function pointer.");
@@ -889,7 +889,7 @@ namespace Npgs
     vk::Result FVulkanCore::GetDeviceExtFunctionProcAddress()
     {
         kVkCmdBindDescriptorBuffersExt =
-            reinterpret_cast<PFN_vkCmdBindDescriptorBuffersEXT>(_Device.getProcAddr("vkCmdBindDescriptorBuffersEXT"));
+            reinterpret_cast<PFN_vkCmdBindDescriptorBuffersEXT>(Device_.getProcAddr("vkCmdBindDescriptorBuffersEXT"));
         if (kVkCmdBindDescriptorBuffersExt == nullptr)
         {
             NpgsCoreError("Failed to get vkCmdBindDescriptorBuffersEXT function pointer.");
@@ -897,7 +897,7 @@ namespace Npgs
         }
 
         kVkCmdSetDescriptorBufferOffsetsExt =
-            reinterpret_cast<PFN_vkCmdSetDescriptorBufferOffsetsEXT>(_Device.getProcAddr("vkCmdSetDescriptorBufferOffsetsEXT"));
+            reinterpret_cast<PFN_vkCmdSetDescriptorBufferOffsetsEXT>(Device_.getProcAddr("vkCmdSetDescriptorBufferOffsetsEXT"));
         if (kVkCmdSetDescriptorBufferOffsetsExt == nullptr)
         {
             NpgsCoreError("Failed to get vkCmdSetDescriptorBufferOffsetsEXT function pointer.");
@@ -905,14 +905,14 @@ namespace Npgs
         }
 
         kVkCmdSetDescriptorBufferOffsets2Ext =
-            reinterpret_cast<PFN_vkCmdSetDescriptorBufferOffsets2EXT>(_Device.getProcAddr("vkCmdSetDescriptorBufferOffsets2EXT"));
+            reinterpret_cast<PFN_vkCmdSetDescriptorBufferOffsets2EXT>(Device_.getProcAddr("vkCmdSetDescriptorBufferOffsets2EXT"));
         if (kVkCmdSetDescriptorBufferOffsets2Ext == nullptr)
         {
             NpgsCoreError("Failed to get vkCmdSetDescriptorBufferOffsets2EXT function pointer.");
             return vk::Result::eErrorExtensionNotPresent;
         }
 
-        kVkGetDescriptorExt = reinterpret_cast<PFN_vkGetDescriptorEXT>(_Device.getProcAddr("vkGetDescriptorEXT"));
+        kVkGetDescriptorExt = reinterpret_cast<PFN_vkGetDescriptorEXT>(Device_.getProcAddr("vkGetDescriptorEXT"));
         if (kVkGetDescriptorExt == nullptr)
         {
             NpgsCoreError("Failed to get vkGetDescriptorEXT function pointer.");
@@ -920,7 +920,7 @@ namespace Npgs
         }
 
         kVkGetDescriptorSetLayoutSizeExt =
-            reinterpret_cast<PFN_vkGetDescriptorSetLayoutSizeEXT>(_Device.getProcAddr("vkGetDescriptorSetLayoutSizeEXT"));
+            reinterpret_cast<PFN_vkGetDescriptorSetLayoutSizeEXT>(Device_.getProcAddr("vkGetDescriptorSetLayoutSizeEXT"));
         if (kVkGetDescriptorSetLayoutSizeExt == nullptr)
         {
             NpgsCoreError("Failed to get vkGetDescriptorSetLayoutSizeEXT function pointer.");
@@ -928,7 +928,7 @@ namespace Npgs
         }
 
         kVkGetDescriptorSetLayoutBindingOffsetExt =
-            reinterpret_cast<PFN_vkGetDescriptorSetLayoutBindingOffsetEXT>(_Device.getProcAddr("vkGetDescriptorSetLayoutBindingOffsetEXT"));
+            reinterpret_cast<PFN_vkGetDescriptorSetLayoutBindingOffsetEXT>(Device_.getProcAddr("vkGetDescriptorSetLayoutBindingOffsetEXT"));
         if (kVkGetDescriptorSetLayoutBindingOffsetExt == nullptr)
         {
             NpgsCoreError("Failed to get vkGetDescriptorSetLayoutBindingOffsetEXT function pointer.");
@@ -982,7 +982,7 @@ namespace Npgs
         vk::DebugUtilsMessengerCreateInfoEXT DebugUtilsMessengerCreateInfo({}, MessageSeverity, MessageType, DebugCallback);
         try
         {
-            _DebugUtilsMessenger = _Instance.createDebugUtilsMessengerEXT(DebugUtilsMessengerCreateInfo);
+            DebugUtilsMessenger_ = Instance_.createDebugUtilsMessengerEXT(DebugUtilsMessengerCreateInfo);
         }
         catch (const vk::SystemError& e)
         {
@@ -998,7 +998,7 @@ namespace Npgs
     {
         try
         {
-            _AvailablePhysicalDevices = _Instance.enumeratePhysicalDevices();
+            AvailablePhysicalDevices_ = Instance_.enumeratePhysicalDevices();
         }
         catch (const vk::SystemError& e)
         {
@@ -1006,7 +1006,7 @@ namespace Npgs
             return static_cast<vk::Result>(e.code().value());
         }
 
-        NpgsCoreInfo("Enumerate physical devices successfully, {} devices found.", _AvailablePhysicalDevices.size());
+        NpgsCoreInfo("Enumerate physical devices successfully, {} devices found.", AvailablePhysicalDevices_.size());
         return vk::Result::eSuccess;
     }
 
@@ -1015,7 +1015,7 @@ namespace Npgs
         // kNotFound 在与其进行与运算最高位是 0 的数结果还是数本身
         // 但是对于 -1U，结果是 kNotFound
         static constexpr std::uint32_t kNotFound = static_cast<std::uint32_t>(std::numeric_limits<std::int32_t>::max());
-        std::vector<FQueueFamilyIndicesComplex> QueueFamilyIndeicesComplexes(_AvailablePhysicalDevices.size());
+        std::vector<FQueueFamilyIndicesComplex> QueueFamilyIndeicesComplexes(AvailablePhysicalDevices_.size());
 
         auto& [
             GraphicsQueueFamilyIndex, PresentQueueFamilyIndex, ComputeQueueFamilyIndex, TransferQueueFamilyIndex
@@ -1023,18 +1023,18 @@ namespace Npgs
 
         // 如果任何索引已经搜索过但还是找不到，直接报错
         if ((GraphicsQueueFamilyIndex == kNotFound && bEnableGraphicsQueue) ||
-            (PresentQueueFamilyIndex  == kNotFound && _Surface) ||
+            (PresentQueueFamilyIndex  == kNotFound && Surface_) ||
             (ComputeQueueFamilyIndex  == kNotFound && bEnableGraphicsQueue))
         {
             return vk::Result::eErrorFeatureNotPresent;
         }
 
         if ((GraphicsQueueFamilyIndex == vk::QueueFamilyIgnored && bEnableGraphicsQueue) ||
-            (PresentQueueFamilyIndex  == vk::QueueFamilyIgnored && _Surface) ||
+            (PresentQueueFamilyIndex  == vk::QueueFamilyIgnored && Surface_) ||
             (ComputeQueueFamilyIndex  == vk::QueueFamilyIgnored && bEnableGraphicsQueue))
         {
             FQueueFamilyIndicesComplex Indices;
-            if (vk::Result Result = ObtainQueueFamilyIndices(_AvailablePhysicalDevices[Index], bEnableGraphicsQueue, bEnableComputeQueue, Indices);
+            if (vk::Result Result = ObtainQueueFamilyIndices(AvailablePhysicalDevices_[Index], bEnableGraphicsQueue, bEnableComputeQueue, Indices);
                 Result != vk::Result::eSuccess)
             {
                 return Result;
@@ -1045,7 +1045,7 @@ namespace Npgs
             {
                 GraphicsQueueFamilyIndex = Indices.GraphicsQueueFamilyIndex & kNotFound;
             }
-            if (_Surface)
+            if (Surface_)
             {
                 PresentQueueFamilyIndex = Indices.PresentQueueFamilyIndex & kNotFound;
             }
@@ -1056,19 +1056,19 @@ namespace Npgs
 
             TransferQueueFamilyIndex = Indices.TransferQueueFamilyIndex & kNotFound;
 
-            _QueueFamilyIndices[EQueueType::kGraphics] = bEnableGraphicsQueue ? GraphicsQueueFamilyIndex : vk::QueueFamilyIgnored;
-            _QueueFamilyIndices[EQueueType::kPresent]  = _Surface             ? PresentQueueFamilyIndex  : vk::QueueFamilyIgnored;
-            _QueueFamilyIndices[EQueueType::kCompute]  = bEnableComputeQueue  ? ComputeQueueFamilyIndex  : vk::QueueFamilyIgnored;
+            QueueFamilyIndices_[EQueueType::kGraphics] = bEnableGraphicsQueue ? GraphicsQueueFamilyIndex : vk::QueueFamilyIgnored;
+            QueueFamilyIndices_[EQueueType::kPresent]  = Surface_             ? PresentQueueFamilyIndex  : vk::QueueFamilyIgnored;
+            QueueFamilyIndices_[EQueueType::kCompute]  = bEnableComputeQueue  ? ComputeQueueFamilyIndex  : vk::QueueFamilyIgnored;
         }
         else // 如果已经找到了，直接设置索引
         {
-            _QueueFamilyIndices[EQueueType::kGraphics] = bEnableGraphicsQueue ? GraphicsQueueFamilyIndex : vk::QueueFamilyIgnored;
-            _QueueFamilyIndices[EQueueType::kPresent] = _Surface             ? PresentQueueFamilyIndex  : vk::QueueFamilyIgnored;
-            _QueueFamilyIndices[EQueueType::kCompute] = bEnableComputeQueue  ? ComputeQueueFamilyIndex  : vk::QueueFamilyIgnored;
+            QueueFamilyIndices_[EQueueType::kGraphics] = bEnableGraphicsQueue ? GraphicsQueueFamilyIndex : vk::QueueFamilyIgnored;
+            QueueFamilyIndices_[EQueueType::kPresent] = Surface_             ? PresentQueueFamilyIndex  : vk::QueueFamilyIgnored;
+            QueueFamilyIndices_[EQueueType::kCompute] = bEnableComputeQueue  ? ComputeQueueFamilyIndex  : vk::QueueFamilyIgnored;
         }
 
-        _QueueFamilyIndices[EQueueType::kTransfer] = TransferQueueFamilyIndex;
-        _PhysicalDevice = _AvailablePhysicalDevices[Index];
+        QueueFamilyIndices_[EQueueType::kTransfer] = TransferQueueFamilyIndex;
+        PhysicalDevice_ = AvailablePhysicalDevices_[Index];
         return vk::Result::eSuccess;
     }
 
@@ -1093,11 +1093,11 @@ namespace Npgs
             bool bSupportPresent  = vk::False;
             bool bSupportCompute  = bEnableComputeQueue  && QueueFamilyProperties[i].queueFlags & vk::QueueFlagBits::eCompute;
 
-            if (_Surface)
+            if (Surface_)
             {
                 try
                 {
-                    bSupportPresent = PhysicalDevice.getSurfaceSupportKHR(i, _Surface);
+                    bSupportPresent = PhysicalDevice.getSurfaceSupportKHR(i, Surface_);
                 }
                 catch (const vk::SystemError& e)
                 {
@@ -1117,7 +1117,7 @@ namespace Npgs
                 {
                     GraphicsQueueFamilyIndex = ComputeQueueFamilyIndex = i; // 确保图形和计算队列族的索引相同
                 }
-                if (!_Surface)
+                if (!Surface_)
                 {
                     break; // 如果不需要呈现，那么只需要找到一个支持图形和计算队列族的索引即可
                 }
@@ -1151,7 +1151,7 @@ namespace Npgs
 
         // 如果有任意一个需要启用的队列族的索引是 vk::QueueFamilyIgnored，报错
         if ((GraphicsQueueFamilyIndex == vk::QueueFamilyIgnored && bEnableGraphicsQueue) ||
-            (PresentQueueFamilyIndex  == vk::QueueFamilyIgnored && _Surface) ||
+            (PresentQueueFamilyIndex  == vk::QueueFamilyIgnored && Surface_) ||
             (ComputeQueueFamilyIndex  == vk::QueueFamilyIgnored && bEnableComputeQueue))
         {
             NpgsCoreError("Failed to obtain queue family indices.");
@@ -1164,7 +1164,7 @@ namespace Npgs
             TransferQueueFamilyIndex = GraphicsQueueFamilyIndex;
         }
 
-        _QueueFamilyProperties = std::move(QueueFamilyProperties);
+        QueueFamilyProperties_ = std::move(QueueFamilyProperties);
 
         NpgsCoreInfo("Queue family indices obtained successfully.");
         return vk::Result::eSuccess;
@@ -1174,7 +1174,7 @@ namespace Npgs
     {
         try
         {
-            _AvailableSurfaceFormats = _PhysicalDevice.getSurfaceFormatsKHR(_Surface);
+            AvailableSurfaceFormats_ = PhysicalDevice_.getSurfaceFormatsKHR(Surface_);
         }
         catch (const vk::SystemError& e)
         {
@@ -1182,7 +1182,7 @@ namespace Npgs
             return static_cast<vk::Result>(e.code().value());
         }
 
-        NpgsCoreInfo("Surface formats obtained successfully, {} formats found.", _AvailableSurfaceFormats.size());
+        NpgsCoreInfo("Surface formats obtained successfully, {} formats found.", AvailableSurfaceFormats_.size());
         return vk::Result::eSuccess;
     }
 
@@ -1190,7 +1190,7 @@ namespace Npgs
     {
         try
         {
-            _Swapchain = _Device.createSwapchainKHR(_SwapchainCreateInfo);
+            Swapchain_ = Device_.createSwapchainKHR(SwapchainCreateInfo_);
         }
         catch (const vk::SystemError& e)
         {
@@ -1198,15 +1198,15 @@ namespace Npgs
             return static_cast<vk::Result>(e.code().value());
         }
 
-        if (_HdrMetadata.maxLuminance != 0.0f)
+        if (HdrMetadata_.maxLuminance != 0.0f)
         {
-            vkSetHdrMetadataEXT(_Device, 1, reinterpret_cast<const VkSwapchainKHR*>(&_Swapchain),
-                                reinterpret_cast<const VkHdrMetadataEXT*>(&_HdrMetadata));
+            vkSetHdrMetadataEXT(Device_, 1, reinterpret_cast<const VkSwapchainKHR*>(&Swapchain_),
+                                reinterpret_cast<const VkHdrMetadataEXT*>(&HdrMetadata_));
         }
 
         try
         {
-            _SwapchainImages = _Device.getSwapchainImagesKHR(_Swapchain);
+            SwapchainImages_ = Device_.getSwapchainImagesKHR(Swapchain_);
         }
         catch (const vk::SystemError& e)
         {
@@ -1217,16 +1217,16 @@ namespace Npgs
         vk::ImageSubresourceRange ImageSubresourceRange(vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1);
         vk::ImageViewCreateInfo ImageViewCreateInfo = vk::ImageViewCreateInfo()
             .setViewType(vk::ImageViewType::e2D)
-            .setFormat(_SwapchainCreateInfo.imageFormat)
+            .setFormat(SwapchainCreateInfo_.imageFormat)
             .setSubresourceRange(ImageSubresourceRange);
 
-        for (const auto& SwapchainImages : _SwapchainImages)
+        for (const auto& SwapchainImages : SwapchainImages_)
         {
             ImageViewCreateInfo.setImage(SwapchainImages);
             vk::ImageView ImageView;
             try
             {
-                ImageView = _Device.createImageView(ImageViewCreateInfo);
+                ImageView = Device_.createImageView(ImageViewCreateInfo);
             }
             catch (const vk::SystemError& e)
             {
@@ -1234,7 +1234,7 @@ namespace Npgs
                 return static_cast<vk::Result>(e.code().value());
             }
 
-            _SwapchainImageViews.push_back(ImageView);
+            SwapchainImageViews_.push_back(ImageView);
         }
 
         return vk::Result::eSuccess;
@@ -1245,12 +1245,12 @@ namespace Npgs
         VmaAllocatorCreateInfo AllocatorCreateInfo
         {
             .flags          = VMA_ALLOCATOR_CREATE_KHR_MAINTENANCE5_BIT,
-            .physicalDevice = _PhysicalDevice,
-            .device         = _Device,
-            .instance       = _Instance,
+            .physicalDevice = PhysicalDevice_,
+            .device         = Device_,
+            .instance       = Instance_,
         };
 
-        if (vk::Result Result = static_cast<vk::Result>(vmaCreateAllocator(&AllocatorCreateInfo, &_VmaAllocator));
+        if (vk::Result Result = static_cast<vk::Result>(vmaCreateAllocator(&AllocatorCreateInfo, &VmaAllocator_));
             Result != vk::Result::eSuccess)
         {
             NpgsCoreError("Failed to create VMA allocator: {}", vk::to_string(Result));

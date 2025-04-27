@@ -8,40 +8,40 @@ namespace Npgs::Astro
     }
 
     FOrbit::FOrbitalObject::FOrbitalObject()
-        : _Object{}, _Type(EObjectType::kBaryCenter)
+        : Object_{}, Type_(EObjectType::kBaryCenter)
     {
     }
 
     FOrbit::FOrbitalObject::FOrbitalObject(INpgsObject* Object, EObjectType Type)
-        : _Type(Type)
+        : Type_(Type)
     {
         switch (Type)
         {
         case EObjectType::kBaryCenter:
-            _Object = static_cast<FBaryCenter*>(Object);
+            Object_ = static_cast<FBaryCenter*>(Object);
             break;
         case EObjectType::kStar:
-            _Object = static_cast<AStar*>(Object);
+            Object_ = static_cast<AStar*>(Object);
             break;
         case EObjectType::kPlanet:
-            _Object = static_cast<APlanet*>(Object);
+            Object_ = static_cast<APlanet*>(Object);
             break;
         case EObjectType::kAsteroidCluster:
-            _Object = static_cast<AAsteroidCluster*>(Object);
+            Object_ = static_cast<AAsteroidCluster*>(Object);
             break;
         case EObjectType::kArtifactCluster:
-            _Object = static_cast<Intelli::AArtifact*>(Object);
+            Object_ = static_cast<Intelli::AArtifact*>(Object);
             break;
         }
     }
 
     FOrbit::FOrbitalDetails::FOrbitalDetails()
-        : _Object{}, _HostOrbit(nullptr), _InitialTrueAnomaly(0.0f)
+        : Object_{}, HostOrbit_(nullptr), InitialTrueAnomaly_(0.0f)
     {
     }
 
     FOrbit::FOrbitalDetails::FOrbitalDetails(INpgsObject* Object, EObjectType Type, FOrbit* HostOrbit, float InitialTrueAnomaly)
-        : _Object(FOrbitalObject(Object, Type)), _HostOrbit(HostOrbit), _InitialTrueAnomaly(InitialTrueAnomaly)
+        : Object_(FOrbitalObject(Object, Type)), HostOrbit_(HostOrbit), InitialTrueAnomaly_(InitialTrueAnomaly)
     {
     }
 
@@ -50,19 +50,19 @@ namespace Npgs::Astro
         switch (Type)
         {
         case EObjectType::kBaryCenter:
-            _Object.SetObject(static_cast<FBaryCenter*>(Object));
+            Object_.SetObject(static_cast<FBaryCenter*>(Object));
             break;
         case EObjectType::kStar:
-            _Object.SetObject(static_cast<AStar*>(Object));
+            Object_.SetObject(static_cast<AStar*>(Object));
             break;
         case EObjectType::kPlanet:
-            _Object.SetObject(static_cast<APlanet*>(Object));
+            Object_.SetObject(static_cast<APlanet*>(Object));
             break;
         case EObjectType::kAsteroidCluster:
-            _Object.SetObject(static_cast<AAsteroidCluster*>(Object));
+            Object_.SetObject(static_cast<AAsteroidCluster*>(Object));
             break;
         case EObjectType::kArtifactCluster:
-            _Object.SetObject(static_cast<Intelli::AArtifact*>(Object));
+            Object_.SetObject(static_cast<Intelli::AArtifact*>(Object));
             break;
         default:
             break;
@@ -76,19 +76,19 @@ namespace Npgs::Astro
         switch (Type)
         {
         case EObjectType::kBaryCenter:
-            _Parent.SetObject(static_cast<FBaryCenter*>(Object));
+            Parent_.SetObject(static_cast<FBaryCenter*>(Object));
             break;
         case EObjectType::kStar:
-            _Parent.SetObject(static_cast<AStar*>(Object));
+            Parent_.SetObject(static_cast<AStar*>(Object));
             break;
         case EObjectType::kPlanet:
-            _Parent.SetObject(static_cast<APlanet*>(Object));
+            Parent_.SetObject(static_cast<APlanet*>(Object));
             break;
         case EObjectType::kAsteroidCluster:
-            _Parent.SetObject(static_cast<AAsteroidCluster*>(Object));
+            Parent_.SetObject(static_cast<AAsteroidCluster*>(Object));
             break;
         case EObjectType::kArtifactCluster:
-            _Parent.SetObject(static_cast<Intelli::AArtifact*>(Object));
+            Parent_.SetObject(static_cast<Intelli::AArtifact*>(Object));
             break;
         default:
             break;
@@ -98,28 +98,28 @@ namespace Npgs::Astro
     }
 
     FStellarSystem::FStellarSystem(const FBaryCenter& SystemBary)
-        : _SystemBary(SystemBary)
+        : SystemBary_(SystemBary)
     {
     }
 
     FStellarSystem::FStellarSystem(const FStellarSystem& Other)
-        : _SystemBary(Other._SystemBary)
+        : SystemBary_(Other.SystemBary_)
     {
-        for (const auto& Star : Other._Stars)
+        for (const auto& Star : Other.Stars_)
         {
-            _Stars.push_back(std::make_unique<AStar>(*Star));
+            Stars_.push_back(std::make_unique<AStar>(*Star));
         }
-        for (const auto& Planet : Other._Planets)
+        for (const auto& Planet : Other.Planets_)
         {
-            _Planets.push_back(std::make_unique<APlanet>(*Planet));
+            Planets_.push_back(std::make_unique<APlanet>(*Planet));
         }
-        for (const auto& AsteroidCluster : Other._AsteroidClusters)
+        for (const auto& AsteroidCluster : Other.AsteroidClusters_)
         {
-            _AsteroidClusters.push_back(std::make_unique<AAsteroidCluster>(*AsteroidCluster));
+            AsteroidClusters_.push_back(std::make_unique<AAsteroidCluster>(*AsteroidCluster));
         }
-        for (const auto& Orbit : Other._Orbits)
+        for (const auto& Orbit : Other.Orbits_)
         {
-            _Orbits.push_back(std::make_unique<FOrbit>(*Orbit));
+            Orbits_.push_back(std::make_unique<FOrbit>(*Orbit));
         }
     }
 
@@ -127,30 +127,30 @@ namespace Npgs::Astro
     {
         if (this != &Other)
         {
-            _SystemBary = Other._SystemBary;
+            SystemBary_ = Other.SystemBary_;
 
-            _Stars.clear();
-            for (const auto& Star : Other._Stars)
+            Stars_.clear();
+            for (const auto& Star : Other.Stars_)
             {
-                _Stars.push_back(std::make_unique<AStar>(*Star));
+                Stars_.push_back(std::make_unique<AStar>(*Star));
             }
 
-            _Planets.clear();
-            for (const auto& Planet : Other._Planets)
+            Planets_.clear();
+            for (const auto& Planet : Other.Planets_)
             {
-                _Planets.push_back(std::make_unique<APlanet>(*Planet));
+                Planets_.push_back(std::make_unique<APlanet>(*Planet));
             }
 
-            _AsteroidClusters.clear();
-            for (const auto& AsteroidCluster : Other._AsteroidClusters)
+            AsteroidClusters_.clear();
+            for (const auto& AsteroidCluster : Other.AsteroidClusters_)
             {
-                _AsteroidClusters.push_back(std::make_unique<AAsteroidCluster>(*AsteroidCluster));
+                AsteroidClusters_.push_back(std::make_unique<AAsteroidCluster>(*AsteroidCluster));
             }
 
-            _Orbits.clear();
-            for (const auto& Orbit : Other._Orbits)
+            Orbits_.clear();
+            for (const auto& Orbit : Other.Orbits_)
             {
-                _Orbits.push_back(std::make_unique<FOrbit>(*Orbit));
+                Orbits_.push_back(std::make_unique<FOrbit>(*Orbit));
             }
         }
 

@@ -36,15 +36,15 @@ namespace Npgs
         void SetThreadAffinity(std::thread& Thread, std::size_t CoreId) const;
 
     private:
-        std::vector<std::thread>          _Threads;
-        std::queue<std::function<void()>> _Tasks;
-        std::mutex                        _Mutex;
-        std::condition_variable           _Condition;
-        int                               _MaxThreadCount;
-        int                               _PhysicalCoreCount;
-        int                               _HyperThreadIndex{ 0 };
-        bool                              _bEnableHyperThread;
-        bool                              _bTerminate{ false };
+        std::vector<std::thread>          Threads_;
+        std::queue<std::function<void()>> Tasks_;
+        std::mutex                        Mutex_;
+        std::condition_variable           Condition_;
+        int                               MaxThreadCount_;
+        int                               PhysicalCoreCount_;
+        int                               HyperThreadIndex_{};
+        bool                              bEnableHyperThread_;
+        bool                              bTerminate_{ false };
     };
 
     template <typename DataType, typename ResultType>

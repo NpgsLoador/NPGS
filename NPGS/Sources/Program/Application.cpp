@@ -33,13 +33,13 @@ namespace Npgs
 {
     FApplication::FApplication(const vk::Extent2D& WindowSize, const std::string& WindowTitle,
                                bool bEnableVSync, bool bEnableFullscreen, bool bEnableHdr)
-        : _VulkanContext(EngineServicesGetCoreServices->GetVulkanContext())
-        , _ThreadPool(EngineServicesGetCoreServices->GetThreadPool())
-        , _WindowTitle(WindowTitle)
-        , _WindowSize(WindowSize)
-        , _bEnableVSync(bEnableVSync)
-        , _bEnableFullscreen(bEnableFullscreen)
-        , _bEnableHdr(bEnableHdr)
+        : VulkanContext_(EngineServicesGetCoreServices->GetVulkanContext())
+        , ThreadPool_(EngineServicesGetCoreServices->GetThreadPool())
+        , WindowTitle_(WindowTitle)
+        , WindowSize_(WindowSize)
+        , bEnableVSync_(bEnableVSync)
+        , bEnableFullscreen_(bEnableFullscreen)
+        , bEnableHdr_(bEnableHdr)
     {
         if (!InitializeWindow())
         {
@@ -99,7 +99,7 @@ namespace Npgs
 
         GetPipelines();
 
-        _VulkanContext->RegisterAutoRemovedCallbacks(
+        VulkanContext_->RegisterAutoRemovedCallbacks(
             FVulkanContext::ECallbackType::kCreateSwapchain, "GetPipelines", GetPipelines);
 
         auto PbrSceneGBufferPipelineLayout = PipelineManager->GetPipelineLayout("PbrSceneGBufferPipeline");
@@ -122,13 +122,13 @@ namespace Npgs
         std::vector<FVulkanCommandBuffer> PostProcessCommandBuffers(Config::Graphics::kMaxFrameInFlight);
         for (std::size_t i = 0; i != Config::Graphics::kMaxFrameInFlight; ++i)
         {
-            InFlightFences.emplace_back(_VulkanContext->GetDevice(), vk::FenceCreateFlagBits::eSignaled);
-            Semaphores_ImageAvailable.emplace_back(_VulkanContext->GetDevice(), vk::SemaphoreCreateFlags());
-            Semaphores_RenderFinished.emplace_back(_VulkanContext->GetDevice(), vk::SemaphoreCreateFlags());
+            InFlightFences.emplace_back(VulkanContext_->GetDevice(), vk::FenceCreateFlagBits::eSignaled);
+            Semaphores_ImageAvailable.emplace_back(VulkanContext_->GetDevice(), vk::SemaphoreCreateFlags());
+            Semaphores_RenderFinished.emplace_back(VulkanContext_->GetDevice(), vk::SemaphoreCreateFlags());
         }
 
         FVulkanCommandPool GraphicsCommandPool(
-            _VulkanContext->GetDevice(), _VulkanContext->GetQueueFamilyIndex(FVulkanContext::EQueueType::kGraphics),
+            VulkanContext_->GetDevice(), VulkanContext_->GetQueueFamilyIndex(FVulkanContext::EQueueType::kGraphics),
             vk::CommandPoolCreateFlagBits::eResetCommandBuffer);
 
         GraphicsCommandPool.AllocateBuffers(vk::CommandBufferLevel::ePrimary, CommandBuffers);
@@ -151,9 +151,9 @@ namespace Npgs
         vk::ImageSubresourceRange ColorSubresourceRange(vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1);
         vk::ImageSubresourceRange DepthSubresourceRange(vk::ImageAspectFlagBits::eDepth, 0, 1, 0, 1);
 
-        std::array PlaneVertexBuffers{ *_PlaneVertexBuffer->GetBuffer(), *_InstanceBuffer->GetBuffer() };
-        std::array CubeVertexBuffers{ *_CubeVertexBuffer->GetBuffer(), *_InstanceBuffer->GetBuffer() };
-        std::array SphereVertexBuffers{ *_SphereVertexBuffer->GetBuffer(), *_InstanceBuffer->GetBuffer() };
+        std::array PlaneVertexBuffers{ *PlaneVertexBuffer_->GetBuffer(), *InstanceBuffer_->GetBuffer() };
+        std::array CubeVertexBuffers{ *CubeVertexBuffer_->GetBuffer(), *InstanceBuffer_->GetBuffer() };
+        std::array SphereVertexBuffers{ *SphereVertexBuffer_->GetBuffer(), *InstanceBuffer_->GetBuffer() };
         std::array PlaneOffsets{ Offset, Offset };
         std::array CubeOffsets{ Offset, Offset + sizeof(glm::mat4x4) };
         std::array SphereOffsets{ Offset, Offset + 4 * sizeof(glm::mat4x4) };
@@ -163,7 +163,7 @@ namespace Npgs
         // TessArgs[0] = 50.0f;
         // TessArgs[1] = 1000.0f;
         // TessArgs[2] = 8.0f;
-        // TessArgs[3] = 1.5f * _VulkanContext->GetPhysicalDevice().getProperties().limits.maxTessellationGenerationLevel;
+        // TessArgs[3] = 1.5f * VulkanContext_->GetPhysicalDevice().getProperties().limits.maxTessellationGenerationLevel;
 
         FMatrices    Matrices{};
         FMvpMatrices MvpMatrices{};
@@ -176,14 +176,14 @@ namespace Npgs
 
         ShaderBufferManager->UpdateDataBuffers("LightArgs", LightArgs);
 
-        // _Camera->SetOrbitTarget(glm::vec3(0.0f));
-        // _Camera->SetOrbitAxis(glm::vec3(0.0f, 1.0f, 0.0f));
+        // Camera_->SetOrbitTarget(glm::vec3(0.0f));
+        // Camera_->SetOrbitAxis(glm::vec3(0.0f, 1.0f, 0.0f));
 
         // Record secondary commands
         // -------------------------
         auto RecordSecondaryCommands = [&]() -> void
         {
-            vk::Extent2D SupersamplingExtent(_WindowSize.width * 2, _WindowSize.height * 2);
+            vk::Extent2D SupersamplingExtent(WindowSize_.width * 2, WindowSize_.height * 2);
 
             vk::Viewport CommonViewport(0.0f, 0.0f, static_cast<float>(SupersamplingExtent.width),
                                         static_cast<float>(SupersamplingExtent.height), 0.0f, 1.0f);
@@ -228,7 +228,7 @@ namespace Npgs
 
             vk::CommandBufferInheritanceRenderingInfo PostInheritanceRenderingInfo = vk::CommandBufferInheritanceRenderingInfo()
                 .setColorAttachmentCount(1)
-                .setColorAttachmentFormats(_VulkanContext->GetSwapchainCreateInfo().imageFormat);
+                .setColorAttachmentFormats(VulkanContext_->GetSwapchainCreateInfo().imageFormat);
 
             for (std::uint32_t i = 0; i != Config::Graphics::kMaxFrameInFlight; ++i)
             {
@@ -319,7 +319,7 @@ namespace Npgs
                 FrontgroundCommandBuffer->bindDescriptorBuffersEXT(SkyboxDescriptorBufferBindingInfo);
                 vk::DeviceSize OffsetSet0 = ShaderBufferManager->GetDescriptorBindingOffset("SkyboxDescriptorBuffer", 0, 0);
                 FrontgroundCommandBuffer->setDescriptorBufferOffsetsEXT(vk::PipelineBindPoint::eGraphics, SkyboxPipelineLayout, 0, { 0 }, OffsetSet0);
-                FrontgroundCommandBuffer->bindVertexBuffers(0, *_SkyboxVertexBuffer->GetBuffer(), Offset);
+                FrontgroundCommandBuffer->bindVertexBuffers(0, *SkyboxVertexBuffer_->GetBuffer(), Offset);
                 FrontgroundCommandBuffer->draw(36, 1, 0, 0);
                 FrontgroundCommandBuffer.End();
 
@@ -333,10 +333,10 @@ namespace Npgs
                 PostProcessCommandBuffer->setScissor(0, CommonScissor);
                 PostProcessCommandBuffer->bindPipeline(vk::PipelineBindPoint::eGraphics, PostPipeline);
                 PostProcessCommandBuffer->bindDescriptorBuffersEXT(PostDescriptorBufferBindingInfo);
-                PostProcessCommandBuffer->pushConstants<vk::Bool32>(PostPipelineLayout, vk::ShaderStageFlagBits::eFragment, PostShader->GetPushConstantOffset("bEnableHdr"), static_cast<vk::Bool32>(_bEnableHdr));
+                PostProcessCommandBuffer->pushConstants<vk::Bool32>(PostPipelineLayout, vk::ShaderStageFlagBits::eFragment, PostShader->GetPushConstantOffset("bEnableHdr"), static_cast<vk::Bool32>(bEnableHdr_));
                 OffsetSet0 = ShaderBufferManager->GetDescriptorBindingOffset("PostDescriptorBuffer", 0, 0);
                 PostProcessCommandBuffer->setDescriptorBufferOffsetsEXT(vk::PipelineBindPoint::eGraphics, PostPipelineLayout, 0, { 0 }, OffsetSet0);
-                PostProcessCommandBuffer->bindVertexBuffers(0, *_QuadVertexBuffer->GetBuffer(), Offset);
+                PostProcessCommandBuffer->bindVertexBuffers(0, *QuadVertexBuffer_->GetBuffer(), Offset);
                 PostProcessCommandBuffer->draw(6, 1, 0, 0);
                 PostProcessCommandBuffer.End();
             }
@@ -344,18 +344,18 @@ namespace Npgs
 
         RecordSecondaryCommands();
 
-        _VulkanContext->RegisterAutoRemovedCallbacks(
+        VulkanContext_->RegisterAutoRemovedCallbacks(
             FVulkanContext::ECallbackType::kCreateSwapchain, "RecordSecondaryCommands", RecordSecondaryCommands);
 
         // Main rendering loop
-        while (!glfwWindowShouldClose(_Window))
+        while (!glfwWindowShouldClose(Window_))
         {
-            while (glfwGetWindowAttrib(_Window, GLFW_ICONIFIED))
+            while (glfwGetWindowAttrib(Window_, GLFW_ICONIFIED))
             {
                 glfwWaitEvents();
             }
 
-            vk::Extent2D SupersamplingExtent(_WindowSize.width * 2, _WindowSize.height * 2);
+            vk::Extent2D SupersamplingExtent(WindowSize_.width * 2, WindowSize_.height * 2);
 
             vk::Viewport CommonViewport(0.0f, 0.0f, static_cast<float>(SupersamplingExtent.width),
                                         static_cast<float>(SupersamplingExtent.height), 0.0f, 1.0f);
@@ -370,23 +370,23 @@ namespace Npgs
 
             // Uniform update
             // --------------
-            float WindowAspect = static_cast<float>(_WindowSize.width) / static_cast<float>(_WindowSize.height);
+            float WindowAspect = static_cast<float>(WindowSize_.width) / static_cast<float>(WindowSize_.height);
 
-            Matrices.View             = _Camera->GetViewMatrix();
-            Matrices.Projection       = _Camera->GetProjectionMatrix(WindowAspect, 0.001f);
+            Matrices.View             = Camera_->GetViewMatrix();
+            Matrices.Projection       = Camera_->GetProjectionMatrix(WindowAspect, 0.001f);
             Matrices.LightSpaceMatrix = LightSpaceMatrix;
 
             // MvpMatrices.Model      = glm::mat4x4(1.0f);
-            // MvpMatrices.View       = _Camera->GetViewMatrix();
-            // MvpMatrices.Projection = _Camera->GetProjectionMatrix(WindowAspect, 0.001f);
+            // MvpMatrices.View       = Camera_->GetViewMatrix();
+            // MvpMatrices.Projection = Camera_->GetProjectionMatrix(WindowAspect, 0.001f);
 
             ShaderBufferManager->UpdateDataBuffer(CurrentFrame, "Matrices", Matrices);
             // ShaderBufferManager->UpdateDataBuffer(CurrentFrame, "MvpMatrices", MvpMatrices);
 
-            CameraPosUpdater[CurrentFrame] << _Camera->GetVector(FCamera::EVector::kPosition);
+            CameraPosUpdater[CurrentFrame] << Camera_->GetVector(FCamera::EVector::kPosition);
 
-            _VulkanContext->SwapImage(*Semaphores_ImageAvailable[CurrentFrame]);
-            std::uint32_t ImageIndex = _VulkanContext->GetCurrentImageIndex();
+            VulkanContext_->SwapImage(*Semaphores_ImageAvailable[CurrentFrame]);
+            std::uint32_t ImageIndex = VulkanContext_->GetCurrentImageIndex();
 
             // Record commands
             // ---------------
@@ -402,7 +402,7 @@ namespace Npgs
                 vk::ImageLayout::eTransferDstOptimal,
                 vk::QueueFamilyIgnored,
                 vk::QueueFamilyIgnored,
-                _VulkanContext->GetSwapchainImage(ImageIndex),
+                VulkanContext_->GetSwapchainImage(ImageIndex),
                 ColorSubresourceRange
             );
 
@@ -415,7 +415,7 @@ namespace Npgs
                 vk::ImageLayout::eColorAttachmentOptimal,
                 vk::QueueFamilyIgnored,
                 vk::QueueFamilyIgnored,
-                *_PositionAoAttachment->GetImage(),
+                *PositionAoAttachment_->GetImage(),
                 ColorSubresourceRange
             );
 
@@ -428,7 +428,7 @@ namespace Npgs
                 vk::ImageLayout::eColorAttachmentOptimal,
                 vk::QueueFamilyIgnored,
                 vk::QueueFamilyIgnored,
-                *_NormalRoughAttachment->GetImage(),
+                *NormalRoughAttachment_->GetImage(),
                 ColorSubresourceRange
             );
 
@@ -441,7 +441,7 @@ namespace Npgs
                 vk::ImageLayout::eColorAttachmentOptimal,
                 vk::QueueFamilyIgnored,
                 vk::QueueFamilyIgnored,
-                *_AlbedoMetalAttachment->GetImage(),
+                *AlbedoMetalAttachment_->GetImage(),
                 ColorSubresourceRange
             );
 
@@ -454,7 +454,7 @@ namespace Npgs
                 vk::ImageLayout::eColorAttachmentOptimal,
                 vk::QueueFamilyIgnored,
                 vk::QueueFamilyIgnored,
-                *_ShadowAttachment->GetImage(),
+                *ShadowAttachment_->GetImage(),
                 ColorSubresourceRange
             );
 
@@ -467,7 +467,7 @@ namespace Npgs
                 vk::ImageLayout::eGeneral,
                 vk::QueueFamilyIgnored,
                 vk::QueueFamilyIgnored,
-                *_ColorAttachment->GetImage(),
+                *ColorAttachment_->GetImage(),
                 ColorSubresourceRange
             );
 
@@ -480,7 +480,7 @@ namespace Npgs
                 vk::ImageLayout::eColorAttachmentOptimal,
                 vk::QueueFamilyIgnored,
                 vk::QueueFamilyIgnored,
-                *_ResolveAttachment->GetImage(),
+                *ResolveAttachment_->GetImage(),
                 ColorSubresourceRange
             );
 
@@ -493,7 +493,7 @@ namespace Npgs
                 vk::ImageLayout::eDepthAttachmentOptimal,
                 vk::QueueFamilyIgnored,
                 vk::QueueFamilyIgnored,
-                *_DepthMapAttachment->GetImage(),
+                *DepthMapAttachment_->GetImage(),
                 DepthSubresourceRange
             );
 
@@ -510,7 +510,7 @@ namespace Npgs
                 .setFlags(vk::RenderingFlagBits::eContentsSecondaryCommandBuffers)
                 .setRenderArea(DepthMapScissor)
                 .setLayerCount(1)
-                .setPDepthAttachment(&_DepthMapAttachmentInfo);
+                .setPDepthAttachment(&DepthMapAttachmentInfo_);
 
             CurrentBuffer->beginRendering(DepthMapRenderingInfo);
             // Draw scene for depth mapping
@@ -526,7 +526,7 @@ namespace Npgs
                 vk::ImageLayout::eShaderReadOnlyOptimal,
                 vk::QueueFamilyIgnored,
                 vk::QueueFamilyIgnored,
-                *_DepthMapAttachment->GetImage(),
+                *DepthMapAttachment_->GetImage(),
                 DepthSubresourceRange
             );
 
@@ -536,15 +536,15 @@ namespace Npgs
 
             CurrentBuffer->pipelineBarrier2(DepthMapRenderEndDependencyInfo);
 
-            std::array GBufferAttachments{ _PositionAoAttachmentInfo, _NormalRoughAttachmentInfo,
-                                           _AlbedoMetalAttachmentInfo, _ShadowAttachmentInfo };
+            std::array GBufferAttachments{ PositionAoAttachmentInfo_, NormalRoughAttachmentInfo_,
+                                           AlbedoMetalAttachmentInfo_, ShadowAttachmentInfo_ };
 
             vk::RenderingInfo SceneRenderingInfo = vk::RenderingInfo()
                 .setFlags(vk::RenderingFlagBits::eContentsSecondaryCommandBuffers)
                 .setRenderArea(CommonScissor)
                 .setLayerCount(1)
                 .setColorAttachments(GBufferAttachments)
-                .setPDepthAttachment(&_DepthStencilAttachmentInfo);
+                .setPDepthAttachment(&DepthStencilAttachmentInfo_);
 
             CurrentBuffer->beginRendering(SceneRenderingInfo);
             CurrentBuffer->executeCommands(*SceneGBufferCommandBuffers[CurrentFrame]);
@@ -555,8 +555,8 @@ namespace Npgs
             //                                   TerrainShader->GetDescriptorSets(CurrentFrame), {});
             // CurrentBuffer->pushConstants(TerrainPipelineLayout, vk::ShaderStageFlagBits::eTessellationControl, 0,
             //                              static_cast<std::uint32_t>(TessArgs.size()) * sizeof(float), TessArgs.data());
-            // CurrentBuffer->bindVertexBuffers(0, *_TerrainVertexBuffer->GetBuffer(), Offset);
-            // CurrentBuffer->draw(_TessResolution* _TessResolution * 4, 1, 0, 0);
+            // CurrentBuffer->bindVertexBuffers(0, *TerrainVertexBuffer_->GetBuffer(), Offset);
+            // CurrentBuffer->draw(TessResolution_* TessResolution_ * 4, 1, 0, 0);
 
             // CurrentBuffer->endRendering();
 
@@ -569,7 +569,7 @@ namespace Npgs
                 vk::ImageLayout::eShaderReadOnlyOptimal,
                 vk::QueueFamilyIgnored,
                 vk::QueueFamilyIgnored,
-                *_PositionAoAttachment->GetImage(),
+                *PositionAoAttachment_->GetImage(),
                 ColorSubresourceRange
             );
 
@@ -582,7 +582,7 @@ namespace Npgs
                 vk::ImageLayout::eShaderReadOnlyOptimal,
                 vk::QueueFamilyIgnored,
                 vk::QueueFamilyIgnored,
-                *_NormalRoughAttachment->GetImage(),
+                *NormalRoughAttachment_->GetImage(),
                 ColorSubresourceRange
             );
 
@@ -595,7 +595,7 @@ namespace Npgs
                 vk::ImageLayout::eShaderReadOnlyOptimal,
                 vk::QueueFamilyIgnored,
                 vk::QueueFamilyIgnored,
-                *_AlbedoMetalAttachment->GetImage(),
+                *AlbedoMetalAttachment_->GetImage(),
                 ColorSubresourceRange
             );
 
@@ -608,7 +608,7 @@ namespace Npgs
                 vk::ImageLayout::eShaderReadOnlyOptimal,
                 vk::QueueFamilyIgnored,
                 vk::QueueFamilyIgnored,
-                *_ShadowAttachment->GetImage(),
+                *ShadowAttachment_->GetImage(),
                 ColorSubresourceRange
             );
 
@@ -633,7 +633,7 @@ namespace Npgs
                 vk::ImageLayout::eColorAttachmentOptimal,
                 vk::QueueFamilyIgnored,
                 vk::QueueFamilyIgnored,
-                *_ColorAttachment->GetImage(),
+                *ColorAttachment_->GetImage(),
                 ColorSubresourceRange
             );
 
@@ -644,16 +644,16 @@ namespace Npgs
             CurrentBuffer->pipelineBarrier2(MergeEndDependencyInfo);
 
             // Draw other objects
-            SceneRenderingInfo.setColorAttachmentCount(1).setColorAttachments(_ColorAttachmentInfo);
-            _ColorAttachmentInfo.setLoadOp(vk::AttachmentLoadOp::eLoad);
-            _DepthStencilAttachmentInfo.setLoadOp(vk::AttachmentLoadOp::eLoad);
+            SceneRenderingInfo.setColorAttachmentCount(1).setColorAttachments(ColorAttachmentInfo_);
+            ColorAttachmentInfo_.setLoadOp(vk::AttachmentLoadOp::eLoad);
+            DepthStencilAttachmentInfo_.setLoadOp(vk::AttachmentLoadOp::eLoad);
 
             CurrentBuffer->beginRendering(SceneRenderingInfo);
             CurrentBuffer->executeCommands(*FrontgroundCommandBuffers[CurrentFrame]);
             CurrentBuffer->endRendering();
 
-            _ColorAttachmentInfo.setLoadOp(vk::AttachmentLoadOp::eClear);
-            _DepthStencilAttachmentInfo.setLoadOp(vk::AttachmentLoadOp::eClear);
+            ColorAttachmentInfo_.setLoadOp(vk::AttachmentLoadOp::eClear);
+            DepthStencilAttachmentInfo_.setLoadOp(vk::AttachmentLoadOp::eClear);
 
             vk::ImageMemoryBarrier2 PrePostBarrier(
                 vk::PipelineStageFlagBits2::eColorAttachmentOutput,
@@ -664,7 +664,7 @@ namespace Npgs
                 vk::ImageLayout::eShaderReadOnlyOptimal,
                 vk::QueueFamilyIgnored,
                 vk::QueueFamilyIgnored,
-                *_ColorAttachment->GetImage(),
+                *ColorAttachment_->GetImage(),
                 ColorSubresourceRange
             );
 
@@ -679,7 +679,7 @@ namespace Npgs
                 .setFlags(vk::RenderingFlagBits::eContentsSecondaryCommandBuffers)
                 .setRenderArea(CommonScissor)
                 .setLayerCount(1)
-                .setColorAttachments(_PostProcessAttachmentInfo);
+                .setColorAttachments(PostProcessAttachmentInfo_);
 
             CurrentBuffer->beginRendering(PostRenderingInfo);
             CurrentBuffer->executeCommands(*PostProcessCommandBuffers[CurrentFrame]);
@@ -694,7 +694,7 @@ namespace Npgs
                 vk::ImageLayout::eTransferSrcOptimal,
                 vk::QueueFamilyIgnored,
                 vk::QueueFamilyIgnored,
-                *_ResolveAttachment->GetImage(),
+                *ResolveAttachment_->GetImage(),
                 ColorSubresourceRange
             );
 
@@ -709,11 +709,11 @@ namespace Npgs
                 vk::ImageSubresourceLayers(vk::ImageAspectFlagBits::eColor, 0, 0, 1),
                 { vk::Offset3D(0, 0, 0), vk::Offset3D(SupersamplingExtent.width, SupersamplingExtent.height, 1) },
                 vk::ImageSubresourceLayers(vk::ImageAspectFlagBits::eColor, 0, 0, 1),
-                { vk::Offset3D(0, 0, 0), vk::Offset3D(_WindowSize.width, _WindowSize.height, 1) }
+                { vk::Offset3D(0, 0, 0), vk::Offset3D(WindowSize_.width, WindowSize_.height, 1) }
             );
 
-            CurrentBuffer->blitImage(*_ResolveAttachment->GetImage(), vk::ImageLayout::eTransferSrcOptimal,
-                                     _VulkanContext->GetSwapchainImage(ImageIndex), vk::ImageLayout::eTransferDstOptimal,
+            CurrentBuffer->blitImage(*ResolveAttachment_->GetImage(), vk::ImageLayout::eTransferSrcOptimal,
+                                     VulkanContext_->GetSwapchainImage(ImageIndex), vk::ImageLayout::eTransferDstOptimal,
                                      BlitRegion, vk::Filter::eLinear);
 
             vk::ImageMemoryBarrier2 PresentBarrier(
@@ -725,7 +725,7 @@ namespace Npgs
                 vk::ImageLayout::ePresentSrcKHR,
                 vk::QueueFamilyIgnored,
                 vk::QueueFamilyIgnored,
-                _VulkanContext->GetSwapchainImage(ImageIndex),
+                VulkanContext_->GetSwapchainImage(ImageIndex),
                 ColorSubresourceRange
             );
 
@@ -736,55 +736,55 @@ namespace Npgs
             CurrentBuffer->pipelineBarrier2(FinalDependencyInfo);
             CurrentBuffer.End();
 
-            _VulkanContext->SubmitCommandBuffer(FVulkanContext::EQueueType::kGraphics,
+            VulkanContext_->SubmitCommandBuffer(FVulkanContext::EQueueType::kGraphics,
                                                 *CurrentBuffer,
                                                 *Semaphores_ImageAvailable[CurrentFrame],
                                                 *Semaphores_RenderFinished[CurrentFrame],
                                                 *InFlightFences[CurrentFrame],
                                                 vk::PipelineStageFlagBits::eColorAttachmentOutput);
             
-            _VulkanContext->PresentImage(*Semaphores_RenderFinished[CurrentFrame]);
+            VulkanContext_->PresentImage(*Semaphores_RenderFinished[CurrentFrame]);
 
             CurrentFrame = (CurrentFrame + 1) % Config::Graphics::kMaxFrameInFlight;
 
-            _Camera->ProcessEvent(_DeltaTime);
+            Camera_->ProcessEvent(DeltaTime_);
 
             ProcessInput();
             glfwPollEvents();
             ShowTitleFps();
         }
 
-        _VulkanContext->WaitIdle();
+        VulkanContext_->WaitIdle();
         // GraphicsCommandPool.FreeBuffers(CommandBuffers);
     }
 
     void FApplication::CreateAttachments()
     {
-        _PositionAoAttachmentInfo
+        PositionAoAttachmentInfo_
             .setImageLayout(vk::ImageLayout::eColorAttachmentOptimal)
             .setLoadOp(vk::AttachmentLoadOp::eClear)
             .setStoreOp(vk::AttachmentStoreOp::eStore)
             .setClearValue(vk::ClearColorValue(0.0f, 0.0f, 0.0f, 1.0f));
 
-        _NormalRoughAttachmentInfo
+        NormalRoughAttachmentInfo_
             .setImageLayout(vk::ImageLayout::eColorAttachmentOptimal)
             .setLoadOp(vk::AttachmentLoadOp::eClear)
             .setStoreOp(vk::AttachmentStoreOp::eStore)
             .setClearValue(vk::ClearColorValue(0.0f, 0.0f, 0.0f, 1.0f));
 
-        _AlbedoMetalAttachmentInfo
+        AlbedoMetalAttachmentInfo_
             .setImageLayout(vk::ImageLayout::eColorAttachmentOptimal)
             .setLoadOp(vk::AttachmentLoadOp::eClear)
             .setStoreOp(vk::AttachmentStoreOp::eStore)
             .setClearValue(vk::ClearColorValue(0.0f, 0.0f, 0.0f, 1.0f));
 
-        _ShadowAttachmentInfo
+        ShadowAttachmentInfo_
             .setImageLayout(vk::ImageLayout::eColorAttachmentOptimal)
             .setLoadOp(vk::AttachmentLoadOp::eClear)
             .setStoreOp(vk::AttachmentStoreOp::eStore)
             .setClearValue(vk::ClearColorValue(0.0f, 0.0f, 0.0f, 1.0f));
 
-        _ColorAttachmentInfo
+        ColorAttachmentInfo_
             .setImageLayout(vk::ImageLayout::eColorAttachmentOptimal)
             // .setResolveMode(vk::ResolveModeFlagBits::eAverage)
             // .setResolveImageLayout(vk::ImageLayout::eColorAttachmentOptimal)
@@ -792,19 +792,19 @@ namespace Npgs
             .setStoreOp(vk::AttachmentStoreOp::eStore)
             .setClearValue(vk::ClearColorValue(0.0f, 0.0f, 0.0f, 1.0f));
 
-        _DepthStencilAttachmentInfo
+        DepthStencilAttachmentInfo_
             .setImageLayout(vk::ImageLayout::eDepthStencilAttachmentOptimal)
             .setLoadOp(vk::AttachmentLoadOp::eClear)
             .setStoreOp(vk::AttachmentStoreOp::eDontCare)
             .setClearValue(vk::ClearDepthStencilValue(1.0f, 0));
 
-        _DepthMapAttachmentInfo
+        DepthMapAttachmentInfo_
             .setImageLayout(vk::ImageLayout::eDepthAttachmentOptimal)
             .setLoadOp(vk::AttachmentLoadOp::eClear)
             .setStoreOp(vk::AttachmentStoreOp::eDontCare)
             .setClearValue(vk::ClearDepthStencilValue(1.0f, 0));
 
-        _PostProcessAttachmentInfo
+        PostProcessAttachmentInfo_
             .setImageLayout(vk::ImageLayout::eColorAttachmentOptimal)
             .setLoadOp(vk::AttachmentLoadOp::eClear)
             .setStoreOp(vk::AttachmentStoreOp::eStore)
@@ -818,66 +818,66 @@ namespace Npgs
                 .usage = VMA_MEMORY_USAGE_GPU_ONLY,
             };
 
-            vk::Extent2D AttachmentExtent(_WindowSize.width * 2, _WindowSize.height * 2);
+            vk::Extent2D AttachmentExtent(WindowSize_.width * 2, WindowSize_.height * 2);
             vk::Extent2D DepthMapExtent(8192, 8192);
 
-            _VulkanContext->WaitIdle();
-            auto Allocator = _VulkanContext->GetVmaAllocator();
+            VulkanContext_->WaitIdle();
+            auto Allocator = VulkanContext_->GetVmaAllocator();
 
-            _PositionAoAttachment = std::make_unique<FColorAttachment>(
-                _VulkanContext, Allocator, AllocationCreateInfo, vk::Format::eR16G16B16A16Sfloat,
+            PositionAoAttachment_ = std::make_unique<FColorAttachment>(
+                VulkanContext_, Allocator, AllocationCreateInfo, vk::Format::eR16G16B16A16Sfloat,
                 AttachmentExtent, 1, vk::SampleCountFlagBits::e1, vk::ImageUsageFlagBits::eSampled);
 
-            _NormalRoughAttachment = std::make_unique<FColorAttachment>(
-                _VulkanContext, Allocator, AllocationCreateInfo, vk::Format::eR16G16B16A16Sfloat,
+            NormalRoughAttachment_ = std::make_unique<FColorAttachment>(
+                VulkanContext_, Allocator, AllocationCreateInfo, vk::Format::eR16G16B16A16Sfloat,
                 AttachmentExtent, 1, vk::SampleCountFlagBits::e1, vk::ImageUsageFlagBits::eSampled);
 
-            _AlbedoMetalAttachment = std::make_unique<FColorAttachment>(
-                _VulkanContext, Allocator, AllocationCreateInfo, vk::Format::eR16G16B16A16Sfloat,
+            AlbedoMetalAttachment_ = std::make_unique<FColorAttachment>(
+                VulkanContext_, Allocator, AllocationCreateInfo, vk::Format::eR16G16B16A16Sfloat,
                 AttachmentExtent, 1, vk::SampleCountFlagBits::e1, vk::ImageUsageFlagBits::eSampled);
 
-            _ShadowAttachment = std::make_unique<FColorAttachment>(
-                _VulkanContext, Allocator, AllocationCreateInfo, vk::Format::eR16G16B16A16Sfloat,
+            ShadowAttachment_ = std::make_unique<FColorAttachment>(
+                VulkanContext_, Allocator, AllocationCreateInfo, vk::Format::eR16G16B16A16Sfloat,
                 AttachmentExtent, 1, vk::SampleCountFlagBits::e1, vk::ImageUsageFlagBits::eSampled);
 
-            _ColorAttachment = std::make_unique<FColorAttachment>(
-                _VulkanContext, Allocator, AllocationCreateInfo, vk::Format::eR16G16B16A16Sfloat,
+            ColorAttachment_ = std::make_unique<FColorAttachment>(
+                VulkanContext_, Allocator, AllocationCreateInfo, vk::Format::eR16G16B16A16Sfloat,
                 AttachmentExtent, 1, vk::SampleCountFlagBits::e1, vk::ImageUsageFlagBits::eSampled | vk::ImageUsageFlagBits::eStorage);
 
-            _ResolveAttachment = std::make_unique<FColorAttachment>(
-                _VulkanContext, Allocator, AllocationCreateInfo, _VulkanContext->GetSwapchainCreateInfo().imageFormat,
+            ResolveAttachment_ = std::make_unique<FColorAttachment>(
+                VulkanContext_, Allocator, AllocationCreateInfo, VulkanContext_->GetSwapchainCreateInfo().imageFormat,
                 AttachmentExtent, 1, vk::SampleCountFlagBits::e1, vk::ImageUsageFlagBits::eTransferSrc);
 
-            _DepthStencilAttachment = std::make_unique<FDepthStencilAttachment>(
-                _VulkanContext, Allocator, AllocationCreateInfo, vk::Format::eD32Sfloat,
+            DepthStencilAttachment_ = std::make_unique<FDepthStencilAttachment>(
+                VulkanContext_, Allocator, AllocationCreateInfo, vk::Format::eD32Sfloat,
                 AttachmentExtent, 1, vk::SampleCountFlagBits::e1);
 
-            _DepthMapAttachment = std::make_unique<FDepthStencilAttachment>(
-                _VulkanContext, Allocator, AllocationCreateInfo, vk::Format::eD32Sfloat,
+            DepthMapAttachment_ = std::make_unique<FDepthStencilAttachment>(
+                VulkanContext_, Allocator, AllocationCreateInfo, vk::Format::eD32Sfloat,
                 DepthMapExtent, 1, vk::SampleCountFlagBits::e1, vk::ImageUsageFlagBits::eSampled);
 
-            _PositionAoAttachmentInfo.setImageView(*_PositionAoAttachment->GetImageView());
-            _NormalRoughAttachmentInfo.setImageView(*_NormalRoughAttachment->GetImageView());
-            _AlbedoMetalAttachmentInfo.setImageView(*_AlbedoMetalAttachment->GetImageView());
-            _ShadowAttachmentInfo.setImageView(*_ShadowAttachment->GetImageView());
-            _ColorAttachmentInfo.setImageView(*_ColorAttachment->GetImageView());
-            //                     .setResolveImageView(*_ResolveAttachment->GetImageView
+            PositionAoAttachmentInfo_.setImageView(*PositionAoAttachment_->GetImageView());
+            NormalRoughAttachmentInfo_.setImageView(*NormalRoughAttachment_->GetImageView());
+            AlbedoMetalAttachmentInfo_.setImageView(*AlbedoMetalAttachment_->GetImageView());
+            ShadowAttachmentInfo_.setImageView(*ShadowAttachment_->GetImageView());
+            ColorAttachmentInfo_.setImageView(*ColorAttachment_->GetImageView());
+            //                     .setResolveImageView(*ResolveAttachment_->GetImageView
 
-            _DepthStencilAttachmentInfo.setImageView(*_DepthStencilAttachment->GetImageView());
-            _DepthMapAttachmentInfo.setImageView(*_DepthMapAttachment->GetImageView());
-            _PostProcessAttachmentInfo.setImageView(*_ResolveAttachment->GetImageView());
+            DepthStencilAttachmentInfo_.setImageView(*DepthStencilAttachment_->GetImageView());
+            DepthMapAttachmentInfo_.setImageView(*DepthMapAttachment_->GetImageView());
+            PostProcessAttachmentInfo_.setImageView(*ResolveAttachment_->GetImageView());
         };
 
         auto DestroyFramebuffers = [&]() -> void
         {
-            _VulkanContext->WaitIdle();
+            VulkanContext_->WaitIdle();
         };
 
         CreateFramebuffers();
 
-        _VulkanContext->RegisterAutoRemovedCallbacks(
+        VulkanContext_->RegisterAutoRemovedCallbacks(
             FVulkanContext::ECallbackType::kCreateSwapchain, "CreateFramebuffers", CreateFramebuffers);
-        _VulkanContext->RegisterAutoRemovedCallbacks(
+        VulkanContext_->RegisterAutoRemovedCallbacks(
             FVulkanContext::ECallbackType::kDestroySwapchain, "DestroyFramebuffers", DestroyFramebuffers);
     }
 
@@ -1054,7 +1054,7 @@ namespace Npgs
         };
 #endif
 
-        auto Allocator = _VulkanContext->GetVmaAllocator();
+        auto Allocator = VulkanContext_->GetVmaAllocator();
 
         AssetManager->AddAsset<FTextureCube>(
             "Skybox", Allocator, TextureAllocationCreateInfo, "Skybox",
@@ -1072,7 +1072,7 @@ namespace Npgs
 
         for (std::size_t i = 0; i != TextureNames.size(); ++i)
         {
-            Futures.push_back(_ThreadPool->Submit([&, i]() -> void
+            Futures.push_back(ThreadPool_->Submit([&, i]() -> void
             {
                 AssetManager->AddAsset<FTexture2D>(
                     TextureNames[i], Allocator, TextureAllocationCreateInfo, TextureFiles[i],
@@ -1118,9 +1118,9 @@ namespace Npgs
         VmaAllocatorCreateInfo AllocatorCreateInfo
         {
             .flags          = VMA_ALLOCATOR_CREATE_BUFFER_DEVICE_ADDRESS_BIT,
-            .physicalDevice = _VulkanContext->GetPhysicalDevice(),
-            .device         = _VulkanContext->GetDevice(),
-            .instance       = _VulkanContext->GetInstance()
+            .physicalDevice = VulkanContext_->GetPhysicalDevice(),
+            .device         = VulkanContext_->GetDevice(),
+            .instance       = VulkanContext_->GetInstance()
         };
 
         VmaAllocationCreateInfo AllocationCreateInfo
@@ -1171,8 +1171,8 @@ namespace Npgs
             SceneGBufferDescriptorBufferCreateInfo.Name = "SceneGBufferDescriptorBuffer";
             SceneGBufferDescriptorBufferCreateInfo.SetSizes = std::move(PbrSceneGBufferShader->GetDescriptorSetSizes());
 
-            vk::SamplerCreateInfo SamplerCreateInfo = FTexture::CreateDefaultSamplerCreateInfo(_VulkanContext);
-            static FVulkanSampler kSampler(_VulkanContext->GetDevice(), SamplerCreateInfo);
+            vk::SamplerCreateInfo SamplerCreateInfo = FTexture::CreateDefaultSamplerCreateInfo(VulkanContext_);
+            static FVulkanSampler kSampler(VulkanContext_->GetDevice(), SamplerCreateInfo);
             SceneGBufferDescriptorBufferCreateInfo.SamplerInfos.emplace_back(0u, 0u, *kSampler);
 
             auto PbrDiffuseImageInfo = PbrDiffuse->CreateDescriptorImageInfo(nullptr);
@@ -1197,7 +1197,7 @@ namespace Npgs
                 .setAddressModeV(vk::SamplerAddressMode::eClampToEdge)
                 .setAddressModeW(vk::SamplerAddressMode::eClampToEdge);
 
-            static FVulkanSampler kSkyboxSampler(_VulkanContext->GetDevice(), SamplerCreateInfo);
+            static FVulkanSampler kSkyboxSampler(VulkanContext_->GetDevice(), SamplerCreateInfo);
             auto SkyboxImageInfo = Skybox->CreateDescriptorImageInfo(kSkyboxSampler);
             SkyboxDescriptorBufferCreateInfo.CombinedImageSamplerInfos.emplace_back(0u, 0u, SkyboxImageInfo);
 
@@ -1225,22 +1225,22 @@ namespace Npgs
                 .setMaxLod(0.0f)
                 .setBorderColor(vk::BorderColor::eFloatCustomEXT);
 
-            static FVulkanSampler kFramebufferSampler(_VulkanContext->GetDevice(), SamplerCreateInfo);
+            static FVulkanSampler kFramebufferSampler(VulkanContext_->GetDevice(), SamplerCreateInfo);
 
             vk::DescriptorImageInfo ColorStorageImageInfo(
-                *kFramebufferSampler, *_ColorAttachment->GetImageView(), vk::ImageLayout::eGeneral);
+                *kFramebufferSampler, *ColorAttachment_->GetImageView(), vk::ImageLayout::eGeneral);
             vk::DescriptorImageInfo ColorImageInfo(
-                *kFramebufferSampler, *_ColorAttachment->GetImageView(), vk::ImageLayout::eShaderReadOnlyOptimal);
+                *kFramebufferSampler, *ColorAttachment_->GetImageView(), vk::ImageLayout::eShaderReadOnlyOptimal);
             vk::DescriptorImageInfo DepthMapImageInfo(
-                *kFramebufferSampler, *_DepthMapAttachment->GetImageView(), vk::ImageLayout::eShaderReadOnlyOptimal);
+                *kFramebufferSampler, *DepthMapAttachment_->GetImageView(), vk::ImageLayout::eShaderReadOnlyOptimal);
             vk::DescriptorImageInfo PositionAoImageInfo(
-                *kFramebufferSampler, *_PositionAoAttachment->GetImageView(), vk::ImageLayout::eShaderReadOnlyOptimal);
+                *kFramebufferSampler, *PositionAoAttachment_->GetImageView(), vk::ImageLayout::eShaderReadOnlyOptimal);
             vk::DescriptorImageInfo NormalRoughImageInfo(
-                *kFramebufferSampler, *_NormalRoughAttachment->GetImageView(), vk::ImageLayout::eShaderReadOnlyOptimal);
+                *kFramebufferSampler, *NormalRoughAttachment_->GetImageView(), vk::ImageLayout::eShaderReadOnlyOptimal);
             vk::DescriptorImageInfo AlbedoMetalImageInfo(
-                *kFramebufferSampler, *_AlbedoMetalAttachment->GetImageView(), vk::ImageLayout::eShaderReadOnlyOptimal);
+                *kFramebufferSampler, *AlbedoMetalAttachment_->GetImageView(), vk::ImageLayout::eShaderReadOnlyOptimal);
             vk::DescriptorImageInfo ShadowImageInfo(
-                *kFramebufferSampler, *_ShadowAttachment->GetImageView(), vk::ImageLayout::eShaderReadOnlyOptimal);
+                *kFramebufferSampler, *ShadowAttachment_->GetImageView(), vk::ImageLayout::eShaderReadOnlyOptimal);
 
             SceneGBufferDescriptorBufferCreateInfo.CombinedImageSamplerInfos.emplace_back(2u, 0u, DepthMapImageInfo);
             SceneMergeDescriptorBufferCreateInfo.SampledImageInfos.emplace_back(0u, 0u, PositionAoImageInfo);
@@ -1266,9 +1266,9 @@ namespace Npgs
 
         CreateAttachmentDescriptors();
 
-        _VulkanContext->RegisterAutoRemovedCallbacks(
+        VulkanContext_->RegisterAutoRemovedCallbacks(
             FVulkanContext::ECallbackType::kCreateSwapchain, "CreateAttachmentDescriptors", CreateAttachmentDescriptors);
-        _VulkanContext->RegisterAutoRemovedCallbacks(
+        VulkanContext_->RegisterAutoRemovedCallbacks(
             FVulkanContext::ECallbackType::kDestroySwapchain, "DestroyAttachmentDescriptors", DestroyAttachmentDescriptors);
     }
 
@@ -1276,32 +1276,32 @@ namespace Npgs
     {
         glm::mat4x4 Model(1.0f);
         // plane
-        _InstanceData.emplace_back(Model);
+        InstanceData_.emplace_back(Model);
 
         // cube
         Model = glm::mat4x4(1.0f);
         Model = glm::translate(Model, glm::vec3(0.0f, 1.5f, 0.0f));
-        _InstanceData.emplace_back(Model);
+        InstanceData_.emplace_back(Model);
 
         Model = glm::mat4x4(1.0f);
         Model = glm::translate(Model, glm::vec3(2.0f, 0.0f, 1.0f));
-        _InstanceData.emplace_back(Model);
+        InstanceData_.emplace_back(Model);
 
         Model = glm::mat4x4(1.0f);
         Model = glm::translate(Model, glm::vec3(-1.0f, 0.0f, 2.0f));
         Model = glm::scale(Model, glm::vec3(0.5f));
         Model = glm::rotate(Model, glm::radians(60.0f), glm::normalize(glm::vec3(1.0, 0.0, 1.0)));
-        _InstanceData.emplace_back(Model);
+        InstanceData_.emplace_back(Model);
 
         // sphere
         Model = glm::mat4x4(1.0f);
-        _InstanceData.emplace_back(Model);
+        InstanceData_.emplace_back(Model);
 
         // lamp
         glm::vec3 LightPos(-2.0f, 4.0f, -1.0f);
         Model = glm::mat4x4(1.0f);
         Model = glm::scale(glm::translate(Model, LightPos), glm::vec3(0.2f));
-        _InstanceData.emplace_back(Model);
+        InstanceData_.emplace_back(Model);
     }
 
     void FApplication::InitializeVerticesData()
@@ -1389,38 +1389,38 @@ namespace Npgs
             .setSize(SphereVertices.size() * sizeof(FVertex))
             .setUsage(vk::BufferUsageFlagBits::eVertexBuffer | vk::BufferUsageFlagBits::eTransferDst);
 
-        auto Allocator = _VulkanContext->GetVmaAllocator();
+        auto Allocator = VulkanContext_->GetVmaAllocator();
 
-        _SphereVertexBuffer = std::make_unique<FDeviceLocalBuffer>(_VulkanContext, Allocator, AllocationCreateInfo, VertexBufferCreateInfo);
-        _SphereVertexBuffer->CopyData(SphereVertices);
+        SphereVertexBuffer_ = std::make_unique<FDeviceLocalBuffer>(VulkanContext_, Allocator, AllocationCreateInfo, VertexBufferCreateInfo);
+        SphereVertexBuffer_->CopyData(SphereVertices);
 
         VertexBufferCreateInfo.setSize(CubeVertices.size() * sizeof(FVertex));
-        _CubeVertexBuffer = std::make_unique<FDeviceLocalBuffer>(_VulkanContext, Allocator, AllocationCreateInfo, VertexBufferCreateInfo);
-        _CubeVertexBuffer->CopyData(CubeVertices);
+        CubeVertexBuffer_ = std::make_unique<FDeviceLocalBuffer>(VulkanContext_, Allocator, AllocationCreateInfo, VertexBufferCreateInfo);
+        CubeVertexBuffer_->CopyData(CubeVertices);
 
         VertexBufferCreateInfo.setSize(SkyboxVertices.size() * sizeof(FSkyboxVertex));
-        _SkyboxVertexBuffer = std::make_unique<FDeviceLocalBuffer>(_VulkanContext, Allocator, AllocationCreateInfo, VertexBufferCreateInfo);
-        _SkyboxVertexBuffer->CopyData(SkyboxVertices);
+        SkyboxVertexBuffer_ = std::make_unique<FDeviceLocalBuffer>(VulkanContext_, Allocator, AllocationCreateInfo, VertexBufferCreateInfo);
+        SkyboxVertexBuffer_->CopyData(SkyboxVertices);
 
         VertexBufferCreateInfo.setSize(PlaneVertices.size() * sizeof(FVertex));
-        _PlaneVertexBuffer = std::make_unique<FDeviceLocalBuffer>(_VulkanContext, Allocator, AllocationCreateInfo, VertexBufferCreateInfo);
-        _PlaneVertexBuffer->CopyData(PlaneVertices);
+        PlaneVertexBuffer_ = std::make_unique<FDeviceLocalBuffer>(VulkanContext_, Allocator, AllocationCreateInfo, VertexBufferCreateInfo);
+        PlaneVertexBuffer_->CopyData(PlaneVertices);
 
         VertexBufferCreateInfo.setSize(QuadVertices.size() * sizeof(FQuadVertex));
-        _QuadVertexBuffer = std::make_unique<FDeviceLocalBuffer>(_VulkanContext, Allocator, AllocationCreateInfo, VertexBufferCreateInfo);
-        _QuadVertexBuffer->CopyData(QuadVertices);
+        QuadVertexBuffer_ = std::make_unique<FDeviceLocalBuffer>(VulkanContext_, Allocator, AllocationCreateInfo, VertexBufferCreateInfo);
+        QuadVertexBuffer_->CopyData(QuadVertices);
 
-        VertexBufferCreateInfo.setSize(_InstanceData.size() * sizeof(FInstanceData));
-        _InstanceBuffer = std::make_unique<FDeviceLocalBuffer>(_VulkanContext, Allocator, AllocationCreateInfo, VertexBufferCreateInfo);
-        _InstanceBuffer->CopyData(_InstanceData);
+        VertexBufferCreateInfo.setSize(InstanceData_.size() * sizeof(FInstanceData));
+        InstanceBuffer_ = std::make_unique<FDeviceLocalBuffer>(VulkanContext_, Allocator, AllocationCreateInfo, VertexBufferCreateInfo);
+        InstanceBuffer_->CopyData(InstanceData_);
 
         vk::BufferCreateInfo IndexBufferCreateInfo = vk::BufferCreateInfo()
             .setSize(SphereIndices.size() * sizeof(std::uint32_t))
             .setUsage(vk::BufferUsageFlagBits::eIndexBuffer | vk::BufferUsageFlagBits::eTransferDst);
 
-        _SphereIndexBuffer = std::make_unique<FDeviceLocalBuffer>(_VulkanContext, Allocator, AllocationCreateInfo, IndexBufferCreateInfo);
-        _SphereIndexBuffer->CopyData(SphereIndices);
-        _SphereIndicesCount = static_cast<std::uint32_t>(SphereIndices.size());
+        SphereIndexBuffer_ = std::make_unique<FDeviceLocalBuffer>(VulkanContext_, Allocator, AllocationCreateInfo, IndexBufferCreateInfo);
+        SphereIndexBuffer_->CopyData(SphereIndices);
+        SphereIndicesCount_ = static_cast<std::uint32_t>(SphereIndices.size());
 
 #if 0
         // Create height map vertices
@@ -1432,24 +1432,24 @@ namespace Npgs
         int   ImageHeight = static_cast<int>(IceLand->GetImageExtent().height);
         int   StartX      = -ImageWidth  / 2;
         int   StartZ      = -ImageHeight / 2;
-        float TessWidth   =  ImageWidth  / static_cast<float>(_TessResolution);
-        float TessHeight  =  ImageHeight / static_cast<float>(_TessResolution);
+        float TessWidth   =  ImageWidth  / static_cast<float>(TessResolution_);
+        float TessHeight  =  ImageHeight / static_cast<float>(TessResolution_);
 
         std::vector<FPatchVertex> TerrainVertices;
-        TerrainVertices.reserve(_TessResolution * _TessResolution * 4);
-        for (int z = 0; z != _TessResolution; ++z)
+        TerrainVertices.reserve(TessResolution_ * TessResolution_ * 4);
+        for (int z = 0; z != TessResolution_; ++z)
         {
-            for (int x = 0; x != _TessResolution; ++x)
+            for (int x = 0; x != TessResolution_; ++x)
             {
                 float AxisX0 = StartX + TessWidth  *  x;
                 float AxisX1 = StartX + TessWidth  * (x + 1);
                 float AxisZ0 = StartZ + TessHeight *  z;
                 float AxisZ1 = StartZ + TessHeight * (z + 1);
 
-                float AxisU0 =  x      / static_cast<float>(_TessResolution);
-                float AxisU1 = (x + 1) / static_cast<float>(_TessResolution);
-                float AxisV0 =  z      / static_cast<float>(_TessResolution);
-                float AxisV1 = (z + 1) / static_cast<float>(_TessResolution);
+                float AxisU0 =  x      / static_cast<float>(TessResolution_);
+                float AxisU1 = (x + 1) / static_cast<float>(TessResolution_);
+                float AxisV0 =  z      / static_cast<float>(TessResolution_);
+                float AxisV1 = (z + 1) / static_cast<float>(TessResolution_);
 
                 FPatchVertex PatchVertex00{ glm::vec3(AxisX0, 0.0f, AxisZ0), glm::vec2(AxisU0, AxisV0) };
                 FPatchVertex PatchVertex01{ glm::vec3(AxisX0, 0.0f, AxisZ1), glm::vec2(AxisU0, AxisV1) };
@@ -1464,8 +1464,8 @@ namespace Npgs
         }
 
         VertexBufferCreateInfo.setSize(TerrainVertices.size() * sizeof(FPatchVertex));
-        _TerrainVertexBuffer = std::make_unique<FDeviceLocalBuffer>(_VulkanContext, Allocator, AllocationCreateInfo, VertexBufferCreateInfo);
-        _TerrainVertexBuffer->CopyData(TerrainVertices);
+        TerrainVertexBuffer_ = std::make_unique<FDeviceLocalBuffer>(VulkanContext_, Allocator, AllocationCreateInfo, VertexBufferCreateInfo);
+        TerrainVertexBuffer_->CopyData(TerrainVertices);
 #endif
     }
 
@@ -1554,7 +1554,7 @@ namespace Npgs
 
         vk::PipelineRenderingCreateInfo PostRenderingCreateInfo = vk::PipelineRenderingCreateInfo()
             .setColorAttachmentCount(1)
-            .setColorAttachmentFormats(_VulkanContext->GetSwapchainCreateInfo().imageFormat);
+            .setColorAttachmentFormats(VulkanContext_->GetSwapchainCreateInfo().imageFormat);
 
         PostPipelineCreateInfoPack.GraphicsPipelineCreateInfo.setPNext(&PostRenderingCreateInfo);
         PostPipelineCreateInfoPack.DepthStencilStateCreateInfo  = vk::PipelineDepthStencilStateCreateInfo();
@@ -1581,8 +1581,8 @@ namespace Npgs
 
     void FApplication::Terminate()
     {
-        _VulkanContext->WaitIdle();
-        glfwDestroyWindow(_Window);
+        VulkanContext_->WaitIdle();
+        glfwDestroyWindow(Window_);
         glfwTerminate();
         // FEngineServices::GetInstance()->ShutdownResourceServices();
     }
@@ -1597,8 +1597,8 @@ namespace Npgs
 
         glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
 
-        _Window = glfwCreateWindow(_WindowSize.width, _WindowSize.height, _WindowTitle.c_str(), nullptr, nullptr);
-        if (_Window == nullptr)
+        Window_ = glfwCreateWindow(WindowSize_.width, WindowSize_.height, WindowTitle_.c_str(), nullptr, nullptr);
+        if (Window_ == nullptr)
         {
             NpgsCoreError("Failed to create GLFW window.");
             glfwTerminate();
@@ -1612,58 +1612,58 @@ namespace Npgs
         if (Extensions == nullptr)
         {
             NpgsCoreError("Failed to get required instance extensions.");
-            glfwDestroyWindow(_Window);
+            glfwDestroyWindow(Window_);
             glfwTerminate();
             return false;
         }
 
         for (std::uint32_t i = 0; i != ExtensionCount; ++i)
         {
-            _VulkanContext->AddInstanceExtension(Extensions[i]);
+            VulkanContext_->AddInstanceExtension(Extensions[i]);
         }
 
         vk::Result Result;
-        if ((Result = _VulkanContext->CreateInstance()) != vk::Result::eSuccess)
+        if ((Result = VulkanContext_->CreateInstance()) != vk::Result::eSuccess)
         {
-            glfwDestroyWindow(_Window);
+            glfwDestroyWindow(Window_);
             glfwTerminate();
             return false;
         }
 
         vk::SurfaceKHR Surface;
-        if (glfwCreateWindowSurface(_VulkanContext->GetInstance(), _Window, nullptr, reinterpret_cast<VkSurfaceKHR*>(&Surface)) != VK_SUCCESS)
+        if (glfwCreateWindowSurface(VulkanContext_->GetInstance(), Window_, nullptr, reinterpret_cast<VkSurfaceKHR*>(&Surface)) != VK_SUCCESS)
         {
             NpgsCoreError("Failed to create window surface.");
-            glfwDestroyWindow(_Window);
+            glfwDestroyWindow(Window_);
             glfwTerminate();
             return false;
         }
-        _VulkanContext->SetSurface(Surface);
+        VulkanContext_->SetSurface(Surface);
 
-        if (_bEnableHdr)
+        if (bEnableHdr_)
         {
-            _VulkanContext->SetHdrMetadata(GetHdrMetadata());
+            VulkanContext_->SetHdrMetadata(GetHdrMetadata());
         }
 
-        if (_VulkanContext->CreateDevice(0) != vk::Result::eSuccess ||
-            _VulkanContext->CreateSwapchain(_WindowSize, _bEnableVSync, _bEnableHdr) != vk::Result::eSuccess)
+        if (VulkanContext_->CreateDevice(0) != vk::Result::eSuccess ||
+            VulkanContext_->CreateSwapchain(WindowSize_, bEnableVSync_, bEnableHdr_) != vk::Result::eSuccess)
         {
             return false;
         }
 
         FEngineServices::GetInstance()->InitializeResourceServices();
 
-        _Camera = std::make_unique<FCamera>(glm::vec3(0.0f, 0.0f, 3.0f));
+        Camera_ = std::make_unique<FCamera>(glm::vec3(0.0f, 0.0f, 3.0f));
 
         return true;
     }
 
     void FApplication::InitializeInputCallbacks()
     {
-        glfwSetWindowUserPointer(_Window, this);
-        glfwSetFramebufferSizeCallback(_Window, &FApplication::FramebufferSizeCallback);
-        glfwSetScrollCallback(_Window, nullptr);
-        glfwSetScrollCallback(_Window, &FApplication::ScrollCallback);
+        glfwSetWindowUserPointer(Window_, this);
+        glfwSetFramebufferSizeCallback(Window_, &FApplication::FramebufferSizeCallback);
+        glfwSetScrollCallback(Window_, nullptr);
+        glfwSetScrollCallback(Window_, &FApplication::ScrollCallback);
     }
 
     void FApplication::ShowTitleFps()
@@ -1674,12 +1674,12 @@ namespace Npgs
         static int    FrameCount    = 0;
 
         CurrentTime   = glfwGetTime();
-        _DeltaTime    = CurrentTime - LastFrameTime;
+        DeltaTime_    = CurrentTime - LastFrameTime;
         LastFrameTime = CurrentTime;
         ++FrameCount;
         if (CurrentTime - PreviousTime >= 1.0)
         {
-            glfwSetWindowTitle(_Window, (std::string(_WindowTitle) + " " + std::to_string(FrameCount)).c_str());
+            glfwSetWindowTitle(Window_, (std::string(WindowTitle_) + " " + std::to_string(FrameCount)).c_str());
             FrameCount   = 0;
             PreviousTime = CurrentTime;
         }
@@ -1687,39 +1687,39 @@ namespace Npgs
 
     void FApplication::ProcessInput()
     {
-        if (glfwGetMouseButton(_Window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS)
+        if (glfwGetMouseButton(Window_, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS)
         {
-            glfwSetCursorPosCallback(_Window, &FApplication::CursorPosCallback);
-            glfwSetInputMode(_Window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+            glfwSetCursorPosCallback(Window_, &FApplication::CursorPosCallback);
+            glfwSetInputMode(Window_, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
         }
 
-        if (glfwGetMouseButton(_Window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_RELEASE)
+        if (glfwGetMouseButton(Window_, GLFW_MOUSE_BUTTON_LEFT) == GLFW_RELEASE)
         {
-            glfwSetCursorPosCallback(_Window, nullptr);
-            glfwSetInputMode(_Window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
-            _bFirstMouse = true;
+            glfwSetCursorPosCallback(Window_, nullptr);
+            glfwSetInputMode(Window_, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+            bFirstMouse_ = true;
         }
 
-        if (glfwGetKey(_Window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
-            glfwSetWindowShouldClose(_Window, GLFW_TRUE);
-        if (glfwGetKey(_Window, GLFW_KEY_W) == GLFW_PRESS)
-            _Camera->ProcessKeyboard(FCamera::EMovement::kForward, _DeltaTime);
-        if (glfwGetKey(_Window, GLFW_KEY_S) == GLFW_PRESS)
-            _Camera->ProcessKeyboard(FCamera::EMovement::kBack, _DeltaTime);
-        if (glfwGetKey(_Window, GLFW_KEY_A) == GLFW_PRESS)
-            _Camera->ProcessKeyboard(FCamera::EMovement::kLeft, _DeltaTime);
-        if (glfwGetKey(_Window, GLFW_KEY_D) == GLFW_PRESS)
-            _Camera->ProcessKeyboard(FCamera::EMovement::kRight, _DeltaTime);
-        if (glfwGetKey(_Window, GLFW_KEY_R) == GLFW_PRESS)
-            _Camera->ProcessKeyboard(FCamera::EMovement::kUp, _DeltaTime);
-        if (glfwGetKey(_Window, GLFW_KEY_F) == GLFW_PRESS)
-            _Camera->ProcessKeyboard(FCamera::EMovement::kDown, _DeltaTime);
-        if (glfwGetKey(_Window, GLFW_KEY_Q) == GLFW_PRESS)
-            _Camera->ProcessKeyboard(FCamera::EMovement::kRollLeft, _DeltaTime);
-        if (glfwGetKey(_Window, GLFW_KEY_E) == GLFW_PRESS)
-            _Camera->ProcessKeyboard(FCamera::EMovement::kRollRight, _DeltaTime);
-        if (glfwGetKey(_Window, GLFW_KEY_C) == GLFW_PRESS)
-            _Camera->AlignCamera();
+        if (glfwGetKey(Window_, GLFW_KEY_ESCAPE) == GLFW_PRESS)
+            glfwSetWindowShouldClose(Window_, GLFW_TRUE);
+        if (glfwGetKey(Window_, GLFW_KEY_W) == GLFW_PRESS)
+            Camera_->ProcessKeyboard(FCamera::EMovement::kForward, DeltaTime_);
+        if (glfwGetKey(Window_, GLFW_KEY_S) == GLFW_PRESS)
+            Camera_->ProcessKeyboard(FCamera::EMovement::kBack, DeltaTime_);
+        if (glfwGetKey(Window_, GLFW_KEY_A) == GLFW_PRESS)
+            Camera_->ProcessKeyboard(FCamera::EMovement::kLeft, DeltaTime_);
+        if (glfwGetKey(Window_, GLFW_KEY_D) == GLFW_PRESS)
+            Camera_->ProcessKeyboard(FCamera::EMovement::kRight, DeltaTime_);
+        if (glfwGetKey(Window_, GLFW_KEY_R) == GLFW_PRESS)
+            Camera_->ProcessKeyboard(FCamera::EMovement::kUp, DeltaTime_);
+        if (glfwGetKey(Window_, GLFW_KEY_F) == GLFW_PRESS)
+            Camera_->ProcessKeyboard(FCamera::EMovement::kDown, DeltaTime_);
+        if (glfwGetKey(Window_, GLFW_KEY_Q) == GLFW_PRESS)
+            Camera_->ProcessKeyboard(FCamera::EMovement::kRollLeft, DeltaTime_);
+        if (glfwGetKey(Window_, GLFW_KEY_E) == GLFW_PRESS)
+            Camera_->ProcessKeyboard(FCamera::EMovement::kRollRight, DeltaTime_);
+        if (glfwGetKey(Window_, GLFW_KEY_C) == GLFW_PRESS)
+            Camera_->AlignCamera();
     }
 
     vk::HdrMetadataEXT FApplication::GetHdrMetadata()
@@ -1731,7 +1731,7 @@ namespace Npgs
             return {};
         }
 
-        HMONITOR       Monitor      = MonitorFromWindow(glfwGetWin32Window(_Window), MONITOR_DEFAULTTOPRIMARY);
+        HMONITOR       Monitor      = MonitorFromWindow(glfwGetWin32Window(Window_), MONITOR_DEFAULTTOPRIMARY);
         IDXGIAdapter1* Adapter1     = nullptr;
         IDXGIOutput*   Output       = nullptr;
         IDXGIOutput6*  Output6      = nullptr;
@@ -1809,33 +1809,33 @@ namespace Npgs
             return;
         }
 
-        App->_WindowSize.width  = Width;
-        App->_WindowSize.height = Height;
-        App->_VulkanContext->WaitIdle();
-        App->_VulkanContext->RecreateSwapchain();
+        App->WindowSize_.width  = Width;
+        App->WindowSize_.height = Height;
+        App->VulkanContext_->WaitIdle();
+        App->VulkanContext_->RecreateSwapchain();
     }
 
     void FApplication::CursorPosCallback(GLFWwindow* Window, double PosX, double PosY)
     {
         auto* Application = static_cast<FApplication*>(glfwGetWindowUserPointer(Window));
 
-        if (Application->_bFirstMouse)
+        if (Application->bFirstMouse_)
         {
-            Application->_LastX = PosX;
-            Application->_LastY = PosY;
-            Application->_bFirstMouse = false;
+            Application->LastX_ = PosX;
+            Application->LastY_ = PosY;
+            Application->bFirstMouse_ = false;
         }
 
-        glm::vec2 Offset(PosX - Application->_LastX, Application->_LastY - PosY);
+        glm::vec2 Offset(PosX - Application->LastX_, Application->LastY_ - PosY);
 
-        Application->_LastX = PosX;
-        Application->_LastY = PosY;
-        Application->_Camera->SetTargetOffset(Offset);
+        Application->LastX_ = PosX;
+        Application->LastY_ = PosY;
+        Application->Camera_->SetTargetOffset(Offset);
     }
 
     void FApplication::ScrollCallback(GLFWwindow* Window, double OffsetX, double OffsetY)
     {
         auto* Application = static_cast<FApplication*>(glfwGetWindowUserPointer(Window));
-        Application->_Camera->ProcessMouseScroll(OffsetY);
+        Application->Camera_->ProcessMouseScroll(OffsetY);
     }
 } // namespace Npgs

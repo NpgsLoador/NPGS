@@ -71,8 +71,8 @@ namespace Npgs::Astro
             ObjectType* GetObject() const;
 
         private:
-            FObjectPointer _Object; // 指向天体数组中该天体的指针
-            EObjectType    _Type;   // 天体类型，用于区分 union
+            FObjectPointer Object_; // 指向天体数组中该天体的指针
+            EObjectType    Type_;   // 天体类型，用于区分 union
         };
 
         class FOrbitalDetails // 轨道信息
@@ -93,10 +93,10 @@ namespace Npgs::Astro
             std::vector<FOrbit*>& DirectOrbitsData();
 
         private:
-            std::vector<FOrbit*> _DirectOrbits;       // 直接下级轨道
-            FOrbitalObject       _Object;             // 天体信息
-            FOrbit*              _HostOrbit;          // 所在轨道
-            float                _InitialTrueAnomaly; // 初始真近点角，单位 rad
+            std::vector<FOrbit*> DirectOrbits_;       // 直接下级轨道
+            FOrbitalObject       Object_;             // 天体信息
+            FOrbit*              HostOrbit_;          // 所在轨道
+            float                InitialTrueAnomaly_; // 初始真近点角，单位 rad
         };
 
     public:
@@ -126,11 +126,11 @@ namespace Npgs::Astro
         std::vector<FOrbitalDetails>& ObjectsData();
 
     private:
-        std::vector<FOrbitalDetails> _Objects;  // 每条轨道信息，上有存储的天体
-        FKeplerElements              _OrbitElements;
-        FOrbitalObject               _Parent;   // 上级天体
-        glm::vec2                    _Normal{}; // 轨道法向量 (theta, phi)
-        float                        _Period{}; // 轨道周期，单位 s
+        std::vector<FOrbitalDetails> Objects_;  // 每条轨道信息，上有存储的天体
+        FKeplerElements              OrbitElements_;
+        FOrbitalObject               Parent_;   // 上级天体
+        glm::vec2                    Normal_{}; // 轨道法向量 (theta, phi)
+        float                        Period_{}; // 轨道周期，单位 s
     };
 
     class FStellarSystem : public INpgsObject
@@ -165,11 +165,11 @@ namespace Npgs::Astro
         std::vector<std::unique_ptr<FOrbit>>& OrbitsData();
 
     private:
-        FBaryCenter                                           _SystemBary;
-        std::vector<std::unique_ptr<Astro::AStar>>            _Stars;
-        std::vector<std::unique_ptr<Astro::APlanet>>          _Planets;
-        std::vector<std::unique_ptr<Astro::AAsteroidCluster>> _AsteroidClusters;
-        std::vector<std::unique_ptr<FOrbit>>                  _Orbits;
+        FBaryCenter                                           SystemBary_;
+        std::vector<std::unique_ptr<Astro::AStar>>            Stars_;
+        std::vector<std::unique_ptr<Astro::APlanet>>          Planets_;
+        std::vector<std::unique_ptr<Astro::AAsteroidCluster>> AsteroidClusters_;
+        std::vector<std::unique_ptr<FOrbit>>                  Orbits_;
     };
 }
 

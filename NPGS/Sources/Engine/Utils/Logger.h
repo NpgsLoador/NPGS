@@ -16,8 +16,8 @@ namespace Npgs::Util
         FLogger()  = default;
         ~FLogger() = default;
 
-        static std::shared_ptr<spdlog::logger> _kCoreLogger;
-        static std::shared_ptr<spdlog::logger> _kClientLogger;
+        static std::shared_ptr<spdlog::logger> kCoreLogger_;
+        static std::shared_ptr<spdlog::logger> kClientLogger_;
     };
 } // namespace Npgs::Util
 

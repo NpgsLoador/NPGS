@@ -49,53 +49,53 @@ namespace Npgs
         static void ScrollCallback(GLFWwindow* Window, double OffsetX, double OffsetY);
 
     private:
-        FVulkanContext* _VulkanContext;
-        FThreadPool*    _ThreadPool;
+        FVulkanContext* VulkanContext_;
+        FThreadPool*    ThreadPool_;
 
-        GLFWwindow*  _Window{ nullptr };
-        std::string  _WindowTitle;
-        vk::Extent2D _WindowSize;
-        bool         _bEnableVSync;
-        bool         _bEnableFullscreen;
-        bool         _bEnableHdr;
+        GLFWwindow*  Window_{ nullptr };
+        std::string  WindowTitle_;
+        vk::Extent2D WindowSize_;
+        bool         bEnableVSync_;
+        bool         bEnableFullscreen_;
+        bool         bEnableHdr_;
 
-        std::unique_ptr<FCamera> _Camera;
-        double  _DeltaTime{};
-        double  _LastX{};
-        double  _LastY{};
-        bool    _bFirstMouse{ true };
+        std::unique_ptr<FCamera> Camera_;
+        double  DeltaTime_{};
+        double  LastX_{};
+        double  LastY_{};
+        bool    bFirstMouse_{ true };
 
-        vk::RenderingAttachmentInfo _PositionAoAttachmentInfo;
-        vk::RenderingAttachmentInfo _NormalRoughAttachmentInfo;
-        vk::RenderingAttachmentInfo _AlbedoMetalAttachmentInfo;
-        vk::RenderingAttachmentInfo _ShadowAttachmentInfo;
-        vk::RenderingAttachmentInfo _ColorAttachmentInfo;
-        vk::RenderingAttachmentInfo _ResolveAttachmentInfo;
-        vk::RenderingAttachmentInfo _DepthStencilAttachmentInfo;
-        vk::RenderingAttachmentInfo _DepthMapAttachmentInfo;
-        vk::RenderingAttachmentInfo _PostProcessAttachmentInfo;
+        vk::RenderingAttachmentInfo PositionAoAttachmentInfo_;
+        vk::RenderingAttachmentInfo NormalRoughAttachmentInfo_;
+        vk::RenderingAttachmentInfo AlbedoMetalAttachmentInfo_;
+        vk::RenderingAttachmentInfo ShadowAttachmentInfo_;
+        vk::RenderingAttachmentInfo ColorAttachmentInfo_;
+        vk::RenderingAttachmentInfo ResolveAttachmentInfo_;
+        vk::RenderingAttachmentInfo DepthStencilAttachmentInfo_;
+        vk::RenderingAttachmentInfo DepthMapAttachmentInfo_;
+        vk::RenderingAttachmentInfo PostProcessAttachmentInfo_;
 
-        std::unique_ptr<FColorAttachment>        _PositionAoAttachment;
-        std::unique_ptr<FColorAttachment>        _NormalRoughAttachment;
-        std::unique_ptr<FColorAttachment>        _AlbedoMetalAttachment;
-        std::unique_ptr<FColorAttachment>        _ShadowAttachment;
-        std::unique_ptr<FColorAttachment>        _ColorAttachment;
-        std::unique_ptr<FColorAttachment>        _ResolveAttachment;
-        std::unique_ptr<FDepthStencilAttachment> _DepthStencilAttachment;
-        std::unique_ptr<FDepthStencilAttachment> _DepthMapAttachment;
+        std::unique_ptr<FColorAttachment>        PositionAoAttachment_;
+        std::unique_ptr<FColorAttachment>        NormalRoughAttachment_;
+        std::unique_ptr<FColorAttachment>        AlbedoMetalAttachment_;
+        std::unique_ptr<FColorAttachment>        ShadowAttachment_;
+        std::unique_ptr<FColorAttachment>        ColorAttachment_;
+        std::unique_ptr<FColorAttachment>        ResolveAttachment_;
+        std::unique_ptr<FDepthStencilAttachment> DepthStencilAttachment_;
+        std::unique_ptr<FDepthStencilAttachment> DepthMapAttachment_;
 
-        std::vector<FInstanceData>          _InstanceData;
-        std::unique_ptr<FDeviceLocalBuffer> _InstanceBuffer;
+        std::vector<FInstanceData>          InstanceData_;
+        std::unique_ptr<FDeviceLocalBuffer> InstanceBuffer_;
 
-        std::unique_ptr<FDeviceLocalBuffer> _SphereVertexBuffer;
-        std::unique_ptr<FDeviceLocalBuffer> _SphereIndexBuffer;
-        std::unique_ptr<FDeviceLocalBuffer> _CubeVertexBuffer;
-        std::unique_ptr<FDeviceLocalBuffer> _SkyboxVertexBuffer;
-        std::unique_ptr<FDeviceLocalBuffer> _PlaneVertexBuffer;
-        std::unique_ptr<FDeviceLocalBuffer> _QuadVertexBuffer;
-        std::unique_ptr<FDeviceLocalBuffer> _TerrainVertexBuffer;
+        std::unique_ptr<FDeviceLocalBuffer> SphereVertexBuffer_;
+        std::unique_ptr<FDeviceLocalBuffer> SphereIndexBuffer_;
+        std::unique_ptr<FDeviceLocalBuffer> CubeVertexBuffer_;
+        std::unique_ptr<FDeviceLocalBuffer> SkyboxVertexBuffer_;
+        std::unique_ptr<FDeviceLocalBuffer> PlaneVertexBuffer_;
+        std::unique_ptr<FDeviceLocalBuffer> QuadVertexBuffer_;
+        std::unique_ptr<FDeviceLocalBuffer> TerrainVertexBuffer_;
 
-        std::uint32_t _SphereIndicesCount{};
-        std::uint32_t _TessResolution{ 4 };
+        std::uint32_t SphereIndicesCount_{};
+        std::uint32_t TessResolution_{ 4 };
     };
 } // namespace Npgs

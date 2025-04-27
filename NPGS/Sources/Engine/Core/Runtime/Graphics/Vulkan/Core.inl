@@ -1,5 +1,3 @@
-#include "Core.h"
-
 #include "Engine/Core/Base/Base.h"
 
 #define CompareCallback [&Name](const auto& Callback) -> bool { return Name == Callback.first; }
@@ -8,217 +6,217 @@ namespace Npgs
 {
     NPGS_INLINE void FVulkanCore::AddCreateDeviceCallback(const std::string& Name, const std::function<void()>& Callback)
     {
-        _CreateDeviceCallbacks.emplace_back(Name, Callback);
+        CreateDeviceCallbacks_.emplace_back(Name, Callback);
     }
 
     NPGS_INLINE void FVulkanCore::AddDestroyDeviceCallback(const std::string& Name, const std::function<void()>& Callback)
     {
-        _DestroyDeviceCallbacks.emplace_back(Name, Callback);
+        DestroyDeviceCallbacks_.emplace_back(Name, Callback);
     }
 
     NPGS_INLINE void FVulkanCore::AddCreateSwapchainCallback(const std::string& Name, const std::function<void()>& Callback)
     {
-        _CreateSwapchainCallbacks.emplace_back(Name, Callback);
+        CreateSwapchainCallbacks_.emplace_back(Name, Callback);
     }
 
     NPGS_INLINE void FVulkanCore::AddDestroySwapchainCallback(const std::string& Name, const std::function<void()>& Callback)
     {
-        _DestroySwapchainCallbacks.emplace_back(Name, Callback);
+        DestroySwapchainCallbacks_.emplace_back(Name, Callback);
     }
 
     NPGS_INLINE void FVulkanCore::RemoveCreateDeviceCallback(const std::string& Name)
     {
-        std::erase_if(_CreateDeviceCallbacks, CompareCallback);
+        std::erase_if(CreateDeviceCallbacks_, CompareCallback);
     }
 
     NPGS_INLINE void FVulkanCore::RemoveDestroyDeviceCallback(const std::string& Name)
     {
-        std::erase_if(_DestroyDeviceCallbacks, CompareCallback);
+        std::erase_if(DestroyDeviceCallbacks_, CompareCallback);
     }
 
     NPGS_INLINE void FVulkanCore::RemoveCreateSwapchainCallback(const std::string& Name)
     {
-        std::erase_if(_CreateSwapchainCallbacks, CompareCallback);
+        std::erase_if(CreateSwapchainCallbacks_, CompareCallback);
     }
 
     NPGS_INLINE void FVulkanCore::RemoveDestroySwapchainCallback(const std::string& Name)
     {
-        std::erase_if(_DestroySwapchainCallbacks, CompareCallback);
+        std::erase_if(DestroySwapchainCallbacks_, CompareCallback);
     }
 
     NPGS_INLINE void FVulkanCore::AddInstanceLayer(const char* Layer)
     {
-        AddElementChecked(Layer, _InstanceLayers);
+        AddElementChecked(Layer, InstanceLayers_);
     }
 
     NPGS_INLINE void FVulkanCore::SetInstanceLayers(const std::vector<const char*>& Layers)
     {
-        _InstanceLayers = Layers;
+        InstanceLayers_ = Layers;
     }
 
     NPGS_INLINE void FVulkanCore::AddInstanceExtension(const char* Extension)
     {
-        AddElementChecked(Extension, _InstanceExtensions);
+        AddElementChecked(Extension, InstanceExtensions_);
     }
 
     NPGS_INLINE void FVulkanCore::SetInstanceExtensions(const std::vector<const char*>& Extensions)
     {
-        _InstanceExtensions = Extensions;
+        InstanceExtensions_ = Extensions;
     }
 
     NPGS_INLINE void FVulkanCore::AddDeviceExtension(const char* Extension)
     {
-        AddElementChecked(Extension, _DeviceExtensions);
+        AddElementChecked(Extension, DeviceExtensions_);
     }
 
     NPGS_INLINE void FVulkanCore::SetDeviceExtensions(const std::vector<const char*>& Extensions)
     {
-        _DeviceExtensions = Extensions;
+        DeviceExtensions_ = Extensions;
     }
 
     NPGS_INLINE void FVulkanCore::SetSurface(vk::SurfaceKHR Surface)
     {
-        _Surface = Surface;
+        Surface_ = Surface;
     }
 
     NPGS_INLINE void FVulkanCore::SetHdrMetadata(const vk::HdrMetadataEXT& HdrMetadata)
     {
-        _HdrMetadata = HdrMetadata;
+        HdrMetadata_ = HdrMetadata;
     }
 
     NPGS_INLINE const std::vector<const char*>& FVulkanCore::GetInstanceLayers() const
     {
-        return _InstanceLayers;
+        return InstanceLayers_;
     }
 
     NPGS_INLINE const std::vector<const char*>& FVulkanCore::GetInstanceExtensions() const
     {
-        return _InstanceExtensions;
+        return InstanceExtensions_;
     }
 
     NPGS_INLINE const std::vector<const char*>& FVulkanCore::GetDeviceExtensions() const
     {
-        return _DeviceExtensions;
+        return DeviceExtensions_;
     }
 
     NPGS_INLINE vk::Instance FVulkanCore::GetInstance() const
     {
-        return _Instance;
+        return Instance_;
     }
 
     NPGS_INLINE vk::SurfaceKHR FVulkanCore::GetSurface() const
     {
-        return _Surface;
+        return Surface_;
     }
 
     NPGS_INLINE vk::PhysicalDevice FVulkanCore::GetPhysicalDevice() const
     {
-        return _PhysicalDevice;
+        return PhysicalDevice_;
     }
 
     NPGS_INLINE vk::Device FVulkanCore::GetDevice() const
     {
-        return _Device;
+        return Device_;
     }
 
     NPGS_INLINE vk::Queue FVulkanCore::GetQueue(EQueueType QueueType) const
     {
-        return _Queues.at(QueueType);
+        return Queues_.at(QueueType);
     }
 
     NPGS_INLINE vk::SwapchainKHR FVulkanCore::GetSwapchain() const
     {
-        return _Swapchain;
+        return Swapchain_;
     }
 
     NPGS_INLINE const vk::PhysicalDeviceProperties& FVulkanCore::GetPhysicalDeviceProperties() const
     {
-        return _PhysicalDeviceProperties;
+        return PhysicalDeviceProperties_;
     }
 
     NPGS_INLINE const vk::PhysicalDeviceMemoryProperties& FVulkanCore::GetPhysicalDeviceMemoryProperties() const
     {
-        return _PhysicalDeviceMemoryProperties;
+        return PhysicalDeviceMemoryProperties_;
     }
 
     NPGS_INLINE const vk::SwapchainCreateInfoKHR& FVulkanCore::GetSwapchainCreateInfo() const
     {
-        return _SwapchainCreateInfo;
+        return SwapchainCreateInfo_;
     }
 
     NPGS_INLINE std::uint32_t FVulkanCore::GetAvailablePhysicalDeviceCount() const
     {
-        return static_cast<std::uint32_t>(_AvailablePhysicalDevices.size());
+        return static_cast<std::uint32_t>(AvailablePhysicalDevices_.size());
     }
 
     NPGS_INLINE std::uint32_t FVulkanCore::GetAvailableSurfaceFormatCount() const
     {
-        return static_cast<std::uint32_t>(_AvailableSurfaceFormats.size());
+        return static_cast<std::uint32_t>(AvailableSurfaceFormats_.size());
     }
 
     NPGS_INLINE std::uint32_t FVulkanCore::GetSwapchainImageCount() const
     {
-        return static_cast<std::uint32_t>(_SwapchainImages.size());
+        return static_cast<std::uint32_t>(SwapchainImages_.size());
     }
 
     NPGS_INLINE std::uint32_t FVulkanCore::GetSwapchainImageViewCount() const
     {
-        return static_cast<std::uint32_t>(_SwapchainImageViews.size());
+        return static_cast<std::uint32_t>(SwapchainImageViews_.size());
     }
 
     NPGS_INLINE vk::PhysicalDevice FVulkanCore::GetAvailablePhysicalDevice(std::uint32_t Index) const
     {
-        return _AvailablePhysicalDevices[Index];
+        return AvailablePhysicalDevices_[Index];
     }
 
     NPGS_INLINE vk::Format FVulkanCore::GetAvailableSurfaceFormat(std::uint32_t Index) const
     {
-        return _AvailableSurfaceFormats[Index].format;
+        return AvailableSurfaceFormats_[Index].format;
     }
 
     NPGS_INLINE vk::ColorSpaceKHR FVulkanCore::GetAvailableSurfaceColorSpace(std::uint32_t Index) const
     {
-        return _AvailableSurfaceFormats[Index].colorSpace;
+        return AvailableSurfaceFormats_[Index].colorSpace;
     }
 
     NPGS_INLINE vk::Image FVulkanCore::GetSwapchainImage(std::uint32_t Index) const
     {
-        return _SwapchainImages[Index];
+        return SwapchainImages_[Index];
     }
 
     NPGS_INLINE vk::ImageView FVulkanCore::GetSwapchainImageView(std::uint32_t Index) const
     {
-        return _SwapchainImageViews[Index];
+        return SwapchainImageViews_[Index];
     }
 
     NPGS_INLINE const vk::QueueFamilyProperties& FVulkanCore::GetQueueFamilyProperties(EQueueType QueueType) const
     {
-        return _QueueFamilyProperties.at(_QueueFamilyIndices.at(QueueType));
+        return QueueFamilyProperties_.at(QueueFamilyIndices_.at(QueueType));
     }
 
     NPGS_INLINE FQueuePool& FVulkanCore::GetQueuePool()
     {
-        return _QueuePool.value();
+        return QueuePool_.value();
     }
 
     NPGS_INLINE VmaAllocator FVulkanCore::GetVmaAllocator() const
     {
-        return _VmaAllocator;
+        return VmaAllocator_;
     }
 
     NPGS_INLINE std::uint32_t FVulkanCore::GetQueueFamilyIndex(EQueueType QueueType) const
     {
-        return _QueueFamilyIndices.at(QueueType);
+        return QueueFamilyIndices_.at(QueueType);
     }
 
     NPGS_INLINE std::uint32_t FVulkanCore::GetCurrentImageIndex() const
     {
-        return _CurrentImageIndex;
+        return CurrentImageIndex_;
     }
 
     NPGS_INLINE std::uint32_t FVulkanCore::GetApiVersion() const
     {
-        return _ApiVersion;
+        return ApiVersion_;
     }
 } // namespace Npgs
 

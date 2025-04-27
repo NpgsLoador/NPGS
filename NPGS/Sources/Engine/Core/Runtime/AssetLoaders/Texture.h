@@ -41,8 +41,6 @@ namespace Npgs
         FImageData LoadExrFormat(std::string_view Filename,    FFormatInfo FormatInfo);
         FImageData LoadHdrFormat(std::string_view Filename,    FFormatInfo FormatInfo);
         FImageData LoadKtxFormat(std::string_view Filename,    FFormatInfo FormatInfo);
-    private:
-        FImageData _ImageData;
     };
 
     class FTexture
@@ -110,12 +108,12 @@ namespace Npgs
                              vk::Extent3D Extent, std::uint32_t MipLevels, std::uint32_t ArrayLayers, vk::Filter Filter);
 
     protected:
-        FVulkanContext*                     _VulkanContext;
-        std::unique_ptr<FImageLoader>       _ImageLoader;
-        std::unique_ptr<FVulkanImageMemory> _ImageMemory;
-        std::unique_ptr<FVulkanImageView>   _ImageView;
-        VmaAllocator                        _Allocator;
-        const VmaAllocationCreateInfo*      _AllocationCreateInfo;
+        FVulkanContext*                     VulkanContext_;
+        std::unique_ptr<FImageLoader>       ImageLoader_;
+        std::unique_ptr<FVulkanImageMemory> ImageMemory_;
+        std::unique_ptr<FVulkanImageView>   ImageView_;
+        VmaAllocator                        Allocator_;
+        const VmaAllocationCreateInfo*      AllocationCreateInfo_;
     };
 
     class FTexture2D : public FTexture
@@ -148,7 +146,7 @@ namespace Npgs
                            vk::Format FinalFormat, vk::ImageCreateFlags Flags, bool bGenerateMipmaps);
 
     private:
-        vk::Extent2D _ImageExtent;
+        vk::Extent2D ImageExtent_;
     };
 
     class FTextureCube : public FTexture
@@ -184,7 +182,7 @@ namespace Npgs
                            vk::ImageCreateFlags Flags, bool bGenerateMipmaps);
 
     private:
-        vk::Extent2D _ImageExtent;
+        vk::Extent2D ImageExtent_;
     };
 } // namespace Npgs
 

@@ -1,23 +1,21 @@
-#include "Shader.h"
-
 #include "Engine/Core/Base/Base.h"
 
 namespace Npgs
 {
     NPGS_INLINE std::vector<vk::PushConstantRange> FShader::GetPushConstantRanges() const
     {
-        return _ReflectionInfo.PushConstants;
+        return ReflectionInfo_.PushConstants;
     }
 
     NPGS_INLINE std::uint32_t FShader::GetPushConstantOffset(const std::string& Name) const
     {
-        return _PushConstantOffsetsMap.at(Name);
+        return PushConstantOffsetsMap_.at(Name);
     }
 
     NPGS_INLINE std::map<std::uint32_t, vk::DeviceSize> FShader::GetDescriptorSetSizes() const
     {
         std::map<std::uint32_t, vk::DeviceSize> SetSizes;
-        for (const auto& [Set, Info] : _DescriptorSetInfos)
+        for (const auto& [Set, Info] : DescriptorSetInfos_)
         {
             SetSizes.emplace(Set, Info.Size);
         }
@@ -27,17 +25,16 @@ namespace Npgs
 
     NPGS_INLINE const std::vector<vk::VertexInputBindingDescription>& FShader::GetVertexInputBindings() const
     {
-        return _ReflectionInfo.VertexInputBindings;
+        return ReflectionInfo_.VertexInputBindings;
     }
 
     NPGS_INLINE const std::vector<vk::VertexInputAttributeDescription>& FShader::GetVertexInputAttributes() const
     {
-        return _ReflectionInfo.VertexInputAttributes;
+        return ReflectionInfo_.VertexInputAttributes;
     }
 
-    NPGS_INLINE const FShader::FDescriptorSetInfo&
-        FShader::GetDescriptorSetInfo(std::uint32_t Set) const
+    NPGS_INLINE const FShader::FDescriptorSetInfo& FShader::GetDescriptorSetInfo(std::uint32_t Set) const
     {
-        return _DescriptorSetInfos.at(Set);
+        return DescriptorSetInfos_.at(Set);
     }
 } // namespace Npgs

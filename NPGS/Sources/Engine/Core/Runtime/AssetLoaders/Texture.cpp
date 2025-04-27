@@ -398,16 +398,16 @@ namespace Npgs
     }
 
     FTexture::FTexture(FVulkanContext* VulkanContext, VmaAllocator Allocator, const VmaAllocationCreateInfo* AllocationCreateInfo)
-        : _VulkanContext(VulkanContext)
-        , _Allocator(Allocator)
-        , _AllocationCreateInfo(AllocationCreateInfo)
+        : VulkanContext_(VulkanContext)
+        , Allocator_(Allocator)
+        , AllocationCreateInfo_(AllocationCreateInfo)
     {
     }
 
     FTexture::FTexture(FTexture&& Other) noexcept
-        : _VulkanContext(std::exchange(Other._VulkanContext, nullptr))
-        , _Allocator(std::exchange(Other._Allocator, nullptr))
-        , _AllocationCreateInfo(std::exchange(Other._AllocationCreateInfo, {}))
+        : VulkanContext_(std::exchange(Other.VulkanContext_, nullptr))
+        , Allocator_(std::exchange(Other.Allocator_, nullptr))
+        , AllocationCreateInfo_(std::exchange(Other.AllocationCreateInfo_, {}))
     {
     }
 
@@ -415,9 +415,9 @@ namespace Npgs
     {
         if (this != &Other)
         {
-            _VulkanContext        = std::exchange(Other._VulkanContext, nullptr);
-            _Allocator            = std::exchange(Other._Allocator, nullptr);
-            _AllocationCreateInfo = std::exchange(Other._AllocationCreateInfo, {});
+            VulkanContext_        = std::exchange(Other.VulkanContext_, nullptr);
+            Allocator_            = std::exchange(Other.Allocator_, nullptr);
+            AllocationCreateInfo_ = std::exchange(Other.AllocationCreateInfo_, {});
         }
 
         return *this;
@@ -434,7 +434,7 @@ namespace Npgs
                                          vk::ImageViewType ImageViewType, vk::Format InitialFormat, vk::Format FinalFormat,
                                          std::uint32_t ArrayLayers, bool bGenerateMipmaps)
     {
-        auto StagingBuffer = _VulkanContext->AcquireStagingBuffer(ImageData.Size);
+        auto StagingBuffer = VulkanContext_->AcquireStagingBuffer(ImageData.Size);
         StagingBuffer->SubmitBufferData(0, 0, ImageData.Size, ImageData.Data.data());
 
         vk::Extent3D  Extent          = ImageData.Extent;
@@ -457,12 +457,12 @@ namespace Npgs
             if (!bImageMipmapped)
             {
                 CopyBlitGenerateTexture(*StagingBuffer->GetBuffer(), Extent, MipLevels, ArrayLayers, vk::Filter::eLinear,
-                                        *_ImageMemory->GetResource(), *_ImageMemory->GetResource());
+                                        *ImageMemory_->GetResource(), *ImageMemory_->GetResource());
             }
             else
             {
                 CopyBlitApplyTexture(*StagingBuffer->GetBuffer(), Extent, MipLevels, ImageData.LevelOffsets,
-                                     ArrayLayers, vk::Filter::eLinear, *_ImageMemory->GetResource());
+                                     ArrayLayers, vk::Filter::eLinear, *ImageMemory_->GetResource());
             }
         }
         else
@@ -484,11 +484,11 @@ namespace Npgs
             {
                 if (!bImageMipmapped)
                 {
-                    BlitGenerateTexture(Extent, MipLevels, ArrayLayers, vk::Filter::eLinear, **ConvertedImage, *_ImageMemory->GetResource());
+                    BlitGenerateTexture(Extent, MipLevels, ArrayLayers, vk::Filter::eLinear, **ConvertedImage, *ImageMemory_->GetResource());
                 }
                 else
                 {
-                    BlitApplyTexture(Extent, MipLevels, ArrayLayers, vk::Filter::eLinear, **ConvertedImage, *_ImageMemory->GetResource());
+                    BlitApplyTexture(Extent, MipLevels, ArrayLayers, vk::Filter::eLinear, **ConvertedImage, *ImageMemory_->GetResource());
                 }
             }
             else
@@ -496,19 +496,19 @@ namespace Npgs
                 if (!bImageMipmapped)
                 {
                     CopyBlitGenerateTexture(*StagingBuffer->GetBuffer(), Extent, MipLevels, ArrayLayers, vk::Filter::eLinear,
-                                            *_ImageMemory->GetResource(), *_ImageMemory->GetResource());
+                                            *ImageMemory_->GetResource(), *ImageMemory_->GetResource());
                 }
                 else
                 {
                     CopyBlitApplyTexture(*StagingBuffer->GetBuffer(), Extent, MipLevels, ImageData.LevelOffsets,
-                                         ArrayLayers, vk::Filter::eLinear, *_ImageMemory->GetResource());
+                                         ArrayLayers, vk::Filter::eLinear, *ImageMemory_->GetResource());
                 }
 
-                FVulkanImageMemory VanillaImageMemory(std::move(*_ImageMemory));
-                FVulkanImageView VanillaImageView(std::move(*_ImageView));
+                FVulkanImageMemory VanillaImageMemory(std::move(*ImageMemory_));
+                FVulkanImageView VanillaImageView(std::move(*ImageView_));
 
-                _ImageMemory.release();
-                _ImageView.release();
+                ImageMemory_.release();
+                ImageView_.release();
 
                 CreateImageMemory(Flags, ImageType, FinalFormat, Extent, MipLevels, ArrayLayers);
                 CreateImageView({}, ImageViewType, FinalFormat, MipLevels, ArrayLayers);
@@ -516,12 +516,12 @@ namespace Npgs
                 if (!bImageMipmapped)
                 {
                     BlitGenerateTexture(Extent, MipLevels, ArrayLayers, vk::Filter::eLinear,
-                                        *VanillaImageMemory.GetResource(), *_ImageMemory->GetResource());
+                                        *VanillaImageMemory.GetResource(), *ImageMemory_->GetResource());
                 }
                 else
                 {
                     BlitApplyTexture(Extent, MipLevels, ArrayLayers, vk::Filter::eLinear,
-                                     *VanillaImageMemory.GetResource(), *_ImageMemory->GetResource());
+                                     *VanillaImageMemory.GetResource(), *ImageMemory_->GetResource());
                 }
             }
         }
@@ -541,16 +541,16 @@ namespace Npgs
             .setUsage(vk::ImageUsageFlagBits::eTransferSrc | vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eSampled)
             .setInitialLayout(vk::ImageLayout::eUndefined);
 
-        if (_Allocator != nullptr)
+        if (Allocator_ != nullptr)
         {
-            _ImageMemory = std::make_unique<FVulkanImageMemory>(
-                _VulkanContext->GetDevice(), _Allocator, *_AllocationCreateInfo, ImageCreateInfo);
+            ImageMemory_ = std::make_unique<FVulkanImageMemory>(
+                VulkanContext_->GetDevice(), Allocator_, *AllocationCreateInfo_, ImageCreateInfo);
         }
         else
         {
-            _ImageMemory = std::make_unique<FVulkanImageMemory>(
-                _VulkanContext->GetDevice(), _VulkanContext->GetPhysicalDeviceProperties(),
-                _VulkanContext->GetPhysicalDeviceMemoryProperties(), ImageCreateInfo, vk::MemoryPropertyFlagBits::eDeviceLocal);
+            ImageMemory_ = std::make_unique<FVulkanImageMemory>(
+                VulkanContext_->GetDevice(), VulkanContext_->GetPhysicalDeviceProperties(),
+                VulkanContext_->GetPhysicalDeviceMemoryProperties(), ImageCreateInfo, vk::MemoryPropertyFlagBits::eDeviceLocal);
         }
     }
 
@@ -559,8 +559,9 @@ namespace Npgs
     {
         vk::ImageSubresourceRange ImageSubresourceRange(vk::ImageAspectFlagBits::eColor, 0, MipLevels, 0, ArrayLayers);
 
-        _ImageView = std::make_unique<FVulkanImageView>(
-            _VulkanContext->GetDevice(), _ImageMemory->GetResource(), ImageViewType, Format, vk::ComponentMapping(), ImageSubresourceRange, Flags);
+        ImageView_ = std::make_unique<FVulkanImageView>(
+            VulkanContext_->GetDevice(), ImageMemory_->GetResource(), ImageViewType,
+            Format, vk::ComponentMapping(), ImageSubresourceRange, Flags);
     }
 
     void FTexture::CopyBlitGenerateTexture(vk::Buffer SrcBuffer, vk::Extent3D Extent, std::uint32_t MipLevels, std::uint32_t ArrayLayers,
@@ -584,7 +585,7 @@ namespace Npgs
         bool bGenerateMipmaps = MipLevels > 1;
         bool bNeedBlit        = DstImageSrcBlit != DstImageDstBlit;
 
-        auto  BufferGuard   = _VulkanContext->AcquireCommandBuffer(FVulkanContext::EQueueType::kGraphics);
+        auto  BufferGuard   = VulkanContext_->AcquireCommandBuffer(FVulkanContext::EQueueType::kGraphics);
         auto& CommandBuffer = *BufferGuard;
         CommandBuffer.Begin(vk::CommandBufferUsageFlagBits::eOneTimeSubmit);
 
@@ -613,14 +614,14 @@ namespace Npgs
         }
 
         CommandBuffer.End();
-        _VulkanContext->ExecuteCommands(FVulkanContext::EQueueType::kGraphics, CommandBuffer);
+        VulkanContext_->ExecuteCommands(FVulkanContext::EQueueType::kGraphics, CommandBuffer);
     }
 
     void FTexture::CopyBlitApplyTexture(vk::Buffer SrcBuffer, vk::Extent3D Extent, std::uint32_t MipLevels,
                                         const std::vector<std::size_t>& LevelOffsets,
                                         std::uint32_t ArrayLayers, vk::Filter Filter, vk::Image DstImage)
     {
-        auto  BufferGuard   = _VulkanContext->AcquireCommandBuffer(FVulkanContext::EQueueType::kGraphics);
+        auto  BufferGuard   = VulkanContext_->AcquireCommandBuffer(FVulkanContext::EQueueType::kGraphics);
         auto& CommandBuffer = *BufferGuard;
         CommandBuffer.Begin(vk::CommandBufferUsageFlagBits::eOneTimeSubmit);
 
@@ -650,7 +651,7 @@ namespace Npgs
         CopyBufferToImage(CommandBuffer, SrcBuffer, DstImage, PostTransferState, Regions);
 
         CommandBuffer.End();
-        _VulkanContext->ExecuteCommands(FVulkanContext::EQueueType::kGraphics, CommandBuffer);
+        VulkanContext_->ExecuteCommands(FVulkanContext::EQueueType::kGraphics, CommandBuffer);
     }
 
     void FTexture::BlitGenerateTexture(vk::Extent3D Extent, std::uint32_t MipLevels, std::uint32_t ArrayLayers,
@@ -680,7 +681,7 @@ namespace Npgs
         bool bGenerateMipmaps = MipLevels > 1;
         bool bNeedBlit = SrcImage != DstImage;
 
-        auto  BufferGuard   = _VulkanContext->AcquireCommandBuffer(FVulkanContext::EQueueType::kGraphics);
+        auto  BufferGuard   = VulkanContext_->AcquireCommandBuffer(FVulkanContext::EQueueType::kGraphics);
         auto& CommandBuffer = *BufferGuard;
         CommandBuffer.Begin(vk::CommandBufferUsageFlagBits::eOneTimeSubmit);
 
@@ -702,7 +703,7 @@ namespace Npgs
         }
 
         CommandBuffer.End();
-        _VulkanContext->ExecuteCommands(FVulkanContext::EQueueType::kGraphics, CommandBuffer);
+        VulkanContext_->ExecuteCommands(FVulkanContext::EQueueType::kGraphics, CommandBuffer);
     }
 
     void FTexture::BlitApplyTexture(vk::Extent3D Extent, std::uint32_t MipLevels, std::uint32_t ArrayLayers,
@@ -718,7 +719,7 @@ namespace Npgs
             ImageTracker->TrackImage(DstImage, FImageTracker::FImageState());
         }
 
-        auto  BufferGuard   = _VulkanContext->AcquireCommandBuffer(FVulkanContext::EQueueType::kGraphics);
+        auto  BufferGuard   = VulkanContext_->AcquireCommandBuffer(FVulkanContext::EQueueType::kGraphics);
         auto& CommandBuffer = *BufferGuard;
         CommandBuffer.Begin(vk::CommandBufferUsageFlagBits::eOneTimeSubmit);
 
@@ -742,7 +743,7 @@ namespace Npgs
         BlitImage(CommandBuffer, SrcImage, PostTransferState, DstImage, PostTransferState, Regions, Filter);
 
         CommandBuffer.End();
-        _VulkanContext->ExecuteCommands(FVulkanContext::EQueueType::kGraphics, CommandBuffer);
+        VulkanContext_->ExecuteCommands(FVulkanContext::EQueueType::kGraphics, CommandBuffer);
     }
 
     void FTexture::CopyBufferToImage(const FVulkanCommandBuffer& CommandBuffer,
@@ -1000,7 +1001,7 @@ namespace Npgs
 
     FTexture2D::FTexture2D(FTexture2D&& Other) noexcept
         : Base(std::move(Other))
-        , _ImageExtent(std::exchange(Other._ImageExtent, {}))
+        , ImageExtent_(std::exchange(Other.ImageExtent_, {}))
     {
     }
 
@@ -1009,7 +1010,7 @@ namespace Npgs
         if (this != &Other)
         {
             Base::operator=(std::move(Other));
-            _ImageExtent = std::exchange(Other._ImageExtent, {});
+            ImageExtent_ = std::exchange(Other.ImageExtent_, {});
         }
 
         return *this;
@@ -1018,14 +1019,14 @@ namespace Npgs
     void FTexture2D::CreateTexture(std::string_view Filename, vk::Format InitialFormat, vk::Format FinalFormat,
                                    vk::ImageCreateFlags Flags, bool bGenreteMipmaps)
     {
-        FImageData ImageData = _ImageLoader->LoadImage(Filename, InitialFormat);
+        FImageData ImageData = ImageLoader_->LoadImage(Filename, InitialFormat);
         CreateTexture(ImageData, InitialFormat, FinalFormat, Flags, bGenreteMipmaps);
     }
 
     void FTexture2D::CreateTexture(const FImageData& ImageData, vk::Format InitialFormat, vk::Format FinalFormat,
                                    vk::ImageCreateFlags Flags, bool bGenerateMipmaps)
     {
-        _ImageExtent = vk::Extent2D(ImageData.Extent.width, ImageData.Extent.height);
+        ImageExtent_ = vk::Extent2D(ImageData.Extent.width, ImageData.Extent.height);
         Base::CreateTexture(ImageData, Flags, vk::ImageType::e2D, vk::ImageViewType::e2D, InitialFormat, FinalFormat, 1, bGenerateMipmaps);
     }
 
@@ -1064,7 +1065,7 @@ namespace Npgs
 
     FTextureCube::FTextureCube(FTextureCube&& Other) noexcept
         : Base(std::move(Other))
-        , _ImageExtent(std::exchange(Other._ImageExtent, {}))
+        , ImageExtent_(std::exchange(Other.ImageExtent_, {}))
     {
     }
 
@@ -1073,7 +1074,7 @@ namespace Npgs
         if (this != &Other)
         {
             Base::operator=(std::move(Other));
-            _ImageExtent = std::exchange(Other._ImageExtent, {});
+            ImageExtent_ = std::exchange(Other.ImageExtent_, {});
         }
 
         return *this;
@@ -1082,7 +1083,7 @@ namespace Npgs
     void FTextureCube::CreateCubemap(std::string_view Filename, vk::Format InitialFormat, vk::Format FinalFormat,
                                      vk::ImageCreateFlags Flags, bool bGenerateMipmaps)
     {
-        FImageData ImageData = _ImageLoader->LoadImage(Filename, InitialFormat);
+        FImageData ImageData = ImageLoader_->LoadImage(Filename, InitialFormat);
         CreateCubemap(ImageData, InitialFormat, FinalFormat, Flags, bGenerateMipmaps);
     }
 
@@ -1093,13 +1094,13 @@ namespace Npgs
 
         for (int i = 0; i != 6; ++i)
         {
-            FaceImages[i] = _ImageLoader->LoadImage(GetAssetFullPath(EAssetType::kTexture, Filenames[i]), InitialFormat);
+            FaceImages[i] = ImageLoader_->LoadImage(GetAssetFullPath(EAssetType::kTexture, Filenames[i]), InitialFormat);
 
             if (i == 0)
             {
-                _ImageExtent = vk::Extent2D(FaceImages[i].Extent.width, FaceImages[i].Extent.height);
+                ImageExtent_ = vk::Extent2D(FaceImages[i].Extent.width, FaceImages[i].Extent.height);
             }
-            else if (FaceImages[i].Extent.width != _ImageExtent.width || FaceImages[i].Extent.height != _ImageExtent.height)
+            else if (FaceImages[i].Extent.width != ImageExtent_.width || FaceImages[i].Extent.height != ImageExtent_.height)
             {
                 NpgsCoreError("Cubemap faces must have same dimensions. Face {} has different size.", i);
                 return;
@@ -1117,7 +1118,7 @@ namespace Npgs
 
         FImageData CubemapImageData;
         CubemapImageData.Size   = TotalSize;
-        CubemapImageData.Extent = vk::Extent3D(_ImageExtent.width, _ImageExtent.height, 1);
+        CubemapImageData.Extent = vk::Extent3D(ImageExtent_.width, ImageExtent_.height, 1);
         CubemapImageData.Data   = std::move(CubemapData);
 
         CreateCubemap(CubemapImageData, InitialFormat, FinalFormat, Flags, bGenerateMipmaps);
@@ -1126,7 +1127,7 @@ namespace Npgs
     void FTextureCube::CreateCubemap(const FImageData& ImageData, vk::Format InitialFormat, vk::Format FinalFormat,
                                      vk::ImageCreateFlags Flags, bool bGenerateMipmaps)
     {
-        _ImageExtent = vk::Extent2D(ImageData.Extent.width, ImageData.Extent.height);
+        ImageExtent_ = vk::Extent2D(ImageData.Extent.width, ImageData.Extent.height);
         vk::ImageCreateFlags CubeFlags = Flags | vk::ImageCreateFlagBits::eCubeCompatible;
 
         Base::CreateTexture(ImageData, CubeFlags, vk::ImageType::e2D, vk::ImageViewType::eCube, InitialFormat, FinalFormat, 6, bGenerateMipmaps);

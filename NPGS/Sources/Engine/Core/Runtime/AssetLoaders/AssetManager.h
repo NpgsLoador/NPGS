@@ -32,18 +32,18 @@ namespace Npgs
         template <typename OriginalType>
         requires std::is_class_v<OriginalType>
         FTypeErasedDeleter(OriginalType*)
-            : _Deleter([](void* Ptr) -> void { delete static_cast<OriginalType*>(Ptr); })
+            : Deleter_([](void* Ptr) -> void { delete static_cast<OriginalType*>(Ptr); })
         {
         }
 
         void operator()(void* Ptr) const
         {
-            _Deleter(Ptr);
+            Deleter_(Ptr);
         }
 
     private:
-        std::function<void(void*)> _Deleter;
-        // void (*_Deleter)(void*);
+        std::function<void(void*)> Deleter_;
+        // void (*Deleter_)(void*);
     };
 
     template <typename AssetType>
@@ -82,8 +82,8 @@ namespace Npgs
     private:
         using FManagedAsset = std::unique_ptr<void, FTypeErasedDeleter>;
 
-        std::unordered_map<std::string, FManagedAsset> _Assets;
-        FVulkanContext*                                _VulkanContext;
+        std::unordered_map<std::string, FManagedAsset> Assets_;
+        FVulkanContext*                                VulkanContext_;
     };
 
 } // namespace Npgs

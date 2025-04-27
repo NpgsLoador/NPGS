@@ -6,6 +6,7 @@
 #include <vector>
 
 #include <vulkan/vulkan.hpp>
+
 #include "Engine/Core/Runtime/AssetLoaders/AssetManager.h"
 #include "Engine/Core/Runtime/Graphics/Vulkan/Context.h"
 #include "Engine/Core/Runtime/Graphics/Vulkan/Wrappers.h"
@@ -44,12 +45,12 @@ namespace Npgs
         void RegisterCallback(const std::string& Name, EPipelineType Type);
 
     private:
-        FVulkanContext*                                                  _VulkanContext;
-        FAssetManager*                                                   _AssetManager;
-        std::unordered_map<std::string, FGraphicsPipelineCreateInfoPack> _GraphicsPipelineCreateInfoPacks;
-        std::unordered_map<std::string, vk::ComputePipelineCreateInfo>   _ComputePipelineCreateInfos;
-        std::unordered_map<std::string, FVulkanPipelineLayout>           _PipelineLayouts;
-        std::unordered_map<std::string, FVulkanPipeline>                 _Pipelines;
+        FVulkanContext*                                                  VulkanContext_;
+        FAssetManager*                                                   AssetManager_;
+        std::unordered_map<std::string, FGraphicsPipelineCreateInfoPack> GraphicsPipelineCreateInfoPacks_;
+        std::unordered_map<std::string, vk::ComputePipelineCreateInfo>   ComputePipelineCreateInfos_;
+        std::unordered_map<std::string, FVulkanPipelineLayout>           PipelineLayouts_;
+        std::unordered_map<std::string, FVulkanPipeline>                 Pipelines_;
     };
 } // namespace Npgs
 

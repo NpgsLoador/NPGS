@@ -13,12 +13,12 @@ namespace Npgs::Astro
     // FStellarClass implementations
     // -----------------------------
     FStellarClass::FStellarClass()
-        : _StellarType(EStellarType::kNormalStar)
+        : StellarType_(EStellarType::kNormalStar)
     {
     }
 
     FStellarClass::FStellarClass(EStellarType StellarType, const FSpectralType& SpectralType)
-        : _StellarType(StellarType)
+        : StellarType_(StellarType)
     {
         Load(SpectralType);
     }
@@ -27,13 +27,13 @@ namespace Npgs::Astro
     {
         FSpectralType SpectralType;
 
-        SpectralType.HSpectralClass  = static_cast<ESpectralClass>(_SpectralType >> 57 & 0x1F);
-        SpectralType.Subclass        = (_SpectralType >> 53 & 0xF) + (_SpectralType >> 49 & 0xF) / 10.0f;
-        SpectralType.bIsAmStar       = _SpectralType >> 48 & 0x1;
-        SpectralType.MSpectralClass  = static_cast<ESpectralClass>(_SpectralType >> 44 & 0xF);
-        SpectralType.AmSubclass      = (_SpectralType >> 40 & 0xF) + (_SpectralType >> 36 & 0xF) / 10.0f;
-        SpectralType.LuminosityClass = static_cast<ELuminosityClass>(_SpectralType >> 32 & 0xF);
-        SpectralType.SpecialMark     = static_cast<FSpecialMarkDigital>(_SpectralType & 0x1FFFFFFFF);
+        SpectralType.HSpectralClass  = static_cast<ESpectralClass>(SpectralType_ >> 57 & 0x1F);
+        SpectralType.Subclass        = (SpectralType_ >> 53 & 0xF) + (SpectralType_ >> 49 & 0xF) / 10.0f;
+        SpectralType.bIsAmStar       = SpectralType_ >> 48 & 0x1;
+        SpectralType.MSpectralClass  = static_cast<ESpectralClass>(SpectralType_ >> 44 & 0xF);
+        SpectralType.AmSubclass      = (SpectralType_ >> 40 & 0xF) + (SpectralType_ >> 36 & 0xF) / 10.0f;
+        SpectralType.LuminosityClass = static_cast<ELuminosityClass>(SpectralType_ >> 32 & 0xF);
+        SpectralType.SpecialMark     = static_cast<FSpecialMarkDigital>(SpectralType_ & 0x1FFFFFFFF);
 
         if (SpectralType.HSpectralClass == ESpectralClass::kSpectral_Unknown)
         {
@@ -67,7 +67,7 @@ namespace Npgs::Astro
         float         Intermediate = std::round((SpectralType.Subclass - SubclassHigh) * 1000.0f) / 1000.0f;
         std::uint64_t SubclassLow  = static_cast<std::uint64_t>(Intermediate * 10.0f);
 
-        Data |= static_cast<std::uint64_t>(_StellarType)                 << 62;
+        Data |= static_cast<std::uint64_t>(StellarType_)                 << 62;
         Data |= static_cast<std::uint64_t>(SpectralType.HSpectralClass)  << 57;
         Data |= SubclassHigh                                             << 53;
         Data |= SubclassLow                                              << 49;
@@ -83,7 +83,7 @@ namespace Npgs::Astro
         Data |= static_cast<std::uint64_t>(SpectralType.LuminosityClass) << 32;
         Data |= static_cast<std::uint64_t>(SpectralType.SpecialMark)     << 0;
 
-        _SpectralType = Data;
+        SpectralType_ = Data;
         return true;
     }
 

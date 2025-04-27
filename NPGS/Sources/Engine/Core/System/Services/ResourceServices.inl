@@ -1,21 +1,19 @@
-#include "ResourceServices.h"
-
-#include <utility>
+#include "Engine/Core/Base/Base.h"
 
 namespace Npgs
 {
     NPGS_INLINE FImageTracker* FResourceServices::GetImageTracker() const
     {
-        return _ImageTracker.get();
+        return ImageTracker_.get();
     }
 
     NPGS_INLINE FPipelineManager* FResourceServices::GetPipelineManager() const
     {
-        return _PipelineManager.get();
+        return PipelineManager_.get();
     }
 
     NPGS_INLINE FShaderBufferManager* FResourceServices::GetShaderBufferManager() const
     {
-        return _ShaderBufferManager.get();
+        return ShaderBufferManager_.get();
     }
 } // namespace Npgs

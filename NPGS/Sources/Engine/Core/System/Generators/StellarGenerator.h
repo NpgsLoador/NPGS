@@ -178,63 +178,63 @@ namespace Npgs
         void ExpandMistData(double TargetMassSol, FDataArray& StarData);
 
     public:
-        static const int _kStarAgeIndex;
-        static const int _kStarMassIndex;
-        static const int _kStarMdotIndex;
-        static const int _kLogTeffIndex;
-        static const int _kLogRIndex;
-        static const int _kLogSurfZIndex;
-        static const int _kSurfaceH1Index;
-        static const int _kSurfaceHe3Index;
-        static const int _kLogCenterTIndex;
-        static const int _kLogCenterRhoIndex;
-        static const int _kPhaseIndex;
-        static const int _kXIndex;
-        static const int _kLifetimeIndex;
+        static const int kStarAgeIndex_;
+        static const int kStarMassIndex_;
+        static const int kStarMdotIndex_;
+        static const int kLogTeffIndex_;
+        static const int kLogRIndex_;
+        static const int kLogSurfZIndex_;
+        static const int kSurfaceH1Index_;
+        static const int kSurfaceHe3Index_;
+        static const int kLogCenterTIndex_;
+        static const int kLogCenterRhoIndex_;
+        static const int kPhaseIndex_;
+        static const int kXIndex_;
+        static const int kLifetimeIndex_;
 
-        static const int _kWdStarAgeIndex;
-        static const int _kWdLogRIndex;
-        static const int _kWdLogTeffIndex;
-        static const int _kWdLogCenterTIndex;
-        static const int _kWdLogCenterRhoIndex;
+        static const int kWdStarAgeIndex_;
+        static const int kWdLogRIndex_;
+        static const int kWdLogTeffIndex_;
+        static const int kWdLogCenterTIndex_;
+        static const int kWdLogCenterRhoIndex_;
 
     private:
-        std::mt19937                                          _RandomEngine;
-        std::array<Util::TUniformRealDistribution<>,       8> _MagneticGenerators;
-        std::array<std::unique_ptr<Util::TDistribution<>>, 4> _FeHGenerators;
-        std::array<Util::TUniformRealDistribution<>,       2> _SpinGenerators;
-        Util::TUniformRealDistribution<>                      _AgeGenerator;
-        Util::TUniformRealDistribution<>                      _CommonGenerator;
-        std::unique_ptr<Util::TDistribution<>>                _LogMassGenerator;
+        std::mt19937                                          RandomEngine_;
+        std::array<Util::TUniformRealDistribution<>,       8> MagneticGenerators_;
+        std::array<std::unique_ptr<Util::TDistribution<>>, 4> FeHGenerators_;
+        std::array<Util::TUniformRealDistribution<>,       2> SpinGenerators_;
+        Util::TUniformRealDistribution<>                      AgeGenerator_;
+        Util::TUniformRealDistribution<>                      CommonGenerator_;
+        std::unique_ptr<Util::TDistribution<>>                LogMassGenerator_;
 
-        std::array<std::function<float(float)>, 2>    _MassPdfs;
-        std::array<glm::vec2, 2>                      _MassMaxPdfs;
-        std::function<float(glm::vec3, float, float)> _AgePdf;
-        glm::vec2                                     _AgeMaxPdf;
+        std::array<std::function<float(float)>, 2>    MassPdfs_;
+        std::array<glm::vec2, 2>                      MassMaxPdfs_;
+        std::function<float(glm::vec3, float, float)> AgePdf_;
+        glm::vec2                                     AgeMaxPdf_;
 
-        float _UniverseAge;
-        float _AgeLowerLimit;
-        float _AgeUpperLimit;
-        float _FeHLowerLimit;
-        float _FeHUpperLimit;
-        float _MassLowerLimit;
-        float _MassUpperLimit;
-        float _CoilTemperatureLimit;
-        float _dEpdM;
+        float UniverseAge_;
+        float AgeLowerLimit_;
+        float AgeUpperLimit_;
+        float FeHLowerLimit_;
+        float FeHUpperLimit_;
+        float MassLowerLimit_;
+        float MassUpperLimit_;
+        float CoilTemperatureLimit_;
+        float dEpdM_;
 
-        EGenerationDistribution       _AgeDistribution;
-        EGenerationDistribution       _FeHDistribution;
-        EGenerationDistribution       _MassDistribution;
-        EStellarTypeGenerationOption  _StellarTypeOption;
-        EMultiplicityGenerationOption _MultiplicityOption;
+        EGenerationDistribution       AgeDistribution_;
+        EGenerationDistribution       FeHDistribution_;
+        EGenerationDistribution       MassDistribution_;
+        EStellarTypeGenerationOption  StellarTypeOption_;
+        EMultiplicityGenerationOption MultiplicityOption_;
 
-        static const std::vector<std::string>                                _kMistHeaders;
-        static const std::vector<std::string>                                _kWdMistHeaders;
-        static const std::vector<std::string>                                _kHrDiagramHeaders;
-        static std::unordered_map<std::string, std::vector<float>>           _kMassFilesCache;
-        static std::unordered_map<const FMistData*, std::vector<FDataArray>> _kPhaseChangesCache;
-        static std::shared_mutex                                             _kCacheMutex;
-        static bool                                                          _kbMistDataInitiated;
+        static const std::vector<std::string>                                kMistHeaders_;
+        static const std::vector<std::string>                                kWdMistHeaders_;
+        static const std::vector<std::string>                                kHrDiagramHeaders_;
+        static std::unordered_map<std::string, std::vector<float>>           kMassFilesCache_;
+        static std::unordered_map<const FMistData*, std::vector<FDataArray>> kPhaseChangesCache_;
+        static std::shared_mutex                                             kCacheMutex_;
+        static bool                                                          kbMistDataInitiated_;
     };
 } // namespace Npgs
 

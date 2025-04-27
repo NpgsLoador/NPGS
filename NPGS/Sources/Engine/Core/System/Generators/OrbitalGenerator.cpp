@@ -73,24 +73,24 @@ namespace Npgs
     // OrbitalGenerator implementations
     // --------------------------------
     FOrbitalGenerator::FOrbitalGenerator(const FGenerationInfo& GenerationInfo)
-        : _RandomEngine(*GenerationInfo.SeedSequence)
-        , _RingsProbabilities{ Util::TBernoulliDistribution<>(0.5), Util::TBernoulliDistribution<>(0.2) }
-        , _BinaryPeriodDistribution(GenerationInfo.BinaryPeriodMean, GenerationInfo.BinaryPeriodSigma)
-        , _CommonGenerator(0.0f, 1.0f)
-        , _AsteroidBeltProbability(0.4)
-        , _MigrationProbability(0.1)
-        , _ScatteringProbability(0.15)
-        , _WalkInProbability(0.8)
-        , _CivilizationGenerator(nullptr)
-        , _AsteroidUpperLimit(GenerationInfo.AsteroidUpperLimit)
-        , _CoilTemperatureLimit(GenerationInfo.CoilTemperatureLimit)
-        , _RingsParentLowerLimit(GenerationInfo.RingsParentLowerLimit)
-        , _UniverseAge(GenerationInfo.UniverseAge)
-        , _bContainUltravioletHabitableZone(GenerationInfo.bContainUltravioletHabitableZone)
+        : RandomEngine_(*GenerationInfo.SeedSequence)
+        , RingsProbabilities_{ Util::TBernoulliDistribution<>(0.5), Util::TBernoulliDistribution<>(0.2) }
+        , BinaryPeriodDistribution_(GenerationInfo.BinaryPeriodMean, GenerationInfo.BinaryPeriodSigma)
+        , CommonGenerator_(0.0f, 1.0f)
+        , AsteroidBeltProbability_(0.4)
+        , MigrationProbability_(0.1)
+        , ScatteringProbability_(0.15)
+        , WalkInProbability_(0.8)
+        , CivilizationGenerator_(nullptr)
+        , AsteroidUpperLimit_(GenerationInfo.AsteroidUpperLimit)
+        , CoilTemperatureLimit_(GenerationInfo.CoilTemperatureLimit)
+        , RingsParentLowerLimit_(GenerationInfo.RingsParentLowerLimit)
+        , UniverseAge_(GenerationInfo.UniverseAge)
+        , bContainUltravioletHabitableZone_(GenerationInfo.bContainUltravioletHabitableZone)
     {
         std::vector<std::uint32_t> Seeds((*GenerationInfo.SeedSequence).size());
         GenerationInfo.SeedSequence->param(Seeds.begin());
-        std::shuffle(Seeds.begin(), Seeds.end(), _RandomEngine);
+        std::shuffle(Seeds.begin(), Seeds.end(), RandomEngine_);
         std::seed_seq ShuffledSeeds(Seeds.begin(), Seeds.end());
 
         FCivilizationGenerator::FGenerationInfo CivilizationGenerationInfo
@@ -100,45 +100,45 @@ namespace Npgs
             .bEnableAsiFilter          = GenerationInfo.bEnableAsiFilter
         };
 
-        _CivilizationGenerator = std::make_unique<FCivilizationGenerator>(CivilizationGenerationInfo);
+        CivilizationGenerator_ = std::make_unique<FCivilizationGenerator>(CivilizationGenerationInfo);
     }
 
     FOrbitalGenerator::FOrbitalGenerator(const FOrbitalGenerator& Other)
-        : _RandomEngine(Other._RandomEngine)
-        , _RingsProbabilities{ Other._RingsProbabilities[0], Other._RingsProbabilities[1] }
-        , _BinaryPeriodDistribution(Other._BinaryPeriodDistribution)
-        , _CommonGenerator(Other._CommonGenerator)
-        , _AsteroidBeltProbability(Other._AsteroidBeltProbability)
-        , _MigrationProbability(Other._MigrationProbability)
-        , _ScatteringProbability(Other._ScatteringProbability)
-        , _WalkInProbability(Other._WalkInProbability)
-        , _AsteroidUpperLimit(Other._AsteroidUpperLimit)
-        , _CoilTemperatureLimit(Other._CoilTemperatureLimit)
-        , _RingsParentLowerLimit(Other._RingsParentLowerLimit)
-        , _UniverseAge(Other._UniverseAge)
-        , _bContainUltravioletHabitableZone(Other._bContainUltravioletHabitableZone)
+        : RandomEngine_(Other.RandomEngine_)
+        , RingsProbabilities_{ Other.RingsProbabilities_[0], Other.RingsProbabilities_[1] }
+        , BinaryPeriodDistribution_(Other.BinaryPeriodDistribution_)
+        , CommonGenerator_(Other.CommonGenerator_)
+        , AsteroidBeltProbability_(Other.AsteroidBeltProbability_)
+        , MigrationProbability_(Other.MigrationProbability_)
+        , ScatteringProbability_(Other.ScatteringProbability_)
+        , WalkInProbability_(Other.WalkInProbability_)
+        , AsteroidUpperLimit_(Other.AsteroidUpperLimit_)
+        , CoilTemperatureLimit_(Other.CoilTemperatureLimit_)
+        , RingsParentLowerLimit_(Other.RingsParentLowerLimit_)
+        , UniverseAge_(Other.UniverseAge_)
+        , bContainUltravioletHabitableZone_(Other.bContainUltravioletHabitableZone_)
     {
-        if (Other._CivilizationGenerator != nullptr)
+        if (Other.CivilizationGenerator_ != nullptr)
         {
-            _CivilizationGenerator = std::make_unique<FCivilizationGenerator>(*Other._CivilizationGenerator);
+            CivilizationGenerator_ = std::make_unique<FCivilizationGenerator>(*Other.CivilizationGenerator_);
         }
     }
 
     FOrbitalGenerator::FOrbitalGenerator(FOrbitalGenerator&& Other) noexcept
-        : _RandomEngine(std::move(Other._RandomEngine))
-        , _RingsProbabilities(std::move(Other._RingsProbabilities))
-        , _BinaryPeriodDistribution(std::move(Other._BinaryPeriodDistribution))
-        , _CommonGenerator(std::move(Other._CommonGenerator))
-        , _AsteroidBeltProbability(std::move(Other._AsteroidBeltProbability))
-        , _MigrationProbability(std::move(Other._MigrationProbability))
-        , _ScatteringProbability(std::move(Other._ScatteringProbability))
-        , _WalkInProbability(std::move(Other._WalkInProbability))
-        , _CivilizationGenerator(std::move(Other._CivilizationGenerator))
-        , _AsteroidUpperLimit(std::exchange(Other._AsteroidUpperLimit, 0.0f))
-        , _CoilTemperatureLimit(std::exchange(Other._CoilTemperatureLimit, 0.0f))
-        , _RingsParentLowerLimit(std::exchange(Other._RingsParentLowerLimit, 0.0f))
-        , _UniverseAge(std::exchange(Other._UniverseAge, 0.0f))
-        , _bContainUltravioletHabitableZone(std::exchange(Other._bContainUltravioletHabitableZone, false))
+        : RandomEngine_(std::move(Other.RandomEngine_))
+        , RingsProbabilities_(std::move(Other.RingsProbabilities_))
+        , BinaryPeriodDistribution_(std::move(Other.BinaryPeriodDistribution_))
+        , CommonGenerator_(std::move(Other.CommonGenerator_))
+        , AsteroidBeltProbability_(std::move(Other.AsteroidBeltProbability_))
+        , MigrationProbability_(std::move(Other.MigrationProbability_))
+        , ScatteringProbability_(std::move(Other.ScatteringProbability_))
+        , WalkInProbability_(std::move(Other.WalkInProbability_))
+        , CivilizationGenerator_(std::move(Other.CivilizationGenerator_))
+        , AsteroidUpperLimit_(std::exchange(Other.AsteroidUpperLimit_, 0.0f))
+        , CoilTemperatureLimit_(std::exchange(Other.CoilTemperatureLimit_, 0.0f))
+        , RingsParentLowerLimit_(std::exchange(Other.RingsParentLowerLimit_, 0.0f))
+        , UniverseAge_(std::exchange(Other.UniverseAge_, 0.0f))
+        , bContainUltravioletHabitableZone_(std::exchange(Other.bContainUltravioletHabitableZone_, false))
     {
     }
 
@@ -146,24 +146,24 @@ namespace Npgs
     {
         if (this != &Other)
         {
-            _RandomEngine                     = Other._RandomEngine;
-            _RingsProbabilities[0]            = Other._RingsProbabilities[0];
-            _RingsProbabilities[1]            = Other._RingsProbabilities[1];
-            _BinaryPeriodDistribution         = Other._BinaryPeriodDistribution;
-            _CommonGenerator                  = Other._CommonGenerator;
-            _AsteroidBeltProbability          = Other._AsteroidBeltProbability;
-            _MigrationProbability             = Other._MigrationProbability;
-            _ScatteringProbability            = Other._ScatteringProbability;
-            _WalkInProbability                = Other._WalkInProbability;
-            _AsteroidUpperLimit               = Other._AsteroidUpperLimit;
-            _CoilTemperatureLimit             = Other._CoilTemperatureLimit;
-            _RingsParentLowerLimit            = Other._RingsParentLowerLimit;
-            _UniverseAge                      = Other._UniverseAge;
-            _bContainUltravioletHabitableZone = Other._bContainUltravioletHabitableZone;
+            RandomEngine_                     = Other.RandomEngine_;
+            RingsProbabilities_[0]            = Other.RingsProbabilities_[0];
+            RingsProbabilities_[1]            = Other.RingsProbabilities_[1];
+            BinaryPeriodDistribution_         = Other.BinaryPeriodDistribution_;
+            CommonGenerator_                  = Other.CommonGenerator_;
+            AsteroidBeltProbability_          = Other.AsteroidBeltProbability_;
+            MigrationProbability_             = Other.MigrationProbability_;
+            ScatteringProbability_            = Other.ScatteringProbability_;
+            WalkInProbability_                = Other.WalkInProbability_;
+            AsteroidUpperLimit_               = Other.AsteroidUpperLimit_;
+            CoilTemperatureLimit_             = Other.CoilTemperatureLimit_;
+            RingsParentLowerLimit_            = Other.RingsParentLowerLimit_;
+            UniverseAge_                      = Other.UniverseAge_;
+            bContainUltravioletHabitableZone_ = Other.bContainUltravioletHabitableZone_;
 
-            if (Other._CivilizationGenerator != nullptr)
+            if (Other.CivilizationGenerator_ != nullptr)
             {
-                _CivilizationGenerator = std::make_unique<FCivilizationGenerator>(*Other._CivilizationGenerator);
+                CivilizationGenerator_ = std::make_unique<FCivilizationGenerator>(*Other.CivilizationGenerator_);
             }
         }
 
@@ -174,21 +174,21 @@ namespace Npgs
     {
         if (this != &Other)
         {
-            _RandomEngine                     = std::move(Other._RandomEngine);
-            _RingsProbabilities[0]            = std::move(Other._RingsProbabilities[0]);
-            _RingsProbabilities[1]            = std::move(Other._RingsProbabilities[1]);
-            _BinaryPeriodDistribution         = std::move(Other._BinaryPeriodDistribution);
-            _CommonGenerator                  = std::move(Other._CommonGenerator);
-            _AsteroidBeltProbability          = std::move(Other._AsteroidBeltProbability);
-            _MigrationProbability             = std::move(Other._MigrationProbability);
-            _ScatteringProbability            = std::move(Other._ScatteringProbability);
-            _WalkInProbability                = std::move(Other._WalkInProbability);
-            _CivilizationGenerator            = std::move(Other._CivilizationGenerator);
-            _AsteroidUpperLimit               = std::exchange(Other._AsteroidUpperLimit, 0.0f);
-            _CoilTemperatureLimit             = std::exchange(Other._CoilTemperatureLimit, 0.0f);
-            _RingsParentLowerLimit            = std::exchange(Other._RingsParentLowerLimit, 0.0f);
-            _UniverseAge                      = std::exchange(Other._UniverseAge, 0.0f);
-            _bContainUltravioletHabitableZone = std::exchange(Other._bContainUltravioletHabitableZone, false);
+            RandomEngine_                     = std::move(Other.RandomEngine_);
+            RingsProbabilities_[0]            = std::move(Other.RingsProbabilities_[0]);
+            RingsProbabilities_[1]            = std::move(Other.RingsProbabilities_[1]);
+            BinaryPeriodDistribution_         = std::move(Other.BinaryPeriodDistribution_);
+            CommonGenerator_                  = std::move(Other.CommonGenerator_);
+            AsteroidBeltProbability_          = std::move(Other.AsteroidBeltProbability_);
+            MigrationProbability_             = std::move(Other.MigrationProbability_);
+            ScatteringProbability_            = std::move(Other.ScatteringProbability_);
+            WalkInProbability_                = std::move(Other.WalkInProbability_);
+            CivilizationGenerator_            = std::move(Other.CivilizationGenerator_);
+            AsteroidUpperLimit_               = std::exchange(Other.AsteroidUpperLimit_, 0.0f);
+            CoilTemperatureLimit_             = std::exchange(Other.CoilTemperatureLimit_, 0.0f);
+            RingsParentLowerLimit_            = std::exchange(Other.RingsParentLowerLimit_, 0.0f);
+            UniverseAge_                      = std::exchange(Other.UniverseAge_, 0.0f);
+            bContainUltravioletHabitableZone_ = std::exchange(Other.bContainUltravioletHabitableZone_, false);
         }
 
         return *this;
@@ -258,7 +258,7 @@ namespace Npgs
             System.OrbitsData().push_back(std::move(ZeroOrbit));
 
             float NearStarSemiMajorAxis = static_cast<float>(
-                std::sqrt(Star->GetLuminosity() / (4 * Math::kPi * kStefanBoltzmann * std::pow(_CoilTemperatureLimit, 4))));
+                std::sqrt(Star->GetLuminosity() / (4 * Math::kPi * kStefanBoltzmann * std::pow(CoilTemperatureLimit_, 4))));
             auto NearStarOrbit = std::make_unique<Astro::FOrbit>();
 
             NearStarOrbit->SetParent(System.GetBaryCenter(), Astro::FOrbit::EObjectType::kBaryCenter);
@@ -319,7 +319,7 @@ namespace Npgs
         float LogPeriodUpperLimit = std::log10(2500 * CommonCoefficient);
 
         do {
-            LogPeriodDays = _BinaryPeriodDistribution(_RandomEngine);
+            LogPeriodDays = BinaryPeriodDistribution_(RandomEngine_);
         } while (LogPeriodDays > LogPeriodUpperLimit || LogPeriodDays < LogPeriodLowerLimit);
 
         float Period = std::pow(10.0f, LogPeriodDays) * kDayToSecond;
@@ -336,7 +336,7 @@ namespace Npgs
         OrbitData[0].SetPeriod(Period);
         OrbitData[1].SetPeriod(Period);
 
-        float Random = _CommonGenerator(_RandomEngine) * 1.2f;
+        float Random = CommonGenerator_(RandomEngine_) * 1.2f;
         float Eccentricity = 0.0f;
         if (Period / kDayToSecond < 10)
         {
@@ -361,8 +361,8 @@ namespace Npgs
         for (int i = 0; i != 2; ++i)
         {
             StarNormals[i] = glm::vec2(OrbitData[i].GetNormal() + glm::vec2(
-                -0.09f + _CommonGenerator(_RandomEngine) * 0.18f,
-                -0.09f + _CommonGenerator(_RandomEngine) * 0.18f
+                -0.09f + CommonGenerator_(RandomEngine_) * 0.18f,
+                -0.09f + CommonGenerator_(RandomEngine_) * 0.18f
             ));
 
             if (StarNormals[i].x > 2 * Math::kPi)
@@ -387,7 +387,7 @@ namespace Npgs
         System.StarsData().front()->SetNormal(StarNormals[0]);
         System.StarsData().back()->SetNormal(StarNormals[1]);
 
-        Random = _CommonGenerator(_RandomEngine) * 2.0f * Math::kPi;
+        Random = CommonGenerator_(RandomEngine_) * 2.0f * Math::kPi;
         float ArgumentOfPeriapsis1 = Random;
         float ArgumentOfPeriapsis2 = 0.0f;
         if (ArgumentOfPeriapsis1 >= Math::kPi)
@@ -402,7 +402,7 @@ namespace Npgs
         OrbitData[0].SetArgumentOfPeriapsis(ArgumentOfPeriapsis1);
         OrbitData[1].SetArgumentOfPeriapsis(ArgumentOfPeriapsis2);
 
-        Random = _CommonGenerator(_RandomEngine) * 2 * Math::kPi;
+        Random = CommonGenerator_(RandomEngine_) * 2 * Math::kPi;
         float InitialTrueAnomaly1 = Random;
         float InitialTrueAnomaly2 = 0.0f;
         if (InitialTrueAnomaly1 >= Math::kPi)
@@ -436,7 +436,7 @@ namespace Npgs
             Astro::AStar* TheOther = System.StarsData()[1 - i].get();
 
             float NearStarSemiMajorAxis = static_cast<float>(
-                std::sqrt(Current->GetLuminosity() / (4 * Math::kPi * ((kStefanBoltzmann * std::pow(_CoilTemperatureLimit, 4)) -
+                std::sqrt(Current->GetLuminosity() / (4 * Math::kPi * ((kStefanBoltzmann * std::pow(CoilTemperatureLimit_, 4)) -
                                                                        TheOther->GetLuminosity() / (4 * Math::kPi * std::pow(BinarySemiMajorAxis, 2))))));
 
             std::unique_ptr<Astro::FOrbit> NearStarOrbit = std::make_unique<Astro::FOrbit>();
@@ -484,7 +484,7 @@ namespace Npgs
 
         // 生成原行星盘数据
         FPlanetaryDisk PlanetaryDisk;
-        float DiskBase           = 1.0f + _CommonGenerator(_RandomEngine); // 基准随机数，1-2 之间
+        float DiskBase           = 1.0f + CommonGenerator_(RandomEngine_); // 基准随机数，1-2 之间
         float StarInitialMassSol = Star->GetInitialMass() / kSolarMass;
         auto  StellarType        = Star->GetStellarClass().GetStellarType();
         if (StellarType != Astro::FStellarClass::EStellarType::kNeutronStar &&
@@ -535,7 +535,7 @@ namespace Npgs
         }
         else if (Star->GetStarFrom() == Astro::AStar::EStarFrom::kWhiteDwarfMerge)
         {
-            DiskBase = std::pow(10.0f, -1.0f) + _CommonGenerator(_RandomEngine) * (1.0f - std::pow(10.0f, -1.0f));
+            DiskBase = std::pow(10.0f, -1.0f) + CommonGenerator_(RandomEngine_) * (1.0f - std::pow(10.0f, -1.0f));
             float StarMassSol = static_cast<float>(Star->GetMass() / kSolarMass);
             float DiskMassSol = DiskBase * 1e-5f * StarMassSol;
             PlanetaryDisk.InnerRadiusAu = 0.02f; // 高于洛希极限
@@ -563,24 +563,24 @@ namespace Npgs
         {
             if (StarInitialMassSol < 0.6f)
             {
-                PlanetCount = static_cast<std::size_t>(4.0f + _CommonGenerator(_RandomEngine) * 4.0f);
+                PlanetCount = static_cast<std::size_t>(4.0f + CommonGenerator_(RandomEngine_) * 4.0f);
             }
             else if (StarInitialMassSol < 0.9f)
             {
-                PlanetCount = static_cast<std::size_t>(5.0f + _CommonGenerator(_RandomEngine) * 5.0f);
+                PlanetCount = static_cast<std::size_t>(5.0f + CommonGenerator_(RandomEngine_) * 5.0f);
             }
             else if (StarInitialMassSol < 3.0f)
             {
-                PlanetCount = static_cast<std::size_t>(6.0f + _CommonGenerator(_RandomEngine) * 6.0f);
+                PlanetCount = static_cast<std::size_t>(6.0f + CommonGenerator_(RandomEngine_) * 6.0f);
             }
             else
             {
-                PlanetCount = static_cast<std::size_t>(4.0f + _CommonGenerator(_RandomEngine) * 4.0f);
+                PlanetCount = static_cast<std::size_t>(4.0f + CommonGenerator_(RandomEngine_) * 4.0f);
             }
         }
         else if (Star->GetStarFrom() == Astro::AStar::EStarFrom::kWhiteDwarfMerge)
         {
-            PlanetCount = static_cast<std::size_t>(2.0f + _CommonGenerator(_RandomEngine) * 2.0f);
+            PlanetCount = static_cast<std::size_t>(2.0f + CommonGenerator_(RandomEngine_) * 2.0f);
         }
 
         std::vector<std::unique_ptr<Astro::APlanet>> Planets;
@@ -596,7 +596,7 @@ namespace Npgs
         std::vector<float> CoreBase(PlanetCount, 0.0f);
         for (float& Num : CoreBase)
         {
-            Num = _CommonGenerator(_RandomEngine) * 3.0f;
+            Num = CommonGenerator_(RandomEngine_) * 3.0f;
         }
 
         float CoreBaseSum = 0.0f;
@@ -686,7 +686,7 @@ namespace Npgs
             {
                 if (CoreMassesSol[i] * kSolarMassToEarth < 0.5f)
                 {
-                    if (ConstructFailedProbability(_RandomEngine))
+                    if (ConstructFailedProbability(RandomEngine_))
                     {
                         float StarAge  = static_cast<float>(Star->GetAge());
                         float Exponent = StarAge / (5e9f * (Orbits[i]->GetSemiMajorAxis() / kAuToMeter) / 2.7f);
@@ -819,13 +819,13 @@ namespace Npgs
                 auto PlanetType = Planets[i]->GetPlanetType();
                 if (PlanetType == Astro::APlanet::EPlanetType::kIceGiant || PlanetType == Astro::APlanet::EPlanetType::kGasGiant)
                 {
-                    if (_MigrationProbability(_RandomEngine))
+                    if (MigrationProbability_(RandomEngine_))
                     {
                         int MigrationIndex = 0;
-                        if (_WalkInProbability(_RandomEngine))
+                        if (WalkInProbability_(RandomEngine_))
                         {
                             // 夺舍，随机生成在该行星之前的位置
-                            MigrationIndex = static_cast<int>(_CommonGenerator(_RandomEngine) * (i - 1));
+                            MigrationIndex = static_cast<int>(CommonGenerator_(RandomEngine_) * (i - 1));
                         }
                         else
                         {
@@ -846,7 +846,7 @@ namespace Npgs
                             }
                             float Lower    = std::log10(PlanetaryDisk.InnerRadiusAu / Coefficient);
                             float Upper    = std::log10(PlanetaryDisk.InnerRadiusAu * 0.67f);
-                            float Exponent = Lower + _CommonGenerator(_RandomEngine) * (Upper - Lower);
+                            float Exponent = Lower + CommonGenerator_(RandomEngine_) * (Upper - Lower);
                             Orbits[0]->SetSemiMajorAxis(std::pow(10.0f, Exponent) * kAuToMeter);
                         }
 
@@ -919,9 +919,9 @@ namespace Npgs
                 {
                     if (Planets[i]->GetPlanetType() == Astro::APlanet::EPlanetType::kRocky)
                     {
-                        if (_ScatteringProbability(_RandomEngine))
+                        if (ScatteringProbability_(RandomEngine_))
                         {
-                            float Random = 4.0f + _CommonGenerator(_RandomEngine) * 16.0f; // 4.0 Rsun 高于洛希极限
+                            float Random = 4.0f + CommonGenerator_(RandomEngine_) * 16.0f; // 4.0 Rsun 高于洛希极限
                             Orbits[i]->SetSemiMajorAxis(Random * kSolarRadius);
                             break;
                         }
@@ -1056,7 +1056,7 @@ namespace Npgs
 
                 if (PlanetType != Astro::APlanet::EPlanetType::kRockyAsteroidCluster    &&
                     PlanetType != Astro::APlanet::EPlanetType::kRockyIceAsteroidCluster &&
-                    Planets[i]->GetMassDigital<float>() > _RingsParentLowerLimit)
+                    Planets[i]->GetMassDigital<float>() > RingsParentLowerLimit_)
                 {
                     GenerateRings(i, std::numeric_limits<float>::infinity(), Star, Planet, Orbits, AsteroidClusters);
                 }
@@ -1078,9 +1078,9 @@ namespace Npgs
             if (System.StarsData().size() == 1)
             {
                 AsteroidClusters.push_back(std::make_unique<Astro::AAsteroidCluster>());
-                float Exponent                       = 1.0f + _CommonGenerator(_RandomEngine);
+                float Exponent                       = 1.0f + CommonGenerator_(RandomEngine_);
                 float KuiperBeltMass                 = PlanetaryDisk.DustMassSol * std::pow(10.0f, Exponent) * 1e-4f * kSolarMass;
-                float KuiperBeltRadiusAu             = PlanetaryDisk.OuterRadiusAu * (1.0f + _CommonGenerator(_RandomEngine) * 0.5f);
+                float KuiperBeltRadiusAu             = PlanetaryDisk.OuterRadiusAu * (1.0f + CommonGenerator_(RandomEngine_) * 0.5f);
                 float KuiperBeltMassVolatiles        = 0.0f;
                 float KuiperBeltMassEnergeticNuclide = 0.0f;
                 float KuiperBeltMassZ                = 0.0f;
@@ -1170,7 +1170,7 @@ namespace Npgs
 
                 if (PlanetType != Astro::APlanet::EPlanetType::kRockyAsteroidCluster    &&
                     PlanetType != Astro::APlanet::EPlanetType::kRockyIceAsteroidCluster &&
-                    Planets[i]->GetMassDigital<float>() > _RingsParentLowerLimit)
+                    Planets[i]->GetMassDigital<float>() > RingsParentLowerLimit_)
                 {
                     GenerateRings(i, std::numeric_limits<float>::infinity(), Star, Planet, Orbits, AsteroidClusters);
                 }
@@ -1304,27 +1304,27 @@ namespace Npgs
     {
         if (!Orbit.GetEccentricity())
         {
-            Orbit.SetEccentricity(_CommonGenerator(_RandomEngine) * 0.05f);
+            Orbit.SetEccentricity(CommonGenerator_(RandomEngine_) * 0.05f);
         }
 
         if (!Orbit.GetInclination())
         {
-            Orbit.SetInclination(_CommonGenerator(_RandomEngine) * 4.0f - 2.0f);
+            Orbit.SetInclination(CommonGenerator_(RandomEngine_) * 4.0f - 2.0f);
         }
 
         if (!Orbit.GetLongitudeOfAscendingNode())
         {
-            Orbit.SetLongitudeOfAscendingNode(_CommonGenerator(_RandomEngine) * 2 * Math::kPi);
+            Orbit.SetLongitudeOfAscendingNode(CommonGenerator_(RandomEngine_) * 2 * Math::kPi);
         }
 
         if (!Orbit.GetArgumentOfPeriapsis())
         {
-            Orbit.SetArgumentOfPeriapsis(_CommonGenerator(_RandomEngine) * 2 * Math::kPi);
+            Orbit.SetArgumentOfPeriapsis(CommonGenerator_(RandomEngine_) * 2 * Math::kPi);
         }
 
         if (!Orbit.GetTrueAnomaly())
         {
-            Orbit.SetTrueAnomaly(_CommonGenerator(_RandomEngine) * 2 * Math::kPi);
+            Orbit.SetTrueAnomaly(CommonGenerator_(RandomEngine_) * 2 * Math::kPi);
         }
     }
 
@@ -1379,7 +1379,7 @@ namespace Npgs
                 std::pow(PlanetBalanceTemperatureWhenStarAtPrevMainSequenceQuadraticed, 0.25f);
 
             // 开除大行星
-            if (NewCoreMassesSol[i] * kSolarMass < _AsteroidUpperLimit ||
+            if (NewCoreMassesSol[i] * kSolarMass < AsteroidUpperLimit_ ||
                 Planets[i]->GetPlanetType() == Astro::APlanet::EPlanetType::kRockyAsteroidCluster)
             {
                 if (NewCoreMassesSol[i] * kSolarMass < 1e19f)
@@ -1406,7 +1406,7 @@ namespace Npgs
             {
                 if (Planets[i]->GetPlanetType() != Astro::APlanet::EPlanetType::kRockyAsteroidCluster    &&
                     Planets[i]->GetPlanetType() != Astro::APlanet::EPlanetType::kRockyIceAsteroidCluster &&
-                    CoreMassesSol[i] * kSolarMassToEarth < 0.1f && _AsteroidBeltProbability(_RandomEngine))
+                    CoreMassesSol[i] * kSolarMassToEarth < 0.1f && AsteroidBeltProbability_(RandomEngine_))
                 {
                     if (std::to_underlying(Star->GetEvolutionPhase()) < 1 && Orbits[i]->GetSemiMajorAxis() / kAuToMeter > FrostLineAu)
                     {
@@ -1417,7 +1417,7 @@ namespace Npgs
                         Planets[i]->SetPlanetType(Astro::APlanet::EPlanetType::kRockyAsteroidCluster);
                     }
 
-                    float Exponent            = -3.0f + _CommonGenerator(_RandomEngine) * 3.0f;
+                    float Exponent            = -3.0f + CommonGenerator_(RandomEngine_) * 3.0f;
                     float DiscountCoefficient = std::pow(10.0f, Exponent);
                     CoreMassesSol[i]    *= DiscountCoefficient; // 对核心质量打个折扣
                     NewCoreMassesSol[i] *= DiscountCoefficient;
@@ -1501,8 +1501,8 @@ namespace Npgs
 
         auto CalculateRockyMass = [&]() -> float
         {
-            Random2 = 0.9f + _CommonGenerator(_RandomEngine) * 0.2f;
-            Random3 = 0.9f + _CommonGenerator(_RandomEngine) * 0.2f;
+            Random2 = 0.9f + CommonGenerator_(RandomEngine_) * 0.2f;
+            Random3 = 0.9f + CommonGenerator_(RandomEngine_) * 0.2f;
 
             CoreMassVolatiles        = CoreMass * 1e-4f * Random2;
             CoreMassEnergeticNuclide = CoreMass * 2e-7f * Random3;
@@ -1519,8 +1519,8 @@ namespace Npgs
 
         auto CalculateIcePlanetMass = [&]() -> float
         {
-            Random2 = 0.9f + _CommonGenerator(_RandomEngine) * 0.2f;
-            Random3 = 0.9f + _CommonGenerator(_RandomEngine) * 0.2f;
+            Random2 = 0.9f + CommonGenerator_(RandomEngine_) * 0.2f;
+            Random3 = 0.9f + CommonGenerator_(RandomEngine_) * 0.2f;
 
             if (std::to_underlying(Star->GetEvolutionPhase()) < 1)
             {
@@ -1555,9 +1555,9 @@ namespace Npgs
 
         auto CalculateOceanicMass = [&]() -> float
         {
-            Random1 =        _CommonGenerator(_RandomEngine) * 1.35f;
-            Random2 = 0.9f + _CommonGenerator(_RandomEngine) * 0.2f;
-            Random3 = 0.9f + _CommonGenerator(_RandomEngine) * 0.2f;
+            Random1 =        CommonGenerator_(RandomEngine_) * 1.35f;
+            Random2 = 0.9f + CommonGenerator_(RandomEngine_) * 0.2f;
+            Random3 = 0.9f + CommonGenerator_(RandomEngine_) * 0.2f;
 
             if (std::to_underlying(Star->GetEvolutionPhase()) < 1)
             {
@@ -1592,9 +1592,9 @@ namespace Npgs
 
         auto CalculateIceGiantMass = [&]() -> float
         {
-            Random1 = 2.0f + _CommonGenerator(_RandomEngine) * (std::log10(20.0f) - std::log10(2.0f));
-            Random2 = 0.9f + _CommonGenerator(_RandomEngine) * 0.2f;
-            Random3 = 0.9f + _CommonGenerator(_RandomEngine) * 0.2f;
+            Random1 = 2.0f + CommonGenerator_(RandomEngine_) * (std::log10(20.0f) - std::log10(2.0f));
+            Random2 = 0.9f + CommonGenerator_(RandomEngine_) * 0.2f;
+            Random3 = 0.9f + CommonGenerator_(RandomEngine_) * 0.2f;
 
             float CommonCoefficient = (0.5f + 0.5f * (SemiMajorAxisAu - PlanetaryDisk.InnerRadiusAu) /
                                        (PlanetaryDisk.OuterRadiusAu - PlanetaryDisk.InnerRadiusAu)) * Random1;
@@ -1627,9 +1627,9 @@ namespace Npgs
 
         auto CalculateGasGiantMass = [&]() -> float
         {
-            Random1 = 7.0f + _CommonGenerator(_RandomEngine) * (std::min(50.0f, 1.0f / 0.0142f * std::pow(10.0f, Star->GetFeH())) - 7.0f);
-            Random2 = 0.9f + _CommonGenerator(_RandomEngine) * 0.2f;
-            Random3 = 0.9f + _CommonGenerator(_RandomEngine) * 0.2f;
+            Random1 = 7.0f + CommonGenerator_(RandomEngine_) * (std::min(50.0f, 1.0f / 0.0142f * std::pow(10.0f, Star->GetFeH())) - 7.0f);
+            Random2 = 0.9f + CommonGenerator_(RandomEngine_) * 0.2f;
+            Random3 = 0.9f + CommonGenerator_(RandomEngine_) * 0.2f;
 
             float CommonCoefficient = (0.5f + 0.5f * (SemiMajorAxisAu - PlanetaryDisk.InnerRadiusAu) /
                                        (PlanetaryDisk.OuterRadiusAu - PlanetaryDisk.InnerRadiusAu)) * Random1;
@@ -1662,7 +1662,7 @@ namespace Npgs
 
         auto CalculateRockyAsteroidMass = [&]() -> float
         {
-            Random3 = 0.9f + _CommonGenerator(_RandomEngine) * 0.2f;
+            Random3 = 0.9f + CommonGenerator_(RandomEngine_) * 0.2f;
 
             CoreMassVolatiles        = 0.0f;
             CoreMassEnergeticNuclide = CoreMass * 5e-6f * Random3;
@@ -1679,8 +1679,8 @@ namespace Npgs
 
         auto CalculateRockyIceAsteroidMass = [&]() -> float
         {
-            Random2 = 0.9f + _CommonGenerator(_RandomEngine) * 0.2f;
-            Random3 = 0.9f + _CommonGenerator(_RandomEngine) * 0.2f;
+            Random2 = 0.9f + CommonGenerator_(RandomEngine_) * 0.2f;
+            Random3 = 0.9f + CommonGenerator_(RandomEngine_) * 0.2f;
 
             CoreMassVolatiles        = CoreMass *    0.15f * Random2;
             CoreMassEnergeticNuclide = CoreMass * 1.25e-5f * Random3;
@@ -1834,11 +1834,11 @@ namespace Npgs
             if (PlanetType == Astro::APlanet::EPlanetType::kGasGiant ||
                 PlanetType == Astro::APlanet::EPlanetType::kHotGasGiant)
             {
-                InitialSpin = 21600.0f + _CommonGenerator(_RandomEngine) * (43200.0f - 21600.0f);
+                InitialSpin = 21600.0f + CommonGenerator_(RandomEngine_) * (43200.0f - 21600.0f);
             }
             else
             {
-                InitialSpin = 28800.0f + _CommonGenerator(_RandomEngine) * (86400.0f - 28800.0f);
+                InitialSpin = 28800.0f + CommonGenerator_(RandomEngine_) * (86400.0f - 28800.0f);
             }
             Spin = InitialSpin + (OrbitalPeriod - InitialSpin) * static_cast<float>(std::pow(ParentAge / TimeToTidalLock, 2.35));
 
@@ -1914,7 +1914,7 @@ namespace Npgs
         {
             float AtmospherePressureAtm = (kGravityConstant * PlanetMass * Planet->GetAtmosphereMassDigital<float>()) /
                                           (4 * Math::kPi * std::pow(Planet->GetRadius(), 4.0f)) / kPascalToAtm;
-            float Random                = 0.9f + _CommonGenerator(_RandomEngine) * 0.2f;
+            float Random                = 0.9f + CommonGenerator_(RandomEngine_) * 0.2f;
             float TidalLockCoefficient  = 0.0f;
             if (ParentType == Astro::FOrbit::EObjectType::kStar)
             {
@@ -1945,19 +1945,19 @@ namespace Npgs
         {
             if (PlanetType == Astro::APlanet::EPlanetType::kRocky || PlanetType == Astro::APlanet::EPlanetType::kChthonian)
             {
-                Albedo = 0.12f * (0.9f + _CommonGenerator(_RandomEngine) * 0.2f);
+                Albedo = 0.12f * (0.9f + CommonGenerator_(RandomEngine_) * 0.2f);
                 Emissivity = 0.95f;
             }
             else if (PlanetType == Astro::APlanet::EPlanetType::kIcePlanet)
             {
-                Albedo = 0.4f + _CommonGenerator(_RandomEngine) * (0.98f - 0.4f);
+                Albedo = 0.4f + CommonGenerator_(RandomEngine_) * (0.98f - 0.4f);
                 Emissivity = 0.98f;
             }
         }
 
         // 计算平衡温度
         float BalanceTemperature = std::pow((PoyntingVector * (1.0f - Albedo)) / (4.0f * kStefanBoltzmann * Emissivity), 0.25f);
-        float CosmosMicrowaveBackground = (3.76119e10f) / _UniverseAge;
+        float CosmosMicrowaveBackground = (3.76119e10f) / UniverseAge_;
         if (BalanceTemperature < CosmosMicrowaveBackground)
         {
             BalanceTemperature = CosmosMicrowaveBackground;
@@ -1988,16 +1988,16 @@ namespace Npgs
         {
             if (Planet->GetMassDigital<float>() > 10 * kEarthMass && HillSphereRadius / 3 - 2 * LiquidRocheRadius > 1e9)
             {
-                MoonCount = static_cast<std::size_t>(_CommonGenerator(_RandomEngine) * 3.0f);
+                MoonCount = static_cast<std::size_t>(CommonGenerator_(RandomEngine_) * 3.0f);
             }
             else
             {
-                if (Planet->GetMassDigital<float>() > 100 * _AsteroidUpperLimit &&
+                if (Planet->GetMassDigital<float>() > 100 * AsteroidUpperLimit_ &&
                     HillSphereRadius / 3 - 2 * LiquidRocheRadius > 3e8f)
                 {
                     Util::TBernoulliDistribution MoonProbability(
                         std::min(0.5f, 0.1f * (HillSphereRadius / 3 - 2 * LiquidRocheRadius) / 3e8f));
-                    if (MoonProbability(_RandomEngine))
+                    if (MoonProbability(RandomEngine_))
                     {
                         MoonCount = 1;
                     }
@@ -2015,13 +2015,13 @@ namespace Npgs
         {
             Astro::FOrbit MoonOrbitData;
             MoonOrbitData.SetParent(Planet, Astro::FOrbit::EObjectType::kPlanet);
-            MoonOrbitData.SetSemiMajorAxis(2 * LiquidRocheRadius + _CommonGenerator(_RandomEngine) *
+            MoonOrbitData.SetSemiMajorAxis(2 * LiquidRocheRadius + CommonGenerator_(RandomEngine_) *
                                            (std::min(1e9f, HillSphereRadius / 3 - 1e8f) - 2 * LiquidRocheRadius));
             GenerateOrbitElements(MoonOrbitData);
 
             glm::vec2 MoonNormal(Planet->GetNormal() + glm::vec2(
-                -0.09f + _CommonGenerator(_RandomEngine) * 0.18f,
-                -0.09f + _CommonGenerator(_RandomEngine) * 0.18f
+                -0.09f + CommonGenerator_(RandomEngine_) * 0.18f,
+                -0.09f + CommonGenerator_(RandomEngine_) * 0.18f
             ));
 
             if (MoonNormal.x > 2 * Math::kPi)
@@ -2049,11 +2049,11 @@ namespace Npgs
         else if (MoonCount == 2)
         {
             std::array<Astro::FOrbit, 2> MoonOrbitData;
-            MoonOrbitData[0].SetSemiMajorAxis(2 * LiquidRocheRadius + _CommonGenerator(_RandomEngine) *
+            MoonOrbitData[0].SetSemiMajorAxis(2 * LiquidRocheRadius + CommonGenerator_(RandomEngine_) *
                                               (7e8f - 2 * LiquidRocheRadius));
             GenerateOrbitElements(MoonOrbitData[0]);
 
-            float Probability = _CommonGenerator(_RandomEngine);
+            float Probability = CommonGenerator_(RandomEngine_);
             if (Probability >= 0.0f && Probability < 0.1f)
             {
                 MoonOrbitData[1].SetSemiMajorAxis(1.587401f * MoonOrbitData[0].GetSemiMajorAxis());
@@ -2064,7 +2064,7 @@ namespace Npgs
             }
             else
             {
-                MoonOrbitData[1].SetSemiMajorAxis(MoonOrbitData[0].GetSemiMajorAxis() + 2e8f + _CommonGenerator(_RandomEngine) *
+                MoonOrbitData[1].SetSemiMajorAxis(MoonOrbitData[0].GetSemiMajorAxis() + 2e8f + CommonGenerator_(RandomEngine_) *
                                                   (std::min(2e9f, HillSphereRadius / 3 - 1e8f) -
                                                    (MoonOrbitData[0].GetSemiMajorAxis() + 2e8f)));
             }
@@ -2077,8 +2077,8 @@ namespace Npgs
             {
                 MoonOrbitData[i].SetParent(Planet, Astro::FOrbit::EObjectType::kPlanet);
                 MoonNormals[i] = glm::vec2(Planet->GetNormal() + glm::vec2(
-                    -0.09f + _CommonGenerator(_RandomEngine) * 0.18f,
-                    -0.09f + _CommonGenerator(_RandomEngine) * 0.18f
+                    -0.09f + CommonGenerator_(RandomEngine_) * 0.18f,
+                    -0.09f + CommonGenerator_(RandomEngine_) * 0.18f
                 ));
 
                 if (MoonNormals[i].x > 2 * Math::kPi)
@@ -2113,7 +2113,7 @@ namespace Npgs
         }
 
         float ParentCoreMass        = Planet->GetCoreMassZDigital<float>();
-        float LogCoreMassLowerLimit = std::log10(std::max(_AsteroidUpperLimit, ParentCoreMass / 600));
+        float LogCoreMassLowerLimit = std::log10(std::max(AsteroidUpperLimit_, ParentCoreMass / 600));
         float LogCoreMassUpperLimit = std::log10(ParentCoreMass / 30.0f);
 
         std::vector<std::unique_ptr<Astro::APlanet>> Moons;
@@ -2123,11 +2123,11 @@ namespace Npgs
         {
             Moons.push_back(std::make_unique<Astro::APlanet>());
 
-            float Exponent = LogCoreMassLowerLimit + _CommonGenerator(_RandomEngine) * (LogCoreMassUpperLimit - LogCoreMassLowerLimit);
+            float Exponent = LogCoreMassLowerLimit + CommonGenerator_(RandomEngine_) * (LogCoreMassUpperLimit - LogCoreMassLowerLimit);
             boost::multiprecision::uint128_t InitialCoreMass(std::pow(10.0f, Exponent));
 
-            int VolatilesRate        = 9000    + static_cast<int>(_CommonGenerator(_RandomEngine)) + 2000;
-            int EnergeticNuclideRate = 4500000 + static_cast<int>(_CommonGenerator(_RandomEngine)) * 1000000;
+            int VolatilesRate        = 9000    + static_cast<int>(CommonGenerator_(RandomEngine_)) + 2000;
+            int EnergeticNuclideRate = 4500000 + static_cast<int>(CommonGenerator_(RandomEngine_)) * 1000000;
 
             Astro::FComplexMass CoreMass;
 
@@ -2222,7 +2222,7 @@ namespace Npgs
         for (std::size_t i = 0; i != MoonCount; ++i)
         {
             Astro::FOrbit::FOrbitalDetails Moon(Moons[i].get(), Astro::FOrbit::EObjectType::kPlanet,
-                                                MoonOrbits[i].get(), _CommonGenerator(_RandomEngine) * 2 * Math::kPi);
+                                                MoonOrbits[i].get(), CommonGenerator_(RandomEngine_) * 2 * Math::kPi);
             MoonOrbits[i]->ObjectsData().push_back(std::move(Moon));
         }
 
@@ -2257,21 +2257,21 @@ namespace Npgs
             if (PlanetType == Astro::APlanet::EPlanetType::kGasGiant ||
                 PlanetType == Astro::APlanet::EPlanetType::kIceGiant)
             {
-                RingsProbability = &_RingsProbabilities[0];
+                RingsProbability = &RingsProbabilities_[0];
             }
             else
             {
-                RingsProbability = &_RingsProbabilities[1];
+                RingsProbability = &RingsProbabilities_[1];
             }
         }
 
-        if (RingsProbability == nullptr || !(*RingsProbability)(_RandomEngine))
+        if (RingsProbability == nullptr || !(*RingsProbability)(RandomEngine_))
         {
             return;
         }
 
         Astro::AAsteroidCluster::EAsteroidType AsteroidType{};
-        float Exponent                  = -4.0f + _CommonGenerator(_RandomEngine) * 4.0f;
+        float Exponent                  = -4.0f + CommonGenerator_(RandomEngine_) * 4.0f;
         float Random                    = std::pow(10.0f, Exponent);
         float RingsMass                 = Random * 1e20f * std::pow(LiquidRocheRadius / 1e8f, 2.0f);
         float RingsMassZ                = 0.0f;
@@ -2302,7 +2302,7 @@ namespace Npgs
         Astro::FOrbit::FOrbitalDetails Rings(RingsPtr, Astro::FOrbit::EObjectType::kAsteroidCluster, RingsOrbit.get());
 
         GenerateOrbitElements(*RingsOrbit);
-        float Inaccuracy    = -0.1f + _CommonGenerator(_RandomEngine) * 0.2f;
+        float Inaccuracy    = -0.1f + CommonGenerator_(RandomEngine_) * 0.2f;
         float SemiMajorAxis =  0.6f * LiquidRocheRadius * (1.0f + Inaccuracy);
 
         RingsOrbit->SetParent(Planet, Astro::FOrbit::EObjectType::kPlanet);
@@ -2351,7 +2351,7 @@ namespace Npgs
             // 判断类地行星
             Planet->SetPlanetType(Astro::APlanet::EPlanetType::kTerra);
             // 计算新的海洋质量
-            float Exponent                     = -0.5f + _CommonGenerator(_RandomEngine) * 1.5f;
+            float Exponent                     = -0.5f + CommonGenerator_(RandomEngine_) * 1.5f;
             float Random                       = std::pow(10.0f, Exponent);
             float NewOceanMass                 = CoreMass * Random * 1e-4f;
             float NewOceanMassVolatiles        = NewOceanMass / 9.0f;
@@ -2371,11 +2371,11 @@ namespace Npgs
         float Random = 0.0f;
         if (PlanetType == Astro::APlanet::EPlanetType::kRocky)
         {
-            Random = 0.1f + _CommonGenerator(_RandomEngine) * 0.9f;
+            Random = 0.1f + CommonGenerator_(RandomEngine_) * 0.9f;
         }
         else if (PlanetType == Astro::APlanet::EPlanetType::kTerra)
         {
-            Random = 1.0f + _CommonGenerator(_RandomEngine) * 9.0f;
+            Random = 1.0f + CommonGenerator_(RandomEngine_) * 9.0f;
         }
         float CrustMineralMass = Random * 1e-9f * std::pow(PlanetMass / kEarthMass, 2.0f) * kEarthMass;
         Planet->SetCrustMineralMass(CrustMineralMass);
@@ -2388,7 +2388,7 @@ namespace Npgs
                 PlanetType == Astro::APlanet::EPlanetType::kOceanic ||
                 PlanetType == Astro::APlanet::EPlanetType::kIcePlanet)
             {
-                float Exponent = _CommonGenerator(_RandomEngine);
+                float Exponent = CommonGenerator_(RandomEngine_);
                 Random = std::pow(10.0f, Exponent);
                 float NewAtmosphereMass = EscapeCoefficient * PlanetMass * Random * 1e-5f;
                 if (PlanetType == Astro::APlanet::EPlanetType::kTerra)
@@ -2449,7 +2449,7 @@ namespace Npgs
         float PlanetMassEarth   = PlanetMass / kEarthMass;
         float LiquidRocheRadius = 2.02373e7f * std::pow(PlanetMassEarth, 1.0f / 3.0f);
         float HillSphereRadius  = Orbit->GetSemiMajorAxis() * std::pow(3.0f * PlanetMass / static_cast<float>(Star->GetMass()), 1.0f / 3.0f);
-        float Random            = 1.0f + _CommonGenerator(_RandomEngine);
+        float Random            = 1.0f + CommonGenerator_(RandomEngine_);
         float Term1             = 1e-9f * PlanetMassEarth * (HillSphereRadius / 3.11e9f);
         float Term2             = PlanetMassEarth * 1e-3f / 2.0f;
         float TrojanMass        = Random * std::max(Term1, Term1) * kEarthMass;
@@ -2536,7 +2536,7 @@ namespace Npgs
             if (Orbit->GetSemiMajorAxis() / kAuToMeter > HabitableZoneAu.first &&
                 Orbit->GetSemiMajorAxis() / kAuToMeter < HabitableZoneAu.second)
             {
-                if (_bContainUltravioletHabitableZone)
+                if (bContainUltravioletHabitableZone_)
                 {
                     double StarMassSol = Star->GetMass() / kSolarMass;
                     if (StarMassSol > 0.75 && StarMassSol < 1.5)
@@ -2553,7 +2553,7 @@ namespace Npgs
 
         if (bHasLife)
         {
-            _CivilizationGenerator->GenerateCivilization(Star, PoyntingVector, Planet);
+            CivilizationGenerator_->GenerateCivilization(Star, PoyntingVector, Planet);
         }
     }
 

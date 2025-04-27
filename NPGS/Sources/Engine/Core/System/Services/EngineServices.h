@@ -30,8 +30,8 @@ namespace Npgs
         FEngineServices& operator=(FEngineServices&&)      = delete;
     
     private:
-        std::unique_ptr<FCoreServices>     _CoreServices;
-        std::unique_ptr<FResourceServices> _ResourceServices;
+        std::unique_ptr<FCoreServices>     CoreServices_;
+        std::unique_ptr<FResourceServices> ResourceServices_;
     };
 } // namespace Npgs
 

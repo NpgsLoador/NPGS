@@ -133,44 +133,44 @@ namespace Npgs
         vk::Result InitializeVmaAllocator();
 
     private:
-        std::vector<std::pair<std::string, std::function<void()>>> _CreateDeviceCallbacks;
-        std::vector<std::pair<std::string, std::function<void()>>> _DestroyDeviceCallbacks;
-        std::vector<std::pair<std::string, std::function<void()>>> _CreateSwapchainCallbacks;
-        std::vector<std::pair<std::string, std::function<void()>>> _DestroySwapchainCallbacks;
+        std::vector<std::pair<std::string, std::function<void()>>> CreateDeviceCallbacks_;
+        std::vector<std::pair<std::string, std::function<void()>>> DestroyDeviceCallbacks_;
+        std::vector<std::pair<std::string, std::function<void()>>> CreateSwapchainCallbacks_;
+        std::vector<std::pair<std::string, std::function<void()>>> DestroySwapchainCallbacks_;
 
-        std::vector<const char*>           _InstanceLayers;
-        std::vector<const char*>           _InstanceExtensions;
-        std::vector<const char*>           _DeviceExtensions;
+        std::vector<const char*>           InstanceLayers_;
+        std::vector<const char*>           InstanceExtensions_;
+        std::vector<const char*>           DeviceExtensions_;
 
-        std::vector<vk::PhysicalDevice>    _AvailablePhysicalDevices;
-        std::vector<vk::SurfaceFormatKHR>  _AvailableSurfaceFormats;
-        std::vector<vk::Image>             _SwapchainImages;
-        std::vector<vk::ImageView>         _SwapchainImageViews;
+        std::vector<vk::PhysicalDevice>    AvailablePhysicalDevices_;
+        std::vector<vk::SurfaceFormatKHR>  AvailableSurfaceFormats_;
+        std::vector<vk::Image>             SwapchainImages_;
+        std::vector<vk::ImageView>         SwapchainImageViews_;
 
-        std::vector<vk::QueueFamilyProperties> _QueueFamilyProperties;
+        std::vector<vk::QueueFamilyProperties> QueueFamilyProperties_;
 
-        vk::Instance                       _Instance;
-        vk::DebugUtilsMessengerEXT         _DebugUtilsMessenger;
-        vk::SurfaceKHR                     _Surface;
-        vk::PhysicalDevice                 _PhysicalDevice;
-        vk::Device                         _Device;
-        vk::SwapchainKHR                   _Swapchain;
+        vk::Instance                       Instance_;
+        vk::DebugUtilsMessengerEXT         DebugUtilsMessenger_;
+        vk::SurfaceKHR                     Surface_;
+        vk::PhysicalDevice                 PhysicalDevice_;
+        vk::Device                         Device_;
+        vk::SwapchainKHR                   Swapchain_;
 
-        vk::PhysicalDeviceProperties       _PhysicalDeviceProperties;
-        vk::PhysicalDeviceMemoryProperties _PhysicalDeviceMemoryProperties;
-        vk::HdrMetadataEXT                 _HdrMetadata;
-        vk::SwapchainCreateInfoKHR		   _SwapchainCreateInfo;
-        vk::Extent2D                       _SwapchainExtent;
+        vk::PhysicalDeviceProperties       PhysicalDeviceProperties_;
+        vk::PhysicalDeviceMemoryProperties PhysicalDeviceMemoryProperties_;
+        vk::HdrMetadataEXT                 HdrMetadata_;
+        vk::SwapchainCreateInfoKHR		   SwapchainCreateInfo_;
+        vk::Extent2D                       SwapchainExtent_;
 
-        std::optional<FQueuePool>          _QueuePool; // for stack allocation
+        std::optional<FQueuePool>          QueuePool_; // for stack allocation
 
-        VmaAllocator                       _VmaAllocator{ nullptr };
+        VmaAllocator                       VmaAllocator_{ nullptr };
 
-        std::unordered_map<EQueueType, vk::Queue>     _Queues;
-        std::unordered_map<EQueueType, std::uint32_t> _QueueFamilyIndices;
+        std::unordered_map<EQueueType, vk::Queue>     Queues_;
+        std::unordered_map<EQueueType, std::uint32_t> QueueFamilyIndices_;
 
-        std::uint32_t                      _CurrentImageIndex{ std::numeric_limits<std::uint32_t>::max() };
-        std::uint32_t                      _ApiVersion{ vk::ApiVersion14 };
+        std::uint32_t                      CurrentImageIndex_{ std::numeric_limits<std::uint32_t>::max() };
+        std::uint32_t                      ApiVersion_{ vk::ApiVersion14 };
     };
 } // namespace Npgs
 

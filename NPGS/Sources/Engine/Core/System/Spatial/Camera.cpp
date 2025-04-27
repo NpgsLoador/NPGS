@@ -8,39 +8,39 @@
 namespace Npgs
 {
     FCamera::FCamera(glm::vec3 Position, float Sensitivity, float Speed, float Zoom, float InertiaDecay, float SmoothCoefficient)
-        : _Position(Position)
-        , _Sensitivity(Sensitivity)
-        , _Speed(Speed)
-        , _Zoom(Zoom)
-        , _InertiaDecay(InertiaDecay)
-        , _SmoothCoefficient(SmoothCoefficient)
+        : Position_(Position)
+        , Sensitivity_(Sensitivity)
+        , Speed_(Speed)
+        , Zoom_(Zoom)
+        , InertiaDecay_(InertiaDecay)
+        , SmoothCoefficient_(SmoothCoefficient)
     {
         UpdateVectors();
     }
 
     void FCamera::ProcessKeyboard(EMovement Direction, double DeltaTime)
     {
-        float Velocity = static_cast<float>(_Speed * DeltaTime);
+        float Velocity = static_cast<float>(Speed_ * DeltaTime);
 
         switch (Direction)
         {
         case EMovement::kForward:
-            _Position += _Front * Velocity;
+            Position_ += Front_ * Velocity;
             break;
         case EMovement::kBack:
-            _Position -= _Front * Velocity;
+            Position_ -= Front_ * Velocity;
             break;
         case EMovement::kLeft:
-            _Position -= _Right * Velocity;
+            Position_ -= Right_ * Velocity;
             break;
         case EMovement::kRight:
-            _Position += _Right * Velocity;
+            Position_ += Right_ * Velocity;
             break;
         case EMovement::kUp:
-            _Position += _Up * Velocity;
+            Position_ += Up_ * Velocity;
             break;
         case EMovement::kDown:
-            _Position -= _Up * Velocity;
+            Position_ -= Up_ * Velocity;
             break;
         case EMovement::kRollLeft:
             ProcessRotation(0.0f, 0.0f, -10.0f * 2.5f * static_cast<float>(DeltaTime));
@@ -55,22 +55,22 @@ namespace Npgs
 
     void FCamera::ProcessEvent(double DeltaTime)
     {
-        if (!_bCameraAligned)
+        if (!bCameraAligned_)
         {
             ProcessAlign(DeltaTime);
         }
 
-        if (Util::Equal(_TargetOffset.x, 0.0f) && Util::Equal(_TargetOffset.y, 0.0f))
+        if (Util::Equal(TargetOffset_.x, 0.0f) && Util::Equal(TargetOffset_.y, 0.0f))
         {
             return;
         }
 
-        if (_Mode == EMode::kFree)
+        if (Mode_ == EMode::kFree)
         {
             ProcessOrient();
-            _TargetOffset = glm::vec2();
+            TargetOffset_ = glm::vec2();
         }
-        else if (_Mode == EMode::kArcBall)
+        else if (Mode_ == EMode::kArcBall)
         {
             ProcessOrbital(DeltaTime);
         }
@@ -85,16 +85,16 @@ namespace Npgs
         switch (Vector)
         {
         case EVector::kPosition:
-            _Position = NewVector;
+            Position_ = NewVector;
             break;
         case EVector::kFront:
-            _Front = NewVector;
+            Front_ = NewVector;
             break;
         case EVector::kUp:
-            _Up = NewVector;
+            Up_ = NewVector;
             break;
         case EVector::kRight:
-            _Right = NewVector;
+            Right_ = NewVector;
             break;
         default:
             NpgsAssert(false, "Invalid vector type");
@@ -108,13 +108,13 @@ namespace Npgs
         switch (Vector)
         {
         case EVector::kPosition:
-            return _Position;
+            return Position_;
         case EVector::kFront:
-            return _Front;
+            return Front_;
         case EVector::kUp:
-            return _Up;
+            return Up_;
         case EVector::kRight:
-            return _Right;
+            return Right_;
         default:
             NpgsAssert(false, "Invalid vector type");
         }
@@ -123,38 +123,38 @@ namespace Npgs
 
     void FCamera::ProcessAlign(double DeltaTime)
     {
-        glm::vec3 DesiredDirection = glm::normalize(_OrbitTarget - _Position);
+        glm::vec3 DesiredDirection = glm::normalize(OrbitTarget_ - Position_);
 
-        float FrontDotTarget = glm::dot(_Front, DesiredDirection);
+        float FrontDotTarget = glm::dot(Front_, DesiredDirection);
         bool bNeedAlignFront = (FrontDotTarget < 0.9999f);
 
         bool bNeedAlignUp = false;
-        if (_Mode == EMode::kAxisOrbital)
+        if (Mode_ == EMode::kAxisOrbital)
         {
-            float UpDotAxis = glm::dot(_Up, _OrbitAxis);
+            float UpDotAxis = glm::dot(Up_, OrbitAxis_);
             bNeedAlignUp = (UpDotAxis < 0.9999f);
         }
 
         if (!bNeedAlignFront && !bNeedAlignUp)
         {
-            _bCameraAligned = true;
+            bCameraAligned_ = true;
             return;
         }
 
         glm::quat TargetOrient;
 
-        if (_Mode != EMode::kAxisOrbital)
+        if (Mode_ != EMode::kAxisOrbital)
         {
             glm::vec3 Direction = DesiredDirection;
-            glm::vec3 Right     = glm::normalize(glm::cross(Direction, _Up));
+            glm::vec3 Right     = glm::normalize(glm::cross(Direction, Up_));
 
-            glm::mat3x3 RotationMatrix(Right, _Up, -Direction);
+            glm::mat3x3 RotationMatrix(Right, Up_, -Direction);
             TargetOrient = glm::conjugate(glm::quat_cast(RotationMatrix));
         }
         else
         {
             glm::vec3 Direction = DesiredDirection;
-            glm::vec3 Right     = glm::normalize(glm::cross(Direction, _OrbitAxis));
+            glm::vec3 Right     = glm::normalize(glm::cross(Direction, OrbitAxis_));
 
             if (glm::length(Right) < 0.001f)
             {
@@ -170,14 +170,14 @@ namespace Npgs
         float RotationSpeed  = 3.0f;
         float RotationAmount = std::min(1.0f, static_cast<float>(DeltaTime) * RotationSpeed);
 
-        _Orientation = glm::normalize(glm::slerp(_Orientation, TargetOrient, RotationAmount));
+        Orientation_ = glm::normalize(glm::slerp(Orientation_, TargetOrient, RotationAmount));
         UpdateVectors();
     }
 
     void FCamera::ProcessOrient()
     {
-        float HorizontalAngle = static_cast<float>(_Sensitivity *  _TargetOffset.x);
-        float VerticalAngle   = static_cast<float>(_Sensitivity * -_TargetOffset.y);
+        float HorizontalAngle = static_cast<float>(Sensitivity_ *  TargetOffset_.x);
+        float VerticalAngle   = static_cast<float>(Sensitivity_ * -TargetOffset_.y);
         ProcessRotation(HorizontalAngle, VerticalAngle, 0.0f);
     }
 
@@ -187,57 +187,57 @@ namespace Npgs
         glm::quat QuatPitch = glm::angleAxis(glm::radians(Pitch), glm::vec3(1.0f, 0.0f, 0.0f));
         glm::quat QuatRoll  = glm::angleAxis(glm::radians(Roll),  glm::vec3(0.0f, 0.0f, 1.0f));
 
-        _Orientation = glm::normalize(QuatYaw * QuatPitch * QuatRoll * _Orientation);
+        Orientation_ = glm::normalize(QuatYaw * QuatPitch * QuatRoll * Orientation_);
 
         UpdateVectors();
     }
 
     void FCamera::ProcessOrbital(double DeltaTime)
     {
-        if (_Mode == EMode::kFree)
+        if (Mode_ == EMode::kFree)
         {
             return;
         }
 
-        if (std::abs(_TargetOffset.x) > _VelocityThreshold * 1000.0f || std::abs(_TargetOffset.y) > _VelocityThreshold * 1000.0f)
+        if (std::abs(TargetOffset_.x) > VelocityThreshold_ * 1000.0f || std::abs(TargetOffset_.y) > VelocityThreshold_ * 1000.0f)
         {
-            float SmoothedX = _Sensitivity * 10.0f * _SmoothCoefficient * _TargetOffset.x + (1.0f - _SmoothCoefficient) * _PrevOffset.x;
-            float SmoothedY = _Sensitivity * 10.0f * _SmoothCoefficient * _TargetOffset.y + (1.0f - _SmoothCoefficient) * _PrevOffset.y;
+            float SmoothedX = Sensitivity_ * 10.0f * SmoothCoefficient_ * TargetOffset_.x + (1.0f - SmoothCoefficient_) * PrevOffset_.x;
+            float SmoothedY = Sensitivity_ * 10.0f * SmoothCoefficient_ * TargetOffset_.y + (1.0f - SmoothCoefficient_) * PrevOffset_.y;
 
-            _OrbitalVelocity = glm::vec2(SmoothedX, SmoothedY);
-            _PrevOffset      = glm::vec2(SmoothedX, SmoothedY);
+            OrbitalVelocity_ = glm::vec2(SmoothedX, SmoothedY);
+            PrevOffset_      = glm::vec2(SmoothedX, SmoothedY);
 
-            _TargetOffset *= (1.0f - _SmoothCoefficient);
+            TargetOffset_ *= (1.0f - SmoothCoefficient_);
         }
         else
         {
             float DecaySpeed        = 50.0f;
-            float TimeAdjustedDecay = std::pow(_InertiaDecay, static_cast<float>(DeltaTime) * DecaySpeed);
-            _OrbitalVelocity *= TimeAdjustedDecay;
+            float TimeAdjustedDecay = std::pow(InertiaDecay_, static_cast<float>(DeltaTime) * DecaySpeed);
+            OrbitalVelocity_ *= TimeAdjustedDecay;
 
-            if (glm::length(_OrbitalVelocity) < _VelocityThreshold)
+            if (glm::length(OrbitalVelocity_) < VelocityThreshold_)
             {
-                _OrbitalVelocity = glm::vec2(0.0f);
+                OrbitalVelocity_ = glm::vec2(0.0f);
                 return;
             }
 
-            _PrevOffset = _OrbitalVelocity;
+            PrevOffset_ = OrbitalVelocity_;
         }
 
-        glm::vec3 OrbitAxis         = _Mode == EMode::kArcBall ? _Up : _OrbitAxis;
-        glm::vec3 PrevRight         = _Right;
-        glm::vec3 DirectionToCamera = _Position - _OrbitTarget;
+        glm::vec3 OrbitAxis         = Mode_ == EMode::kArcBall ? Up_ : OrbitAxis_;
+        glm::vec3 PrevRight         = Right_;
+        glm::vec3 DirectionToCamera = Position_ - OrbitTarget_;
 
-        float HorizontalAngle = static_cast<float>(_Sensitivity * -_OrbitalVelocity.x);
-        float VerticalAngle   = static_cast<float>(_Sensitivity *  _OrbitalVelocity.y);
+        float HorizontalAngle = static_cast<float>(Sensitivity_ * -OrbitalVelocity_.x);
+        float VerticalAngle   = static_cast<float>(Sensitivity_ *  OrbitalVelocity_.y);
 
         glm::quat HorizontalRotation = glm::angleAxis(glm::radians(HorizontalAngle), OrbitAxis);
-        glm::quat VerticalRotation   = glm::angleAxis(glm::radians(VerticalAngle), _Right);
+        glm::quat VerticalRotation   = glm::angleAxis(glm::radians(VerticalAngle), Right_);
 
         DirectionToCamera = HorizontalRotation * VerticalRotation * DirectionToCamera;
-        _Position         = _OrbitTarget + DirectionToCamera;
+        Position_         = OrbitTarget_ + DirectionToCamera;
 
-        glm::vec3 Direction = glm::normalize(_OrbitTarget - _Position);
+        glm::vec3 Direction = glm::normalize(OrbitTarget_ - Position_);
         glm::vec3 Right     = glm::normalize(glm::cross(Direction, OrbitAxis));
 
         Right = glm::dot(Right, PrevRight) < 0.0f ? -Right : Right;
@@ -246,18 +246,18 @@ namespace Npgs
         glm::mat3x3 RotationMatrix(Right, Up, -Direction);
         glm::quat TargetOrient = glm::normalize(glm::conjugate(glm::quat_cast(RotationMatrix)));
 
-        _Orientation = TargetOrient;
+        Orientation_ = TargetOrient;
 
         UpdateVectors();
     }
 
     void FCamera::UpdateVectors()
     {
-        _Orientation = glm::normalize(_Orientation);
-        glm::quat ConjugateOrient = glm::conjugate(_Orientation);
+        Orientation_ = glm::normalize(Orientation_);
+        glm::quat ConjugateOrient = glm::conjugate(Orientation_);
 
-        _Front = glm::normalize(ConjugateOrient * glm::vec3(0.0f, 0.0f, -1.0f));
-        _Right = glm::normalize(ConjugateOrient * glm::vec3(1.0f, 0.0f,  0.0f));
-        _Up    = glm::normalize(ConjugateOrient * glm::vec3(0.0f, 1.0f,  0.0f));
+        Front_ = glm::normalize(ConjugateOrient * glm::vec3(0.0f, 0.0f, -1.0f));
+        Right_ = glm::normalize(ConjugateOrient * glm::vec3(1.0f, 0.0f,  0.0f));
+        Up_    = glm::normalize(ConjugateOrient * glm::vec3(0.0f, 1.0f,  0.0f));
     }
 } // namespace Npgs

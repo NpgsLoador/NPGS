@@ -339,13 +339,13 @@ namespace Npgs
     public:
         TVulkanHandleNoDestroy() = default;
         explicit TVulkanHandleNoDestroy(HandleType Handle)
-            : _Handle(Handle)
+            : Handle_(Handle)
         {
         }
 
         TVulkanHandleNoDestroy(const TVulkanHandleNoDestroy&) = default;
         TVulkanHandleNoDestroy(TVulkanHandleNoDestroy&& Other) noexcept
-            : _Handle(std::move(Other._Handle))
+            : Handle_(std::move(Other.Handle_))
         {
         }
 
@@ -356,7 +356,7 @@ namespace Npgs
         {
             if (this != &Other)
             {
-                _Handle = std::move(Other._Handle);
+                Handle_ = std::move(Other.Handle_);
             }
 
             return *this;
@@ -364,28 +364,28 @@ namespace Npgs
 
         TVulkanHandleNoDestroy& operator=(HandleType Handle)
         {
-            _Handle = Handle;
+            Handle_ = Handle;
             return *this;
         }
 
         HandleType* operator->()
         {
-            return &_Handle;
+            return &Handle_;
         }
 
         const HandleType* operator->() const
         {
-            return &_Handle;
+            return &Handle_;
         }
 
         HandleType& operator*()
         {
-            return _Handle;
+            return Handle_;
         }
 
         const HandleType& operator*() const
         {
-            return _Handle;
+            return Handle_;
         }
 
         explicit operator bool() const
@@ -395,11 +395,11 @@ namespace Npgs
 
         bool IsValid() const
         {
-            return static_cast<bool>(_Handle);
+            return static_cast<bool>(Handle_);
         }
 
     protected:
-        HandleType _Handle;
+        HandleType Handle_;
     };
 
     template <typename HandleType, bool bEnableReleaseInfoOutput = true,
@@ -414,35 +414,35 @@ namespace Npgs
         TVulkanHandle() = delete;
         TVulkanHandle(vk::Device Device, HandleType Handle, const std::string& HandleName)
             : Base(Handle)
-            , _ReleaseInfo(std::string(HandleName) + " destroyed successfully.")
-            , _Device(Device)
-            , _Status(vk::Result::eSuccess)
+            , ReleaseInfo_(std::string(HandleName) + " destroyed successfully.")
+            , Device_(Device)
+            , Status_(vk::Result::eSuccess)
         {
         }
 
         explicit TVulkanHandle(vk::Device Device)
-            : _Device(Device)
-            , _Status(vk::Result::eSuccess)
+            : Device_(Device)
+            , Status_(vk::Result::eSuccess)
         {
         }
 
         TVulkanHandle(const TVulkanHandle&) = default;
         TVulkanHandle(TVulkanHandle&& Other) noexcept
             : Base(std::move(Other))
-            , _ReleaseInfo(std::move(Other._ReleaseInfo))
-            , _Device(std::move(Other._Device))
-            , _Status(std::exchange(Other._Status, {}))
+            , ReleaseInfo_(std::move(Other.ReleaseInfo_))
+            , Device_(std::move(Other.Device_))
+            , Status_(std::exchange(Other.Status_, {}))
         {
         }
 
         ~TVulkanHandle() override
         {
-            if (this->_Handle)
+            if (this->Handle_)
             {
                 ReleaseHandle();
                 if constexpr (bEnableReleaseInfoOutput)
                 {
-                    NpgsCoreTrace(_ReleaseInfo);
+                    NpgsCoreTrace(ReleaseInfo_);
                 }
             }
         }
@@ -452,16 +452,16 @@ namespace Npgs
         {
             if (this != &Other)
             {
-                if (this->_Handle)
+                if (this->Handle_)
                 {
                     ReleaseHandle();
                 }
 
                 Base::operator=(std::move(Other));
 
-                _ReleaseInfo = std::move(Other._ReleaseInfo);
-                _Device      = std::move(Other._Device);
-                _Status      = std::exchange(Other._Status, {});
+                ReleaseInfo_ = std::move(Other.ReleaseInfo_);
+                Device_      = std::move(Other.Device_);
+                Status_      = std::exchange(Other.Status_, {});
             }
 
             return *this;
@@ -469,29 +469,29 @@ namespace Npgs
 
         vk::Result GetStatus() const
         {
-            return _Status;
+            return Status_;
         }
 
     protected:
         void ReleaseHandle()
         {
-            if (this->_Handle)
+            if (this->Handle_)
             {
                 if constexpr (ReleaseMethod == EVulkanHandleReleaseMethod::kDestroy)
                 {
-                    _Device.destroy(this->_Handle);
+                    Device_.destroy(this->Handle_);
                 }
                 else if constexpr (ReleaseMethod == EVulkanHandleReleaseMethod::kFree)
                 {
-                    _Device.free(this->_Handle);
+                    Device_.free(this->Handle_);
                 }
             }
         }
 
     protected:
-        std::string _ReleaseInfo;
-        vk::Device  _Device;
-        vk::Result  _Status;
+        std::string ReleaseInfo_;
+        vk::Device  Device_;
+        vk::Result  Status_;
     };
 
     // Wrapper for vk::CommandBuffer
@@ -595,20 +595,20 @@ namespace Npgs
         vk::DeviceSize AlignNonCoherentMemoryRange(vk::DeviceSize& Offset, vk::DeviceSize& Size) const;
 
     private:
-        VmaAllocator                       _Allocator;
-        VmaAllocation                      _Allocation;
-        VmaAllocationInfo                  _AllocationInfo;
-        vk::PhysicalDeviceProperties       _PhysicalDeviceProperties;
-        vk::PhysicalDeviceMemoryProperties _PhysicalDeviceMemoryProperties;
-        vk::DeviceSize                     _AllocationSize;
-        vk::MemoryPropertyFlags            _MemoryPropertyFlags;
-        bool                               _bHostingVma;
+        VmaAllocator                       Allocator_;
+        VmaAllocation                      Allocation_;
+        VmaAllocationInfo                  AllocationInfo_;
+        vk::PhysicalDeviceProperties       PhysicalDeviceProperties_;
+        vk::PhysicalDeviceMemoryProperties PhysicalDeviceMemoryProperties_;
+        vk::DeviceSize                     AllocationSize_;
+        vk::MemoryPropertyFlags            MemoryPropertyFlags_;
+        bool                               bHostingVma_;
 
-        void*                              _MappedDataMemory{ nullptr };
-        void*                              _MappedTargetMemory{ nullptr };
-        bool                               _bPersistentlyMapped{ false };
+        void*                              MappedDataMemory_{ nullptr };
+        void*                              MappedTargetMemory_{ nullptr };
+        bool                               bPersistentlyMapped_{ false };
 
-        static std::unordered_map<vk::DeviceMemory, std::size_t, FVulkanDeviceMemoryHash> _HandleTracker;
+        static std::unordered_map<vk::DeviceMemory, std::size_t, FVulkanDeviceMemoryHash> HandleTracker_;
     };
 
     // Wrapper for vk::Buffer
@@ -641,10 +641,10 @@ namespace Npgs
         vk::Result CreateBuffer(const VmaAllocationCreateInfo& AllocationCreateInfo, const vk::BufferCreateInfo& CreateInfo);
 
     private:
-        vk::PhysicalDeviceMemoryProperties _PhysicalDeviceMemoryProperties;
-        VmaAllocator                       _Allocator;
-        VmaAllocation                      _Allocation{ nullptr };
-        VmaAllocationInfo                  _AllocationInfo{};
+        vk::PhysicalDeviceMemoryProperties PhysicalDeviceMemoryProperties_;
+        VmaAllocator                       Allocator_;
+        VmaAllocation                      Allocation_{ nullptr };
+        VmaAllocationInfo                  AllocationInfo_{};
     };
 
     // Wrapper for vk::BufferView
@@ -691,7 +691,7 @@ namespace Npgs
                     const vk::ArrayProxy<vk::CopyDescriptorSet>& Copies = {});
 
     private:
-        vk::Device _Device;
+        vk::Device Device_;
     };
 
     // Wrapper for vk::DescriptorSetLayout
@@ -800,10 +800,10 @@ namespace Npgs
         vk::Result CreateImage(const VmaAllocationCreateInfo& AllocationCreateInfo, const vk::ImageCreateInfo& CreateInfo);
 
     private:
-        vk::PhysicalDeviceMemoryProperties _PhysicalDeviceMemoryProperties;
-        VmaAllocator                       _Allocator;
-        VmaAllocation                      _Allocation{ nullptr };
-        VmaAllocationInfo                  _AllocationInfo{};
+        vk::PhysicalDeviceMemoryProperties PhysicalDeviceMemoryProperties_;
+        VmaAllocator                       Allocator_;
+        VmaAllocation                      Allocation_{ nullptr };
+        VmaAllocationInfo                  AllocationInfo_{};
     };
 
     // Wrapper for vk::ImageView
@@ -975,16 +975,16 @@ namespace Npgs
     public:
         TVulkanResourceMemory() = delete;
         TVulkanResourceMemory(std::unique_ptr<ResourceType>&& Resource, std::unique_ptr<MemoryType>&& Memory)
-            : _Resource(std::move(Resource))
-            , _Memory(std::move(Memory))
+            : Resource_(std::move(Resource))
+            , Memory_(std::move(Memory))
         {
         }
 
         TVulkanResourceMemory(const TVulkanResourceMemory&) = default;
         TVulkanResourceMemory(TVulkanResourceMemory&& Other) noexcept
-            : _Resource(std::move(Other._Resource))
-            , _Memory(std::move(Other._Memory))
-            , _bMemoryBound(std::exchange(Other._bMemoryBound, false))
+            : Resource_(std::move(Other.Resource_))
+            , Memory_(std::move(Other.Memory_))
+            , bMemoryBound_(std::exchange(Other.bMemoryBound_, false))
         {
         }
 
@@ -995,9 +995,9 @@ namespace Npgs
         {
             if (this != &Other)
             {
-                _Resource     = std::move(Other._Resource);
-                _Memory       = std::move(Other._Memory);
-                _bMemoryBound = std::exchange(Other._bMemoryBound, false);
+                Resource_     = std::move(Other.Resource_);
+                Memory_       = std::move(Other.Memory_);
+                bMemoryBound_ = std::exchange(Other.bMemoryBound_, false);
             }
 
             return *this;
@@ -1030,33 +1030,33 @@ namespace Npgs
 
         MemoryType& GetMemory()
         {
-            return *_Memory;
+            return *Memory_;
         }
 
         const MemoryType& GetMemory() const
         {
-            return *_Memory;
+            return *Memory_;
         }
 
         ResourceType& GetResource()
         {
-            return *_Resource;
+            return *Resource_;
         }
 
         const ResourceType& GetResource() const
         {
-            return *_Resource;
+            return *Resource_;
         }
 
         bool IsValid() const
         {
-            return _Resource && _Memory && _Resource->operator bool() && _Memory->operator bool();
+            return Resource_ && Memory_ && Resource_->operator bool() && Memory_->operator bool();
         }
 
     protected:
-        std::unique_ptr<ResourceType> _Resource;
-        std::unique_ptr<MemoryType>   _Memory;
-        bool                          _bMemoryBound{ false };
+        std::unique_ptr<ResourceType> Resource_;
+        std::unique_ptr<MemoryType>   Memory_;
+        bool                          bMemoryBound_{ false };
     };
 
     class FVulkanBufferMemory : public TVulkanResourceMemory<FVulkanBuffer>

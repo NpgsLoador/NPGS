@@ -137,27 +137,27 @@ namespace Npgs::Astro
         EEvolutionPhase GetEvolutionPhase() const;
         const Astro::FStellarClass& GetStellarClass() const;
 
-        static const std::vector<std::pair<int, int>> _kSpectralSubclassMap_O;
-        static const std::vector<std::pair<int, int>> _kSpectralSubclassMap_B;
-        static const std::vector<std::pair<int, int>> _kSpectralSubclassMap_A;
-        static const std::vector<std::pair<int, int>> _kSpectralSubclassMap_F;
-        static const std::vector<std::pair<int, int>> _kSpectralSubclassMap_G;
-        static const std::vector<std::pair<int, int>> _kSpectralSubclassMap_K;
-        static const std::vector<std::pair<int, int>> _kSpectralSubclassMap_M;
-        static const std::vector<std::pair<int, int>> _kSpectralSubclassMap_L;
-        static const std::vector<std::pair<int, int>> _kSpectralSubclassMap_T;
-        static const std::vector<std::pair<int, int>> _kSpectralSubclassMap_Y;
-        static const std::vector<std::pair<int, int>> _kSpectralSubclassMap_WC;
-        static const std::vector<std::pair<int, int>> _kSpectralSubclassMap_WN;
-        static const std::vector<std::pair<int, int>> _kSpectralSubclassMap_WO;
-        static const std::vector<std::pair<int, int>> _kSpectralSubclassMap_WNxh;
-        static const std::vector<std::pair<int, std::vector<std::pair<int, int>>>> _kInitialCommonMap;
-        static const std::vector<std::pair<int, std::vector<std::pair<int, int>>>> _kInitialWolfRayetMap;
-        static const std::unordered_map<EEvolutionPhase, Astro::FStellarClass::ELuminosityClass> _kLuminosityMap;
-        static const std::unordered_map<float, float> _kFeHSurfaceH1Map;
+        static const std::vector<std::pair<int, int>>                                            kSpectralSubclassMap_O_;
+        static const std::vector<std::pair<int, int>>                                            kSpectralSubclassMap_B_;
+        static const std::vector<std::pair<int, int>>                                            kSpectralSubclassMap_A_;
+        static const std::vector<std::pair<int, int>>                                            kSpectralSubclassMap_F_;
+        static const std::vector<std::pair<int, int>>                                            kSpectralSubclassMap_G_;
+        static const std::vector<std::pair<int, int>>                                            kSpectralSubclassMap_K_;
+        static const std::vector<std::pair<int, int>>                                            kSpectralSubclassMap_M_;
+        static const std::vector<std::pair<int, int>>                                            kSpectralSubclassMap_L_;
+        static const std::vector<std::pair<int, int>>                                            kSpectralSubclassMap_T_;
+        static const std::vector<std::pair<int, int>>                                            kSpectralSubclassMap_Y_;
+        static const std::vector<std::pair<int, int>>                                            kSpectralSubclassMap_WC_;
+        static const std::vector<std::pair<int, int>>                                            kSpectralSubclassMap_WN_;
+        static const std::vector<std::pair<int, int>>                                            kSpectralSubclassMap_WO_;
+        static const std::vector<std::pair<int, int>>                                            kSpectralSubclassMap_WNxh_;
+        static const std::vector<std::pair<int, std::vector<std::pair<int, int>>>>               kInitialCommonMap_;
+        static const std::vector<std::pair<int, std::vector<std::pair<int, int>>>>               kInitialWolfRayetMap_;
+        static const std::unordered_map<EEvolutionPhase, Astro::FStellarClass::ELuminosityClass> kLuminosityMap_;
+        static const std::unordered_map<float, float>                                            kFeHSurfaceH1Map_;
 
     private:
-        FExtendedProperties _ExtraProperties{};
+        FExtendedProperties ExtraProperties_{};
     };
 } // namespace Npgs::Astro
 

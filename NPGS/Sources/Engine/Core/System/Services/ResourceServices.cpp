@@ -3,10 +3,10 @@
 namespace Npgs
 {
     FResourceServices::FResourceServices(const FCoreServices& CoreServices)
-        : _CoreServices(&CoreServices)
-        , _ImageTracker(std::make_unique<FImageTracker>())
-        , _PipelineManager(std::make_unique<FPipelineManager>(_CoreServices->GetVulkanContext(), _CoreServices->GetAssetManager()))
-        , _ShaderBufferManager(std::make_unique<FShaderBufferManager>(_CoreServices->GetVulkanContext()))
+        : CoreServices_(&CoreServices)
+        , ImageTracker_(std::make_unique<FImageTracker>())
+        , PipelineManager_(std::make_unique<FPipelineManager>(CoreServices_->GetVulkanContext(), CoreServices_->GetAssetManager()))
+        , ShaderBufferManager_(std::make_unique<FShaderBufferManager>(CoreServices_->GetVulkanContext()))
     {
     }
 } // namespace Npgs

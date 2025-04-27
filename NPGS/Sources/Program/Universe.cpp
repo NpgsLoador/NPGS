@@ -15,6 +15,7 @@
 #include "Engine/Core/Base/Base.h"
 #include "Engine/Core/Math/NumericConstants.h"
 #include "Engine/Core/System/Generators/OrbitalGenerator.h"
+#include "Engine/Core/System/Services/EngineServices.h"
 #include "Engine/Utils/Logger.h"
 
 namespace Npgs
@@ -22,43 +23,43 @@ namespace Npgs
     FUniverse::FUniverse(std::uint32_t Seed, std::size_t StarCount, std::size_t ExtraGiantCount, std::size_t ExtraMassiveStarCount,
                          std::size_t ExtraNeutronStarCount, std::size_t ExtraBlackHoleCount, std::size_t ExtraMergeStarCount,
                          float UniverseAge)
-        : _RandomEngine(Seed)
-        , _SeedGenerator(0ull, std::numeric_limits<std::uint32_t>::max())
-        , _CommonGenerator(0.0f, 1.0f)
-        , _ThreadPool(8, false)
+        : RandomEngine_(Seed)
+        , SeedGenerator_(0ull, std::numeric_limits<std::uint32_t>::max())
+        , CommonGenerator_(0.0f, 1.0f)
+        , ThreadPool_(EngineServicesGetCoreServices->GetThreadPool())
 
-        , _StarCount(StarCount)
-        , _ExtraGiantCount(ExtraGiantCount)
-        , _ExtraMassiveStarCount(ExtraMassiveStarCount)
-        , _ExtraNeutronStarCount(ExtraNeutronStarCount)
-        , _ExtraBlackHoleCount(ExtraBlackHoleCount)
-        , _ExtraMergeStarCount(ExtraMergeStarCount)
-        , _UniverseAge(UniverseAge)
+        , StarCount_(StarCount)
+        , ExtraGiantCount_(ExtraGiantCount)
+        , ExtraMassiveStarCount_(ExtraMassiveStarCount)
+        , ExtraNeutronStarCount_(ExtraNeutronStarCount)
+        , ExtraBlackHoleCount_(ExtraBlackHoleCount)
+        , ExtraMergeStarCount_(ExtraMergeStarCount)
+        , UniverseAge_(UniverseAge)
     {
         std::vector<std::uint32_t> Seeds(32);
         for (int i = 0; i != 32; ++i)
         {
-            Seeds[i] = _SeedGenerator(_RandomEngine);
+            Seeds[i] = SeedGenerator_(RandomEngine_);
         }
 
-        std::shuffle(Seeds.begin(), Seeds.end(), _RandomEngine);
+        std::shuffle(Seeds.begin(), Seeds.end(), RandomEngine_);
         std::seed_seq SeedSequence(Seeds.begin(), Seeds.end());
-        _RandomEngine.seed(SeedSequence);
+        RandomEngine_.seed(SeedSequence);
     }
 
     void FUniverse::FillUniverse()
     {
-        int MaxThread = _ThreadPool.GetMaxThreadCount();
+        int MaxThread = ThreadPool_->GetMaxThreadCount();
 
         GenerateStars(MaxThread);
         FillStellarSystem(MaxThread);
 
-        _ThreadPool.Terminate();
+        // ThreadPool_->Terminate();
     }
 
     void FUniverse::ReplaceStar(std::size_t DistanceRank, const Astro::AStar& StarData)
     {
-        for (auto& System : _StellarSystems)
+        for (auto& System : StellarSystems_)
         {
             if (DistanceRank == System.GetBaryDistanceRank())
             {
@@ -319,7 +320,7 @@ namespace Npgs
         std::println("{}", FormatTitle());
         std::println("");
 
-        for (auto& System : _StellarSystems)
+        for (auto& System : StellarSystems_)
         {
             for (auto& Star : System.StarsData())
             {
@@ -600,10 +601,10 @@ namespace Npgs
                 std::vector<std::uint32_t> Seeds(32);
                 for (int i = 0; i != 32; ++i)
                 {
-                    Seeds[i] = _SeedGenerator(_RandomEngine);
+                    Seeds[i] = SeedGenerator_(RandomEngine_);
                 }
 
-                std::shuffle(Seeds.begin(), Seeds.end(), _RandomEngine);
+                std::shuffle(Seeds.begin(), Seeds.end(), RandomEngine_);
                 std::seed_seq SeedSequence(Seeds.begin(), Seeds.end());
 
                 FStellarGenerator::FGenerationInfo GenerationInfo
@@ -611,7 +612,7 @@ namespace Npgs
                     .SeedSequence       = &SeedSequence,
                     .StellarTypeOption  = StellarTypeOption,
                     .MultiplicityOption = FStellarGenerator::EMultiplicityGenerationOption::kSingleStar,
-                    .UniverseAge        = _UniverseAge,
+                    .UniverseAge        = UniverseAge_,
                     .MassLowerLimit     = MassLowerLimit,
                     .MassUpperLimit     = MassUpperLimit,
                     .MassDistribution   = MassDistribution,
@@ -638,52 +639,52 @@ namespace Npgs
         };
 
         // 特殊星基础参数设置
-        if (_ExtraGiantCount != 0)
+        if (ExtraGiantCount_ != 0)
         {
             Generators.clear();
             CreateGenerators(FStellarGenerator::EStellarTypeGenerationOption::kGiant, 1.0f, 35.0f);
-            GenerateBasicProperties(_ExtraGiantCount);
+            GenerateBasicProperties(ExtraGiantCount_);
         }
 
-        if (_ExtraMassiveStarCount != 0)
+        if (ExtraMassiveStarCount_ != 0)
         {
             Generators.clear();
             CreateGenerators(FStellarGenerator::EStellarTypeGenerationOption::kRandom,
                              20.0f, 300.0f, FStellarGenerator::EGenerationDistribution::kUniform,
                              0.0f,  3.5e6f, FStellarGenerator::EGenerationDistribution::kUniform);
-            GenerateBasicProperties(_ExtraMassiveStarCount);
+            GenerateBasicProperties(ExtraMassiveStarCount_);
         }
 
-        if (_ExtraNeutronStarCount != 0)
+        if (ExtraNeutronStarCount_ != 0)
         {
             Generators.clear();
             CreateGenerators(FStellarGenerator::EStellarTypeGenerationOption::kDeathStar,
                              10.0f, 20.0f, FStellarGenerator::EGenerationDistribution::kUniform,
                              1e7f,   1e8f, FStellarGenerator::EGenerationDistribution::kUniformByExponent);
-            GenerateBasicProperties(_ExtraNeutronStarCount);
+            GenerateBasicProperties(ExtraNeutronStarCount_);
         }
 
-        if (_ExtraBlackHoleCount != 0)
+        if (ExtraBlackHoleCount_ != 0)
         {
             Generators.clear();
             CreateGenerators(FStellarGenerator::EStellarTypeGenerationOption::kRandom,
                              35.0f,  300.0f, FStellarGenerator::EGenerationDistribution::kUniform,
                              1e7f, 1.26e10f, FStellarGenerator::EGenerationDistribution::kFromPdf,
                              -2.0, 0.5);
-            GenerateBasicProperties(_ExtraBlackHoleCount);
+            GenerateBasicProperties(ExtraBlackHoleCount_);
         }
 
-        if (_ExtraMergeStarCount != 0)
+        if (ExtraMergeStarCount_ != 0)
         {
             Generators.clear();
             CreateGenerators(FStellarGenerator::EStellarTypeGenerationOption::kMergeStar,
                              0.0f, 0.0f, FStellarGenerator::EGenerationDistribution::kUniform,
                              1e6f, 1e8f, FStellarGenerator::EGenerationDistribution::kUniformByExponent);
-            GenerateBasicProperties(_ExtraMergeStarCount);
+            GenerateBasicProperties(ExtraMergeStarCount_);
         }
 
         std::size_t CommonStarsCount =
-            _StarCount - _ExtraGiantCount - _ExtraMassiveStarCount - _ExtraNeutronStarCount - _ExtraBlackHoleCount - _ExtraMergeStarCount;
+            StarCount_ - ExtraGiantCount_ - ExtraMassiveStarCount_ - ExtraNeutronStarCount_ - ExtraBlackHoleCount_ - ExtraMergeStarCount_;
 
         Generators.clear();
         CreateGenerators(FStellarGenerator::EStellarTypeGenerationOption::kRandom, 0.075f);
@@ -694,11 +695,11 @@ namespace Npgs
         std::vector<Astro::AStar> Stars = InterpolateStars(MaxThread, Generators, BasicProperties);
 
         NpgsCoreInfo("Building stellar octree in 8 threads...");
-        GenerateSlots(0.1f, _StarCount, 0.004f);
+        GenerateSlots(0.1f, StarCount_, 0.004f);
 
         NpgsCoreInfo("Linking positions in octree to stellar systems...");
-        _StellarSystems.reserve(_StarCount);
-        std::shuffle(Stars.begin(), Stars.end(), _RandomEngine);
+        StellarSystems_.reserve(StarCount_);
+        std::shuffle(Stars.begin(), Stars.end(), RandomEngine_);
         std::vector<glm::vec3> Slots;
         OctreeLinkToStellarSystems(Stars, Slots);
 
@@ -714,7 +715,7 @@ namespace Npgs
         NpgsCoreInfo("Assigning name...");
         std::string Name;
         std::ostringstream Stream;
-        for (auto& System : _StellarSystems)
+        for (auto& System : StellarSystems_)
         {
             glm::vec3 Position = System.GetBaryPosition();
             auto it = std::lower_bound(Slots.begin(), Slots.end(), Position, [](glm::vec3 Point1, glm::vec3 Point2) -> bool
@@ -752,7 +753,7 @@ namespace Npgs
         }
 
         NpgsCoreInfo("Reset home stellar system...");
-        FNodeType* HomeNode = _Octree->Find(glm::vec3(0.0f), [](const FNodeType& Node) -> bool
+        FNodeType* HomeNode = Octree_->Find(glm::vec3(0.0f), [](const FNodeType& Node) -> bool
         {
             if (Node.IsLeafNode())
             {
@@ -794,10 +795,10 @@ namespace Npgs
             std::vector<std::uint32_t> Seeds(32);
             for (int i = 0; i != 32; ++i)
             {
-                Seeds[i] = _SeedGenerator(_RandomEngine);
+                Seeds[i] = SeedGenerator_(RandomEngine_);
             }
 
-            std::shuffle(Seeds.begin(), Seeds.end(), _RandomEngine);
+            std::shuffle(Seeds.begin(), Seeds.end(), RandomEngine_);
             std::seed_seq SeedSequence(Seeds.begin(), Seeds.end());
 
             FOrbitalGenerator::FGenerationInfo GenerationInfo;
@@ -818,7 +819,7 @@ namespace Npgs
 
         for (int i = 0; i != MaxThread; ++i)
         {
-            _ThreadPool.Submit([&, i]() -> void
+            ThreadPool_->Submit([&, i]() -> void
             {
                 std::vector<Astro::AStar> Stars;
                 for (auto& Properties : PropertyLists[i])
@@ -849,11 +850,11 @@ namespace Npgs
         float LeafRadius = LeafSize * 0.5f;
         float RootRadius = LeafSize * static_cast<float>(std::pow(2, Exponent));
 
-        _Octree = std::make_unique<TOctree<Astro::FStellarSystem>>(glm::vec3(0.0), RootRadius);
-        _Octree->BuildEmptyTree(LeafRadius); // 快速构建一个空树，每个叶子节点作为一个格子，用于生成恒星
+        Octree_ = std::make_unique<TOctree<Astro::FStellarSystem>>(glm::vec3(0.0), RootRadius);
+        Octree_->BuildEmptyTree(LeafRadius); // 快速构建一个空树，每个叶子节点作为一个格子，用于生成恒星
 
         // 遍历八叉树，将距离原点大于半径的叶子节点标记为无效，保证恒星只会在范围内生成
-        _Octree->Traverse([Radius](FNodeType& Node) -> void
+        Octree_->Traverse([Radius](FNodeType& Node) -> void
         {
             if (Node.IsLeafNode() && glm::length(Node.GetCenter()) > Radius)
             {
@@ -861,7 +862,7 @@ namespace Npgs
             }
         });
 
-        std::size_t ValidLeafCount = _Octree->GetCapacity();
+        std::size_t ValidLeafCount = Octree_->GetCapacity();
         std::vector<FNodeType*> LeafNodes;
 
         auto CollectLeafNodes = [&LeafNodes](FNodeType& Node) -> void
@@ -876,8 +877,8 @@ namespace Npgs
         while (ValidLeafCount != SampleCount)
         {
             LeafNodes.clear();
-            _Octree->Traverse(CollectLeafNodes);
-            std::shuffle(LeafNodes.begin(), LeafNodes.end(), _RandomEngine); // 打乱叶子节点，保证随机性
+            Octree_->Traverse(CollectLeafNodes);
+            std::shuffle(LeafNodes.begin(), LeafNodes.end(), RandomEngine_); // 打乱叶子节点，保证随机性
 
             // 删除或收回叶子节点，直到格子数量等于目标数量
             if (ValidLeafCount < SampleCount)
@@ -916,21 +917,21 @@ namespace Npgs
 
         Util::TUniformRealDistribution Offset(-LeafRadius, LeafRadius - MinDistance); // 用于随机生成恒星位置相对于叶子节点中心点的偏移量
         // 遍历八叉树，为每个有效的叶子节点生成一个恒星
-        _Octree->Traverse([&Offset, LeafRadius, MinDistance, this](FNodeType& Node) -> void
+        Octree_->Traverse([&Offset, LeafRadius, MinDistance, this](FNodeType& Node) -> void
         {
             if (Node.IsLeafNode() && Node.IsValid())
             {
                 glm::vec3 Center(Node.GetCenter());
-                glm::vec3 StellarSlot(Center.x + Offset(_RandomEngine),
-                                      Center.y + Offset(_RandomEngine),
-                                      Center.z + Offset(_RandomEngine));
+                glm::vec3 StellarSlot(Center.x + Offset(RandomEngine_),
+                                      Center.y + Offset(RandomEngine_),
+                                      Center.z + Offset(RandomEngine_));
                 Node.AddPoint(StellarSlot);
             }
         });
 
         // 为了保证恒星系统的唯一性，将原点附近所在的叶子节点作为存储初始恒星系统的结点
         // 寻找包含了 (LeafRadius, LeafRadius, LeafRadius) 的叶子节点，将这个格子存储的位置修改为原点
-        FNodeType* HomeNode = _Octree->Find(glm::vec3(LeafRadius), [](const FNodeType& Node) -> bool
+        FNodeType* HomeNode = Octree_->Find(glm::vec3(LeafRadius), [](const FNodeType& Node) -> bool
         {
             return Node.IsLeafNode();
         });
@@ -944,7 +945,7 @@ namespace Npgs
     {
         std::size_t Index = 0;
 
-        _Octree->Traverse([&](FNodeType& Node) -> void
+        Octree_->Traverse([&](FNodeType& Node) -> void
         {
             if (Node.IsLeafNode() && Node.IsValid())
             {
@@ -956,9 +957,9 @@ namespace Npgs
                     NewSystem.SetBaryNormal(NewSystem.StarsData().front()->GetNormal());
                     Stars.pop_back();
 
-                    _StellarSystems.push_back(std::move(NewSystem));
+                    StellarSystems_.push_back(std::move(NewSystem));
 
-                    Node.AddLink(&_StellarSystems[Index]);
+                    Node.AddLink(&StellarSystems_[Index]);
                     Slots.push_back(Point);
                     ++Index;
                 }
@@ -974,10 +975,10 @@ namespace Npgs
             std::vector<std::uint32_t> Seeds(32);
             for (int i = 0; i != 32; ++i)
             {
-                Seeds[i] = _SeedGenerator(_RandomEngine);
+                Seeds[i] = SeedGenerator_(RandomEngine_);
             }
 
-            std::shuffle(Seeds.begin(), Seeds.end(), _RandomEngine);
+            std::shuffle(Seeds.begin(), Seeds.end(), RandomEngine_);
             std::seed_seq SeedSequence(Seeds.begin(), Seeds.end());
 
             FStellarGenerator::FGenerationInfo GenerationInfo
@@ -991,7 +992,7 @@ namespace Npgs
         }
 
         std::vector<Astro::FStellarSystem*> BinarySystems;
-        for (auto& System : _StellarSystems)
+        for (auto& System : StellarSystems_)
         {
             const auto& Star = System.StarsData().front();
             if (!Star->IsSingleStar())

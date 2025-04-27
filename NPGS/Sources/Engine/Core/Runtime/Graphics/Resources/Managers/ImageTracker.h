@@ -55,8 +55,8 @@ namespace Npgs
         void ResetAll();
 
     private:
-        std::unordered_map<FImageKey, FImageState, FImageHash> _ImageStateMap;
-        std::unordered_set<vk::Image, FImageHash>              _ImageSet;
+        std::unordered_map<FImageKey, FImageState, FImageHash> ImageStateMap_;
+        std::unordered_set<vk::Image, FImageHash>              ImageSet_;
     };
 } // namespace Npgs
 

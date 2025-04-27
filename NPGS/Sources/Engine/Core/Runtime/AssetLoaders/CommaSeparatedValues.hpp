@@ -29,7 +29,7 @@ namespace Npgs
 
     public:
         TCommaSeparatedValues(const std::string& Filename, const std::vector<std::string>& ColNames)
-            : _Filename(Filename), _ColNames(ColNames)
+            : Filename_(Filename), ColNames_(ColNames)
         {
             InitializeHeaderMap();
             ReadData(io::ignore_extra_column);
@@ -45,7 +45,7 @@ namespace Npgs
         FRowArray FindFirstDataArray(const std::string& DataHeader, const BaseType& DataValue) const
         {
             std::size_t DataIndex = GetHeaderIndex(DataHeader);
-            for (const auto& Row : _Data)
+            for (const auto& Row : Data_)
             {
                 if (Row[DataIndex] == DataValue)
                 {
@@ -60,7 +60,7 @@ namespace Npgs
         {
             std::size_t DataIndex   = GetHeaderIndex(DataHeader);
             std::size_t TargetIndex = GetHeaderIndex(TargetHeader);
-            for (const auto& Row : _Data)
+            for (const auto& Row : Data_)
             {
                 if (Row[DataIndex] == DataValue)
                 {
@@ -86,19 +86,19 @@ namespace Npgs
 
             if (!bSorted)
             {
-                std::sort(_Data.begin(), _Data.end(), [&](const FRowArray& Lhs, const FRowArray& Rhs) -> bool
+                std::sort(Data_.begin(), Data_.end(), [&](const FRowArray& Lhs, const FRowArray& Rhs) -> bool
                 {
                     return Comparator(Lhs[DataIndex], Rhs[DataIndex]);
                 });
             }
 
-            auto it = std::lower_bound(_Data.begin(), _Data.end(), TargetValue,
+            auto it = std::lower_bound(Data_.begin(), Data_.end(), TargetValue,
             [&](const FRowArray& Row, const BaseType& Value) -> bool
             {
                 return Comparator(Row[DataIndex], Value);
             });
 
-            if (it == _Data.end())
+            if (it == Data_.end())
             {
                 throw std::out_of_range("Target value is out of range of the data.");
             }
@@ -112,7 +112,7 @@ namespace Npgs
             }
             else
             {
-                LowerRow = it == _Data.begin() ? it : it - 1;
+                LowerRow = it == Data_.begin() ? it : it - 1;
                 UpperRow = it;
             }
 
@@ -121,27 +121,27 @@ namespace Npgs
 
         std::vector<FRowArray>* Data()
         {
-            return &_Data;
+            return &Data_;
         }
 
         const std::vector<FRowArray>* Data() const
         {
-            return &_Data;
+            return &Data_;
         }
 
     private:
         void InitializeHeaderMap()
         {
-            for (std::size_t i = 0; i < _ColNames.size(); ++i)
+            for (std::size_t i = 0; i < ColNames_.size(); ++i)
             {
-                _HeaderMap[_ColNames[i]] = i;
+                HeaderMap_[ColNames_[i]] = i;
             }
         }
 
         std::size_t GetHeaderIndex(const std::string& Header) const
         {
-            auto it = _HeaderMap.find(Header);
-            if (it != _HeaderMap.end())
+            auto it = HeaderMap_.find(Header);
+            if (it != HeaderMap_.end())
             {
                 return it->second;
             }
@@ -156,18 +156,18 @@ namespace Npgs
             std::apply([&](auto&&... Args) -> void
             {
                 Reader.read_header(IgnoreColumn, std::forward<decltype(Args)>(Args)...);
-            }, VectorToTuple(_ColNames));
+            }, VectorToTuple(ColNames_));
         }
 
         void ReadData(io::ignore_column IgnoreColumn)
         {
-            _Data.reserve(std::min<size_t>(1000, std::filesystem::file_size(_Filename) / (ColSize * sizeof(BaseType))));
-            io::CSVReader<ColSize> Reader(_Filename);
+            Data_.reserve(std::min<size_t>(1000, std::filesystem::file_size(Filename_) / (ColSize * sizeof(BaseType))));
+            io::CSVReader<ColSize> Reader(Filename_);
             ReadHeader(Reader, IgnoreColumn);
-            FRowArray Row(_ColNames.size());
+            FRowArray Row(ColNames_.size());
             while (ReadRow(Reader, Row))
             {
-                _Data.push_back(Row);
+                Data_.push_back(Row);
             }
         }
 
@@ -209,9 +209,9 @@ namespace Npgs
         }
 
     private:
-        std::unordered_map<std::string, std::size_t> _HeaderMap;
-        std::string                                  _Filename;
-        std::vector<std::string>                     _ColNames;
-        std::vector<FRowArray>                       _Data;
+        std::unordered_map<std::string, std::size_t> HeaderMap_;
+        std::string                                  Filename_;
+        std::vector<std::string>                     ColNames_;
+        std::vector<FRowArray>                       Data_;
     };
 } // namespace Npgs

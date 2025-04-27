@@ -1,8 +1,3 @@
-#include "Wrappers.h"
-
-#include <type_traits>
-#include <vector>
-
 #include "Engine/Core/Base/Assert.h"
 #include "Engine/Core/Base/Base.h"
 #include "Engine/Utils/Utils.h"
@@ -39,57 +34,57 @@ namespace Npgs
         using ValueType = typename ContainerType::value_type;
         static_assert(std::is_standard_layout_v<ValueType>, "Container value_type must be standard layout type");
 
-        Data.reserve(_AllocationSize / sizeof(ValueType));
-        Data.resize(_AllocationSize  / sizeof(ValueType));
-        return FetchData(0, 0, _AllocationSize, static_cast<void*>(Data.data()));
+        Data.reserve(AllocationSize_ / sizeof(ValueType));
+        Data.resize(AllocationSize_  / sizeof(ValueType));
+        return FetchData(0, 0, AllocationSize_, static_cast<void*>(Data.data()));
     }
 
     NPGS_INLINE const void* FVulkanDeviceMemory::GetMappedDataMemory() const
     {
-        return _MappedDataMemory;
+        return MappedDataMemory_;
     }
 
     NPGS_INLINE void* FVulkanDeviceMemory::GetMappedTargetMemory()
     {
-        return _MappedTargetMemory;
+        return MappedTargetMemory_;
     }
 
     NPGS_INLINE vk::DeviceSize FVulkanDeviceMemory::GetAllocationSize() const
     {
-        return _AllocationSize;
+        return AllocationSize_;
     }
 
     NPGS_INLINE vk::MemoryPropertyFlags FVulkanDeviceMemory::GetMemoryPropertyFlags() const
     {
-        return _MemoryPropertyFlags;
+        return MemoryPropertyFlags_;
     }
 
     NPGS_INLINE bool FVulkanDeviceMemory::IsPereistentlyMapped() const
     {
-        return _bPersistentlyMapped;
+        return bPersistentlyMapped_;
     }
 
     // Wrapper fo vk::Buffer
     // ---------------------
     NPGS_INLINE vk::DeviceSize FVulkanBuffer::GetDeviceAddress() const
     {
-        vk::BufferDeviceAddressInfo AddressInfo(_Handle);
-        return _Device.getBufferAddress(AddressInfo);
+        vk::BufferDeviceAddressInfo AddressInfo(Handle_);
+        return Device_.getBufferAddress(AddressInfo);
     }
 
     NPGS_INLINE VmaAllocator FVulkanBuffer::GetAllocator() const
     {
-        return _Allocator;
+        return Allocator_;
     }
 
     NPGS_INLINE VmaAllocation FVulkanBuffer::GetAllocation() const
     {
-        return _Allocation;
+        return Allocation_;
     }
 
     NPGS_INLINE const VmaAllocationInfo& FVulkanBuffer::GetAllocationInfo() const
     {
-        return _AllocationInfo;
+        return AllocationInfo_;
     }
 
     // Wrapper for vk::DescriptorSet
@@ -97,21 +92,21 @@ namespace Npgs
     NPGS_INLINE void FVulkanDescriptorSet::Write(const vk::ArrayProxy<vk::DescriptorImageInfo>& ImageInfos, vk::DescriptorType Type,
                                                  std::uint32_t BindingPoint, std::uint32_t ArrayElement)
     {
-        vk::WriteDescriptorSet WriteDescriptorSet(_Handle, BindingPoint, ArrayElement, Type, ImageInfos);
+        vk::WriteDescriptorSet WriteDescriptorSet(Handle_, BindingPoint, ArrayElement, Type, ImageInfos);
         Update(WriteDescriptorSet);
     }
 
     NPGS_INLINE void FVulkanDescriptorSet::Write(const vk::ArrayProxy<vk::DescriptorBufferInfo>& BufferInfos, vk::DescriptorType Type,
                                                  std::uint32_t BindingPoint, std::uint32_t ArrayElement)
     {
-        vk::WriteDescriptorSet WriteDescriptorSet(_Handle, BindingPoint, ArrayElement, Type, {}, BufferInfos);
+        vk::WriteDescriptorSet WriteDescriptorSet(Handle_, BindingPoint, ArrayElement, Type, {}, BufferInfos);
         Update(WriteDescriptorSet);
     }
 
     NPGS_INLINE void FVulkanDescriptorSet::Write(const vk::ArrayProxy<vk::BufferView>& BufferViews, vk::DescriptorType Type,
                                                  std::uint32_t BindingPoint, std::uint32_t ArrayElement)
     {
-        vk::WriteDescriptorSet WriteDescriptorSet(_Handle, BindingPoint, ArrayElement, Type, {}, {}, BufferViews);
+        vk::WriteDescriptorSet WriteDescriptorSet(Handle_, BindingPoint, ArrayElement, Type, {}, {}, BufferViews);
         Update(WriteDescriptorSet);
     }
 
@@ -131,24 +126,24 @@ namespace Npgs
     NPGS_INLINE void FVulkanDescriptorSet::Update(const vk::ArrayProxy<vk::WriteDescriptorSet>& Writes,
                                                   const vk::ArrayProxy<vk::CopyDescriptorSet>& Copies)
     {
-        _Device.updateDescriptorSets(Writes, Copies);
+        Device_.updateDescriptorSets(Writes, Copies);
     }
 
     // Wrapper for vk::Image
     // ---------------------
     NPGS_INLINE VmaAllocator FVulkanImage::GetAllocator() const
     {
-        return _Allocator;
+        return Allocator_;
     }
 
     NPGS_INLINE VmaAllocation FVulkanImage::GetAllocation() const
     {
-        return _Allocation;
+        return Allocation_;
     }
 
     NPGS_INLINE const VmaAllocationInfo& FVulkanImage::GetAllocationInfo() const
     {
-        return _AllocationInfo;
+        return AllocationInfo_;
     }
 
     // Wrapper for vk::QueryPool
@@ -159,7 +154,7 @@ namespace Npgs
     {
         try
         {
-            std::vector<DataType> Results = _Device.getQueryPoolResults(_Handle, FirstQuery, QueryCount, DataSize, Stride, Flags).value;
+            std::vector<DataType> Results = Device_.getQueryPoolResults(Handle_, FirstQuery, QueryCount, DataSize, Stride, Flags).value;
             return Results;
         }
         catch (const vk::SystemError& e)
@@ -193,47 +188,47 @@ namespace Npgs
 
     NPGS_INLINE void FVulkanDeviceMemory::SetPersistentMapping(bool bFlag)
     {
-        _bPersistentlyMapped = bFlag;
+        bPersistentlyMapped_ = bFlag;
     }
 
     NPGS_INLINE vk::Result FVulkanBufferMemory::MapMemoryForSubmit(vk::DeviceSize Offset, vk::DeviceSize Size, void*& Target) const
     {
-        return _Memory->MapMemoryForSubmit(Offset, Size, Target);
+        return Memory_->MapMemoryForSubmit(Offset, Size, Target);
     }
 
     NPGS_INLINE vk::Result FVulkanBufferMemory::MapMemoryForFetch(vk::DeviceSize Offset, vk::DeviceSize Size, void*& Data) const
     {
-        return _Memory->MapMemoryForFetch(Offset, Size, Data);
+        return Memory_->MapMemoryForFetch(Offset, Size, Data);
     }
 
     NPGS_INLINE vk::Result FVulkanBufferMemory::UnmapMemory(vk::DeviceSize Offset, vk::DeviceSize Size) const
     {
-        return _Memory->UnmapMemory(Offset, Size);
+        return Memory_->UnmapMemory(Offset, Size);
     }
 
     NPGS_INLINE vk::Result FVulkanBufferMemory::SubmitBufferData(vk::DeviceSize MapOffset, vk::DeviceSize SubmitOffset,
                                                                  vk::DeviceSize Size, const void* Data) const
     {
-        return _Memory->SubmitData(MapOffset, SubmitOffset, Size, Data);
+        return Memory_->SubmitData(MapOffset, SubmitOffset, Size, Data);
     }
 
     NPGS_INLINE vk::Result FVulkanBufferMemory::FetchBufferData(vk::DeviceSize MapOffset, vk::DeviceSize FetchOffset,
                                                                 vk::DeviceSize Size, void* Target) const
     {
-        return _Memory->FetchData(MapOffset, FetchOffset, Size, Target);
+        return Memory_->FetchData(MapOffset, FetchOffset, Size, Target);
     }
 
     template <typename ContainerType>
     requires std::is_class_v<ContainerType>
     NPGS_INLINE vk::Result FVulkanBufferMemory::SubmitBufferData(const ContainerType& Data) const
     {
-        return _Memory->SubmitData(Data);
+        return Memory_->SubmitData(Data);
     }
 
     template <typename ContainerType>
     requires std::is_class_v<ContainerType>
     NPGS_INLINE vk::Result FVulkanBufferMemory::FetchBufferData(ContainerType& Data) const
     {
-        return _Memory->FetchData(Data);
+        return Memory_->FetchData(Data);
     }
 } // namespace Npgs

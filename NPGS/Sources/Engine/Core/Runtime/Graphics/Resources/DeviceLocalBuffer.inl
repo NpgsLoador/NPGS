@@ -1,23 +1,21 @@
-#include "DeviceLocalBuffer.h"
-
 #include "Engine/Core/Base/Base.h"
 
 namespace Npgs
 {
     NPGS_INLINE FDeviceLocalBuffer::operator FVulkanBuffer& ()
     {
-        return _BufferMemory->GetResource();
+        return BufferMemory_->GetResource();
     }
 
     NPGS_INLINE FDeviceLocalBuffer::operator const FVulkanBuffer& () const
     {
-        return _BufferMemory->GetResource();
+        return BufferMemory_->GetResource();
     }
 
     NPGS_INLINE void FDeviceLocalBuffer::UpdateData(const FVulkanCommandBuffer& CommandBuffer, vk::DeviceSize Offset,
                                                     vk::DeviceSize Size, const void* Data) const
     {
-        CommandBuffer->updateBuffer(*_BufferMemory->GetResource(), Offset, Size, Data);
+        CommandBuffer->updateBuffer(*BufferMemory_->GetResource(), Offset, Size, Data);
     }
 
     template <typename ContainerType>
@@ -44,36 +42,36 @@ namespace Npgs
 
     NPGS_INLINE void FDeviceLocalBuffer::EnablePersistentMapping() const
     {
-        _BufferMemory->GetMemory().SetPersistentMapping(true);
+        BufferMemory_->GetMemory().SetPersistentMapping(true);
     }
 
     NPGS_INLINE void FDeviceLocalBuffer::DisablePersistentMapping() const
     {
-        _BufferMemory->GetMemory().SetPersistentMapping(false);
+        BufferMemory_->GetMemory().SetPersistentMapping(false);
     }
 
     NPGS_INLINE FVulkanBuffer& FDeviceLocalBuffer::GetBuffer()
     {
-        return _BufferMemory->GetResource();
+        return BufferMemory_->GetResource();
     }
 
     NPGS_INLINE const FVulkanBuffer& FDeviceLocalBuffer::GetBuffer() const
     {
-        return _BufferMemory->GetResource();
+        return BufferMemory_->GetResource();
     }
 
     NPGS_INLINE FVulkanDeviceMemory& FDeviceLocalBuffer::GetMemory()
     {
-        return _BufferMemory->GetMemory();
+        return BufferMemory_->GetMemory();
     }
 
     NPGS_INLINE const FVulkanDeviceMemory& FDeviceLocalBuffer::GetMemory() const
     {
-        return _BufferMemory->GetMemory();
+        return BufferMemory_->GetMemory();
     }
 
     NPGS_INLINE bool FDeviceLocalBuffer::IsUsingVma() const
     {
-        return _Allocator != nullptr;
+        return Allocator_ != nullptr;
     }
 } // namespace Npgs

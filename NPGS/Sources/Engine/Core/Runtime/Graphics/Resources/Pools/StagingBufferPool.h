@@ -53,11 +53,11 @@ namespace Npgs
         vk::DeviceSize AlignSize(vk::DeviceSize RequestedSize);
 
     private:
-        vk::PhysicalDevice      _PhysicalDevice;
-        vk::Device              _Device;
-        VmaAllocator            _Allocator;
-        VmaAllocationCreateInfo _AllocationCreateInfo;
-        bool                    _bUsingVma{ true };
+        vk::PhysicalDevice      PhysicalDevice_;
+        vk::Device              Device_;
+        VmaAllocator            Allocator_;
+        VmaAllocationCreateInfo AllocationCreateInfo_;
+        bool                    bUsingVma_{ true };
 
         static constexpr std::array kSizeTiers
         {

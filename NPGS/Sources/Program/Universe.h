@@ -45,19 +45,19 @@ namespace Npgs
         using FNodeType = TOctree<Astro::FStellarSystem>::FNodeType;
 
     private:
-        std::mt19937                                    _RandomEngine;
-        std::vector<Astro::FStellarSystem>              _StellarSystems;
-        Util::TUniformIntDistribution<std::uint32_t>    _SeedGenerator;
-        Util::TUniformRealDistribution<>                _CommonGenerator;
-        std::unique_ptr<TOctree<Astro::FStellarSystem>> _Octree;
-        FThreadPool                                     _ThreadPool;
+        std::mt19937                                    RandomEngine_;
+        std::vector<Astro::FStellarSystem>              StellarSystems_;
+        Util::TUniformIntDistribution<std::uint32_t>    SeedGenerator_;
+        Util::TUniformRealDistribution<>                CommonGenerator_;
+        std::unique_ptr<TOctree<Astro::FStellarSystem>> Octree_;
+        FThreadPool*                                    ThreadPool_;
 
-        std::size_t _StarCount;
-        std::size_t _ExtraGiantCount;
-        std::size_t _ExtraMassiveStarCount;
-        std::size_t _ExtraNeutronStarCount;
-        std::size_t _ExtraBlackHoleCount;
-        std::size_t _ExtraMergeStarCount;
-        float       _UniverseAge;
+        std::size_t StarCount_;
+        std::size_t ExtraGiantCount_;
+        std::size_t ExtraMassiveStarCount_;
+        std::size_t ExtraNeutronStarCount_;
+        std::size_t ExtraBlackHoleCount_;
+        std::size_t ExtraMergeStarCount_;
+        float       UniverseAge_;
     };
 } // namespace Npgs

@@ -31,7 +31,7 @@ namespace Npgs
 
     void FImageTracker::FlushImageAllStates(vk::Image Image, const FImageState& ImageState)
     {
-        for (auto& [Key, State] : _ImageStateMap)
+        for (auto& [Key, State] : ImageStateMap_)
         {
             if (std::holds_alternative<vk::Image>(Key))
             {
@@ -53,18 +53,18 @@ namespace Npgs
     FImageTracker::FImageState FImageTracker::GetImageState(vk::Image Image, const vk::ImageSubresourceRange& Range)
     {
         FImageKey ImageKey = std::make_pair(Image, Range);
-        auto it = _ImageStateMap.find(ImageKey);
-        if (it != _ImageStateMap.end())
+        auto it = ImageStateMap_.find(ImageKey);
+        if (it != ImageStateMap_.end())
         {
             return it->second;
         }
 
-        auto ImageIt = _ImageStateMap.find(Image);
-        if (ImageIt != _ImageStateMap.end())
+        auto ImageIt = ImageStateMap_.find(Image);
+        if (ImageIt != ImageStateMap_.end())
         {
             FImageState ImageState = ImageIt->second;
-            _ImageStateMap[ImageKey] = ImageState;
-            _ImageStateMap.erase(ImageIt);
+            ImageStateMap_[ImageKey] = ImageState;
+            ImageStateMap_.erase(ImageIt);
             return ImageState;
         }
 
@@ -74,14 +74,14 @@ namespace Npgs
     vk::ImageMemoryBarrier2 FImageTracker::CreateBarrier(vk::Image Image, const vk::ImageSubresourceRange& Range, FImageState DstState)
     {
         auto SubresourceKey = std::make_pair(Image, Range);
-        auto it = _ImageStateMap.find(SubresourceKey);
-        if (it == _ImageStateMap.end())
+        auto it = ImageStateMap_.find(SubresourceKey);
+        if (it == ImageStateMap_.end())
         {
-            it = _ImageStateMap.find(Image);
+            it = ImageStateMap_.find(Image);
         }
 
         vk::ImageMemoryBarrier2 Barrier;
-        if (it != _ImageStateMap.end())
+        if (it != ImageStateMap_.end())
         {
             Barrier.setSrcStageMask(it->second.StageMask)
                    .setSrcAccessMask(it->second.AccessMask)

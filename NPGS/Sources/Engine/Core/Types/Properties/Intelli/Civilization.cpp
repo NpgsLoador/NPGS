@@ -3,17 +3,17 @@
 namespace Npgs::Intelli
 {
     FStandard::FStandard(const FLifeProperties& LifeProperties, const FCivilizationProperties& CivilizationProperties)
-        : _LifeProperties(LifeProperties), _CivilizationProperties(CivilizationProperties)
+        : LifeProperties_(LifeProperties), CivilizationProperties_(CivilizationProperties)
     {
     }
 
-    const float FStandard::_kNull                       = 0.0f;
-    const float FStandard::_kInitialGeneralIntelligence = 1.0f;
-    const float FStandard::_kUrgesellschaft             = 2.0f;
-    const float FStandard::_kEarlyIndustrielle          = 3.0f;
-    const float FStandard::_kSteamAge                   = 4.0f;
-    const float FStandard::_kElectricAge                = 5.0f;
-    const float FStandard::_kAtomicAge                  = 6.0f;
-    const float FStandard::_kDigitalAge                 = 7.0f;
-    const float FStandard::_kEarlyAsiAge                = 8.0f;
+    const float FStandard::kNull_                       = 0.0f;
+    const float FStandard::kInitialGeneralIntelligence_ = 1.0f;
+    const float FStandard::kUrgesellschaft_             = 2.0f;
+    const float FStandard::kEarlyIndustrielle_          = 3.0f;
+    const float FStandard::kSteamAge_                   = 4.0f;
+    const float FStandard::kElectricAge_                = 5.0f;
+    const float FStandard::kAtomicAge_                  = 6.0f;
+    const float FStandard::kDigitalAge_                 = 7.0f;
+    const float FStandard::kEarlyAsiAge_                = 8.0f;
 } // namespace Npgs::Intelli

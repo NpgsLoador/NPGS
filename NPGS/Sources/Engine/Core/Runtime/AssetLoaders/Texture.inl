@@ -1,38 +1,35 @@
-#include "Texture.h"
-
 #include "Engine/Core/Base/Base.h"
-#include "Engine/Core/Runtime/Graphics/Vulkan/Context.h"
 
 namespace Npgs
 {
     NPGS_INLINE vk::DescriptorImageInfo FTexture::CreateDescriptorImageInfo(const FVulkanSampler& Sampler) const
     {
-        return { *Sampler, **_ImageView, vk::ImageLayout::eShaderReadOnlyOptimal };
+        return { *Sampler, **ImageView_, vk::ImageLayout::eShaderReadOnlyOptimal };
     }
 
     NPGS_INLINE vk::DescriptorImageInfo FTexture::CreateDescriptorImageInfo(const vk::Sampler& Sampler) const
     {
-        return { Sampler, **_ImageView, vk::ImageLayout::eShaderReadOnlyOptimal };
+        return { Sampler, **ImageView_, vk::ImageLayout::eShaderReadOnlyOptimal };
     }
 
     NPGS_INLINE FVulkanImage& FTexture::GetImage()
     {
-        return _ImageMemory->GetResource();
+        return ImageMemory_->GetResource();
     }
 
     NPGS_INLINE const FVulkanImage& FTexture::GetImage() const
     {
-        return _ImageMemory->GetResource();
+        return ImageMemory_->GetResource();
     }
 
     NPGS_INLINE FVulkanImageView& FTexture::GetImageView()
     {
-        return *_ImageView;
+        return *ImageView_;
     }
 
     NPGS_INLINE const FVulkanImageView& FTexture::GetImageView() const
     {
-        return *_ImageView;
+        return *ImageView_;
     }
 
     NPGS_INLINE vk::SamplerCreateInfo FTexture::CreateDefaultSamplerCreateInfo(FVulkanContext* VulkanContext)
@@ -61,31 +58,31 @@ namespace Npgs
 
     NPGS_INLINE std::uint32_t FTexture2D::GetImageWidth() const
     {
-        return _ImageExtent.width;
+        return ImageExtent_.width;
     }
 
     NPGS_INLINE std::uint32_t FTexture2D::GetImageHeight() const
     {
-        return _ImageExtent.height;
+        return ImageExtent_.height;
     }
 
     NPGS_INLINE vk::Extent2D FTexture2D::GetImageExtent() const
     {
-        return _ImageExtent;
+        return ImageExtent_;
     }
 
     NPGS_INLINE std::uint32_t FTextureCube::GetImageWidth() const
     {
-        return _ImageExtent.width;
+        return ImageExtent_.width;
     }
 
     NPGS_INLINE std::uint32_t FTextureCube::GetImageHeight() const
     {
-        return _ImageExtent.height;
+        return ImageExtent_.height;
     }
 
     NPGS_INLINE vk::Extent2D FTextureCube::GetImageExtent() const
     {
-        return _ImageExtent;
+        return ImageExtent_;
     }
 } // namespace Npgs

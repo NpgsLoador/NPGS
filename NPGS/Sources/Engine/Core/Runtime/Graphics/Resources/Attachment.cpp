@@ -6,8 +6,8 @@
 namespace Npgs
 {
     FAttachment::FAttachment(FVulkanContext* VulkanContext, VmaAllocator Allocator)
-        : _VulkanContext(VulkanContext)
-        , _Allocator(Allocator)
+        : VulkanContext_(VulkanContext)
+        , Allocator_(Allocator)
     {
     }
 
@@ -74,28 +74,28 @@ namespace Npgs
 
         if (AllocationCreateInfo != nullptr)
         {
-            _ImageMemory = std::make_unique<FVulkanImageMemory>(
-                _VulkanContext->GetDevice(), _Allocator, *AllocationCreateInfo, ImageCreateInfo);
+            ImageMemory_ = std::make_unique<FVulkanImageMemory>(
+                VulkanContext_->GetDevice(), Allocator_, *AllocationCreateInfo, ImageCreateInfo);
         }
         else
         {
-            _ImageMemory = std::make_unique<FVulkanImageMemory>(
-                _VulkanContext->GetDevice(), _VulkanContext->GetPhysicalDeviceProperties(),
-                _VulkanContext->GetPhysicalDeviceMemoryProperties(), ImageCreateInfo, MemoryPropertyFlags);
+            ImageMemory_ = std::make_unique<FVulkanImageMemory>(
+                VulkanContext_->GetDevice(), VulkanContext_->GetPhysicalDeviceProperties(),
+                VulkanContext_->GetPhysicalDeviceMemoryProperties(), ImageCreateInfo, MemoryPropertyFlags);
         }
 
-        if (!_ImageMemory->IsValid())
+        if (!ImageMemory_->IsValid())
         {
             return vk::Result::eErrorInitializationFailed;
         }
 
         vk::ImageSubresourceRange SubresourceRange(vk::ImageAspectFlagBits::eColor, 0, 1, 0, LayerCount);
-        _ImageView = std::make_unique<FVulkanImageView>(
-            _VulkanContext->GetDevice(), _ImageMemory->GetResource(),
+        ImageView_ = std::make_unique<FVulkanImageView>(
+            VulkanContext_->GetDevice(), ImageMemory_->GetResource(),
             LayerCount > 1 ? vk::ImageViewType::e2DArray : vk::ImageViewType::e2D,
             Format, vk::ComponentMapping(), SubresourceRange);
 
-        if (!_ImageView->IsValid())
+        if (!ImageView_->IsValid())
         {
             return vk::Result::eErrorInitializationFailed;
         }
@@ -157,17 +157,17 @@ namespace Npgs
 
         if (AllocationCreateInfo != nullptr)
         {
-            _ImageMemory = std::make_unique<FVulkanImageMemory>(
-                _VulkanContext->GetDevice(), _Allocator, *AllocationCreateInfo, ImageCreateInfo);
+            ImageMemory_ = std::make_unique<FVulkanImageMemory>(
+                VulkanContext_->GetDevice(), Allocator_, *AllocationCreateInfo, ImageCreateInfo);
         }
         else
         {
-            _ImageMemory = std::make_unique<FVulkanImageMemory>(
-                _VulkanContext->GetDevice(), _VulkanContext->GetPhysicalDeviceProperties(),
-                _VulkanContext->GetPhysicalDeviceMemoryProperties(), ImageCreateInfo, MemoryPropertyFlags);
+            ImageMemory_ = std::make_unique<FVulkanImageMemory>(
+                VulkanContext_->GetDevice(), VulkanContext_->GetPhysicalDeviceProperties(),
+                VulkanContext_->GetPhysicalDeviceMemoryProperties(), ImageCreateInfo, MemoryPropertyFlags);
         }
 
-        if (!_ImageMemory->IsValid())
+        if (!ImageMemory_->IsValid())
         {
             return vk::Result::eErrorInitializationFailed;
         }
@@ -183,12 +183,12 @@ namespace Npgs
         }
 
         vk::ImageSubresourceRange SubresourceRange(AspectFlags, 0, 1, 0, LayerCount);
-        _ImageView = std::make_unique<FVulkanImageView>(
-            _VulkanContext->GetDevice(), _ImageMemory->GetResource(),
+        ImageView_ = std::make_unique<FVulkanImageView>(
+            VulkanContext_->GetDevice(), ImageMemory_->GetResource(),
             LayerCount > 1 ? vk::ImageViewType::e2DArray : vk::ImageViewType::e2D,
             Format, vk::ComponentMapping(), SubresourceRange);
 
-        if (!_ImageView->IsValid())
+        if (!ImageView_->IsValid())
         {
             return vk::Result::eErrorInitializationFailed;
         }

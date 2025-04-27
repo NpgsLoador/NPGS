@@ -120,7 +120,7 @@ namespace Npgs
     }
 
     FShader::FShader(FVulkanContext* VulkanContext, const std::vector<std::string>& ShaderFiles, const FResourceInfo& ResourceInfo)
-        : _VulkanContext(VulkanContext)
+        : VulkanContext_(VulkanContext)
     {
         InitializeShaders(ShaderFiles, ResourceInfo);
         CreateDescriptorSetLayouts();
@@ -128,12 +128,12 @@ namespace Npgs
     }
 
     FShader::FShader(FShader&& Other) noexcept
-        : _VulkanContext(std::exchange(Other._VulkanContext, nullptr))
-        , _ReflectionInfo(std::exchange(Other._ReflectionInfo, {}))
-        , _ShaderModules(std::move(Other._ShaderModules))
-        , _PushConstantOffsetsMap(std::move(Other._PushConstantOffsetsMap))
-        , _DescriptorSetLayoutsMap(std::move(Other._DescriptorSetLayoutsMap))
-        , _DescriptorSetInfos(std::move(Other._DescriptorSetInfos))
+        : VulkanContext_(std::exchange(Other.VulkanContext_, nullptr))
+        , ReflectionInfo_(std::exchange(Other.ReflectionInfo_, {}))
+        , ShaderModules_(std::move(Other.ShaderModules_))
+        , PushConstantOffsetsMap_(std::move(Other.PushConstantOffsetsMap_))
+        , DescriptorSetLayoutsMap_(std::move(Other.DescriptorSetLayoutsMap_))
+        , DescriptorSetInfos_(std::move(Other.DescriptorSetInfos_))
     {
     }
 
@@ -141,12 +141,12 @@ namespace Npgs
     {
         if (this != &Other)
         {
-            _VulkanContext           = std::exchange(Other._VulkanContext, nullptr);
-            _ReflectionInfo          = std::exchange(Other._ReflectionInfo, {});
-            _ShaderModules           = std::move(Other._ShaderModules);
-            _PushConstantOffsetsMap  = std::move(Other._PushConstantOffsetsMap);
-            _DescriptorSetLayoutsMap = std::move(Other._DescriptorSetLayoutsMap);
-            _DescriptorSetInfos      = std::move(Other._DescriptorSetInfos);
+            VulkanContext_           = std::exchange(Other.VulkanContext_, nullptr);
+            ReflectionInfo_          = std::exchange(Other.ReflectionInfo_, {});
+            ShaderModules_           = std::move(Other.ShaderModules_);
+            PushConstantOffsetsMap_  = std::move(Other.PushConstantOffsetsMap_);
+            DescriptorSetLayoutsMap_ = std::move(Other.DescriptorSetLayoutsMap_);
+            DescriptorSetInfos_      = std::move(Other.DescriptorSetInfos_);
         }
 
         return *this;
@@ -155,7 +155,7 @@ namespace Npgs
     std::vector<vk::PipelineShaderStageCreateInfo> FShader::CreateShaderStageCreateInfo() const
     {
         std::vector<vk::PipelineShaderStageCreateInfo> ShaderStageCreateInfos;
-        for (const auto& [Stage, ShaderModule] : _ShaderModules)
+        for (const auto& [Stage, ShaderModule] : ShaderModules_)
         {
             vk::PipelineShaderStageCreateInfo ShaderStageCreateInfo({}, Stage, *ShaderModule, "main");
             ShaderStageCreateInfos.push_back(std::move(ShaderStageCreateInfo));
@@ -167,7 +167,7 @@ namespace Npgs
     std::vector<vk::DescriptorSetLayout> FShader::GetDescriptorSetLayouts() const
     {
         std::vector<vk::DescriptorSetLayout> NativeTypeLayouts;
-        for (const auto& [Set, Layout] : _DescriptorSetLayoutsMap)
+        for (const auto& [Set, Layout] : DescriptorSetLayoutsMap_)
         {
             NativeTypeLayouts.push_back(*Layout);
         }
@@ -186,8 +186,8 @@ namespace Npgs
             }
 
             vk::ShaderModuleCreateInfo ShaderModuleCreateInfo({}, ShaderInfo.Code);
-            FVulkanShaderModule ShaderModule(_VulkanContext->GetDevice(), ShaderModuleCreateInfo);
-            _ShaderModules.emplace_back(ShaderInfo.Stage, std::move(ShaderModule));
+            FVulkanShaderModule ShaderModule(VulkanContext_->GetDevice(), ShaderModuleCreateInfo);
+            ShaderModules_.emplace_back(ShaderInfo.Stage, std::move(ShaderModule));
 
             ReflectShader(ShaderInfo, ResourceInfo);
         }
@@ -244,9 +244,9 @@ namespace Npgs
             std::size_t   BufferSize  = Reflection->get_declared_struct_size(Type);
             std::uint32_t TotalOffset = 0;
 
-            if (_ReflectionInfo.PushConstants.size() > 0)
+            if (ReflectionInfo_.PushConstants.size() > 0)
             {
-                TotalOffset = _ReflectionInfo.PushConstants.back().offset + _ReflectionInfo.PushConstants.back().size;
+                TotalOffset = ReflectionInfo_.PushConstants.back().offset + ReflectionInfo_.PushConstants.back().size;
             }
 
             const auto& PushConstantNames = ResourceInfo.PushConstantInfos.at(ShaderInfo.Stage);
@@ -255,13 +255,13 @@ namespace Npgs
                 const std::string& MemberName   = PushConstantNames[i];
                 std::uint32_t      MemberOffset = Reflection->get_member_decoration(Type.self, i, spv::DecorationOffset);
 
-                _PushConstantOffsetsMap[MemberName] = MemberOffset;
+                PushConstantOffsetsMap_[MemberName] = MemberOffset;
                 NpgsCoreTrace("  Member \"{}\" at offset={}", MemberName, MemberOffset);
             }
 
             NpgsCoreTrace("Push Constant \"{}\" size={} bytes, offset={}", PushConstant.name, BufferSize - TotalOffset, TotalOffset);
             vk::PushConstantRange PushConstantRange(ShaderInfo.Stage, TotalOffset, static_cast<std::uint32_t>(BufferSize - TotalOffset));
-            _ReflectionInfo.PushConstants.push_back(std::move(PushConstantRange));
+            ReflectionInfo_.PushConstants.push_back(std::move(PushConstantRange));
         }
 
         std::unordered_map<std::uint64_t, bool> DynemicBufferMap;
@@ -436,7 +436,7 @@ namespace Npgs
                     Stride = GetTypeSize(Type.basetype) * Type.columns * Type.vecsize;
                     for (std::uint32_t Column = 0; Column != Type.columns; ++Column)
                     {
-                        _ReflectionInfo.VertexInputAttributes.emplace_back(
+                        ReflectionInfo_.VertexInputAttributes.emplace_back(
                             Location + Column, Binding, GetVectorFormat(Type.basetype, Type.vecsize),
                             Offset + GetTypeSize(Type.basetype) * Column * Type.vecsize);
                     }
@@ -446,7 +446,7 @@ namespace Npgs
                 }
                 else
                 {
-                    _ReflectionInfo.VertexInputAttributes.emplace_back(
+                    ReflectionInfo_.VertexInputAttributes.emplace_back(
                         Location, Binding, GetVectorFormat(Type.basetype, Type.vecsize), Offset);
 
                     NpgsCoreTrace("Vertex Attribute \"{}\" at location={}, binding={}, offset={}, stride={}, rate={}",
@@ -459,7 +459,7 @@ namespace Npgs
                 }
             }
 
-            _ReflectionInfo.VertexInputBindings =
+            ReflectionInfo_.VertexInputBindings =
                 std::vector<vk::VertexInputBindingDescription>(UniqueBindings.begin(), UniqueBindings.end());
         }
 
@@ -468,10 +468,10 @@ namespace Npgs
 
     void FShader::AddDescriptorSetBindings(std::uint32_t Set, vk::DescriptorSetLayoutBinding& LayoutBinding)
     {
-        auto it = _ReflectionInfo.DescriptorSetBindings.find(Set);
-        if (it == _ReflectionInfo.DescriptorSetBindings.end())
+        auto it = ReflectionInfo_.DescriptorSetBindings.find(Set);
+        if (it == ReflectionInfo_.DescriptorSetBindings.end())
         {
-            _ReflectionInfo.DescriptorSetBindings[Set].push_back(std::move(LayoutBinding));
+            ReflectionInfo_.DescriptorSetBindings[Set].push_back(std::move(LayoutBinding));
             return;
         }
 
@@ -497,13 +497,13 @@ namespace Npgs
 
     void FShader::CreateDescriptorSetLayouts()
     {
-        if (_ReflectionInfo.DescriptorSetBindings.empty())
+        if (ReflectionInfo_.DescriptorSetBindings.empty())
         {
             return;
         }
 
         std::vector<vk::ShaderStageFlags> Stages;
-        for (auto& [Set, Bindings] : _ReflectionInfo.DescriptorSetBindings)
+        for (auto& [Set, Bindings] : ReflectionInfo_.DescriptorSetBindings)
         {
             Stages.clear();
             for (const auto& Binding : Bindings)
@@ -523,8 +523,8 @@ namespace Npgs
             }
 
             vk::DescriptorSetLayoutCreateInfo LayoutCreateInfo(vk::DescriptorSetLayoutCreateFlagBits::eDescriptorBufferEXT, Bindings);
-            FVulkanDescriptorSetLayout Layout(_VulkanContext->GetDevice(), LayoutCreateInfo);
-            _DescriptorSetLayoutsMap.emplace(Set, std::move(Layout));
+            FVulkanDescriptorSetLayout Layout(VulkanContext_->GetDevice(), LayoutCreateInfo);
+            DescriptorSetLayoutsMap_.emplace(Set, std::move(Layout));
 
             NpgsCoreTrace("Created descriptor set layout for set {} with {} bindings", Set, Bindings.size());
         }
@@ -532,19 +532,19 @@ namespace Npgs
 
     void FShader::GenerateDescriptorInfos()
     {
-        if (_DescriptorSetLayoutsMap.empty())
+        if (DescriptorSetLayoutsMap_.empty())
         {
             return;
         }
 
-        vk::Device Device = _VulkanContext->GetDevice();
+        vk::Device Device = VulkanContext_->GetDevice();
 
-        for (const auto& [Set, Layout] : _DescriptorSetLayoutsMap)
+        for (const auto& [Set, Layout] : DescriptorSetLayoutsMap_)
         {
             vk::DeviceSize LayoutSize = Device.getDescriptorSetLayoutSizeEXT(*Layout);
             FDescriptorSetInfo SetInfo{ .Set = Set, .Size = LayoutSize };
 
-            const auto& Bindings = _ReflectionInfo.DescriptorSetBindings[Set];
+            const auto& Bindings = ReflectionInfo_.DescriptorSetBindings[Set];
             for (const auto& Binding : Bindings)
             {
                 FDescriptorBindingInfo BindingInfo
@@ -558,7 +558,7 @@ namespace Npgs
                 SetInfo.Bindings.push_back(std::move(BindingInfo));
             }
 
-            _DescriptorSetInfos[Set] = std::move(SetInfo);
+            DescriptorSetInfos_[Set] = std::move(SetInfo);
         }
     }
 } // namespace Npgs

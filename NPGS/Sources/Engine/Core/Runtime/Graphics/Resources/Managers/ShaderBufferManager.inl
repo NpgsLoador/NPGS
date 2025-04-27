@@ -1,5 +1,3 @@
-#include "ShaderBufferManager.h"
-
 #include <utility>
 
 #include "Engine/Core/Base/Base.h"
@@ -20,8 +18,8 @@ namespace Npgs
         FDataBufferInfo BufferInfo;
         BufferInfo.CreateInfo = DataBufferCreateInfo;
 
-        vk::DeviceSize MinUniformAlignment = _VulkanContext->GetPhysicalDeviceProperties().limits.minUniformBufferOffsetAlignment;
-        vk::DeviceSize MinStorageAlignment = _VulkanContext->GetPhysicalDeviceProperties().limits.minStorageBufferOffsetAlignment;
+        vk::DeviceSize MinUniformAlignment = VulkanContext_->GetPhysicalDeviceProperties().limits.minUniformBufferOffsetAlignment;
+        vk::DeviceSize MinStorageAlignment = VulkanContext_->GetPhysicalDeviceProperties().limits.minStorageBufferOffsetAlignment;
         StructType BufferStruct{};
         Util::ForEachField(BufferStruct, [&](const auto& Field, std::size_t Index)
         {
@@ -61,11 +59,11 @@ namespace Npgs
             if (AllocationCreateInfo != nullptr)
             {
                 vk::BufferCreateInfo BufferCreateInfo({}, BufferInfo.Size, BufferUsage | vk::BufferUsageFlagBits::eTransferDst);
-                BufferInfo.Buffers.emplace_back(_VulkanContext, _Allocator, *AllocationCreateInfo, BufferCreateInfo);
+                BufferInfo.Buffers.emplace_back(VulkanContext_, Allocator_, *AllocationCreateInfo, BufferCreateInfo);
             }
             else
             {
-                BufferInfo.Buffers.emplace_back(_VulkanContext, BufferInfo.Size, BufferUsage);
+                BufferInfo.Buffers.emplace_back(VulkanContext_, BufferInfo.Size, BufferUsage);
             }
 
             StructType EmptyData{};
@@ -73,25 +71,25 @@ namespace Npgs
             BufferInfo.Buffers[i].CopyData(0, 0, BufferInfo.Size, &EmptyData);
         }
 
-        _DataBuffers.emplace(DataBufferCreateInfo.Name, std::move(BufferInfo));
+        DataBuffers_.emplace(DataBufferCreateInfo.Name, std::move(BufferInfo));
     }
 
     NPGS_INLINE void FShaderBufferManager::RemoveDataBuffer(const std::string& Name)
     {
-        auto it = _DataBuffers.find(Name);
-        if (it == _DataBuffers.end())
+        auto it = DataBuffers_.find(Name);
+        if (it == DataBuffers_.end())
         {
             return;
         }
 
-        _DataBuffers.erase(it);
+        DataBuffers_.erase(it);
     }
 
     template <typename StructType>
     requires std::is_class_v<StructType>
     inline void FShaderBufferManager::UpdateDataBuffers(const std::string& Name, const StructType& Data)
     {
-        auto& BufferInfo = _DataBuffers.at(Name);
+        auto& BufferInfo = DataBuffers_.at(Name);
         for (std::uint32_t i = 0; i != Config::Graphics::kMaxFrameInFlight; ++i)
         {
             BufferInfo.Buffers[i].CopyData(0, 0, BufferInfo.Size, &Data);
@@ -102,7 +100,7 @@ namespace Npgs
     requires std::is_class_v<StructType>
     inline void FShaderBufferManager::UpdateDataBuffer(std::uint32_t FrameIndex, const std::string& Name, const StructType& Data)
     {
-        auto& BufferInfo = _DataBuffers.at(Name);
+        auto& BufferInfo = DataBuffers_.at(Name);
         BufferInfo.Buffers[FrameIndex].CopyData(0, 0, BufferInfo.Size, &Data);
     }
 
@@ -110,7 +108,7 @@ namespace Npgs
     NPGS_INLINE std::vector<FShaderBufferManager::TUpdater<FieldType>>
     FShaderBufferManager::GetFieldUpdaters(const std::string& BufferName, const std::string& FieldName) const
     {
-        auto& BufferInfo = _DataBuffers.at(BufferName);
+        auto& BufferInfo = DataBuffers_.at(BufferName);
         std::vector<TUpdater<FieldType>> Updaters;
         for (std::uint32_t i = 0; i != Config::Graphics::kMaxFrameInFlight; ++i)
         {
@@ -124,7 +122,7 @@ namespace Npgs
     NPGS_INLINE FShaderBufferManager::TUpdater<FieldType>
     FShaderBufferManager::GetFieldUpdater(std::uint32_t FrameIndex, const std::string& BufferName, const std::string& FieldName) const
     {
-        auto& BufferInfo = _DataBuffers.at(BufferName);
+        auto& BufferInfo = DataBuffers_.at(BufferName);
         return TUpdater<FieldType>(BufferInfo.Buffers[FrameIndex], BufferInfo.Fields.at(FieldName).Offset, BufferInfo.Fields.at(FieldName).Size);
     }
 
@@ -144,32 +142,32 @@ namespace Npgs
     NPGS_INLINE const FDeviceLocalBuffer&
     FShaderBufferManager::GetDataBuffer(std::uint32_t FrameIndex, const std::string& BufferName)
     {
-        auto& BufferInfo = _DataBuffers.at(BufferName);
+        auto& BufferInfo = DataBuffers_.at(BufferName);
         return BufferInfo.Buffers[FrameIndex];
     }
 
     NPGS_INLINE void FShaderBufferManager::RemoveDescriptorBuffer(const std::string& Name)
     {
-        auto it = _DescriptorBuffers.find(Name);
-        if (it == _DescriptorBuffers.end())
+        auto it = DescriptorBuffers_.find(Name);
+        if (it == DescriptorBuffers_.end())
         {
             return;
         }
 
-        _DescriptorBuffers.erase(it);
+        DescriptorBuffers_.erase(it);
     }
 
     NPGS_INLINE vk::DeviceSize
     FShaderBufferManager::GetDescriptorBindingOffset(const std::string& BufferName, std::uint32_t Set, std::uint32_t Binding) const
     {
         auto Pair = std::make_pair(Set, Binding);
-        return _OffsetsMap.at(BufferName).at(Pair);
+        return OffsetsMap_.at(BufferName).at(Pair);
     }
 
     NPGS_INLINE const FDeviceLocalBuffer&
     FShaderBufferManager::GetDescriptorBuffer(std::uint32_t FrameIndex, const std::string& BufferName)
     {
-        auto& BufferInfo = _DescriptorBuffers.at(BufferName);
+        auto& BufferInfo = DescriptorBuffers_.at(BufferName);
         return BufferInfo.Buffers[FrameIndex];
     }
 } // namespace Npgs

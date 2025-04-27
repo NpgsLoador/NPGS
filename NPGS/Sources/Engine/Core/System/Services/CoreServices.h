@@ -36,9 +36,9 @@ namespace Npgs
         FThreadPool* GetThreadPool() const;
 
     private:
-        std::unique_ptr<FVulkanContext> _VulkanContext;
-        std::unique_ptr<FAssetManager>  _AssetManager;
-        std::unique_ptr<FThreadPool>    _ThreadPool;
+        std::unique_ptr<FVulkanContext> VulkanContext_;
+        std::unique_ptr<FAssetManager>  AssetManager_;
+        std::unique_ptr<FThreadPool>    ThreadPool_;
     };
 } // namespace Npgs
 

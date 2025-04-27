@@ -38,13 +38,13 @@ namespace Npgs
         void GenerateCivilizationDetails(const Astro::AStar* Star, float PoyntingVector, Astro::APlanet* Planet);
 
     private:
-        std::mt19937                     _RandomEngine;
-        Util::TUniformRealDistribution<> _CommonGenerator;
-        Util::TBernoulliDistribution<>   _AsiFiltedProbability;
-        Util::TBernoulliDistribution<>   _DestroyedByDisasterProbability;
-        Util::TBernoulliDistribution<>   _LifeOccurrenceProbability;
+        std::mt19937                     RandomEngine_;
+        Util::TUniformRealDistribution<> CommonGenerator_;
+        Util::TBernoulliDistribution<>   AsiFiltedProbability_;
+        Util::TBernoulliDistribution<>   DestroyedByDisasterProbability_;
+        Util::TBernoulliDistribution<>   LifeOccurrenceProbability_;
 
-        static const std::array<float, 7> _kProbabilityListForCenoziocEra;
-        static const std::array<float, 7> _kProbabilityListForSatTeeTouyButAsi;
+        static const std::array<float, 7> kProbabilityListForCenoziocEra_;
+        static const std::array<float, 7> kProbabilityListForSatTeeTouyButAsi_;
     };
 } // namespace Npgs

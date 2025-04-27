@@ -184,8 +184,8 @@ namespace Npgs::Astro
         static std::string SpecialMarkToString(FStellarClass::ESpecialMark SpecialMark);
 
     private:
-        std::uint64_t _SpectralType{};
-        EStellarType  _StellarType;
+        std::uint64_t SpectralType_{};
+        EStellarType  StellarType_;
     };
 } // namespace Npgs::Astro
 

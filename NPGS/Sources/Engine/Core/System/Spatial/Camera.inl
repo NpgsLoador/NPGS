@@ -1,80 +1,79 @@
-#include "Camera.h"
-
 #include <algorithm>
 #include <glm/gtc/matrix_transform.hpp>
+
 #include "Engine/Core/Base/Base.h"
 
 namespace Npgs
 {
     NPGS_INLINE void FCamera::AlignCamera()
     {
-        _bCameraAligned = false;
+        bCameraAligned_ = false;
     }
 
     NPGS_INLINE void FCamera::ProcessMouseScroll(double OffsetY)
     {
-        float SpeedFactor = 0.1f * _Speed;
-        _Speed += static_cast<float>(OffsetY * SpeedFactor);
-        _Speed = std::max(0.0f, _Speed);
+        float SpeedFactor = 0.1f * Speed_;
+        Speed_ += static_cast<float>(OffsetY * SpeedFactor);
+        Speed_ = std::max(0.0f, Speed_);
     }
 
     NPGS_INLINE void FCamera::SetOrientation(glm::quat Orientation)
     {
-        _Orientation = Orientation;
+        Orientation_ = Orientation;
     }
 
     NPGS_INLINE glm::quat FCamera::GetOrientation() const
     {
-        return _Orientation;
+        return Orientation_;
     }
 
     NPGS_INLINE glm::mat4x4 FCamera::GetViewMatrix() const
     {
-        return glm::lookAt(_Position, _Position + _Front, _Up);
+        return glm::lookAt(Position_, Position_ + Front_, Up_);
     }
 
     NPGS_INLINE glm::mat4x4 FCamera::GetProjectionMatrix(float WindowAspect, float Near) const
     {
-        glm::mat4x4 Matrix = glm::infinitePerspective(glm::radians(_Zoom), WindowAspect, Near);
+        glm::mat4x4 Matrix = glm::infinitePerspective(glm::radians(Zoom_), WindowAspect, Near);
         Matrix[1][1] *= -1;
         return Matrix;
     }
 
     NPGS_INLINE void FCamera::SetOrbitTarget(glm::vec3 Target)
     {
-        _OrbitTarget = Target;
-        _OrbitRadius = glm::length(Target - _Position);
+        OrbitTarget_ = Target;
+        OrbitRadius_ = glm::length(Target - Position_);
 
         UpdateVectors();
     }
 
     NPGS_INLINE void FCamera::SetOrbitAxis(glm::vec3 Axis)
     {
-        _OrbitAxis = Axis;
+        OrbitAxis_ = Axis;
     }
 
     NPGS_INLINE void FCamera::SetTargetOffset(glm::vec2 Offset)
     {
-        _TargetOffset = Offset;
+        TargetOffset_ = Offset;
     }
 
     NPGS_INLINE void FCamera::SetZoom(float Zoom)
     {
-        _Zoom = Zoom;
+        Zoom_ = Zoom;
     }
 
     NPGS_INLINE void FCamera::SetMode(EMode Mode)
     {
-        _Mode = Mode;
+        Mode_ = Mode;
     }
 
     NPGS_INLINE float FCamera::GetZoom() const
     {
-        return _Zoom;
+        return Zoom_;
     }
 
     NPGS_INLINE FCamera::EMode FCamera::GetMode() const
     {
-        return _Mode;
+        return Mode_;
     }
 } // namespace Npgs

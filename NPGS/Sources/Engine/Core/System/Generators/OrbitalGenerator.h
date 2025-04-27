@@ -91,21 +91,21 @@ namespace Npgs
         void CalculateOrbitalPeriods(std::vector<std::unique_ptr<Astro::FOrbit>>& Orbits);
 
     private:
-        std::mt19937                                  _RandomEngine;
-        std::array<Util::TBernoulliDistribution<>, 2> _RingsProbabilities;
-        Util::TNormalDistribution<>                   _BinaryPeriodDistribution;
-        Util::TUniformRealDistribution<>              _CommonGenerator;
-        Util::TBernoulliDistribution<>                _AsteroidBeltProbability;
-        Util::TBernoulliDistribution<>                _MigrationProbability;
-        Util::TBernoulliDistribution<>                _ScatteringProbability;
-        Util::TBernoulliDistribution<>                _WalkInProbability;
+        std::mt19937                                  RandomEngine_;
+        std::array<Util::TBernoulliDistribution<>, 2> RingsProbabilities_;
+        Util::TNormalDistribution<>                   BinaryPeriodDistribution_;
+        Util::TUniformRealDistribution<>              CommonGenerator_;
+        Util::TBernoulliDistribution<>                AsteroidBeltProbability_;
+        Util::TBernoulliDistribution<>                MigrationProbability_;
+        Util::TBernoulliDistribution<>                ScatteringProbability_;
+        Util::TBernoulliDistribution<>                WalkInProbability_;
 
-        std::unique_ptr<FCivilizationGenerator> _CivilizationGenerator;
+        std::unique_ptr<FCivilizationGenerator>       CivilizationGenerator_;
 
-        float _AsteroidUpperLimit;
-        float _CoilTemperatureLimit;
-        float _RingsParentLowerLimit;
-        float _UniverseAge;
-        bool  _bContainUltravioletHabitableZone;
+        float                                         AsteroidUpperLimit_;
+        float                                         CoilTemperatureLimit_;
+        float                                         RingsParentLowerLimit_;
+        float                                         UniverseAge_;
+        bool                                          bContainUltravioletHabitableZone_;
     };
 } // namespace Npgs

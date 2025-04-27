@@ -11,8 +11,8 @@
 namespace Npgs
 {
     FDeviceLocalBuffer::FDeviceLocalBuffer(FVulkanContext* VulkanContext, vk::DeviceSize Size, vk::BufferUsageFlags Usage)
-        : _VulkanContext(VulkanContext)
-        , _Allocator(nullptr)
+        : VulkanContext_(VulkanContext)
+        , Allocator_(nullptr)
     {
         CreateBuffer(Size, Usage);
     }
@@ -20,16 +20,16 @@ namespace Npgs
     FDeviceLocalBuffer::FDeviceLocalBuffer(FVulkanContext* VulkanContext, VmaAllocator Allocator,
                                            const VmaAllocationCreateInfo& AllocationCreateInfo,
                                            const vk::BufferCreateInfo& BufferCreateInfo)
-        : _VulkanContext(VulkanContext)
-        , _Allocator(Allocator)
+        : VulkanContext_(VulkanContext)
+        , Allocator_(Allocator)
     {
         CreateBuffer(AllocationCreateInfo, BufferCreateInfo);
     }
 
     FDeviceLocalBuffer::FDeviceLocalBuffer(FDeviceLocalBuffer&& Other) noexcept
-        : _VulkanContext(std::exchange(Other._VulkanContext, nullptr))
-        , _BufferMemory(std::move(Other._BufferMemory))
-        , _Allocator(std::exchange(Other._Allocator, nullptr))
+        : VulkanContext_(std::exchange(Other.VulkanContext_, nullptr))
+        , BufferMemory_(std::move(Other.BufferMemory_))
+        , Allocator_(std::exchange(Other.Allocator_, nullptr))
     {
     }
 
@@ -37,9 +37,9 @@ namespace Npgs
     {
         if (this != &Other)
         {
-            _VulkanContext = std::exchange(Other._VulkanContext, nullptr);
-            _BufferMemory  = std::move(Other._BufferMemory);
-            _Allocator     = std::exchange(Other._Allocator, nullptr);
+            VulkanContext_ = std::exchange(Other.VulkanContext_, nullptr);
+            BufferMemory_  = std::move(Other.BufferMemory_);
+            Allocator_     = std::exchange(Other.Allocator_, nullptr);
         }
 
         return *this;
@@ -47,34 +47,34 @@ namespace Npgs
 
     void FDeviceLocalBuffer::CopyData(vk::DeviceSize MapOffset, vk::DeviceSize TargetOffset, vk::DeviceSize Size, const void* Data) const
     {
-        if (_BufferMemory->GetMemory().GetMemoryPropertyFlags() & vk::MemoryPropertyFlagBits::eHostVisible)
+        if (BufferMemory_->GetMemory().GetMemoryPropertyFlags() & vk::MemoryPropertyFlagBits::eHostVisible)
         {
-            _BufferMemory->SubmitBufferData(MapOffset, TargetOffset, Size, Data);
+            BufferMemory_->SubmitBufferData(MapOffset, TargetOffset, Size, Data);
             return;
         }
 
-        auto StagingBuffer = _VulkanContext->AcquireStagingBuffer(Size);
+        auto StagingBuffer = VulkanContext_->AcquireStagingBuffer(Size);
         StagingBuffer->SubmitBufferData(MapOffset, TargetOffset, Size, Data);
 
-        auto  BufferGuard = _VulkanContext->AcquireCommandBuffer(FVulkanContext::EQueueType::kTransfer);
+        auto  BufferGuard = VulkanContext_->AcquireCommandBuffer(FVulkanContext::EQueueType::kTransfer);
         auto& TransferCommandBuffer = *BufferGuard;
         TransferCommandBuffer.Begin(vk::CommandBufferUsageFlagBits::eOneTimeSubmit);
         vk::BufferCopy Region(0, TargetOffset, Size);
-        TransferCommandBuffer->copyBuffer(*StagingBuffer->GetBuffer(), *_BufferMemory->GetResource(), Region);
+        TransferCommandBuffer->copyBuffer(*StagingBuffer->GetBuffer(), *BufferMemory_->GetResource(), Region);
         TransferCommandBuffer.End();
 
-        _VulkanContext->ExecuteCommands(FVulkanContext::EQueueType::kTransfer, TransferCommandBuffer);
+        VulkanContext_->ExecuteCommands(FVulkanContext::EQueueType::kTransfer, TransferCommandBuffer);
     }
 
     void FDeviceLocalBuffer::CopyData(vk::DeviceSize ElementIndex, vk::DeviceSize ElementCount, vk::DeviceSize ElementSize,
                                       vk::DeviceSize SrcStride, vk::DeviceSize DstStride, vk::DeviceSize MapOffset, const void* Data) const
     {
-        if (_BufferMemory->GetMemory().GetMemoryPropertyFlags() & vk::MemoryPropertyFlagBits::eHostVisible)
+        if (BufferMemory_->GetMemory().GetMemoryPropertyFlags() & vk::MemoryPropertyFlagBits::eHostVisible)
         {
-            void* Target = _BufferMemory->GetMemory().GetMappedTargetMemory();
-            if (Target == nullptr || !_BufferMemory->GetMemory().IsPereistentlyMapped())
+            void* Target = BufferMemory_->GetMemory().GetMappedTargetMemory();
+            if (Target == nullptr || !BufferMemory_->GetMemory().IsPereistentlyMapped())
             {
-                _BufferMemory->MapMemoryForSubmit(MapOffset, ElementCount * DstStride, Target);
+                BufferMemory_->MapMemoryForSubmit(MapOffset, ElementCount * DstStride, Target);
             }
 
             for (std::size_t i = 0; i != ElementCount; ++i)
@@ -83,18 +83,18 @@ namespace Npgs
                             static_cast<std::byte*>(Target)     + DstStride * (i + ElementIndex));
             }
 
-            if (!_BufferMemory->GetMemory().IsPereistentlyMapped())
+            if (!BufferMemory_->GetMemory().IsPereistentlyMapped())
             {
-                _BufferMemory->UnmapMemory(MapOffset, ElementCount * DstStride);
+                BufferMemory_->UnmapMemory(MapOffset, ElementCount * DstStride);
             }
 
             return;
         }
 
-        auto StagingBuffer = _VulkanContext->AcquireStagingBuffer(DstStride * ElementSize);
+        auto StagingBuffer = VulkanContext_->AcquireStagingBuffer(DstStride * ElementSize);
         StagingBuffer->SubmitBufferData(MapOffset, SrcStride * ElementIndex, SrcStride * ElementSize, Data);
 
-        auto  BufferGuard = _VulkanContext->AcquireCommandBuffer(FVulkanContext::EQueueType::kTransfer);
+        auto  BufferGuard = VulkanContext_->AcquireCommandBuffer(FVulkanContext::EQueueType::kTransfer);
         auto& TransferCommandBuffer = *BufferGuard;
         TransferCommandBuffer.Begin(vk::CommandBufferUsageFlagBits::eOneTimeSubmit);
 
@@ -104,10 +104,10 @@ namespace Npgs
             Regions[i] = vk::BufferCopy(SrcStride * (i + ElementIndex), DstStride * (i + ElementIndex), ElementSize);
         }
 
-        TransferCommandBuffer->copyBuffer(*StagingBuffer->GetBuffer(), *_BufferMemory->GetResource(), Regions);
+        TransferCommandBuffer->copyBuffer(*StagingBuffer->GetBuffer(), *BufferMemory_->GetResource(), Regions);
         TransferCommandBuffer.End();
         
-        _VulkanContext->ExecuteCommands(FVulkanContext::EQueueType::kTransfer, TransferCommandBuffer);
+        VulkanContext_->ExecuteCommands(FVulkanContext::EQueueType::kTransfer, TransferCommandBuffer);
     }
 
     vk::Result FDeviceLocalBuffer::CreateBuffer(vk::DeviceSize Size, vk::BufferUsageFlags Usage)
@@ -118,17 +118,17 @@ namespace Npgs
             vk::MemoryPropertyFlagBits::eDeviceLocal | vk::MemoryPropertyFlagBits::eHostVisible;
         vk::MemoryPropertyFlags FallbackMemoryFlags  = vk::MemoryPropertyFlagBits::eDeviceLocal;
 
-        _BufferMemory = std::make_unique<FVulkanBufferMemory>(
-            _VulkanContext->GetDevice(), _VulkanContext->GetPhysicalDeviceProperties(),
-            _VulkanContext->GetPhysicalDeviceMemoryProperties(), BufferCreateInfo, PreferredMemoryFlags);
+        BufferMemory_ = std::make_unique<FVulkanBufferMemory>(
+            VulkanContext_->GetDevice(), VulkanContext_->GetPhysicalDeviceProperties(),
+            VulkanContext_->GetPhysicalDeviceMemoryProperties(), BufferCreateInfo, PreferredMemoryFlags);
 
-        if (!_BufferMemory->IsValid())
+        if (!BufferMemory_->IsValid())
         {
-            _BufferMemory = std::make_unique<FVulkanBufferMemory>(
-                _VulkanContext->GetDevice(), _VulkanContext->GetPhysicalDeviceProperties(),
-                _VulkanContext->GetPhysicalDeviceMemoryProperties(), BufferCreateInfo, FallbackMemoryFlags);
+            BufferMemory_ = std::make_unique<FVulkanBufferMemory>(
+                VulkanContext_->GetDevice(), VulkanContext_->GetPhysicalDeviceProperties(),
+                VulkanContext_->GetPhysicalDeviceMemoryProperties(), BufferCreateInfo, FallbackMemoryFlags);
 
-            if (!_BufferMemory->IsValid())
+            if (!BufferMemory_->IsValid())
             {
                 return vk::Result::eErrorInitializationFailed;
             }
@@ -140,8 +140,8 @@ namespace Npgs
     vk::Result FDeviceLocalBuffer::CreateBuffer(const VmaAllocationCreateInfo& AllocationCreateInfo,
                                                 const vk::BufferCreateInfo& BufferCreateInfo)
     {
-        _BufferMemory = std::make_unique<FVulkanBufferMemory>(_VulkanContext->GetDevice(), _Allocator, AllocationCreateInfo, BufferCreateInfo);
-        if (!_BufferMemory->IsValid())
+        BufferMemory_ = std::make_unique<FVulkanBufferMemory>(VulkanContext_->GetDevice(), Allocator_, AllocationCreateInfo, BufferCreateInfo);
+        if (!BufferMemory_->IsValid())
         {
             return vk::Result::eErrorInitializationFailed;
         }
@@ -151,16 +151,16 @@ namespace Npgs
 
     vk::Result FDeviceLocalBuffer::RecreateBuffer(vk::DeviceSize Size, vk::BufferUsageFlags Usage)
     {
-        _VulkanContext->WaitIdle();
-        _BufferMemory.reset();
+        VulkanContext_->WaitIdle();
+        BufferMemory_.reset();
         return CreateBuffer(Size, Usage);
     }
 
     vk::Result FDeviceLocalBuffer::RecreateBuffer(const VmaAllocationCreateInfo& AllocationCreateInfo,
                                                   const vk::BufferCreateInfo& BufferCreateInfo)
     {
-        _VulkanContext->WaitIdle();
-        _BufferMemory.reset();
+        VulkanContext_->WaitIdle();
+        BufferMemory_.reset();
         return CreateBuffer(AllocationCreateInfo, BufferCreateInfo);
     }
 } // namespace Npgs

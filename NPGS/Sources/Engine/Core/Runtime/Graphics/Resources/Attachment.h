@@ -29,10 +29,10 @@ namespace Npgs
         const FVulkanImageView& GetImageView() const;
 
     protected:
-        FVulkanContext*                     _VulkanContext;
-        std::unique_ptr<FVulkanImageMemory> _ImageMemory;
-        std::unique_ptr<FVulkanImageView>   _ImageView;
-        VmaAllocator                        _Allocator;
+        FVulkanContext*                     VulkanContext_;
+        std::unique_ptr<FVulkanImageMemory> ImageMemory_;
+        std::unique_ptr<FVulkanImageView>   ImageView_;
+        VmaAllocator                        Allocator_;
     };
 
     class FColorAttachment : public FAttachment

@@ -1,19 +1,19 @@
-#include "CoreServices.h"
+#include "Engine/Core/Base/Base.h"
 
 namespace Npgs
 {
     NPGS_INLINE FVulkanContext* Npgs::FCoreServices::GetVulkanContext() const
     {
-        return _VulkanContext.get();
+        return VulkanContext_.get();
     }
 
     NPGS_INLINE FAssetManager* FCoreServices::GetAssetManager() const
     {
-        return _AssetManager.get();
+        return AssetManager_.get();
     }
 
     NPGS_INLINE FThreadPool* FCoreServices::GetThreadPool() const
     {
-        return _ThreadPool.get();
+        return ThreadPool_.get();
     }
 } // namespace Npgs

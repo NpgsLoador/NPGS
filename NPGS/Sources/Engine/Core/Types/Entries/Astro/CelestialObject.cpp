@@ -3,7 +3,7 @@
 namespace Npgs::Astro
 {
     FCelestialBody::FCelestialBody(const FBasicProperties& Properties)
-        : _Properties(Properties)
+        : Properties_(Properties)
     {
     }
 } // namespace Npgs::Astro

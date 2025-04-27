@@ -40,7 +40,7 @@ namespace Npgs
     }
 
     FAssetManager::FAssetManager(FVulkanContext* VulkanContext)
-        : _VulkanContext(VulkanContext)
+        : VulkanContext_(VulkanContext)
     {
     }
 

@@ -2,8 +2,8 @@
 
 #include <cstdint>
 #include <memory>
-#include <boost/multiprecision/cpp_int.hpp>
 
+#include <boost/multiprecision/cpp_int.hpp>
 #include "Engine/Core/Types/Entries/Astro/CelestialObject.h"
 #include "Engine/Core/Types/Properties/Intelli/Civilization.h"
 
@@ -168,7 +168,7 @@ namespace Npgs::Astro
         Intelli::FStandard& CivilizationData();
 
     private:
-        FExtendedProperties _ExtraProperties{};
+        FExtendedProperties ExtraProperties_{};
     };
 
     class AAsteroidCluster : public IAstroObject
@@ -229,7 +229,7 @@ namespace Npgs::Astro
         DigitalType GetMassEnergeticNuclideDigital() const;
 
     private:
-        FBasicProperties _Properties{};
+        FBasicProperties Properties_{};
     };
 } // namespace Npgs::Astro
 

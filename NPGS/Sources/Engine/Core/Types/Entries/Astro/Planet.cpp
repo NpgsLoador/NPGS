@@ -5,25 +5,25 @@
 namespace Npgs::Astro
 {
     APlanet::APlanet(const FCelestialBody::FBasicProperties& BasicProperties, FExtendedProperties&& ExtraProperties)
-        : Base(BasicProperties), _ExtraProperties(std::move(ExtraProperties))
+        : Base(BasicProperties), ExtraProperties_(std::move(ExtraProperties))
     {
     }
 
     APlanet::APlanet(const APlanet& Other)
         : Base(Other)
     {
-        _ExtraProperties =
+        ExtraProperties_ =
         {
-            .AtmosphereMass     = Other._ExtraProperties.AtmosphereMass,
-            .CoreMass           = Other._ExtraProperties.CoreMass,
-            .OceanMass          = Other._ExtraProperties.OceanMass,
-            .CrustMineralMass   = Other._ExtraProperties.CrustMineralMass,
-            .CivilizationData   = Other._ExtraProperties.CivilizationData
-                                ? std::make_unique<Intelli::FStandard>(*Other._ExtraProperties.CivilizationData)
+            .AtmosphereMass     = Other.ExtraProperties_.AtmosphereMass,
+            .CoreMass           = Other.ExtraProperties_.CoreMass,
+            .OceanMass          = Other.ExtraProperties_.OceanMass,
+            .CrustMineralMass   = Other.ExtraProperties_.CrustMineralMass,
+            .CivilizationData   = Other.ExtraProperties_.CivilizationData
+                                ? std::make_unique<Intelli::FStandard>(*Other.ExtraProperties_.CivilizationData)
                                 : nullptr,
-            .BalanceTemperature = Other._ExtraProperties.BalanceTemperature,
-            .Type               = Other._ExtraProperties.Type,
-            .bIsMigrated        = Other._ExtraProperties.bIsMigrated
+            .BalanceTemperature = Other.ExtraProperties_.BalanceTemperature,
+            .Type               = Other.ExtraProperties_.Type,
+            .bIsMigrated        = Other.ExtraProperties_.bIsMigrated
         };
     }
 
@@ -33,18 +33,18 @@ namespace Npgs::Astro
         {
             Base::operator=(Other);
 
-            _ExtraProperties =
+            ExtraProperties_ =
             {
-                .AtmosphereMass     = Other._ExtraProperties.AtmosphereMass,
-                .CoreMass           = Other._ExtraProperties.CoreMass,
-                .OceanMass          = Other._ExtraProperties.OceanMass,
-                .CrustMineralMass   = Other._ExtraProperties.CrustMineralMass,
-                .CivilizationData   = Other._ExtraProperties.CivilizationData
-                                    ? std::make_unique<Intelli::FStandard>(*Other._ExtraProperties.CivilizationData)
+                .AtmosphereMass     = Other.ExtraProperties_.AtmosphereMass,
+                .CoreMass           = Other.ExtraProperties_.CoreMass,
+                .OceanMass          = Other.ExtraProperties_.OceanMass,
+                .CrustMineralMass   = Other.ExtraProperties_.CrustMineralMass,
+                .CivilizationData   = Other.ExtraProperties_.CivilizationData
+                                    ? std::make_unique<Intelli::FStandard>(*Other.ExtraProperties_.CivilizationData)
                                     : nullptr,
-                .BalanceTemperature = Other._ExtraProperties.BalanceTemperature,
-                .Type               = Other._ExtraProperties.Type,
-                .bIsMigrated        = Other._ExtraProperties.bIsMigrated
+                .BalanceTemperature = Other.ExtraProperties_.BalanceTemperature,
+                .Type               = Other.ExtraProperties_.Type,
+                .bIsMigrated        = Other.ExtraProperties_.bIsMigrated
             };
         }
 
@@ -52,7 +52,7 @@ namespace Npgs::Astro
     }
 
     AAsteroidCluster::AAsteroidCluster(const FBasicProperties& Properties)
-        : _Properties(Properties)
+        : Properties_(Properties)
     {
     }
 } // namespace Npgs::Astro

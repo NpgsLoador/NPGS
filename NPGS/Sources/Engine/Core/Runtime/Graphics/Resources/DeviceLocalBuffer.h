@@ -67,9 +67,9 @@ namespace Npgs
                                   const vk::BufferCreateInfo& BufferCreateInfo);
 
     private:
-        FVulkanContext*                      _VulkanContext;
-        std::unique_ptr<FVulkanBufferMemory> _BufferMemory;
-        VmaAllocator                         _Allocator;
+        FVulkanContext*                      VulkanContext_;
+        std::unique_ptr<FVulkanBufferMemory> BufferMemory_;
+        VmaAllocator                         Allocator_;
     };
 } // namespace Npgs
 

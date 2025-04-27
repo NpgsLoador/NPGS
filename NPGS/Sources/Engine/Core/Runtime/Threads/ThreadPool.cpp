@@ -39,36 +39,36 @@ namespace Npgs
     // ThreadPool implementations
     // --------------------------
     FThreadPool::FThreadPool(int MaxThreadCount, bool bEnableHyperThread)
-        : _MaxThreadCount(std::clamp(MaxThreadCount, 0, static_cast<int>(std::thread::hardware_concurrency())))
-        , _PhysicalCoreCount(GetPhysicalCoreCount())
-        , _bEnableHyperThread(bEnableHyperThread)
+        : MaxThreadCount_(std::clamp(MaxThreadCount, 0, static_cast<int>(std::thread::hardware_concurrency())))
+        , PhysicalCoreCount_(GetPhysicalCoreCount())
+        , bEnableHyperThread_(bEnableHyperThread)
     {
-        for (std::size_t i = 0; i != _MaxThreadCount; ++i)
+        for (std::size_t i = 0; i != MaxThreadCount_; ++i)
         {
-            _Threads.emplace_back([this]() -> void
+            Threads_.emplace_back([this]() -> void
             {
                 while (true)
                 {
                     std::function<void()> Task;
                     {
-                        std::unique_lock<std::mutex> Lock(_Mutex);
-                        _Condition.wait(Lock, [this]() -> bool { return !_Tasks.empty() || _bTerminate; });
-                        if (_bTerminate && _Tasks.empty())
+                        std::unique_lock<std::mutex> Lock(Mutex_);
+                        Condition_.wait(Lock, [this]() -> bool { return !Tasks_.empty() || bTerminate_; });
+                        if (bTerminate_ && Tasks_.empty())
                         {
                             return;
                         }
 
-                        Task = std::move(_Tasks.front());
-                        _Tasks.pop();
+                        Task = std::move(Tasks_.front());
+                        Tasks_.pop();
                     }
 
                     Task();
                 }
             });
 
-            if (!_bEnableHyperThread)
+            if (!bEnableHyperThread_)
             {
-                SetThreadAffinity(_Threads.back(), i);
+                SetThreadAffinity(Threads_.back(), i);
             }
         }
     }
@@ -81,11 +81,11 @@ namespace Npgs
     void FThreadPool::Terminate()
     {
         {
-            std::unique_lock<std::mutex> Mutex(_Mutex);
-            _bTerminate = true;
+            std::unique_lock<std::mutex> Mutex(Mutex_);
+            bTerminate_ = true;
         }
-        _Condition.notify_all();
-        for (auto& Thread : _Threads)
+        Condition_.notify_all();
+        for (auto& Thread : Threads_)
         {
             if (Thread.joinable())
             {
@@ -96,10 +96,10 @@ namespace Npgs
 
     void FThreadPool::SetThreadAffinity(std::thread& Thread, std::size_t CoreId) const
     {
-        CoreId = CoreId % _PhysicalCoreCount;
+        CoreId = CoreId % PhysicalCoreCount_;
         HANDLE Handle = Thread.native_handle();
         DWORD_PTR Mask = 0;
-        Mask = static_cast<DWORD_PTR>(Bit(CoreId * 2) + _HyperThreadIndex);
+        Mask = static_cast<DWORD_PTR>(Bit(CoreId * 2) + HyperThreadIndex_);
         SetThreadAffinityMask(Handle, Mask);
     }
 } // namespace Npgs

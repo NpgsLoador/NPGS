@@ -1,105 +1,103 @@
-#include "CelestialObject.h"
-
 #include "Engine/Core/Base/Base.h"
 
 namespace Npgs::Astro
 {
     NPGS_INLINE FCelestialBody& FCelestialBody::SetBasicProperties(const FBasicProperties& Properties)
     {
-        _Properties = Properties;
+        Properties_ = Properties;
         return *this;
     }
 
     NPGS_INLINE const FCelestialBody::FBasicProperties& FCelestialBody::GetBasicProperties() const
     {
-        return _Properties;
+        return Properties_;
     }
 
     NPGS_INLINE FCelestialBody& FCelestialBody::SetName(const std::string& Name)
     {
-        _Properties.Name = Name;
+        Properties_.Name = Name;
         return *this;
     }
 
     NPGS_INLINE FCelestialBody& FCelestialBody::SetNormal(glm::vec2 Normal)
     {
-        _Properties.Normal = Normal;
+        Properties_.Normal = Normal;
         return *this;
     }
 
     NPGS_INLINE FCelestialBody& FCelestialBody::SetAge(double Age)
     {
-        _Properties.Age = Age;
+        Properties_.Age = Age;
         return *this;
     }
 
     NPGS_INLINE FCelestialBody& FCelestialBody::SetRadius(float Radius)
     {
-        _Properties.Radius = Radius;
+        Properties_.Radius = Radius;
         return *this;
     }
 
     NPGS_INLINE FCelestialBody& FCelestialBody::SetSpin(float Spin)
     {
-        _Properties.Spin = Spin;
+        Properties_.Spin = Spin;
         return *this;
     }
 
     NPGS_INLINE FCelestialBody& FCelestialBody::SetOblateness(float Oblateness)
     {
-        _Properties.Oblateness = Oblateness;
+        Properties_.Oblateness = Oblateness;
         return *this;
     }
 
     NPGS_INLINE FCelestialBody& FCelestialBody::SetEscapeVelocity(float EscapeVelocity)
     {
-        _Properties.EscapeVelocity = EscapeVelocity;
+        Properties_.EscapeVelocity = EscapeVelocity;
         return *this;
     }
 
     NPGS_INLINE FCelestialBody& FCelestialBody::SetMagneticField(float MagneticField)
     {
-        _Properties.MagneticField = MagneticField;
+        Properties_.MagneticField = MagneticField;
         return *this;
     }
 
     NPGS_INLINE const std::string& FCelestialBody::GetName() const
     {
-        return _Properties.Name;
+        return Properties_.Name;
     }
 
     NPGS_INLINE glm::vec2 FCelestialBody::GetNormal() const
     {
-        return _Properties.Normal;
+        return Properties_.Normal;
     }
 
     NPGS_INLINE double FCelestialBody::GetAge() const
     {
-        return _Properties.Age;
+        return Properties_.Age;
     }
 
     NPGS_INLINE float FCelestialBody::GetRadius() const
     {
-        return _Properties.Radius;
+        return Properties_.Radius;
     }
 
     NPGS_INLINE float FCelestialBody::GetSpin() const
     {
-        return _Properties.Spin;
+        return Properties_.Spin;
     }
 
     NPGS_INLINE float FCelestialBody::GetOblateness() const
     {
-        return _Properties.Oblateness;
+        return Properties_.Oblateness;
     }
 
     NPGS_INLINE float FCelestialBody::GetEscapeVelocity() const
     {
-        return _Properties.EscapeVelocity;
+        return Properties_.EscapeVelocity;
     }
 
     NPGS_INLINE float FCelestialBody::GetMagneticField() const
     {
-        return _Properties.MagneticField;
+        return Properties_.MagneticField;
     }
 } // namespace Npgs::Astro

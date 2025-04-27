@@ -42,8 +42,8 @@ namespace Npgs
             const vk::Queue& operator*() const;
 
         private:
-            FQueuePool* _Pool;
-            FQueueInfo  _QueueInfo;
+            FQueuePool* Pool_;
+            FQueueInfo  QueueInfo_;
         };
 
     private:
@@ -75,11 +75,11 @@ namespace Npgs
         void ReleaseQueue(FQueueInfo&& QueueInfo);
 
     private:
-        std::mutex                                                    _Mutex;
-        std::unordered_map<vk::QueueFlags, std::uint32_t, FQueueHash> _QueueFamilyIndices;
-        std::unordered_map<std::uint32_t, FQueueFamilyPool>           _QueueFamilyPools;
-        std::queue<std::shared_ptr<std::condition_variable>>          _WaitQueue;
-        vk::Device                                                    _Device;
+        std::mutex                                                    Mutex_;
+        std::unordered_map<vk::QueueFlags, std::uint32_t, FQueueHash> QueueFamilyIndices_;
+        std::unordered_map<std::uint32_t, FQueueFamilyPool>           QueueFamilyPools_;
+        std::queue<std::shared_ptr<std::condition_variable>>          WaitQueue_;
+        vk::Device                                                    Device_;
     };
 } // namespace Npgs
 

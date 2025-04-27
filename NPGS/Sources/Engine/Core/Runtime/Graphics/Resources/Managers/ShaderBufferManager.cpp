@@ -6,24 +6,24 @@
 namespace Npgs
 {
     FShaderBufferManager::FShaderBufferManager(FVulkanContext* VulkanContext)
-        : _VulkanContext(VulkanContext)
+        : VulkanContext_(VulkanContext)
     {
         VmaAllocatorCreateInfo AllocatorCreateInfo
         {
             .flags          = VMA_ALLOCATOR_CREATE_BUFFER_DEVICE_ADDRESS_BIT,
-            .physicalDevice = _VulkanContext->GetPhysicalDevice(),
-            .device         = _VulkanContext->GetDevice(),
-            .instance       = _VulkanContext->GetInstance()
+            .physicalDevice = VulkanContext_->GetPhysicalDevice(),
+            .device         = VulkanContext_->GetDevice(),
+            .instance       = VulkanContext_->GetInstance()
         };
 
-        vmaCreateAllocator(&AllocatorCreateInfo, &_Allocator);
+        vmaCreateAllocator(&AllocatorCreateInfo, &Allocator_);
     }
 
     FShaderBufferManager::~FShaderBufferManager()
     {
-        _DataBuffers.clear();
-        _DescriptorBuffers.clear();
-        vmaDestroyAllocator(_Allocator);
+        DataBuffers_.clear();
+        DescriptorBuffers_.clear();
+        vmaDestroyAllocator(Allocator_);
     }
 
     void FShaderBufferManager::CreateDescriptorBuffer(const FDescriptorBufferCreateInfo& DescriptorBufferCreateInfo,
@@ -50,17 +50,17 @@ namespace Npgs
             if (AllocationCreateInfo != nullptr)
             {
                 vk::BufferCreateInfo BufferCreateInfo({}, BufferSize, BufferUsage);
-                BufferInfo.Buffers.emplace_back(_VulkanContext, _Allocator, *AllocationCreateInfo, BufferCreateInfo);
+                BufferInfo.Buffers.emplace_back(VulkanContext_, Allocator_, *AllocationCreateInfo, BufferCreateInfo);
             }
             else
             {
-                BufferInfo.Buffers.emplace_back(_VulkanContext, BufferSize, BufferUsage);
+                BufferInfo.Buffers.emplace_back(VulkanContext_, BufferSize, BufferUsage);
             }
 
             BufferInfo.Buffers[i].CopyData(0, 0, BufferSize, EmptyData.data());
         }
 
-        _DescriptorBuffers.emplace(DescriptorBufferCreateInfo.Name, std::move(BufferInfo));
+        DescriptorBuffers_.emplace(DescriptorBufferCreateInfo.Name, std::move(BufferInfo));
         NpgsCoreTrace("Created descriptor buffer \"{}\" with size {} bytes.", DescriptorBufferCreateInfo.Name, BufferSize);
 
         BindResourceToDescriptorBuffersInternal(DescriptorBufferCreateInfo);
@@ -72,8 +72,8 @@ namespace Npgs
         if (!kbDescriptorBufferPropertiesGot)
         {
             vk::PhysicalDeviceProperties2 Properties2;
-            Properties2.pNext = &_DescriptorBufferProperties;
-            _VulkanContext->GetPhysicalDevice().getProperties2(&Properties2);
+            Properties2.pNext = &DescriptorBufferProperties_;
+            VulkanContext_->GetPhysicalDevice().getProperties2(&Properties2);
             kbDescriptorBufferPropertiesGot = true;
         }
 
@@ -88,14 +88,14 @@ namespace Npgs
 
     void FShaderBufferManager::BindResourceToDescriptorBuffersInternal(const FDescriptorBufferCreateInfo& DescriptorBufferCreateInfo)
     {
-        auto& DescriptorBufferInfo = _DescriptorBuffers.at(DescriptorBufferCreateInfo.Name);
-        vk::Device Device = _VulkanContext->GetDevice();
+        auto& DescriptorBufferInfo = DescriptorBuffers_.at(DescriptorBufferCreateInfo.Name);
+        vk::Device Device = VulkanContext_->GetDevice();
 
         auto InsertOffsetMap = [this, &DescriptorBufferCreateInfo](const auto& Info, vk::DeviceSize Offset) -> void
         {
             std::uint32_t Set     = Info.Set;
             std::uint32_t Binding = Info.Binding;
-            _OffsetsMap[DescriptorBufferCreateInfo.Name].try_emplace(std::make_pair(Set, Binding), Offset);
+            OffsetsMap_[DescriptorBufferCreateInfo.Name].try_emplace(std::make_pair(Set, Binding), Offset);
         };
 
         std::map<std::uint32_t, vk::DeviceSize> SetOffsets;
@@ -122,7 +122,7 @@ namespace Npgs
 
             for (std::size_t j = 0; j != DescriptorBufferCreateInfo.UniformBufferNames.size(); ++j)
             {
-                const auto&   BufferInfo = _DataBuffers.at(DescriptorBufferCreateInfo.UniformBufferNames[j]);
+                const auto&   BufferInfo = DataBuffers_.at(DescriptorBufferCreateInfo.UniformBufferNames[j]);
                 std::uint32_t CurrentSet = BufferInfo.CreateInfo.Set;
 
                 if (CurrentSet != PrevSet && CurrentSet < DescriptorBufferCreateInfo.SetSizes.size())
@@ -133,7 +133,7 @@ namespace Npgs
 
                 vk::DescriptorAddressInfoEXT AddressInfo(BufferInfo.Buffers[i].GetBuffer().GetDeviceAddress(), BufferInfo.Size);
                 vk::DescriptorGetInfoEXT DescriptorInfo(BufferInfo.CreateInfo.Usage, &AddressInfo);
-                vk::DeviceSize DescriptorSize = _DescriptorBufferProperties.uniformBufferDescriptorSize;
+                vk::DeviceSize DescriptorSize = DescriptorBufferProperties_.uniformBufferDescriptorSize;
                 Device.getDescriptorEXT(DescriptorInfo, DescriptorSize, static_cast<std::byte*>(Target) + Offset);
 
                 InsertOffsetMap(BufferInfo.CreateInfo, Offset);
@@ -142,7 +142,7 @@ namespace Npgs
 
             for (std::size_t j = 0; j != DescriptorBufferCreateInfo.StorageBufferNames.size(); ++j)
             {
-                const auto&   BufferInfo = _DataBuffers.at(DescriptorBufferCreateInfo.StorageBufferNames[j]);
+                const auto&   BufferInfo = DataBuffers_.at(DescriptorBufferCreateInfo.StorageBufferNames[j]);
                 std::uint32_t CurrentSet = BufferInfo.CreateInfo.Set;
 
                 if (CurrentSet != PrevSet && CurrentSet < DescriptorBufferCreateInfo.SetSizes.size())
@@ -153,7 +153,7 @@ namespace Npgs
 
                 vk::DescriptorAddressInfoEXT AddressInfo(BufferInfo.Buffers[i].GetBuffer().GetDeviceAddress(), BufferInfo.Size);
                 vk::DescriptorGetInfoEXT DescriptorInfo(BufferInfo.CreateInfo.Usage, &AddressInfo);
-                vk::DeviceSize DescriptorSize = _DescriptorBufferProperties.storageBufferDescriptorSize;
+                vk::DeviceSize DescriptorSize = DescriptorBufferProperties_.storageBufferDescriptorSize;
                 Device.getDescriptorEXT(DescriptorInfo, DescriptorSize, static_cast<std::byte*>(Target) + Offset);
 
                 InsertOffsetMap(BufferInfo.CreateInfo, Offset);
@@ -172,7 +172,7 @@ namespace Npgs
                 }
 
                 vk::DescriptorGetInfoEXT DescriptorInfo(vk::DescriptorType::eSampler, &SamplerInfo.Sampler);
-                vk::DeviceSize DescriptorSize = _DescriptorBufferProperties.samplerDescriptorSize;
+                vk::DeviceSize DescriptorSize = DescriptorBufferProperties_.samplerDescriptorSize;
                 Device.getDescriptorEXT(DescriptorInfo, DescriptorSize, static_cast<std::byte*>(Target) + Offset);
 
                 InsertOffsetMap(SamplerInfo, Offset);
@@ -191,7 +191,7 @@ namespace Npgs
                 }
 
                 vk::DescriptorGetInfoEXT DescriptorInfo(vk::DescriptorType::eSampledImage, &ImageInfo.Info);
-                vk::DeviceSize DescriptorSize = _DescriptorBufferProperties.sampledImageDescriptorSize;
+                vk::DeviceSize DescriptorSize = DescriptorBufferProperties_.sampledImageDescriptorSize;
                 Device.getDescriptorEXT(DescriptorInfo, DescriptorSize, static_cast<std::byte*>(Target) + Offset);
 
                 InsertOffsetMap(ImageInfo, Offset);
@@ -210,7 +210,7 @@ namespace Npgs
                 }
 
                 vk::DescriptorGetInfoEXT DescriptorInfo(vk::DescriptorType::eStorageImage, &ImageInfo.Info);
-                vk::DeviceSize DescriptorSize = _DescriptorBufferProperties.storageImageDescriptorSize;
+                vk::DeviceSize DescriptorSize = DescriptorBufferProperties_.storageImageDescriptorSize;
                 Device.getDescriptorEXT(DescriptorInfo, DescriptorSize, static_cast<std::byte*>(Target) + Offset);
 
                 InsertOffsetMap(ImageInfo, Offset);
@@ -229,7 +229,7 @@ namespace Npgs
                 }
 
                 vk::DescriptorGetInfoEXT DescriptorInfo(vk::DescriptorType::eCombinedImageSampler, &ImageInfo.Info);
-                vk::DeviceSize DescriptorSize = _DescriptorBufferProperties.combinedImageSamplerDescriptorSize;
+                vk::DeviceSize DescriptorSize = DescriptorBufferProperties_.combinedImageSamplerDescriptorSize;
                 Device.getDescriptorEXT(DescriptorInfo, DescriptorSize, static_cast<std::byte*>(Target) + Offset);
 
                 InsertOffsetMap(ImageInfo, Offset);

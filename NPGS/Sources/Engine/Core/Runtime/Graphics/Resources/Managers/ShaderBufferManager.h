@@ -27,7 +27,7 @@ namespace Npgs
         {
         public:
             TUpdater(const FDeviceLocalBuffer& Buffer, vk::DeviceSize Offset, vk::DeviceSize Size)
-                : _Buffer(&Buffer), _Offset(Offset), _Size(Size)
+                : Buffer_(&Buffer), Offset_(Offset), Size_(Size)
             {
             }
 
@@ -39,13 +39,13 @@ namespace Npgs
 
             void Submit(const DataType& Data) const
             {
-                _Buffer->CopyData(0, _Offset, _Size, &Data);
+                Buffer_->CopyData(0, Offset_, Size_, &Data);
             }
 
         private:
-            const FDeviceLocalBuffer* _Buffer;
-            vk::DeviceSize            _Offset;
-            vk::DeviceSize            _Size;
+            const FDeviceLocalBuffer* Buffer_;
+            vk::DeviceSize            Offset_;
+            vk::DeviceSize            Size_;
         };
 
         struct FDataBufferCreateInfo
@@ -164,16 +164,16 @@ namespace Npgs
         void BindResourceToDescriptorBuffersInternal(const FDescriptorBufferCreateInfo& DescriptorBufferCreateInfo);
 
     private:
-        FVulkanContext* _VulkanContext;
+        FVulkanContext* VulkanContext_;
 
-        vk::PhysicalDeviceDescriptorBufferPropertiesEXT _DescriptorBufferProperties;
+        vk::PhysicalDeviceDescriptorBufferPropertiesEXT DescriptorBufferProperties_;
         // [Name, Buffer]
-        std::unordered_map<std::string, FDataBufferInfo>       _DataBuffers;
-        std::unordered_map<std::string, FDescriptorBufferInfo> _DescriptorBuffers;
+        std::unordered_map<std::string, FDataBufferInfo>       DataBuffers_;
+        std::unordered_map<std::string, FDescriptorBufferInfo> DescriptorBuffers_;
         // [Name, [[Set, Binding], Offset]]
-        std::unordered_map<std::string, std::unordered_map<std::pair<std::uint32_t, std::uint32_t>, vk::DeviceSize, FSetBindingHash>> _OffsetsMap;
+        std::unordered_map<std::string, std::unordered_map<std::pair<std::uint32_t, std::uint32_t>, vk::DeviceSize, FSetBindingHash>> OffsetsMap_;
 
-        VmaAllocator _Allocator;
+        VmaAllocator Allocator_;
     };
 } // namespace Npgs
 

@@ -70,7 +70,7 @@ namespace Npgs::Astro
         float  GetMagneticField() const;
 
     private:
-        FBasicProperties _Properties{};
+        FBasicProperties Properties_{};
     };
 } // namespace Npgs::Astro
 

@@ -12,6 +12,7 @@
 
 #include <glm/glm.hpp>
 #include "Engine/Core/Runtime/Threads/ThreadPool.h"
+#include "Engine/Core/System/Services/EngineServices.h"
 
 namespace Npgs
 {
@@ -20,29 +21,29 @@ namespace Npgs
     {
     public:
         TOctreeNode(glm::vec3 Center, float Radius, TOctreeNode* Previous)
-            : _Center(Center), _Previous(Previous), _Radius(Radius)
+            : Center_(Center), Previous_(Previous), Radius_(Radius)
         {
         }
 
         bool Contains(glm::vec3 Point) const
         {
-            return (Point.x >= _Center.x - _Radius && Point.x <= _Center.x + _Radius &&
-                    Point.y >= _Center.y - _Radius && Point.y <= _Center.y + _Radius &&
-                    Point.z >= _Center.z - _Radius && Point.z <= _Center.z + _Radius);
+            return (Point.x >= Center_.x - Radius_ && Point.x <= Center_.x + Radius_ &&
+                    Point.y >= Center_.y - Radius_ && Point.y <= Center_.y + Radius_ &&
+                    Point.z >= Center_.z - Radius_ && Point.z <= Center_.z + Radius_);
         }
 
         int CalculateOctant(glm::vec3 Point) const
         {
             int Octant = 0;
 
-            if (Point.z < _Center.z)
+            if (Point.z < Center_.z)
             {
                 Octant |= 4;
             }
 
-            if (Point.x >= _Center.x)
+            if (Point.x >= Center_.x)
             {
-                if (Point.y >= _Center.y)
+                if (Point.y >= Center_.y)
                 {
                     Octant |= 0; // (+x, +y)，第一象限
                 }
@@ -53,7 +54,7 @@ namespace Npgs
             }
             else
             {
-                if (Point.y >= _Center.y)
+                if (Point.y >= Center_.y)
                 {
                     Octant |= 1; // (-x, +y)，第二象限
                 }
@@ -68,8 +69,8 @@ namespace Npgs
 
         bool IntersectSphere(glm::vec3 Point, float Radius) const
         {
-            glm::vec3 MinBound = _Center - glm::vec3(_Radius);
-            glm::vec3 MaxBound = _Center + glm::vec3(_Radius);
+            glm::vec3 MinBound = Center_ - glm::vec3(Radius_);
+            glm::vec3 MaxBound = Center_ + glm::vec3(Radius_);
 
             glm::vec3 ClosestPoint = glm::clamp(Point, MinBound, MaxBound);
             float Distance = glm::distance(Point, ClosestPoint);
@@ -79,68 +80,68 @@ namespace Npgs
 
         const bool IsValid() const
         {
-            return _bIsValid;
+            return bIsValid_;
         }
 
         glm::vec3 GetCenter() const
         {
-            return _Center;
+            return Center_;
         }
 
         const TOctreeNode* GetPrevious() const
         {
-            return _Previous;
+            return Previous_;
         }
 
         TOctreeNode* GetPrevious()
         {
-            return _Previous;
+            return Previous_;
         }
 
         float GetRadius() const
         {
-            return _Radius;
+            return Radius_;
         }
 
         std::unique_ptr<TOctreeNode>& GetNext(int Index)
         {
-            return _Next[Index];
+            return Next_[Index];
         }
 
         const std::unique_ptr<TOctreeNode>& GetNext(int Index) const
         {
-            return _Next[Index];
+            return Next_[Index];
         }
 
         void AddPoint(glm::vec3 Point)
         {
-            _Points.push_back(Point);
+            Points_.push_back(Point);
         }
 
         void DeletePoint(glm::vec3 Point)
         {
-            auto it = std::find(_Points.begin(), _Points.end(), Point);
-            if (it != _Points.end())
+            auto it = std::find(Points_.begin(), Points_.end(), Point);
+            if (it != Points_.end())
             {
-                _Points.erase(it);
+                Points_.erase(it);
             }
         }
 
         void RemoveStorage()
         {
-            _Points.clear();
+            Points_.clear();
         }
 
         void AddLink(LinkTargetType* Target)
         {
-            _DataLink.push_back(Target);
+            DataLink_.push_back(Target);
         }
 
         template <typename Func>
         requires std::predicate<Func, const LinkTargetType*> || std::predicate<Func, LinkTargetType*> || std::predicate<Func, void*>
         LinkTargetType* GetLink(Func&& Pred) const
         {
-            for (LinkTargetType* Target : _DataLink)
+            for (LinkTargetType* Target : DataLink_)
             {
                 if (Pred(Target))
                 {
@@ -153,27 +154,27 @@ namespace Npgs
 
         void RemoveLinks()
         {
-            _DataLink.clear();
+            DataLink_.clear();
         }
 
         std::vector<glm::vec3>& GetPoints()
         {
-            return _Points;
+            return Points_;
         }
 
         const std::vector<glm::vec3>& GetPoints() const
         {
-            return _Points;
+            return Points_;
         }
 
         void SetValidation(bool bValidation)
         {
-            _bIsValid = bValidation;
+            bIsValid_ = bValidation;
         }
 
         bool IsLeafNode() const
         {
-            for (const auto& Next : _Next)
+            for (const auto& Next : Next_)
             {
                 if (Next != nullptr)
                 {
@@ -185,14 +186,14 @@ namespace Npgs
         }
 
     private:
-        glm::vec3    _Center;
-        TOctreeNode* _Previous;
-        float        _Radius;
-        bool         _bIsValid{ true };
+        glm::vec3    Center_;
+        TOctreeNode* Previous_;
+        float        Radius_;
+        bool         bIsValid_{ true };
 
-        std::array<std::unique_ptr<TOctreeNode>, 8> _Next;
-        std::vector<glm::vec3>                      _Points;
-        std::vector<LinkTargetType*>                _DataLink;
+        std::array<std::unique_ptr<TOctreeNode>, 8> Next_;
+        std::vector<glm::vec3>                      Points_;
+        std::vector<LinkTargetType*>                DataLink_;
     };
 
     template <typename LinkTargetType>
@@ -203,60 +204,60 @@ namespace Npgs
 
     public:
         TOctree(glm::vec3 Center, float Radius, int MaxDepth = 8)
-            : _Root(std::make_unique<FNodeType>(Center, Radius, nullptr))
-            , _ThreadPool(8, false)
-            , _MaxDepth(MaxDepth)
+            : Root_(std::make_unique<FNodeType>(Center, Radius, nullptr))
+            , ThreadPool_(EngineServicesGetCoreServices->GetThreadPool())
+            , MaxDepth_(MaxDepth)
         {
         }
 
         void BuildEmptyTree(float LeafRadius)
         {
-            int Depth = static_cast<int>(std::ceil(std::log2(_Root->GetRadius() / LeafRadius)));
-            BuildEmptyTreeImpl(_Root.get(), LeafRadius, Depth);
+            int Depth = static_cast<int>(std::ceil(std::log2(Root_->GetRadius() / LeafRadius)));
+            BuildEmptyTreeImpl(Root_.get(), LeafRadius, Depth);
         }
 
         void Insert(glm::vec3 Point)
         {
-            InsertImpl(_Root.get(), Point, 0);
+            InsertImpl(Root_.get(), Point, 0);
         }
 
         void Delete(glm::vec3 Point)
         {
-            DeleteImpl(_Root.get(), Point);
+            DeleteImpl(Root_.get(), Point);
         }
 
         void Query(glm::vec3 Point, float Radius, std::vector<glm::vec3>& Results) const
         {
-            QueryImpl(_Root.get(), Point, Radius, Results);
+            QueryImpl(Root_.get(), Point, Radius, Results);
         }
 
         template <typename Func = std::function<bool(const FNodeType&)>>
         requires std::predicate<Func, const FNodeType&> || std::predicate<Func, FNodeType&>
         FNodeType* Find(glm::vec3 Point, Func&& Pred = [](const FNodeType&) -> bool { return true; }) const
         {
-            return FindImpl(_Root.get(), Point, std::forward<Func>(Pred));
+            return FindImpl(Root_.get(), Point, std::forward<Func>(Pred));
         }
 
         template <typename Func>
         requires std::is_invocable_r_v<void, Func, const FNodeType&> || std::is_invocable_r_v<void, Func, FNodeType&>
         void Traverse(Func&& Pred) const
         {
-            TraverseImpl(_Root.get(), std::forward<Func>(Pred));
+            TraverseImpl(Root_.get(), std::forward<Func>(Pred));
         }
 
         std::size_t GetCapacity() const
         {
-            return GetCapacityImpl(_Root.get());
+            return GetCapacityImpl(Root_.get());
         }
 
         std::size_t GetSize() const
         {
-            return GetSizeImpl(_Root.get());
+            return GetSizeImpl(Root_.get());
         }
 
         const FNodeType* const GetRoot() const
         {
-            return _Root.get();
+            return Root_.get();
         }
 
     private:
@@ -294,9 +295,9 @@ namespace Npgs
                 Offset.z = (i & 4) ? -NextRadius : NextRadius;
 
                 Node->GetNext(i) = std::make_unique<FNodeType>(Node->GetCenter() + Offset, NextRadius, Node);
-                if (Depth == static_cast<int>(std::ceil(std::log2(_Root->GetRadius() / LeafRadius))))
+                if (Depth == static_cast<int>(std::ceil(std::log2(Root_->GetRadius() / LeafRadius))))
                 {
-                    Futures.push_back(_ThreadPool.Submit(&TOctree::BuildEmptyTreeImpl, this, Node->GetNext(i).get(), LeafRadius, Depth - 1));
+                    Futures.push_back(ThreadPool_->Submit(&TOctree::BuildEmptyTreeImpl, this, Node->GetNext(i).get(), LeafRadius, Depth - 1));
                 }
                 else
                 {
@@ -312,7 +313,7 @@ namespace Npgs
 
         void InsertImpl(FNodeType* Node, glm::vec3 Point, int Depth)
         {
-            if (!Node->Contains(Point) || Depth > _MaxDepth)
+            if (!Node->Contains(Point) || Depth > MaxDepth_)
             {
                 return;
             }
@@ -350,7 +351,7 @@ namespace Npgs
             }
 
             int Octant = Node->CalculateOctant(Point);
-            if (Depth == _MaxDepth)
+            if (Depth == MaxDepth_)
             {
                 Node->AddPoint(Point);
             }
@@ -502,8 +503,8 @@ namespace Npgs
         }
 
     private:
-        std::unique_ptr<FNodeType> _Root;
-        FThreadPool                _ThreadPool;
-        int                        _MaxDepth;
+        std::unique_ptr<FNodeType> Root_;
+        FThreadPool*               ThreadPool_;
+        int                        MaxDepth_;
     };
 } // namespace Npgs

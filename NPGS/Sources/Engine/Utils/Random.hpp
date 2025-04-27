@@ -21,11 +21,14 @@ namespace Npgs::Util
     {
     public:
         TUniformIntDistribution() = default;
-        TUniformIntDistribution(BaseType Min, BaseType Max) : _Distribution(Min, Max) {}
+        TUniformIntDistribution(BaseType Min, BaseType Max)
+            : Distribution_(Min, Max)
+        {
+        }
 
         BaseType operator()(RandomEngine& Engine) override
         {
-            return _Distribution(Engine);
+            return Distribution_(Engine);
         }
 
         BaseType Generate(RandomEngine& Engine) override
@@ -34,7 +37,7 @@ namespace Npgs::Util
         }
 
     private:
-        std::uniform_int_distribution<BaseType> _Distribution;
+        std::uniform_int_distribution<BaseType> Distribution_;
     };
 
     template <typename BaseType = float, typename RandomEngine = std::mt19937>
@@ -43,11 +46,14 @@ namespace Npgs::Util
     {
     public:
         TUniformRealDistribution() = default;
-        TUniformRealDistribution(BaseType Min, BaseType Max) : _Distribution(Min, Max) {}
+        TUniformRealDistribution(BaseType Min, BaseType Max)
+            : Distribution_(Min, Max)
+        {
+        }
 
         BaseType operator()(RandomEngine& Engine) override
         {
-            return _Distribution(Engine);
+            return Distribution_(Engine);
         }
 
         BaseType Generate(RandomEngine& Engine) override
@@ -56,7 +62,7 @@ namespace Npgs::Util
         }
 
     private:
-        std::uniform_real_distribution<BaseType> _Distribution;
+        std::uniform_real_distribution<BaseType> Distribution_;
     };
 
     template <typename BaseType = float, typename RandomEngine = std::mt19937>
@@ -65,11 +71,14 @@ namespace Npgs::Util
     {
     public:
         TNormalDistribution() = default;
-        TNormalDistribution(BaseType Mean, BaseType Sigma) : _Distribution(Mean, Sigma) {}
+        TNormalDistribution(BaseType Mean, BaseType Sigma)
+            : Distribution_(Mean, Sigma)
+        {
+        }
 
         BaseType operator()(RandomEngine& Engine) override
         {
-            return _Distribution(Engine);
+            return Distribution_(Engine);
         }
 
         BaseType Generate(RandomEngine& Engine) override
@@ -78,7 +87,7 @@ namespace Npgs::Util
         }
 
     private:
-        std::normal_distribution<BaseType> _Distribution;
+        std::normal_distribution<BaseType> Distribution_;
     };
 
     template <typename BaseType = float, typename RandomEngine = std::mt19937>
@@ -87,11 +96,14 @@ namespace Npgs::Util
     {
     public:
         TLogNormalDistribution() = default;
-        TLogNormalDistribution(BaseType Mean, BaseType Sigma) : _Distribution(Mean, Sigma) {}
+        TLogNormalDistribution(BaseType Mean, BaseType Sigma)
+            : Distribution_(Mean, Sigma)
+        {
+        }
 
         BaseType operator()(RandomEngine& Engine) override
         {
-            return _Distribution(Engine);
+            return Distribution_(Engine);
         }
 
         BaseType Generate(RandomEngine& Engine) override
@@ -100,7 +112,7 @@ namespace Npgs::Util
         }
 
     private:
-        std::lognormal_distribution<BaseType> _Distribution;
+        std::lognormal_distribution<BaseType> Distribution_;
     };
 
     template <typename RandomEngine = std::mt19937>
@@ -109,11 +121,14 @@ namespace Npgs::Util
     {
     public:
         TBernoulliDistribution() = default;
-        TBernoulliDistribution(double Probability) : _Distribution(Probability) {}
+        TBernoulliDistribution(double Probability)
+            : Distribution_(Probability)
+        {
+        }
 
         double operator()(RandomEngine& Engine) override
         {
-            return _Distribution(Engine);
+            return Distribution_(Engine);
         }
 
         double Generate(RandomEngine& Engine) override
@@ -122,6 +137,6 @@ namespace Npgs::Util
         }
 
     private:
-        std::bernoulli_distribution _Distribution;
+        std::bernoulli_distribution Distribution_;
     };
 } // namespace Npgs::Util
