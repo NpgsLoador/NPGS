@@ -140,30 +140,20 @@ namespace Npgs
         std::vector<float> QueuePriorities;
         std::vector<vk::DeviceQueueCreateInfo> DeviceQueueCreateInfos;
 
-        if (QueueFamilyIndices_.at(EQueueType::kGraphics) != vk::QueueFamilyIgnored)
+        if (QueueFamilyIndices_.at(EQueueType::kGeneral) != vk::QueueFamilyIgnored)
         {
-            const auto& QueueFamilyProperties = QueueFamilyProperties_[QueueFamilyIndices_.at(EQueueType::kGraphics)];
+            const auto& QueueFamilyProperties = QueueFamilyProperties_[QueueFamilyIndices_.at(EQueueType::kGeneral)];
             QueuePriorities.assign(QueueFamilyProperties.queueCount, QueuePriority);
-            DeviceQueueCreateInfos.emplace_back(vk::DeviceQueueCreateFlags(), QueueFamilyIndices_.at(EQueueType::kGraphics), QueuePriorities);
+            DeviceQueueCreateInfos.emplace_back(vk::DeviceQueueCreateFlags(), QueueFamilyIndices_.at(EQueueType::kGeneral), QueuePriorities);
         }
-        if (QueueFamilyIndices_.at(EQueueType::kPresent) != vk::QueueFamilyIgnored &&
-            QueueFamilyIndices_.at(EQueueType::kPresent) != QueueFamilyIndices_.at(EQueueType::kGraphics))
-        {
-            const auto& QueueFamilyProperties = QueueFamilyProperties_[QueueFamilyIndices_.at(EQueueType::kPresent)];
-            QueuePriorities.clear();
-            QueuePriorities.assign(QueueFamilyProperties.queueCount, QueuePriority);
-            DeviceQueueCreateInfos.emplace_back(vk::DeviceQueueCreateFlags(), QueueFamilyIndices_.at(EQueueType::kPresent), QueuePriorities);
-        }
-        if (QueueFamilyIndices_.at(EQueueType::kCompute) != vk::QueueFamilyIgnored &&
-            QueueFamilyIndices_.at(EQueueType::kCompute) != QueueFamilyIndices_.at(EQueueType::kGraphics) &&
-            QueueFamilyIndices_.at(EQueueType::kCompute) != QueueFamilyIndices_.at(EQueueType::kPresent))
+        if (QueueFamilyIndices_.at(EQueueType::kCompute) != vk::QueueFamilyIgnored)
         {
             const auto& QueueFamilyProperties = QueueFamilyProperties_[QueueFamilyIndices_.at(EQueueType::kCompute)];
             QueuePriorities.clear();
             QueuePriorities.assign(QueueFamilyProperties.queueCount, QueuePriority);
             DeviceQueueCreateInfos.emplace_back(vk::DeviceQueueCreateFlags(), QueueFamilyIndices_.at(EQueueType::kCompute), QueuePriorities);
         }
-        if (QueueFamilyIndices_.at(EQueueType::kTransfer) != QueueFamilyIndices_.at(EQueueType::kGraphics))
+        if (QueueFamilyIndices_.at(EQueueType::kTransfer) != vk::QueueFamilyIgnored)
         {
             const auto& QueueFamilyProperties = QueueFamilyProperties_[QueueFamilyIndices_.at(EQueueType::kTransfer)];
             QueuePriorities.clear();
@@ -233,38 +223,15 @@ namespace Npgs
         }
 
         // 常驻队列，用于渲染循环频繁提交
-        if (QueueFamilyIndices_.at(EQueueType::kGraphics) != vk::QueueFamilyIgnored)
+        if (QueueFamilyIndices_.at(EQueueType::kGeneral) != vk::QueueFamilyIgnored)
         {
-            Queues_[EQueueType::kGraphics] = QueuePool_->AcquireQueue(
-                QueueFamilyProperties_[QueueFamilyIndices_.at(EQueueType::kGraphics)].queueFlags).Release();
-        }
-        if (QueueFamilyIndices_.at(EQueueType::kPresent) != vk::QueueFamilyIgnored)
-        {
-            if (QueueFamilyIndices_.at(EQueueType::kGraphics) == QueueFamilyIndices_.at(EQueueType::kPresent))
-            {
-                Queues_[EQueueType::kPresent] = Queues_[EQueueType::kGraphics];
-            }
-            else
-            {
-                Queues_[EQueueType::kPresent] = QueuePool_->AcquireQueue(
-                    QueueFamilyProperties_[QueueFamilyIndices_.at(EQueueType::kPresent)].queueFlags).Release();
-            }
+            Queues_[EQueueType::kGeneral] = QueuePool_->AcquireQueue(
+                QueueFamilyProperties_[QueueFamilyIndices_.at(EQueueType::kGeneral)].queueFlags).Release();
         }
         if (QueueFamilyIndices_.at(EQueueType::kCompute) != vk::QueueFamilyIgnored)
         {
-            if (QueueFamilyIndices_.at(EQueueType::kCompute) == QueueFamilyIndices_.at(EQueueType::kGraphics))
-            {
-                Queues_[EQueueType::kCompute] = Queues_[EQueueType::kGraphics];
-            }
-            else if (QueueFamilyIndices_.at(EQueueType::kCompute) == QueueFamilyIndices_.at(EQueueType::kPresent))
-            {
-                Queues_[EQueueType::kCompute] = Queues_[EQueueType::kPresent];
-            }
-            else
-            {
-                Queues_[EQueueType::kCompute] = QueuePool_->AcquireQueue(
-                    QueueFamilyProperties_[QueueFamilyIndices_.at(EQueueType::kCompute)].queueFlags).Release();
-            }
+            Queues_[EQueueType::kCompute] = QueuePool_->AcquireQueue(
+                QueueFamilyProperties_[QueueFamilyIndices_.at(EQueueType::kCompute)].queueFlags).Release();
         }
 
         PhysicalDeviceProperties_       = PhysicalDevice_.getProperties();
@@ -610,7 +577,7 @@ namespace Npgs
     {
         try
         {
-            vk::Result Result = Queues_.at(EQueueType::kPresent).presentKHR(PresentInfo);
+            vk::Result Result = Queues_.at(EQueueType::kGeneral).presentKHR(PresentInfo);
             switch (Result)
             {
             case vk::Result::eSuccess:
@@ -1012,62 +979,19 @@ namespace Npgs
 
     vk::Result FVulkanCore::DeterminePhysicalDevice(std::uint32_t Index, bool bEnableGraphicsQueue, bool bEnableComputeQueue)
     {
-        // kNotFound 在与其进行与运算最高位是 0 的数结果还是数本身
-        // 但是对于 -1U，结果是 kNotFound
-        static constexpr std::uint32_t kNotFound = static_cast<std::uint32_t>(std::numeric_limits<std::int32_t>::max());
-        std::vector<FQueueFamilyIndicesComplex> QueueFamilyIndeicesComplexes(AvailablePhysicalDevices_.size());
-
-        auto& [
-            GraphicsQueueFamilyIndex, PresentQueueFamilyIndex, ComputeQueueFamilyIndex, TransferQueueFamilyIndex
-        ] = QueueFamilyIndeicesComplexes[Index];
-
-        // 如果任何索引已经搜索过但还是找不到，直接报错
-        if ((GraphicsQueueFamilyIndex == kNotFound && bEnableGraphicsQueue) ||
-            (PresentQueueFamilyIndex  == kNotFound && Surface_) ||
-            (ComputeQueueFamilyIndex  == kNotFound && bEnableGraphicsQueue))
+        FQueueFamilyIndicesComplex Indices;
+        if (vk::Result Result = ObtainQueueFamilyIndices(AvailablePhysicalDevices_[Index], bEnableGraphicsQueue, bEnableComputeQueue, Indices);
+            Result != vk::Result::eSuccess)
         {
-            return vk::Result::eErrorFeatureNotPresent;
+            return Result;
         }
 
-        if ((GraphicsQueueFamilyIndex == vk::QueueFamilyIgnored && bEnableGraphicsQueue) ||
-            (PresentQueueFamilyIndex  == vk::QueueFamilyIgnored && Surface_) ||
-            (ComputeQueueFamilyIndex  == vk::QueueFamilyIgnored && bEnableGraphicsQueue))
-        {
-            FQueueFamilyIndicesComplex Indices;
-            if (vk::Result Result = ObtainQueueFamilyIndices(AvailablePhysicalDevices_[Index], bEnableGraphicsQueue, bEnableComputeQueue, Indices);
-                Result != vk::Result::eSuccess)
-            {
-                return Result;
-            }
+        auto [GeneralQueueFamilyIndex, ComputeQueueFamilyIndex, TransferQueueFamilyIndex] = Indices;
 
-            // 如果结果是 vk::QueueFamilyIgnored，那么和 kNotFound 做与运算结果还是 kNotFound
-            if (bEnableGraphicsQueue)
-            {
-                GraphicsQueueFamilyIndex = Indices.GraphicsQueueFamilyIndex & kNotFound;
-            }
-            if (Surface_)
-            {
-                PresentQueueFamilyIndex = Indices.PresentQueueFamilyIndex & kNotFound;
-            }
-            if (bEnableComputeQueue)
-            {
-                ComputeQueueFamilyIndex = Indices.ComputeQueueFamilyIndex & kNotFound;
-            }
-
-            TransferQueueFamilyIndex = Indices.TransferQueueFamilyIndex & kNotFound;
-
-            QueueFamilyIndices_[EQueueType::kGraphics] = bEnableGraphicsQueue ? GraphicsQueueFamilyIndex : vk::QueueFamilyIgnored;
-            QueueFamilyIndices_[EQueueType::kPresent]  = Surface_             ? PresentQueueFamilyIndex  : vk::QueueFamilyIgnored;
-            QueueFamilyIndices_[EQueueType::kCompute]  = bEnableComputeQueue  ? ComputeQueueFamilyIndex  : vk::QueueFamilyIgnored;
-        }
-        else // 如果已经找到了，直接设置索引
-        {
-            QueueFamilyIndices_[EQueueType::kGraphics] = bEnableGraphicsQueue ? GraphicsQueueFamilyIndex : vk::QueueFamilyIgnored;
-            QueueFamilyIndices_[EQueueType::kPresent] = Surface_             ? PresentQueueFamilyIndex  : vk::QueueFamilyIgnored;
-            QueueFamilyIndices_[EQueueType::kCompute] = bEnableComputeQueue  ? ComputeQueueFamilyIndex  : vk::QueueFamilyIgnored;
-        }
-
+        QueueFamilyIndices_[EQueueType::kGeneral]  = GeneralQueueFamilyIndex;
+        QueueFamilyIndices_[EQueueType::kCompute]  = ComputeQueueFamilyIndex;
         QueueFamilyIndices_[EQueueType::kTransfer] = TransferQueueFamilyIndex;
+
         PhysicalDevice_ = AvailablePhysicalDevices_[Index];
         return vk::Result::eSuccess;
     }
@@ -1082,16 +1006,15 @@ namespace Npgs
             return vk::Result::eErrorInitializationFailed;
         }
 
-        auto& [
-            GraphicsQueueFamilyIndex, PresentQueueFamilyIndex, ComputeQueueFamilyIndex, TransferQueueFamilyIndex
-        ] = Indices;
-        GraphicsQueueFamilyIndex = PresentQueueFamilyIndex = ComputeQueueFamilyIndex = TransferQueueFamilyIndex = vk::QueueFamilyIgnored;
+        auto& [GeneralQueueFamilyIndex, ComputeQueueFamilyIndex, TransferQueueFamilyIndex] = Indices;
+        GeneralQueueFamilyIndex = ComputeQueueFamilyIndex = TransferQueueFamilyIndex = vk::QueueFamilyIgnored;
 
         for (std::uint32_t i = 0; i != QueueFamilyProperties.size(); ++i)
         {
             bool bSupportGraphics = bEnableGraphicsQueue && QueueFamilyProperties[i].queueFlags & vk::QueueFlagBits::eGraphics;
-            bool bSupportPresent  = vk::False;
+            bool bSupportPresent  = false;
             bool bSupportCompute  = bEnableComputeQueue  && QueueFamilyProperties[i].queueFlags & vk::QueueFlagBits::eCompute;
+            bool bSupportTransfer =       static_cast<bool>(QueueFamilyProperties[i].queueFlags & vk::QueueFlagBits::eTransfer);
 
             if (Surface_)
             {
@@ -1106,62 +1029,46 @@ namespace Npgs
                 }
             }
 
-            if (bSupportGraphics && bSupportCompute) // 如果同时支持图形和计算队列
+            if (Surface_ && bSupportGraphics && bSupportCompute && GeneralQueueFamilyIndex == vk::QueueFamilyIgnored)
             {
-                if (bSupportPresent) // 三个队列族都支持，将它们的索引设置为相同的值
+                if (bSupportPresent)
                 {
-                    GraphicsQueueFamilyIndex = PresentQueueFamilyIndex = ComputeQueueFamilyIndex = i;
-                    break;
-                }
-                if (GraphicsQueueFamilyIndex != ComputeQueueFamilyIndex || GraphicsQueueFamilyIndex == vk::QueueFamilyIgnored)
-                {
-                    GraphicsQueueFamilyIndex = ComputeQueueFamilyIndex = i; // 确保图形和计算队列族的索引相同
-                }
-                if (!Surface_)
-                {
-                    break; // 如果不需要呈现，那么只需要找到一个支持图形和计算队列族的索引即可
+                    GeneralQueueFamilyIndex = i;
+                    continue;
                 }
             }
 
-            // 将支持对应功能的队列族的索引设置为找到的第一个值
-            if (bSupportGraphics && GraphicsQueueFamilyIndex == vk::QueueFamilyIgnored)
-            {
-                GraphicsQueueFamilyIndex = i;
-            }
-            if (bSupportPresent && PresentQueueFamilyIndex == vk::QueueFamilyIgnored)
-            {
-                PresentQueueFamilyIndex = i;
-            }
-            if (bSupportCompute && ComputeQueueFamilyIndex == vk::QueueFamilyIgnored)
+            if (!bSupportGraphics && bSupportCompute && ComputeQueueFamilyIndex == vk::QueueFamilyIgnored)
             {
                 ComputeQueueFamilyIndex = i;
             }
-        }
-
-        for (std::uint32_t i = 0; i != QueueFamilyProperties.size(); ++i)
-        {
-            if ((QueueFamilyProperties[i].queueFlags & vk::QueueFlagBits::eTransfer) &&
-               !(QueueFamilyProperties[i].queueFlags & vk::QueueFlagBits::eGraphics) &&
-               !(QueueFamilyProperties[i].queueFlags & vk::QueueFlagBits::eCompute))
+            if (!bSupportGraphics && !bSupportCompute && bSupportTransfer && TransferQueueFamilyIndex == vk::QueueFamilyIgnored)
             {
                 TransferQueueFamilyIndex = i;
-                break;
             }
-        }
-
-        // 如果有任意一个需要启用的队列族的索引是 vk::QueueFamilyIgnored，报错
-        if ((GraphicsQueueFamilyIndex == vk::QueueFamilyIgnored && bEnableGraphicsQueue) ||
-            (PresentQueueFamilyIndex  == vk::QueueFamilyIgnored && Surface_) ||
-            (ComputeQueueFamilyIndex  == vk::QueueFamilyIgnored && bEnableComputeQueue))
-        {
-            NpgsCoreError("Failed to obtain queue family indices.");
-            return vk::Result::eErrorFeatureNotPresent;
         }
 
         if (TransferQueueFamilyIndex == vk::QueueFamilyIgnored)
         {
-            NpgsCoreInfo("No dedicated DMA transfer queue found, using graphics queue for transfer operations.");
-            TransferQueueFamilyIndex = GraphicsQueueFamilyIndex;
+            if (QueueFamilyProperties[GeneralQueueFamilyIndex].queueFlags & vk::QueueFlagBits::eTransfer)
+            {
+                NpgsCoreInfo("No dedicated DMA transfer queue found, using general queue for transfer operations.");
+                TransferQueueFamilyIndex = GeneralQueueFamilyIndex;
+            }
+            else if (QueueFamilyProperties[ComputeQueueFamilyIndex].queueFlags & vk::QueueFlagBits::eTransfer)
+            {
+                NpgsCoreInfo("No dedicated DMA transfer queue found, using compute queue for transfer operations.");
+                TransferQueueFamilyIndex = ComputeQueueFamilyIndex;
+            }
+        }
+
+        // 如果有任意一个需要启用的队列族的索引是 vk::QueueFamilyIgnored，报错
+        if ((GeneralQueueFamilyIndex  == vk::QueueFamilyIgnored && bEnableGraphicsQueue) ||
+            (ComputeQueueFamilyIndex  == vk::QueueFamilyIgnored && bEnableComputeQueue)  ||
+            (TransferQueueFamilyIndex == vk::QueueFamilyIgnored))
+        {
+            NpgsCoreError("Failed to obtain queue family indices.");
+            return vk::Result::eErrorFeatureNotPresent;
         }
 
         QueueFamilyProperties_ = std::move(QueueFamilyProperties);

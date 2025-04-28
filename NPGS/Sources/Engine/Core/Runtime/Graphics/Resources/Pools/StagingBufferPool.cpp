@@ -35,8 +35,7 @@ namespace Npgs
         }
     }
 
-    FStagingBufferPool::FBufferGuard
-    FStagingBufferPool::AcquireBuffer(vk::DeviceSize RequestedSize)
+    FStagingBufferPool::FBufferGuard FStagingBufferPool::AcquireBuffer(vk::DeviceSize RequestedSize)
     {
         vk::DeviceSize AlignedSize = AlignSize(RequestedSize);
 

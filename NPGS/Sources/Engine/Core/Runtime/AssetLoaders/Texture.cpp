@@ -40,281 +40,58 @@ namespace Npgs
                                 static_cast<std::int32_t>(MipmapSize(Extent.height, MipLevel)),
                                 static_cast<std::int32_t>(MipmapSize(Extent.depth,  MipLevel)));
         }
-    }
 
-    FImageLoader::FImageData FImageLoader::LoadImage(std::string_view Filename, vk::Format ImageFormat)
-    {
-        bool bIsDds = Filename.ends_with(".dds");
-        bool bIsExr = Filename.ends_with(".exr");
-        bool bIsHdr = Filename.ends_with(".hdr");
-        bool bIsKmg = Filename.ends_with(".kmg");
-        bool bIsKtx = Filename.ends_with(".ktx") || Filename.ends_with("ktx2");
+        FImageData LoadCommonFormat(std::string_view Filename, FFormatInfo FormatInfo)
+        {
+            int   Width     = 0;
+            int   Height    = 0;
+            int   Channels  = 0;
+            void* PixelData = nullptr;
 
-        FFormatInfo FormatInfo(ImageFormat);
-        FImageData ImageData;
-        if (bIsDds)
-        {
-            ImageData = LoadDdsFormat(Filename, FormatInfo);
-        }
-        else if (bIsExr)
-        {
-            try
+            if (FormatInfo.RawDataType == FFormatInfo::ERawDataType::kInteger)
             {
-                ImageData = LoadExrFormat(Filename, FormatInfo);
-            }
-            catch (const Iex::BaseExc& e)
-            {
-                NpgsCoreError("Failed to load OpenEXR image: \"{}\": \"{}\".", Filename.data(), e.what());
-                return {};
-            }
-        }
-        else if (bIsHdr)
-        {
-            ImageData = LoadHdrFormat(Filename, FormatInfo);
-        }
-        else if (bIsKmg || bIsKtx)
-        {
-            ImageData = LoadKtxFormat(Filename, FormatInfo);
-        }
-        else
-        {
-            ImageData = LoadCommonFormat(Filename, FormatInfo);
-        }
-
-        ImageData.FormatInfo = FormatInfo;
-        return ImageData;
-    }
-
-    FImageLoader::FImageData FImageLoader::LoadCommonFormat(std::string_view Filename, FFormatInfo FormatInfo)
-    {
-        int   Width     = 0;
-        int   Height    = 0;
-        int   Channels  = 0;
-        void* PixelData = nullptr;
-
-        if (FormatInfo.RawDataType == FFormatInfo::ERawDataType::kInteger)
-        {
-            if (FormatInfo.ComponentSize == 1)
-            {
-                PixelData = stbi_load(Filename.data(), &Width, &Height, &Channels, FormatInfo.ComponentCount);
+                if (FormatInfo.ComponentSize == 1)
+                {
+                    PixelData = stbi_load(Filename.data(), &Width, &Height, &Channels, FormatInfo.ComponentCount);
+                }
+                else
+                {
+                    PixelData = stbi_load_16(Filename.data(), &Width, &Height, &Channels, FormatInfo.ComponentCount);
+                }
             }
             else
             {
-                PixelData = stbi_load_16(Filename.data(), &Width, &Height, &Channels, FormatInfo.ComponentCount);
+                PixelData = stbi_loadf(Filename.data(), &Width, &Height, &Channels, FormatInfo.ComponentCount);
             }
-        }
-        else
-        {
-            PixelData = stbi_loadf(Filename.data(), &Width, &Height, &Channels, FormatInfo.ComponentCount);
-        }
 
-        if (PixelData == nullptr)
-        {
-            NpgsCoreError("Failed to load image: \"{}\".", Filename.data());
-            return {};
-        }
-
-        FImageData ImageData;
-        ImageData.Size   = static_cast<vk::DeviceSize>(Width) * Height * FormatInfo.PixelSize;
-        ImageData.Extent = vk::Extent3D(Width, Height, 1);
-        ImageData.Data.resize(ImageData.Size);
-        std::copy_n(static_cast<std::byte*>(PixelData), ImageData.Size, ImageData.Data.data());
-
-        return ImageData;
-    }
-
-    FImageLoader::FImageData FImageLoader::LoadDdsFormat(std::string_view Filename, FFormatInfo FormatInfo)
-    {
-        gli::texture Texture(gli::load(Filename.data()));
-        if (Texture.empty())
-        {
-            NpgsCoreError("Failed to load DirectDraw Surface image: \"{}\".", Filename.data());
-            return {};
-        }
-
-        std::size_t DesiredComponentCount = gli::component_count(Texture.format());
-        if (FormatInfo.ComponentCount != DesiredComponentCount)
-        {
-            NpgsCoreWarn("Component count mismatch: Expected {}, got {}.", FormatInfo.ComponentCount, DesiredComponentCount);
-        }
-
-        gli::extent3d Extent    = Texture.extent();
-        std::size_t   Size      = Texture.size();
-        std::uint32_t MipLevels = static_cast<std::uint32_t>(Texture.levels());
-        void*         PixelData = Texture.data();
-
-        FImageData ImageData;
-        ImageData.Extent    = vk::Extent3D(Extent.x, Extent.y, Extent.z);
-        ImageData.Size      = Size;
-        ImageData.MipLevels = MipLevels;
-        for (std::size_t MipLevel = 0; MipLevel != ImageData.MipLevels; ++MipLevel)
-        {
-            ImageData.LevelOffsets.push_back(static_cast<std::byte*>(Texture.data(0, 0, MipLevel)) - static_cast<std::byte*>(Texture.data()));
-        }
-
-        ImageData.Data.resize(Size);
-        std::copy_n(static_cast<std::byte*>(PixelData), Size, ImageData.Data.data());
-
-        return ImageData;
-    }
-
-    FImageLoader::FImageData FImageLoader::LoadExrFormat(std::string_view Filename, FFormatInfo FormatInfo)
-    {
-        bool bIsTiled = false;
-        {
-            Imf::InputFile Test(Filename.data());
-            bIsTiled = Test.header().hasTileDescription();
-        }
-
-        FImageData ImageData;
-        int Width = 0, Height = 0;
-        std::vector<Imf::Rgba> Pixels;
-
-        if (bIsTiled)
-        {
-            Imf::TiledRgbaInputFile InputFile(Filename.data());
-            const auto& Header   = InputFile.header();
-            const auto& TileDesc = Header.tileDescription();
-            Imath::Box2i DataWindow(InputFile.dataWindow());
-            Width  = DataWindow.max.x - DataWindow.min.x + 1;
-            Height = DataWindow.max.y - DataWindow.min.y + 1;
-
-            ImageData.Extent = vk::Extent3D(Width, Height, 1);
-
-            if (TileDesc.mode == Imf::ONE_LEVEL)
+            if (PixelData == nullptr)
             {
-                Pixels.resize(static_cast<std::size_t>(Width) * Height);
-                InputFile.setFrameBuffer(Pixels.data() - (DataWindow.min.x + DataWindow.min.y * Width), 1, Width);
-                InputFile.readTiles(0, InputFile.numXTiles() - 1, 0, InputFile.numYTiles() - 1);
-
-                ImageData.Size = static_cast<vk::DeviceSize>(Width) * Height * FormatInfo.PixelSize;
-                ImageData.Data.resize(ImageData.Size);
-                std::copy_n(reinterpret_cast<std::byte*>(Pixels.data()), ImageData.Size, ImageData.Data.data());
+                NpgsCoreError("Failed to load image: \"{}\".", Filename.data());
+                return {};
             }
-            else if (TileDesc.mode == Imf::MIPMAP_LEVELS)
-            {
-                int MipLevels = InputFile.numLevels();
-                ImageData.MipLevels = MipLevels;
-                NpgsCoreTrace("OpenEXR image \"{}\": {} mipmap levels found.", Filename.data(), MipLevels);
 
-                vk::DeviceSize TotalSize = 0;
-                std::vector<std::size_t>  LevelOffsets(MipLevels);
-                std::vector<vk::Extent2D> LevelExtents(MipLevels);
-                for (int MipLevel = 0; MipLevel != MipLevels; ++MipLevel)
-                {
-                    std::uint32_t LevelWidth  = MipmapSize(Width,  MipLevel);
-                    std::uint32_t LevelHeight = MipmapSize(Height, MipLevel);
-                    LevelExtents[MipLevel] = vk::Extent2D(LevelWidth, LevelHeight);
-                    LevelOffsets[MipLevel] = TotalSize;
-                    TotalSize += static_cast<vk::DeviceSize>(LevelWidth) * LevelHeight * FormatInfo.PixelSize;
-                }
-
-                ImageData.Size = TotalSize;
-                ImageData.Data.resize(TotalSize);
-                std::vector<Imf::Rgba> LevelPixels;
-
-                for (int MipLevel = 0; MipLevel != MipLevels; ++MipLevel)
-                {
-                    int LevelWidth  = static_cast<int>(LevelExtents[MipLevel].width);
-                    int LevelHeight = static_cast<int>(LevelExtents[MipLevel].height);
-
-                    Pixels.resize(static_cast<std::size_t>(LevelWidth) * LevelHeight);
-                    InputFile.setFrameBuffer(Pixels.data() - (DataWindow.min.x + DataWindow.min.y * Width), 1, Width);
-                    InputFile.readTiles(0, InputFile.numXTiles(MipLevel) - 1, 0, InputFile.numYTiles(MipLevel) - 1, MipLevel, MipLevel);
-
-                    LevelPixels.resize(TotalSize);
-                    std::ranges::copy(Pixels, LevelPixels.begin() + LevelOffsets[MipLevel]);
-                }
-
-                ImageData.LevelOffsets = std::move(LevelOffsets);
-                std::copy_n(reinterpret_cast<std::byte*>(Pixels.data()), ImageData.Size, ImageData.Data.data());
-            }
-        }
-        else
-        {
-            Imf::RgbaInputFile InputFile(Filename.data());
-            Imath::Box2i DataWindow(InputFile.dataWindow());
-            Width  = DataWindow.max.x - DataWindow.min.x + 1;
-            Height = DataWindow.max.y - DataWindow.min.y + 1;
-
-            Pixels.resize(static_cast<std::size_t>(Width) * Height);
-            InputFile.setFrameBuffer(Pixels.data() - (DataWindow.min.x + DataWindow.min.y * Width), 1, Width);
-            InputFile.readPixels(DataWindow.min.y, DataWindow.max.y);
-
-            ImageData.Extent = vk::Extent3D(Width, Height, 1);
+            FImageData ImageData;
             ImageData.Size   = static_cast<vk::DeviceSize>(Width) * Height * FormatInfo.PixelSize;
+            ImageData.Extent = vk::Extent3D(Width, Height, 1);
             ImageData.Data.resize(ImageData.Size);
-            std::copy_n(reinterpret_cast<std::byte*>(Pixels.data()), ImageData.Size, ImageData.Data.data());
+            std::copy_n(static_cast<std::byte*>(PixelData), ImageData.Size, ImageData.Data.data());
+
+            return ImageData;
         }
 
-        return ImageData;
-    }
-
-    FImageLoader::FImageData FImageLoader::LoadHdrFormat(std::string_view Filename, FFormatInfo FormatInfo)
-    {
-        int Width    = 0;
-        int Height   = 0;
-        int Channels = 0;
-
-        float* PixelData = stbi_loadf(Filename.data(), &Width, &Height, &Channels, STBI_default);
-        if (PixelData == nullptr)
-        {
-            NpgsCoreError("Failed to load Radiance HDR image: \"{}\".", Filename.data());
-            return {};
-        }
-
-        FImageData ImageData;
-        ImageData.Extent = vk::Extent3D(Width, Height, 1);
-        ImageData.Size   = static_cast<vk::DeviceSize>(Width) * Height * 16;
-        ImageData.Data.resize(ImageData.Size);
-        if (Channels == 4)
-        {
-            std::copy_n(reinterpret_cast<std::byte*>(PixelData), ImageData.Size, ImageData.Data.data());
-        }
-        else
-        {
-            std::size_t PixelCount = ImageData.Size / 16;
-            float* DstData = reinterpret_cast<float*>(ImageData.Data.data());
-            for (std::size_t i = 0; i != PixelCount; ++i)
-            {
-                DstData[i * 4 + 0] = PixelData[i * 3 + 0];
-                DstData[i * 4 + 1] = PixelData[i * 3 + 1];
-                DstData[i * 4 + 2] = PixelData[i * 3 + 2];
-                DstData[i * 4 + 3] = 1.0f;
-            }
-        }
-
-        stbi_image_free(PixelData);
-
-        if (FormatInfo.ComponentSize == 2)
-        {
-            std::vector<std::byte> HalfData(ImageData.Size / 2);
-            std::vector<std::byte> FloatData(std::move(ImageData.Data));
-            std::uint16_t* HalfDataPtr  = reinterpret_cast<std::uint16_t*>(HalfData.data());
-            float*         FloatDataPtr = reinterpret_cast<float*>(FloatData.data());
-
-            for (std::size_t i = 0; i != ImageData.Size / sizeof(float); ++i)
-            {
-                HalfDataPtr[i] = Imath::half(FloatDataPtr[i]).bits();
-            }
-
-            ImageData.Size /= 2;
-            ImageData.Data = std::move(HalfData);
-        }
-
-        return ImageData;
-    }
-
-    FImageLoader::FImageData FImageLoader::LoadKtxFormat(std::string_view Filename, FFormatInfo FormatInfo)
-    {
-        bool bIsKtx2 = Filename.ends_with("ktx2");
-        if (!bIsKtx2)
+        FImageData LoadDdsFormat(std::string_view Filename, FFormatInfo FormatInfo)
         {
             gli::texture Texture(gli::load(Filename.data()));
             if (Texture.empty())
             {
-                NpgsCoreError("Failed to load Khronos Texture image: \"{}\".", Filename.data());
+                NpgsCoreError("Failed to load DirectDraw Surface image: \"{}\".", Filename.data());
                 return {};
+            }
+
+            std::size_t DesiredComponentCount = gli::component_count(Texture.format());
+            if (FormatInfo.ComponentCount != DesiredComponentCount)
+            {
+                NpgsCoreWarn("Component count mismatch: Expected {}, got {}.", FormatInfo.ComponentCount, DesiredComponentCount);
             }
 
             gli::extent3d Extent    = Texture.extent();
@@ -337,64 +114,287 @@ namespace Npgs
             return ImageData;
         }
 
-        ktxTexture2* Texture = nullptr;
-        KTX_error_code Result = ktxTexture2_CreateFromNamedFile(Filename.data(), KTX_TEXTURE_CREATE_LOAD_IMAGE_DATA_BIT, &Texture);
-        if (Result != KTX_SUCCESS)
+        FImageData LoadExrFormat(std::string_view Filename, FFormatInfo FormatInfo)
         {
-            NpgsCoreError("Failed to load Khronos Texture image: \"{}\": \"{}\".", Filename.data(), ktxErrorString(Result));
-            return {};
-        }
-
-        if (ktxTexture2_NeedsTranscoding(Texture))
-        {
-            ktx_transcode_fmt_e TranscodeFormat;
-            if (FormatInfo.ComponentSize == 1)
+            bool bIsTiled = false;
             {
-                TranscodeFormat = KTX_TTF_BC7_RGBA;
+                Imf::InputFile Test(Filename.data());
+                bIsTiled = Test.header().hasTileDescription();
+            }
+
+            FImageData ImageData;
+            int Width = 0, Height = 0;
+            std::vector<Imf::Rgba> Pixels;
+
+            if (bIsTiled)
+            {
+                Imf::TiledRgbaInputFile InputFile(Filename.data());
+                const auto& Header   = InputFile.header();
+                const auto& TileDesc = Header.tileDescription();
+                Imath::Box2i DataWindow(InputFile.dataWindow());
+                Width  = DataWindow.max.x - DataWindow.min.x + 1;
+                Height = DataWindow.max.y - DataWindow.min.y + 1;
+
+                ImageData.Extent = vk::Extent3D(Width, Height, 1);
+
+                if (TileDesc.mode == Imf::ONE_LEVEL)
+                {
+                    Pixels.resize(static_cast<std::size_t>(Width) * Height);
+                    InputFile.setFrameBuffer(Pixels.data() - (DataWindow.min.x + DataWindow.min.y * Width), 1, Width);
+                    InputFile.readTiles(0, InputFile.numXTiles() - 1, 0, InputFile.numYTiles() - 1);
+
+                    ImageData.Size = static_cast<vk::DeviceSize>(Width) * Height * FormatInfo.PixelSize;
+                    ImageData.Data.resize(ImageData.Size);
+                    std::copy_n(reinterpret_cast<std::byte*>(Pixels.data()), ImageData.Size, ImageData.Data.data());
+                }
+                else if (TileDesc.mode == Imf::MIPMAP_LEVELS)
+                {
+                    int MipLevels = InputFile.numLevels();
+                    ImageData.MipLevels = MipLevels;
+                    NpgsCoreTrace("OpenEXR image \"{}\": {} mipmap levels found.", Filename.data(), MipLevels);
+
+                    vk::DeviceSize TotalSize = 0;
+                    std::vector<std::size_t>  LevelOffsets(MipLevels);
+                    std::vector<vk::Extent2D> LevelExtents(MipLevels);
+                    for (int MipLevel = 0; MipLevel != MipLevels; ++MipLevel)
+                    {
+                        std::uint32_t LevelWidth  = MipmapSize(Width,  MipLevel);
+                        std::uint32_t LevelHeight = MipmapSize(Height, MipLevel);
+                        LevelExtents[MipLevel] = vk::Extent2D(LevelWidth, LevelHeight);
+                        LevelOffsets[MipLevel] = TotalSize;
+                        TotalSize += static_cast<vk::DeviceSize>(LevelWidth) * LevelHeight * FormatInfo.PixelSize;
+                    }
+
+                    ImageData.Size = TotalSize;
+                    ImageData.Data.resize(TotalSize);
+                    std::vector<Imf::Rgba> LevelPixels;
+
+                    for (int MipLevel = 0; MipLevel != MipLevels; ++MipLevel)
+                    {
+                        int LevelWidth  = static_cast<int>(LevelExtents[MipLevel].width);
+                        int LevelHeight = static_cast<int>(LevelExtents[MipLevel].height);
+
+                        Pixels.resize(static_cast<std::size_t>(LevelWidth) * LevelHeight);
+                        InputFile.setFrameBuffer(Pixels.data() - (DataWindow.min.x + DataWindow.min.y * Width), 1, Width);
+                        InputFile.readTiles(0, InputFile.numXTiles(MipLevel) - 1, 0, InputFile.numYTiles(MipLevel) - 1, MipLevel, MipLevel);
+
+                        LevelPixels.resize(TotalSize);
+                        std::ranges::copy(Pixels, LevelPixels.begin() + LevelOffsets[MipLevel]);
+                    }
+
+                    ImageData.LevelOffsets = std::move(LevelOffsets);
+                    std::copy_n(reinterpret_cast<std::byte*>(Pixels.data()), ImageData.Size, ImageData.Data.data());
+                }
             }
             else
             {
-                TranscodeFormat = KTX_TTF_RGBA32;
+                Imf::RgbaInputFile InputFile(Filename.data());
+                Imath::Box2i DataWindow(InputFile.dataWindow());
+                Width  = DataWindow.max.x - DataWindow.min.x + 1;
+                Height = DataWindow.max.y - DataWindow.min.y + 1;
+
+                Pixels.resize(static_cast<std::size_t>(Width) * Height);
+                InputFile.setFrameBuffer(Pixels.data() - (DataWindow.min.x + DataWindow.min.y * Width), 1, Width);
+                InputFile.readPixels(DataWindow.min.y, DataWindow.max.y);
+
+                ImageData.Extent = vk::Extent3D(Width, Height, 1);
+                ImageData.Size   = static_cast<vk::DeviceSize>(Width) * Height * FormatInfo.PixelSize;
+                ImageData.Data.resize(ImageData.Size);
+                std::copy_n(reinterpret_cast<std::byte*>(Pixels.data()), ImageData.Size, ImageData.Data.data());
             }
 
-            KTX_error_code Result = ktxTexture2_TranscodeBasis(Texture, TranscodeFormat, KTX_TF_HIGH_QUALITY);
-            if (Result != KTX_SUCCESS)
-            {
-                NpgsCoreError("Failed to transcode basis: \"{}\".", ktxErrorString(Result));
-                ktxTexture_Destroy(ktxTexture(Texture));
-                return {};
-            }
+            return ImageData;
         }
 
-        FImageData ImageData;
-
-        ktx_uint32_t Width     = Texture->baseWidth;
-        ktx_uint32_t Height    = Texture->baseHeight;
-        ktx_uint32_t Depth     = Texture->baseDepth;
-        ktx_size_t   Size      = ktxTexture_GetDataSize(ktxTexture(Texture));
-        ktx_uint8_t* PixelData = ktxTexture_GetData(ktxTexture(Texture));
-
-        ImageData.Extent    = vk::Extent3D(Width, Height, Depth ? Depth : 1);
-        ImageData.Size      = Size;
-        ImageData.MipLevels = Texture->numLevels;
-        for (std::uint32_t MipLevel = 0; MipLevel != ImageData.MipLevels; ++MipLevel)
+        FImageData LoadHdrFormat(std::string_view Filename, FFormatInfo FormatInfo)
         {
-            ktx_size_t Offset = 0;
-            KTX_error_code Result = ktxTexture_GetImageOffset(ktxTexture(Texture), MipLevel, 0, 0, &Offset);
-            if (Result != KTX_SUCCESS)
+            int Width    = 0;
+            int Height   = 0;
+            int Channels = 0;
+
+            float* PixelData = stbi_loadf(Filename.data(), &Width, &Height, &Channels, STBI_default);
+            if (PixelData == nullptr)
             {
-                NpgsCoreError("Failed to get Khronos Texture image offset: \"{}\".", ktxErrorString(Result));
-                ktxTexture_Destroy(ktxTexture(Texture));
+                NpgsCoreError("Failed to load Radiance HDR image: \"{}\".", Filename.data());
                 return {};
             }
 
-            ImageData.LevelOffsets.push_back(Offset);
+            FImageData ImageData;
+            ImageData.Extent = vk::Extent3D(Width, Height, 1);
+            ImageData.Size   = static_cast<vk::DeviceSize>(Width) * Height * 16;
+            ImageData.Data.resize(ImageData.Size);
+            if (Channels == 4)
+            {
+                std::copy_n(reinterpret_cast<std::byte*>(PixelData), ImageData.Size, ImageData.Data.data());
+            }
+            else
+            {
+                std::size_t PixelCount = ImageData.Size / 16;
+                float* DstData = reinterpret_cast<float*>(ImageData.Data.data());
+                for (std::size_t i = 0; i != PixelCount; ++i)
+                {
+                    DstData[i * 4 + 0] = PixelData[i * 3 + 0];
+                    DstData[i * 4 + 1] = PixelData[i * 3 + 1];
+                    DstData[i * 4 + 2] = PixelData[i * 3 + 2];
+                    DstData[i * 4 + 3] = 1.0f;
+                }
+            }
+
+            stbi_image_free(PixelData);
+
+            if (FormatInfo.ComponentSize == 2)
+            {
+                std::vector<std::byte> HalfData(ImageData.Size / 2);
+                std::vector<std::byte> FloatData(std::move(ImageData.Data));
+                std::uint16_t* HalfDataPtr  = reinterpret_cast<std::uint16_t*>(HalfData.data());
+                float*         FloatDataPtr = reinterpret_cast<float*>(FloatData.data());
+
+                for (std::size_t i = 0; i != ImageData.Size / sizeof(float); ++i)
+                {
+                    HalfDataPtr[i] = Imath::half(FloatDataPtr[i]).bits();
+                }
+
+                ImageData.Size /= 2;
+                ImageData.Data = std::move(HalfData);
+            }
+
+            return ImageData;
         }
 
-        ImageData.Data.resize(Size);
-        std::copy_n(reinterpret_cast<std::byte*>(PixelData), Size, ImageData.Data.data());
+        FImageData LoadKtxFormat(std::string_view Filename, FFormatInfo FormatInfo)
+        {
+            bool bIsKtx2 = Filename.ends_with("ktx2");
+            if (!bIsKtx2)
+            {
+                gli::texture Texture(gli::load(Filename.data()));
+                if (Texture.empty())
+                {
+                    NpgsCoreError("Failed to load Khronos Texture image: \"{}\".", Filename.data());
+                    return {};
+                }
 
-        return ImageData;
+                gli::extent3d Extent    = Texture.extent();
+                std::size_t   Size      = Texture.size();
+                std::uint32_t MipLevels = static_cast<std::uint32_t>(Texture.levels());
+                void*         PixelData = Texture.data();
+
+                FImageData ImageData;
+                ImageData.Extent    = vk::Extent3D(Extent.x, Extent.y, Extent.z);
+                ImageData.Size      = Size;
+                ImageData.MipLevels = MipLevels;
+                for (std::size_t MipLevel = 0; MipLevel != ImageData.MipLevels; ++MipLevel)
+                {
+                    ImageData.LevelOffsets.push_back(static_cast<std::byte*>(Texture.data(0, 0, MipLevel)) - static_cast<std::byte*>(Texture.data()));
+                }
+
+                ImageData.Data.resize(Size);
+                std::copy_n(static_cast<std::byte*>(PixelData), Size, ImageData.Data.data());
+
+                return ImageData;
+            }
+
+            ktxTexture2* Texture = nullptr;
+            KTX_error_code Result = ktxTexture2_CreateFromNamedFile(Filename.data(), KTX_TEXTURE_CREATE_LOAD_IMAGE_DATA_BIT, &Texture);
+            if (Result != KTX_SUCCESS)
+            {
+                NpgsCoreError("Failed to load Khronos Texture image: \"{}\": \"{}\".", Filename.data(), ktxErrorString(Result));
+                return {};
+            }
+
+            if (ktxTexture2_NeedsTranscoding(Texture))
+            {
+                ktx_transcode_fmt_e TranscodeFormat;
+                if (FormatInfo.ComponentSize == 1)
+                {
+                    TranscodeFormat = KTX_TTF_BC7_RGBA;
+                }
+                else
+                {
+                    TranscodeFormat = KTX_TTF_RGBA32;
+                }
+
+                KTX_error_code Result = ktxTexture2_TranscodeBasis(Texture, TranscodeFormat, KTX_TF_HIGH_QUALITY);
+                if (Result != KTX_SUCCESS)
+                {
+                    NpgsCoreError("Failed to transcode basis: \"{}\".", ktxErrorString(Result));
+                    ktxTexture_Destroy(ktxTexture(Texture));
+                    return {};
+                }
+            }
+
+            FImageData ImageData;
+
+            ktx_uint32_t Width     = Texture->baseWidth;
+            ktx_uint32_t Height    = Texture->baseHeight;
+            ktx_uint32_t Depth     = Texture->baseDepth;
+            ktx_size_t   Size      = ktxTexture_GetDataSize(ktxTexture(Texture));
+            ktx_uint8_t* PixelData = ktxTexture_GetData(ktxTexture(Texture));
+
+            ImageData.Extent    = vk::Extent3D(Width, Height, Depth ? Depth : 1);
+            ImageData.Size      = Size;
+            ImageData.MipLevels = Texture->numLevels;
+            for (std::uint32_t MipLevel = 0; MipLevel != ImageData.MipLevels; ++MipLevel)
+            {
+                ktx_size_t Offset = 0;
+                KTX_error_code Result = ktxTexture_GetImageOffset(ktxTexture(Texture), MipLevel, 0, 0, &Offset);
+                if (Result != KTX_SUCCESS)
+                {
+                    NpgsCoreError("Failed to get Khronos Texture image offset: \"{}\".", ktxErrorString(Result));
+                    ktxTexture_Destroy(ktxTexture(Texture));
+                    return {};
+                }
+
+                ImageData.LevelOffsets.push_back(Offset);
+            }
+
+            ImageData.Data.resize(Size);
+            std::copy_n(reinterpret_cast<std::byte*>(PixelData), Size, ImageData.Data.data());
+
+            return ImageData;
+        }
+
+        FImageData LoadImage(std::string_view Filename, vk::Format ImageFormat)
+        {
+            bool bIsDds = Filename.ends_with(".dds");
+            bool bIsExr = Filename.ends_with(".exr");
+            bool bIsHdr = Filename.ends_with(".hdr");
+            bool bIsKmg = Filename.ends_with(".kmg");
+            bool bIsKtx = Filename.ends_with(".ktx") || Filename.ends_with("ktx2");
+
+            FFormatInfo FormatInfo(ImageFormat);
+            FImageData ImageData;
+            if (bIsDds)
+            {
+                ImageData = LoadDdsFormat(Filename, FormatInfo);
+            }
+            else if (bIsExr)
+            {
+                try
+                {
+                    ImageData = LoadExrFormat(Filename, FormatInfo);
+                }
+                catch (const Iex::BaseExc& e)
+                {
+                    NpgsCoreError("Failed to load OpenEXR image: \"{}\": \"{}\".", Filename.data(), e.what());
+                    return {};
+                }
+            }
+            else if (bIsHdr)
+            {
+                ImageData = LoadHdrFormat(Filename, FormatInfo);
+            }
+            else if (bIsKmg || bIsKtx)
+            {
+                ImageData = LoadKtxFormat(Filename, FormatInfo);
+            }
+            else
+            {
+                ImageData = LoadCommonFormat(Filename, FormatInfo);
+            }
+
+            ImageData.FormatInfo = FormatInfo;
+            return ImageData;
+        }
     }
 
     FTexture::FTexture(FVulkanContext* VulkanContext, VmaAllocator Allocator, const VmaAllocationCreateInfo* AllocationCreateInfo)
@@ -585,7 +585,7 @@ namespace Npgs
         bool bGenerateMipmaps = MipLevels > 1;
         bool bNeedBlit        = DstImageSrcBlit != DstImageDstBlit;
 
-        auto  BufferGuard   = VulkanContext_->AcquireCommandBuffer(FVulkanContext::EQueueType::kGraphics);
+        auto  BufferGuard   = VulkanContext_->AcquireCommandBuffer(FVulkanContext::EQueueType::kGeneral);
         auto& CommandBuffer = *BufferGuard;
         CommandBuffer.Begin(vk::CommandBufferUsageFlagBits::eOneTimeSubmit);
 
@@ -614,14 +614,14 @@ namespace Npgs
         }
 
         CommandBuffer.End();
-        VulkanContext_->ExecuteCommands(FVulkanContext::EQueueType::kGraphics, CommandBuffer);
+        VulkanContext_->ExecuteCommands(FVulkanContext::EQueueType::kGeneral, CommandBuffer);
     }
 
     void FTexture::CopyBlitApplyTexture(vk::Buffer SrcBuffer, vk::Extent3D Extent, std::uint32_t MipLevels,
                                         const std::vector<std::size_t>& LevelOffsets,
                                         std::uint32_t ArrayLayers, vk::Filter Filter, vk::Image DstImage)
     {
-        auto  BufferGuard   = VulkanContext_->AcquireCommandBuffer(FVulkanContext::EQueueType::kGraphics);
+        auto  BufferGuard   = VulkanContext_->AcquireCommandBuffer(FVulkanContext::EQueueType::kGeneral);
         auto& CommandBuffer = *BufferGuard;
         CommandBuffer.Begin(vk::CommandBufferUsageFlagBits::eOneTimeSubmit);
 
@@ -651,7 +651,7 @@ namespace Npgs
         CopyBufferToImage(CommandBuffer, SrcBuffer, DstImage, PostTransferState, Regions);
 
         CommandBuffer.End();
-        VulkanContext_->ExecuteCommands(FVulkanContext::EQueueType::kGraphics, CommandBuffer);
+        VulkanContext_->ExecuteCommands(FVulkanContext::EQueueType::kGeneral, CommandBuffer);
     }
 
     void FTexture::BlitGenerateTexture(vk::Extent3D Extent, std::uint32_t MipLevels, std::uint32_t ArrayLayers,
@@ -681,7 +681,7 @@ namespace Npgs
         bool bGenerateMipmaps = MipLevels > 1;
         bool bNeedBlit = SrcImage != DstImage;
 
-        auto  BufferGuard   = VulkanContext_->AcquireCommandBuffer(FVulkanContext::EQueueType::kGraphics);
+        auto  BufferGuard   = VulkanContext_->AcquireCommandBuffer(FVulkanContext::EQueueType::kGeneral);
         auto& CommandBuffer = *BufferGuard;
         CommandBuffer.Begin(vk::CommandBufferUsageFlagBits::eOneTimeSubmit);
 
@@ -703,7 +703,7 @@ namespace Npgs
         }
 
         CommandBuffer.End();
-        VulkanContext_->ExecuteCommands(FVulkanContext::EQueueType::kGraphics, CommandBuffer);
+        VulkanContext_->ExecuteCommands(FVulkanContext::EQueueType::kGeneral, CommandBuffer);
     }
 
     void FTexture::BlitApplyTexture(vk::Extent3D Extent, std::uint32_t MipLevels, std::uint32_t ArrayLayers,
@@ -719,7 +719,7 @@ namespace Npgs
             ImageTracker->TrackImage(DstImage, FImageTracker::FImageState());
         }
 
-        auto  BufferGuard   = VulkanContext_->AcquireCommandBuffer(FVulkanContext::EQueueType::kGraphics);
+        auto  BufferGuard   = VulkanContext_->AcquireCommandBuffer(FVulkanContext::EQueueType::kGeneral);
         auto& CommandBuffer = *BufferGuard;
         CommandBuffer.Begin(vk::CommandBufferUsageFlagBits::eOneTimeSubmit);
 
@@ -743,7 +743,7 @@ namespace Npgs
         BlitImage(CommandBuffer, SrcImage, PostTransferState, DstImage, PostTransferState, Regions, Filter);
 
         CommandBuffer.End();
-        VulkanContext_->ExecuteCommands(FVulkanContext::EQueueType::kGraphics, CommandBuffer);
+        VulkanContext_->ExecuteCommands(FVulkanContext::EQueueType::kGeneral, CommandBuffer);
     }
 
     void FTexture::CopyBufferToImage(const FVulkanCommandBuffer& CommandBuffer,
@@ -1019,7 +1019,7 @@ namespace Npgs
     void FTexture2D::CreateTexture(std::string_view Filename, vk::Format InitialFormat, vk::Format FinalFormat,
                                    vk::ImageCreateFlags Flags, bool bGenreteMipmaps)
     {
-        FImageData ImageData = ImageLoader_->LoadImage(Filename, InitialFormat);
+        FImageData ImageData = LoadImage(Filename, InitialFormat);
         CreateTexture(ImageData, InitialFormat, FinalFormat, Flags, bGenreteMipmaps);
     }
 
@@ -1083,7 +1083,7 @@ namespace Npgs
     void FTextureCube::CreateCubemap(std::string_view Filename, vk::Format InitialFormat, vk::Format FinalFormat,
                                      vk::ImageCreateFlags Flags, bool bGenerateMipmaps)
     {
-        FImageData ImageData = ImageLoader_->LoadImage(Filename, InitialFormat);
+        FImageData ImageData = LoadImage(Filename, InitialFormat);
         CreateCubemap(ImageData, InitialFormat, FinalFormat, Flags, bGenerateMipmaps);
     }
 
@@ -1094,7 +1094,7 @@ namespace Npgs
 
         for (int i = 0; i != 6; ++i)
         {
-            FaceImages[i] = ImageLoader_->LoadImage(GetAssetFullPath(EAssetType::kTexture, Filenames[i]), InitialFormat);
+            FaceImages[i] = LoadImage(GetAssetFullPath(EAssetType::kTexture, Filenames[i]), InitialFormat);
 
             if (i == 0)
             {

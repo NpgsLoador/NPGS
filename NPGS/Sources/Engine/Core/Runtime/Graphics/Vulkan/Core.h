@@ -23,8 +23,7 @@ namespace Npgs
     public:
         enum class EQueueType
         {
-            kGraphics,
-            kPresent,
+            kGeneral,
             kCompute,
             kTransfer
         };
@@ -32,8 +31,7 @@ namespace Npgs
     private:
         struct FQueueFamilyIndicesComplex
         {
-            std::uint32_t GraphicsQueueFamilyIndex{ vk::QueueFamilyIgnored };
-            std::uint32_t PresentQueueFamilyIndex{ vk::QueueFamilyIgnored };
+            std::uint32_t GeneralQueueFamilyIndex{ vk::QueueFamilyIgnored };
             std::uint32_t ComputeQueueFamilyIndex{ vk::QueueFamilyIgnored };
             std::uint32_t TransferQueueFamilyIndex{ vk::QueueFamilyIgnored };
         };

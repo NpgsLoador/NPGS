@@ -16,38 +16,18 @@
 
 namespace Npgs
 {
-    class FImageLoader
+    struct FImageData
     {
-    public:
-        struct FImageData
-        {
-            std::vector<std::byte>   Data;
-            std::vector<std::size_t> LevelOffsets;
-            vk::DeviceSize           Size{};
-            vk::Extent3D             Extent{};
-            std::uint32_t            MipLevels{};
-            FFormatInfo              FormatInfo{ kFormatInfos[0] };
-        };
-
-    public:
-        FImageLoader() = default;
-        ~FImageLoader() = default;
-
-        FImageData LoadImage(std::string_view Filename, vk::Format ImageFormat);
-
-    private:
-        FImageData LoadCommonFormat(std::string_view Filename, FFormatInfo FormatInfo);
-        FImageData LoadDdsFormat(std::string_view Filename,    FFormatInfo FormatInfo);
-        FImageData LoadExrFormat(std::string_view Filename,    FFormatInfo FormatInfo);
-        FImageData LoadHdrFormat(std::string_view Filename,    FFormatInfo FormatInfo);
-        FImageData LoadKtxFormat(std::string_view Filename,    FFormatInfo FormatInfo);
+        std::vector<std::byte>   Data;
+        std::vector<std::size_t> LevelOffsets;
+        vk::DeviceSize           Size{};
+        vk::Extent3D             Extent{};
+        std::uint32_t            MipLevels{};
+        FFormatInfo              FormatInfo{ kFormatInfos[0] };
     };
 
     class FTexture
     {
-    protected:
-        using FImageData = FImageLoader::FImageData;
-
     public:
         vk::DescriptorImageInfo CreateDescriptorImageInfo(const FVulkanSampler& Sampler) const;
         vk::DescriptorImageInfo CreateDescriptorImageInfo(const vk::Sampler& Sampler) const;
@@ -109,7 +89,6 @@ namespace Npgs
 
     protected:
         FVulkanContext*                     VulkanContext_;
-        std::unique_ptr<FImageLoader>       ImageLoader_;
         std::unique_ptr<FVulkanImageMemory> ImageMemory_;
         std::unique_ptr<FVulkanImageView>   ImageView_;
         VmaAllocator                        Allocator_;

@@ -32,53 +32,22 @@ namespace Npgs
     FVulkanContext::FVulkanContext()
         : VulkanCore_(std::make_unique<FVulkanCore>())
     {
-        auto InitializeCommandPool = [this]() -> void
+        auto InitializeResourcePool = [this]() -> void
         {
-            if (VulkanCore_->GetQueueFamilyIndex(EQueueType::kGraphics) != vk::QueueFamilyIgnored)
+            if (VulkanCore_->GetQueueFamilyIndex(EQueueType::kGeneral) != vk::QueueFamilyIgnored)
             {
-                CommandBufferPools_[VulkanCore_->GetQueueFamilyIndex(EQueueType::kGraphics)] = std::make_shared<FCommandBufferPool>(
-                    8, 32, 5000, 60000, VulkanCore_->GetDevice(), VulkanCore_->GetQueueFamilyIndex(EQueueType::kGraphics));
+                CommandBufferPools_[VulkanCore_->GetQueueFamilyIndex(EQueueType::kGeneral)] = std::make_shared<FCommandBufferPool>(
+                    8, 32, 5000, 60000, VulkanCore_->GetDevice(), VulkanCore_->GetQueueFamilyIndex(EQueueType::kGeneral));
             }
             if (VulkanCore_->GetQueueFamilyIndex(EQueueType::kCompute) != vk::QueueFamilyIgnored)
             {
-                if (VulkanCore_->GetQueueFamilyIndex(EQueueType::kCompute) != VulkanCore_->GetQueueFamilyIndex(EQueueType::kGraphics))
-                {
-                    CommandBufferPools_[VulkanCore_->GetQueueFamilyIndex(EQueueType::kCompute)] = std::make_shared<FCommandBufferPool>(
-                        4, 16, 5000, 60000, VulkanCore_->GetDevice(), VulkanCore_->GetQueueFamilyIndex(EQueueType::kCompute));
-                }
-                else
-                {
-                    CommandBufferPools_[VulkanCore_->GetQueueFamilyIndex(EQueueType::kCompute)] =
-                        CommandBufferPools_.at(VulkanCore_->GetQueueFamilyIndex(EQueueType::kGraphics));
-                }
-            }
-            if (VulkanCore_->GetQueueFamilyIndex(EQueueType::kPresent) != vk::QueueFamilyIgnored &&
-                VulkanCore_->GetQueueFamilyIndex(EQueueType::kPresent) != VulkanCore_->GetQueueFamilyIndex(EQueueType::kGraphics) &&
-                VulkanCore_->GetSwapchainCreateInfo().imageSharingMode == vk::SharingMode::eExclusive)
-            {
-                if (VulkanCore_->GetQueueFamilyIndex(EQueueType::kPresent) != VulkanCore_->GetQueueFamilyIndex(EQueueType::kGraphics))
-                {
-                    CommandBufferPools_[VulkanCore_->GetQueueFamilyIndex(EQueueType::kPresent)] = std::make_shared<FCommandBufferPool>(
-                        2, 8, 5000, 60000, VulkanCore_->GetDevice(), VulkanCore_->GetQueueFamilyIndex(EQueueType::kPresent));
-                }
-                else
-                {
-                    CommandBufferPools_[VulkanCore_->GetQueueFamilyIndex(EQueueType::kPresent)] =
-                        CommandBufferPools_.at(VulkanCore_->GetQueueFamilyIndex(EQueueType::kGraphics));
-                }
+                CommandBufferPools_[VulkanCore_->GetQueueFamilyIndex(EQueueType::kCompute)] = std::make_shared<FCommandBufferPool>(
+                    4, 16, 5000, 60000, VulkanCore_->GetDevice(), VulkanCore_->GetQueueFamilyIndex(EQueueType::kCompute));
             }
             if (VulkanCore_->GetQueueFamilyIndex(EQueueType::kTransfer) != vk::QueueFamilyIgnored)
             {
-                if (VulkanCore_->GetQueueFamilyIndex(EQueueType::kTransfer) != VulkanCore_->GetQueueFamilyIndex(EQueueType::kGraphics))
-                {
-                    CommandBufferPools_[VulkanCore_->GetQueueFamilyIndex(EQueueType::kTransfer)] = std::make_shared<FCommandBufferPool>(
-                        2, 8, 5000, 60000, VulkanCore_->GetDevice(), VulkanCore_->GetQueueFamilyIndex(EQueueType::kTransfer));
-                }
-                else
-                {
-                    CommandBufferPools_[VulkanCore_->GetQueueFamilyIndex(EQueueType::kTransfer)] =
-                        CommandBufferPools_.at(VulkanCore_->GetQueueFamilyIndex(EQueueType::kGraphics));
-                }
+                CommandBufferPools_[VulkanCore_->GetQueueFamilyIndex(EQueueType::kTransfer)] = std::make_shared<FCommandBufferPool>(
+                    2, 8,  5000, 60000, VulkanCore_->GetDevice(), VulkanCore_->GetQueueFamilyIndex(EQueueType::kTransfer));
             }
 
             StagingBufferPools_[std::to_underlying(FStagingBufferPool::EPoolUsage::kSubmit)] = std::make_unique<FStagingBufferPool>(
@@ -99,7 +68,7 @@ namespace Npgs
         //     }
         // };
 
-        VulkanCore_->AddCreateDeviceCallback("InitializeCommandPool", InitializeCommandPool);
+        VulkanCore_->AddCreateDeviceCallback("InitializeResourcePool", InitializeResourcePool);
         // VulkanCore_->AddCreateDeviceCallback("InitializeFormatProperties", InitializeFormatProperties);
     }
 
@@ -201,51 +170,5 @@ namespace Npgs
     {
         vk::SubmitInfo SubmitInfo = CreateSubmitInfo(Buffer, WaitSemaphore, SignalSemaphore, Flags);
         return SubmitCommandBuffer(QueueType, SubmitInfo, Fence);
-    }
-
-    vk::Result FVulkanContext::TransferImageOwnershipToPresent(vk::CommandBuffer PresentCommandBuffer) const
-    {
-        // vk::CommandBufferBeginInfo CommandBufferBeginInfo(vk::CommandBufferUsageFlagBits::eOneTimeSubmit);
-        // try
-        // {
-        //     PresentCommandBuffer.begin(CommandBufferBeginInfo);
-        // }
-        // catch (const vk::SystemError& e)
-        // {
-        //     NpgsCoreError("Failed to begin present command buffer: {}", e.what());
-        //     return static_cast<vk::Result>(e.code().value());
-        // }
-
-        TransferImageOwnershipToPresentImpl(PresentCommandBuffer);
-        return vk::Result::eSuccess;
-    }
-
-    vk::Result FVulkanContext::TransferImageOwnershipToPresent(const FVulkanCommandBuffer& PresentCommandBuffer) const
-    {
-        // VulkanHppCheck(PresentCommandBuffer.Begin(vk::CommandBufferUsageFlagBits::eOneTimeSubmit));
-        TransferImageOwnershipToPresentImpl(*PresentCommandBuffer);
-        return vk::Result::eSuccess;
-    }
-
-    void FVulkanContext::TransferImageOwnershipToPresentImpl(vk::CommandBuffer PresentCommandBuffer) const
-    {
-        vk::ImageMemoryBarrier2 ImageMemoryBarrier(
-            vk::PipelineStageFlagBits2::eColorAttachmentOutput,
-            vk::AccessFlagBits2::eColorAttachmentWrite,
-            vk::PipelineStageFlagBits2::eBottomOfPipe,
-            vk::AccessFlagBits2::eNone,
-            vk::ImageLayout::eColorAttachmentOptimal,
-            vk::ImageLayout::ePresentSrcKHR,
-            VulkanCore_->GetQueueFamilyIndex(EQueueType::kGraphics),
-            VulkanCore_->GetQueueFamilyIndex(EQueueType::kPresent),
-            VulkanCore_->GetSwapchainImage(VulkanCore_->GetCurrentImageIndex()),
-            vk::ImageSubresourceRange(vk::ImageAspectFlagBits::eColor, 0, 1, 0, 1)
-        );
-
-        vk::DependencyInfo DependencyInfo = vk::DependencyInfo()
-            .setDependencyFlags(vk::DependencyFlagBits::eByRegion)
-            .setImageMemoryBarriers(ImageMemoryBarrier);
-
-        PresentCommandBuffer.pipelineBarrier2(DependencyInfo);
     }
 } // namespace Npgs

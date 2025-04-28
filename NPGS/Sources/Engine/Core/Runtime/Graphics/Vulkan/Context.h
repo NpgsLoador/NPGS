@@ -82,9 +82,6 @@ namespace Npgs
         vk::Result SubmitCommandBuffer(EQueueType QueueType, const FVulkanCommandBuffer& Buffer, const FVulkanSemaphore* WaitSemaphore,
                                        const FVulkanSemaphore* SignalSemaphore, const FVulkanFence* Fence, vk::PipelineStageFlags Flags) const;
 
-        vk::Result TransferImageOwnershipToPresent(vk::CommandBuffer PresentCommandBuffer) const;
-        vk::Result TransferImageOwnershipToPresent(const FVulkanCommandBuffer& PresentCommandBuffer) const;
-
         vk::Result SwapImage(vk::Semaphore Semaphore);
         vk::Result SwapImage(const FVulkanSemaphore& Semaphore);
         vk::Result PresentImage(const vk::PresentInfoKHR& PresentInfo);
@@ -127,9 +124,6 @@ namespace Npgs
         // const vk::FormatProperties& GetFormatProperties(vk::Format Format) const;
 
         std::uint32_t GetApiVersion() const;
-
-    private:
-        void TransferImageOwnershipToPresentImpl(vk::CommandBuffer PresentCommandBuffer) const;
 
     private:
         std::unique_ptr<FVulkanCore>                                           VulkanCore_;

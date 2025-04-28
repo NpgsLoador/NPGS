@@ -127,16 +127,16 @@ namespace Npgs
             Semaphores_RenderFinished.emplace_back(VulkanContext_->GetDevice(), vk::SemaphoreCreateFlags());
         }
 
-        FVulkanCommandPool GraphicsCommandPool(
-            VulkanContext_->GetDevice(), VulkanContext_->GetQueueFamilyIndex(FVulkanContext::EQueueType::kGraphics),
+        FVulkanCommandPool CommandPool(
+            VulkanContext_->GetDevice(), VulkanContext_->GetQueueFamilyIndex(FVulkanContext::EQueueType::kGeneral),
             vk::CommandPoolCreateFlagBits::eResetCommandBuffer);
 
-        GraphicsCommandPool.AllocateBuffers(vk::CommandBufferLevel::ePrimary, CommandBuffers);
-        GraphicsCommandPool.AllocateBuffers(vk::CommandBufferLevel::eSecondary, DepthMapCommandBuffers);
-        GraphicsCommandPool.AllocateBuffers(vk::CommandBufferLevel::eSecondary, SceneGBufferCommandBuffers);
-        GraphicsCommandPool.AllocateBuffers(vk::CommandBufferLevel::eSecondary, SceneMergeCommandBuffers);
-        GraphicsCommandPool.AllocateBuffers(vk::CommandBufferLevel::eSecondary, FrontgroundCommandBuffers);
-        GraphicsCommandPool.AllocateBuffers(vk::CommandBufferLevel::eSecondary, PostProcessCommandBuffers);
+        CommandPool.AllocateBuffers(vk::CommandBufferLevel::ePrimary, CommandBuffers);
+        CommandPool.AllocateBuffers(vk::CommandBufferLevel::eSecondary, DepthMapCommandBuffers);
+        CommandPool.AllocateBuffers(vk::CommandBufferLevel::eSecondary, SceneGBufferCommandBuffers);
+        CommandPool.AllocateBuffers(vk::CommandBufferLevel::eSecondary, SceneMergeCommandBuffers);
+        CommandPool.AllocateBuffers(vk::CommandBufferLevel::eSecondary, FrontgroundCommandBuffers);
+        CommandPool.AllocateBuffers(vk::CommandBufferLevel::eSecondary, PostProcessCommandBuffers);
 
         vk::DeviceSize Offset        = 0;
         std::uint32_t  DynamicOffset = 0;
@@ -736,7 +736,7 @@ namespace Npgs
             CurrentBuffer->pipelineBarrier2(FinalDependencyInfo);
             CurrentBuffer.End();
 
-            VulkanContext_->SubmitCommandBuffer(FVulkanContext::EQueueType::kGraphics,
+            VulkanContext_->SubmitCommandBuffer(FVulkanContext::EQueueType::kGeneral,
                                                 *CurrentBuffer,
                                                 *Semaphores_ImageAvailable[CurrentFrame],
                                                 *Semaphores_RenderFinished[CurrentFrame],
