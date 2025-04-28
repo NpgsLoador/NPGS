@@ -671,7 +671,7 @@ namespace Npgs
     requires std::is_class_v<CsvType>
     CsvType* FStellarGenerator::LoadCsvAsset(const std::string& Filename, const std::vector<std::string>& Headers)
     {
-        auto* AssetManager = EngineServicesGetCoreServices->GetAssetManager();
+        auto* AssetManager = EngineCoreServices->GetAssetManager();
         {
             std::shared_lock Lock(kCacheMutex_);
             auto* Asset = AssetManager->GetAsset<CsvType>(Filename);

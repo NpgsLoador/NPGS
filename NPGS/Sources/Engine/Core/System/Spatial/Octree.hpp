@@ -206,7 +206,7 @@ namespace Npgs
     public:
         TOctree(glm::vec3 Center, float Radius, int MaxDepth = 8)
             : Root_(std::make_unique<FNodeType>(Center, Radius, nullptr))
-            , ThreadPool_(EngineServicesGetCoreServices->GetThreadPool())
+            , ThreadPool_(EngineCoreServices->GetThreadPool())
             , MaxDepth_(MaxDepth)
         {
         }

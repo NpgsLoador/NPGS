@@ -35,7 +35,7 @@ namespace Npgs
     };
 } // namespace Npgs
 
-#define EngineServicesGetCoreServices     ::Npgs::FEngineServices::GetInstance()->GetCoreServices()
-#define EngineServicesGetResourceServices ::Npgs::FEngineServices::GetInstance()->GetResourceServices()
+#define EngineCoreServices     ::Npgs::FEngineServices::GetInstance()->GetCoreServices()
+#define EngineResourceServices ::Npgs::FEngineServices::GetInstance()->GetResourceServices()
 
 #include "EngineServices.inl"

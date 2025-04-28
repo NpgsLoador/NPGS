@@ -578,7 +578,7 @@ namespace Npgs
             FImageMemoryMaskPack()
         };
 
-        auto* ImageTracker = EngineServicesGetResourceServices->GetImageTracker();
+        auto* ImageTracker = EngineResourceServices->GetImageTracker();
         ImageTracker->TrackImage(DstImageSrcBlit, FImageTracker::FImageState());
         ImageTracker->TrackImage(DstImageDstBlit, FImageTracker::FImageState());
 
@@ -631,7 +631,7 @@ namespace Npgs
             vk::ImageLayout::eShaderReadOnlyOptimal
         );
 
-        auto* ImageTracker = EngineServicesGetResourceServices->GetImageTracker();
+        auto* ImageTracker = EngineResourceServices->GetImageTracker();
 
         std::vector<vk::BufferImageCopy> Regions;
         for (std::uint32_t MipLevel = 0; MipLevel != MipLevels; ++MipLevel)
@@ -668,7 +668,7 @@ namespace Npgs
             FImageMemoryMaskPack()
         };
 
-        auto* ImageTracker = EngineServicesGetResourceServices->GetImageTracker();
+        auto* ImageTracker = EngineResourceServices->GetImageTracker();
         if (!ImageTracker->IsExisting(SrcImage))
         {
             ImageTracker->TrackImage(SrcImage, FImageTracker::FImageState());
@@ -709,7 +709,7 @@ namespace Npgs
     void FTexture::BlitApplyTexture(vk::Extent3D Extent, std::uint32_t MipLevels, std::uint32_t ArrayLayers,
                                     vk::Filter Filter, vk::Image SrcImage, vk::Image DstImage)
     {
-        auto* ImageTracker = EngineServicesGetResourceServices->GetImageTracker();
+        auto* ImageTracker = EngineResourceServices->GetImageTracker();
         if (!ImageTracker->IsExisting(SrcImage))
         {
             ImageTracker->TrackImage(SrcImage, FImageTracker::FImageState());
@@ -760,7 +760,7 @@ namespace Npgs
             Region.imageSubresource.layerCount
         );
 
-        auto* ImageTracker = EngineServicesGetResourceServices->GetImageTracker();
+        auto* ImageTracker = EngineResourceServices->GetImageTracker();
         auto  ImageState   = ImageTracker->GetImageState(DstImage, ImageSubresourceRange);
 
         vk::ImageMemoryBarrier2 InitDstImageBarrier(
@@ -826,7 +826,7 @@ namespace Npgs
             Region.dstSubresource.layerCount
         );
 
-        auto* ImageTracker = EngineServicesGetResourceServices->GetImageTracker();
+        auto* ImageTracker = EngineResourceServices->GetImageTracker();
         auto SrcImageState = ImageTracker->GetImageState(SrcImage, SrcImageSubresourceRange);
         auto DstImageState = ImageTracker->GetImageState(DstImage, DstImageSubresourceRange);
 
@@ -972,7 +972,7 @@ namespace Npgs
                 LastMipRange
             );
 
-            auto* ImageTracker = EngineServicesGetResourceServices->GetImageTracker();
+            auto* ImageTracker = EngineResourceServices->GetImageTracker();
             ImageTracker->FlushImageAllStates(Image, FinalState);
 
             std::array FinalBarriers{ PartFinalBarrier, LastFinalBarrier };
