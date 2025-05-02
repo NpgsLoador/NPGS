@@ -52,7 +52,7 @@ namespace Npgs
 
             StagingBufferPools_[std::to_underlying(FStagingBufferPool::EPoolUsage::kSubmit)] = std::make_unique<FStagingBufferPool>(
                 VulkanCore_->GetPhysicalDevice(), VulkanCore_->GetDevice(), VulkanCore_->GetVmaAllocator(),
-                4, 64, 1000, 5000, FStagingBufferPool::EPoolUsage::kSubmit, true);
+                4, 64, 1000, 60000, FStagingBufferPool::EPoolUsage::kSubmit, true);
 
             StagingBufferPools_[std::to_underlying(FStagingBufferPool::EPoolUsage::kFetch)] = std::make_unique<FStagingBufferPool>(
                 VulkanCore_->GetPhysicalDevice(), VulkanCore_->GetDevice(), VulkanCore_->GetVmaAllocator(),

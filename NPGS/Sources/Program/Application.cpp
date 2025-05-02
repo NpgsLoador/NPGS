@@ -1622,9 +1622,9 @@ namespace Npgs
             VulkanContext_->AddInstanceExtension(Extensions[i]);
         }
 
-        vk::Result Result;
-        if ((Result = VulkanContext_->CreateInstance()) != vk::Result::eSuccess)
+        if (vk::Result Result = VulkanContext_->CreateInstance(); Result != vk::Result::eSuccess)
         {
+            NpgsCoreError("Failed to create Vulkan instance.");
             glfwDestroyWindow(Window_);
             glfwTerminate();
             return false;
@@ -1645,9 +1645,13 @@ namespace Npgs
             VulkanContext_->SetHdrMetadata(GetHdrMetadata());
         }
 
+        // TODO config physical device select
         if (VulkanContext_->CreateDevice(0) != vk::Result::eSuccess ||
             VulkanContext_->CreateSwapchain(WindowSize_, bEnableVSync_, bEnableHdr_) != vk::Result::eSuccess)
         {
+            NpgsCoreError("Failed to create Vulkan device.");
+            glfwDestroyWindow(Window_);
+            glfwTerminate();
             return false;
         }
 
