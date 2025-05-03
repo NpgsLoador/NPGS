@@ -14,8 +14,8 @@
 
 #include <glm/glm.hpp>
 
-#include "Engine/Core/Runtime/AssetLoaders/AssetManager.h"
 #include "Engine/Core/Runtime/AssetLoaders/CommaSeparatedValues.hpp"
+#include "Engine/Core/Runtime/Managers/AssetManager.h"
 #include "Engine/Core/System/Services/EngineServices.h"
 #include "Engine/Utils/Logger.h"
 #include "Engine/Utils/Utils.h"

@@ -2,9 +2,9 @@
 
 #include <memory>
 
-#include "Engine/Core/Runtime/AssetLoaders/AssetManager.h"
 #include "Engine/Core/Runtime/Graphics/Vulkan/Context.h"
-#include "Engine/Core/Runtime/Threads/ThreadPool.h"
+#include "Engine/Core/Runtime/Managers/AssetManager.h"
+#include "Engine/Core/Runtime/Pools/ThreadPool.h"
 
 namespace Npgs
 {

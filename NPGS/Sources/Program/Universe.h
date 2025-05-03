@@ -7,9 +7,9 @@
 
 #include <glm/glm.hpp>
 
+#include "Engine/Core/Runtime/Pools/ThreadPool.h"
 #include "Engine/Core/System/Generators/StellarGenerator.h"
 #include "Engine/Core/System/Spatial/Octree.hpp"
-#include "Engine/Core/Runtime/Threads/ThreadPool.h"
 #include "Engine/Core/Types/Entries/Astro/Star.h"
 #include "Engine/Core/Types/Entries/Astro/StellarSystem.h"
 #include "Engine/Utils/Random.hpp"

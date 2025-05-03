@@ -24,8 +24,9 @@
 #include "Engine/Core/Math/TangentSpaceTools.h"
 #include "Engine/Core/Runtime/AssetLoaders/Shader.h"
 #include "Engine/Core/Runtime/AssetLoaders/Texture.h"
-#include "Engine/Core/Runtime/Graphics/Resources/Managers/PipelineManager.h"
-#include "Engine/Core/Runtime/Graphics/Resources/Managers/ShaderBufferManager.h"
+#include "Engine/Core/Runtime/Managers/AssetManager.h"
+#include "Engine/Core/Runtime/Managers/PipelineManager.h"
+#include "Engine/Core/Runtime/Managers/ShaderBufferManager.h"
 #include "Engine/Core/System/Services/EngineServices.h"
 #include "Engine/Utils/Logger.h"
 

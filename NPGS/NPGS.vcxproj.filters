@@ -57,10 +57,10 @@
     <ClCompile Include="Sources\Engine\Core\System\Spatial\Camera.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="Sources\Engine\Core\Runtime\Threads\ThreadPool.cpp">
+    <ClCompile Include="Sources\Engine\Core\Runtime\Pools\ThreadPool.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="Sources\Engine\Core\Runtime\AssetLoaders\AssetManager.cpp">
+    <ClCompile Include="Sources\Engine\Core\Runtime\Managers\AssetManager.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="Sources\Engine\Core\Runtime\AssetLoaders\Texture.cpp">
@@ -84,10 +84,10 @@
     <ClCompile Include="Sources\Engine\Core\Runtime\AssetLoaders\Shader.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="Sources\Engine\Core\Runtime\Graphics\Resources\Managers\ShaderBufferManager.cpp">
+    <ClCompile Include="Sources\Engine\Core\Runtime\Managers\ShaderBufferManager.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="Sources\Engine\Core\Runtime\Graphics\Resources\Managers\PipelineManager.cpp">
+    <ClCompile Include="Sources\Engine\Core\Runtime\Managers\PipelineManager.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="Sources\ExternalImpl\stb_impl.cpp">
@@ -99,7 +99,7 @@
     <ClCompile Include="Sources\Engine\Core\Math\TangentSpaceTools.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="Sources\Engine\Core\Runtime\Graphics\Resources\Managers\ImageTracker.cpp">
+    <ClCompile Include="Sources\Engine\Core\Runtime\Managers\ImageTracker.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="Sources\Program\Application.cpp">
@@ -111,7 +111,7 @@
     <ClCompile Include="Sources\Engine\Core\Runtime\Graphics\Resources\StagingBuffer.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="Sources\Engine\Core\Runtime\Graphics\Resources\Pools\StagingBufferPool.cpp">
+    <ClCompile Include="Sources\Engine\Core\Runtime\Pools\StagingBufferPool.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="Sources\Engine\Core\Runtime\Graphics\Resources\Attachment.cpp">
@@ -132,10 +132,10 @@
     <ClCompile Include="Sources\Program\main.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="Sources\Engine\Core\Runtime\Threads\QueuePool.cpp">
+    <ClCompile Include="Sources\Engine\Core\Runtime\Pools\QueuePool.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="Sources\Engine\Core\Runtime\Graphics\Resources\Pools\CommandBufferPool.cpp">
+    <ClCompile Include="Sources\Engine\Core\Runtime\Pools\CommandBufferPool.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="Sources\Engine\Core\System\Events\Event.cpp">
@@ -209,10 +209,10 @@
     <ClInclude Include="Sources\Engine\Core\System\Spatial\Octree.hpp">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="Sources\Engine\Core\Runtime\Threads\ThreadPool.h">
+    <ClInclude Include="Sources\Engine\Core\Runtime\Pools\ThreadPool.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="Sources\Engine\Core\Runtime\AssetLoaders\AssetManager.h">
+    <ClInclude Include="Sources\Engine\Core\Runtime\Managers\AssetManager.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="Sources\Engine\Core\Runtime\AssetLoaders\CommaSeparatedValues.hpp">
@@ -251,10 +251,10 @@
     <ClInclude Include="Sources\Engine\Utils\FieldReflection.hpp">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="Sources\Engine\Core\Runtime\Graphics\Resources\Managers\ShaderBufferManager.h">
+    <ClInclude Include="Sources\Engine\Core\Runtime\Managers\ShaderBufferManager.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="Sources\Engine\Core\Runtime\Graphics\Resources\Managers\PipelineManager.h">
+    <ClInclude Include="Sources\Engine\Core\Runtime\Managers\PipelineManager.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="Sources\Engine\Core\Runtime\Graphics\Buffers\BufferStructs.h">
@@ -263,16 +263,16 @@
     <ClInclude Include="Sources\Engine\Core\Math\TangentSpaceTools.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="Sources\Engine\Core\Runtime\Graphics\Resources\Managers\ImageTracker.h">
+    <ClInclude Include="Sources\Engine\Core\Runtime\Managers\ImageTracker.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="Sources\Engine\Core\Runtime\Graphics\Resources\Pools\ResourcePoolBase.hpp">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="Sources\Engine\Core\Runtime\Graphics\Resources\Pools\ResourcePool.hpp">
+    <ClInclude Include="Sources\Engine\Core\Runtime\Pools\ResourcePool.hpp">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="Sources\Engine\Core\Runtime\Graphics\Resources\Pools\StagingBufferPool.h">
+    <ClInclude Include="Sources\Engine\Core\Runtime\Pools\StagingBufferPool.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="Sources\Engine\Core\Runtime\Graphics\Resources\Attachment.h">
@@ -296,10 +296,10 @@
     <ClInclude Include="Sources\Engine\Core\System\Services\ResourceServices.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="Sources\Engine\Core\Runtime\Threads\QueuePool.h">
+    <ClInclude Include="Sources\Engine\Core\Runtime\Pools\QueuePool.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="Sources\Engine\Core\Runtime\Graphics\Resources\Pools\CommandBufferPool.h">
+    <ClInclude Include="Sources\Engine\Core\Runtime\Pools\CommandBufferPool.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="Sources\Engine\Core\System\Events\Event.h">
@@ -340,10 +340,10 @@
     <None Include="Sources\Engine\Core\System\Spatial\Camera.inl">
       <Filter>头文件</Filter>
     </None>
-    <None Include="Sources\Engine\Core\Runtime\Threads\ThreadPool.inl">
+    <None Include="Sources\Engine\Core\Runtime\Pools\ThreadPool.inl">
       <Filter>头文件</Filter>
     </None>
-    <None Include="Sources\Engine\Core\Runtime\AssetLoaders\AssetManager.inl">
+    <None Include="Sources\Engine\Core\Runtime\Managers\AssetManager.inl">
       <Filter>头文件</Filter>
     </None>
     <None Include="Sources\Engine\Core\Runtime\AssetLoaders\Texture.inl">
@@ -361,10 +361,10 @@
     <None Include="Sources\Engine\Core\Runtime\AssetLoaders\Shader.inl">
       <Filter>头文件</Filter>
     </None>
-    <None Include="Sources\Engine\Core\Runtime\Graphics\Resources\Managers\ShaderBufferManager.inl">
+    <None Include="Sources\Engine\Core\Runtime\Managers\ShaderBufferManager.inl">
       <Filter>头文件</Filter>
     </None>
-    <None Include="Sources\Engine\Core\Runtime\Graphics\Resources\Managers\PipelineManager.inl">
+    <None Include="Sources\Engine\Core\Runtime\Managers\PipelineManager.inl">
       <Filter>头文件</Filter>
     </None>
     <None Include="Sources\Program\Application.cpp.bak" />
@@ -395,7 +395,7 @@
     <None Include="Sources\Engine\Shaders\PbrScene.vert.glsl" />
     <None Include="Sources\Engine\Shaders\PbrSceneGBuffer.frag.glsl" />
     <None Include="Sources\Engine\Shaders\PbrSceneMerge.comp.glsl" />
-    <None Include="Sources\Engine\Core\Runtime\Graphics\Resources\Managers\ImageTracker.inl">
+    <None Include="Sources\Engine\Core\Runtime\Managers\ImageTracker.inl">
       <Filter>头文件</Filter>
     </None>
     <None Include="Sources\Engine\Shaders\Common\BindlessExtensions.glsl" />
@@ -417,10 +417,10 @@
     <None Include="Sources\Engine\Core\System\Services\ResourceServices.inl">
       <Filter>头文件</Filter>
     </None>
-    <None Include="Sources\Engine\Core\Runtime\Threads\QueuePool.inl">
+    <None Include="Sources\Engine\Core\Runtime\Pools\QueuePool.inl">
       <Filter>头文件</Filter>
     </None>
-    <None Include="Sources\Engine\Core\Runtime\Graphics\Resources\Pools\CommandBufferPool.inl">
+    <None Include="Sources\Engine\Core\Runtime\Pools\CommandBufferPool.inl">
       <Filter>头文件</Filter>
     </None>
   </ItemGroup>

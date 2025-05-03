@@ -13,7 +13,7 @@
 #include <vulkan/vulkan.hpp>
 #include <vulkan/vulkan_to_string.hpp>
 
-#include "Engine/Core/Runtime/Threads/QueuePool.h"
+#include "Engine/Core/Runtime/Pools/QueuePool.h"
 #include "Engine/Utils/Logger.h"
 
 namespace Npgs

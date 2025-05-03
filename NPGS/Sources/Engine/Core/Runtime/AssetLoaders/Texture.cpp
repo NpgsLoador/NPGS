@@ -15,7 +15,7 @@
 #include <OpenEXR/ImfTiledRgbaFile.h>
 #include <stb_image.h>
 
-#include "Engine/Core/Runtime/AssetLoaders/AssetManager.h"
+#include "Engine/Core/Runtime/Managers/AssetManager.h"
 #include "Engine/Core/System/Services/EngineServices.h"
 #include "Engine/Utils/Logger.h"
 

@@ -12,10 +12,10 @@
 #include <vma/vk_mem_alloc.h>
 #include <vulkan/vulkan.hpp>
 
-#include "Engine/Core/Runtime/Graphics/Resources/Pools/CommandBufferPool.h"
-#include "Engine/Core/Runtime/Graphics/Resources/Pools/StagingBufferPool.h"
 #include "Engine/Core/Runtime/Graphics/Vulkan/Core.h"
 #include "Engine/Core/Runtime/Graphics/Vulkan/Wrappers.h"
+#include "Engine/Core/Runtime/Pools/CommandBufferPool.h"
+#include "Engine/Core/Runtime/Pools/StagingBufferPool.h"
 
 namespace Npgs
 {

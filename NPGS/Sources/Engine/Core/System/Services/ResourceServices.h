@@ -6,11 +6,11 @@
 #include <vma/vk_mem_alloc.h>
 #include <vulkan/vulkan.hpp>
 
-#include "Engine/Core/Runtime/Graphics/Resources/Managers/ImageTracker.h"
-#include "Engine/Core/Runtime/Graphics/Resources/Managers/PipelineManager.h"
-#include "Engine/Core/Runtime/Graphics/Resources/Managers/ShaderBufferManager.h"
-#include "Engine/Core/Runtime/Graphics/Resources/Pools/StagingBufferPool.h"
 #include "Engine/Core/Runtime/Graphics/Vulkan/Context.h"
+#include "Engine/Core/Runtime/Managers/ImageTracker.h"
+#include "Engine/Core/Runtime/Managers/PipelineManager.h"
+#include "Engine/Core/Runtime/Managers/ShaderBufferManager.h"
+#include "Engine/Core/Runtime/Pools/StagingBufferPool.h"
 #include "Engine/Core/System/Services/CoreServices.h"
 
 namespace Npgs

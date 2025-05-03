@@ -11,7 +11,7 @@
 
 #include <spirv_cross/spirv_reflect.hpp>
 
-#include "Engine/Core/Runtime/AssetLoaders/AssetManager.h"
+#include "Engine/Core/Runtime/Managers/AssetManager.h"
 #include "Engine/Utils/Logger.h"
 
 namespace Npgs

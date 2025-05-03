@@ -7,13 +7,12 @@
 #include <GLFW/glfw3.h>
 #include <vulkan/vulkan.hpp>
 
-#include "Engine/Core/Runtime/AssetLoaders/AssetManager.h"
 #include "Engine/Core/Runtime/Graphics/Buffers/BufferStructs.h"
 #include "Engine/Core/Runtime/Graphics/Resources/Attachment.h"
 #include "Engine/Core/Runtime/Graphics/Resources/DeviceLocalBuffer.h"
 #include "Engine/Core/Runtime/Graphics/Vulkan/Context.h"
 #include "Engine/Core/Runtime/Graphics/Vulkan/Wrappers.h"
-#include "Engine/Core/Runtime/Threads/ThreadPool.h"
+#include "Engine/Core/Runtime/Pools/ThreadPool.h"
 #include "Engine/Core/System/Spatial/Camera.h"
 
 namespace Npgs

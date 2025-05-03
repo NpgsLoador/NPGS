@@ -2,8 +2,8 @@
 
 #include "Engine/Core/Base/Base.h"
 #include "Engine/Core/Base/Config/EngineConfig.h"
-#include "Engine/Core/Runtime/AssetLoaders/AssetManager.h"
 #include "Engine/Core/Runtime/Graphics/Vulkan/Context.h"
+#include "Engine/Core/Runtime/Managers/AssetManager.h"
 #include "Engine/Utils/FieldReflection.hpp"
 #include "Engine/Utils/Logger.h"
 

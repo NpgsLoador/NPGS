@@ -12,7 +12,7 @@
 #include <vector>
 
 #include <glm/glm.hpp>
-#include "Engine/Core/Runtime/Threads/ThreadPool.h"
+#include "Engine/Core/Runtime/Pools/ThreadPool.h"
 #include "Engine/Core/System/Services/EngineServices.h"
 
 namespace Npgs
