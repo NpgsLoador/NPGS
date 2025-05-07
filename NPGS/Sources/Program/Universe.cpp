@@ -27,7 +27,6 @@ namespace Npgs
         , SeedGenerator_(0ull, std::numeric_limits<std::uint32_t>::max())
         , CommonGenerator_(0.0f, 1.0f)
         , ThreadPool_(EngineCoreServices->GetThreadPool())
-
         , StarCount_(StarCount)
         , ExtraGiantCount_(ExtraGiantCount)
         , ExtraMassiveStarCount_(ExtraMassiveStarCount)

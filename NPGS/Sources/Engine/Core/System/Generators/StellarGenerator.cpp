@@ -1218,7 +1218,7 @@ namespace Npgs
         }
 
         // return std::make_pair(LowerTimePoint->back(), std::make_pair(LowerTimePoint->front(), UpperTimePoint->front()));
-        return { (*LowerTimePoint)[kXIndex_], { (*LowerTimePoint)[kStarAgeIndex_], (*UpperTimePoint)[kStarAgeIndex_] } };
+        return std::make_pair((*LowerTimePoint)[kXIndex_], std::make_pair((*LowerTimePoint)[kStarAgeIndex_], (*UpperTimePoint)[kStarAgeIndex_]));
     }
 
     std::expected<std::pair<double, std::size_t>, Astro::AStar>
@@ -1499,24 +1499,24 @@ namespace Npgs
                     if (SurfaceH1 >= 0.2f)
                     {
                         // 根据表面氢质量分数来判断处于的 WR 阶段
-                        SpectralSubclassMap = Astro::AStar::kSpectralSubclassMap_WNxh_;
-                        SpectralClass = 13;
+                        SpectralSubclassMap      = Astro::AStar::kSpectralSubclassMap_WNxh_;
+                        SpectralClass            = std::to_underlying(Astro::FStellarClass::ESpectralClass::kSpectral_WN);
                         SpectralType.SpecialMark = std::to_underlying(Astro::FStellarClass::ESpecialMark::kCode_h);
                     }
                     else if (SurfaceH1 >= 0.1f)
                     {
-                        SpectralSubclassMap = Astro::AStar::kSpectralSubclassMap_WN_;
-                        SpectralClass = 13;
+                        SpectralSubclassMap      = Astro::AStar::kSpectralSubclassMap_WN_;
+                        SpectralClass            = std::to_underlying(Astro::FStellarClass::ESpectralClass::kSpectral_WN);
                     }
                     else if (SurfaceH1 < 0.1f && SurfaceH1 > 0.05f)
                     {
-                        SpectralSubclassMap = Astro::AStar::kSpectralSubclassMap_WC_;
-                        SpectralClass = 12;
+                        SpectralSubclassMap      = Astro::AStar::kSpectralSubclassMap_WC_;
+                        SpectralClass            = std::to_underlying(Astro::FStellarClass::ESpectralClass::kSpectral_WC);
                     }
                     else
                     {
-                        SpectralSubclassMap = Astro::AStar::kSpectralSubclassMap_WO_;
-                        SpectralClass = 14;
+                        SpectralSubclassMap      = Astro::AStar::kSpectralSubclassMap_WO_;
+                        SpectralClass            = std::to_underlying(Astro::FStellarClass::ESpectralClass::kSpectral_WO);
                     }
                 }
             }

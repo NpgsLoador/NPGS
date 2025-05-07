@@ -279,7 +279,8 @@
     <ClCompile Include="Sources\Engine\Core\System\Services\EngineServices.cpp" />
     <ClCompile Include="Sources\Engine\Core\System\Services\ResourceServices.cpp" />
     <ClCompile Include="Sources\Engine\Core\System\Spatial\Camera.cpp" />
-    <ClCompile Include="Sources\Engine\Core\System\Spatial\UniversalCoord.cpp" />
+    <ClCompile Include="Sources\Engine\Core\System\Spatial\Frustum.cpp" />
+    <ClCompile Include="Sources\Engine\Core\System\Spatial\UniversalCoordinate.cpp" />
     <ClCompile Include="Sources\Engine\Core\Types\Entries\Astro\CelestialObject.cpp" />
     <ClCompile Include="Sources\Engine\Core\Types\Entries\Astro\Planet.cpp" />
     <ClCompile Include="Sources\Engine\Core\Types\Entries\Astro\Star.cpp" />
@@ -302,6 +303,7 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Sources\Engine\Core\Runtime\Pools\MemoryPool.hpp" />
     <ClInclude Include="Sources\Engine\Core\System\Events\Event.h" />
     <ClInclude Include="Sources\Engine\Core\Base\Config\EngineConfig.h" />
     <ClInclude Include="Sources\Engine\Core\Base\Assert.h" />
@@ -335,8 +337,9 @@
     <ClInclude Include="Sources\Engine\Core\System\Services\EngineServices.h" />
     <ClInclude Include="Sources\Engine\Core\System\Services\ResourceServices.h" />
     <ClInclude Include="Sources\Engine\Core\System\Spatial\Camera.h" />
+    <ClInclude Include="Sources\Engine\Core\System\Spatial\Frustum.h" />
     <ClInclude Include="Sources\Engine\Core\System\Spatial\Octree.hpp" />
-    <ClInclude Include="Sources\Engine\Core\System\Spatial\UniversalCoord.h" />
+    <ClInclude Include="Sources\Engine\Core\System\Spatial\UniversalCoordinate.h" />
     <ClInclude Include="Sources\Engine\Core\Types\Entries\Astro\CelestialObject.h" />
     <ClInclude Include="Sources\Engine\Core\Types\Entries\Astro\Planet.h" />
     <ClInclude Include="Sources\Engine\Core\Types\Entries\Astro\Star.h" />

@@ -141,7 +141,10 @@
     <ClCompile Include="Sources\Engine\Core\System\Events\Event.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="Sources\Engine\Core\System\Spatial\UniversalCoord.cpp">
+    <ClCompile Include="Sources\Engine\Core\System\Spatial\UniversalCoordinate.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="Sources\Engine\Core\System\Spatial\Frustum.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>
@@ -305,7 +308,13 @@
     <ClInclude Include="Sources\Engine\Core\System\Events\Event.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="Sources\Engine\Core\System\Spatial\UniversalCoord.h">
+    <ClInclude Include="Sources\Engine\Core\System\Spatial\UniversalCoordinate.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="Sources\Engine\Core\System\Spatial\Frustum.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="Sources\Engine\Core\Runtime\Pools\MemoryPool.hpp">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>
