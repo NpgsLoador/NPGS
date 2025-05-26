@@ -121,9 +121,15 @@ namespace Npgs
         std::vector<FVulkanCommandBuffer> SceneMergeCommandBuffers(Config::Graphics::kMaxFrameInFlight);
         std::vector<FVulkanCommandBuffer> FrontgroundCommandBuffers(Config::Graphics::kMaxFrameInFlight);
         std::vector<FVulkanCommandBuffer> PostProcessCommandBuffers(Config::Graphics::kMaxFrameInFlight);
-        for (std::size_t i = 0; i != Config::Graphics::kMaxFrameInFlight; ++i)
+
+        for (std::uint32_t i = 0; i != Config::Graphics::kMaxFrameInFlight; ++i)
         {
             InFlightFences.emplace_back(VulkanContext_->GetDevice(), vk::FenceCreateFlagBits::eSignaled);
+        }
+
+        std::uint32_t SwapchainImageCount = VulkanContext_->GetSwapchainImageCount();
+        for (std::uint32_t i = 0; i != SwapchainImageCount; ++i)
+        {
             Semaphores_ImageAvailable.emplace_back(VulkanContext_->GetDevice(), vk::SemaphoreCreateFlags());
             Semaphores_RenderFinished.emplace_back(VulkanContext_->GetDevice(), vk::SemaphoreCreateFlags());
         }
@@ -139,9 +145,10 @@ namespace Npgs
         CommandPool.AllocateBuffers(vk::CommandBufferLevel::eSecondary, FrontgroundCommandBuffers);
         CommandPool.AllocateBuffers(vk::CommandBufferLevel::eSecondary, PostProcessCommandBuffers);
 
-        vk::DeviceSize Offset        = 0;
-        std::uint32_t  DynamicOffset = 0;
-        std::uint32_t  CurrentFrame  = 0;
+        vk::DeviceSize Offset           = 0;
+        std::uint32_t  DynamicOffset    = 0;
+        std::uint32_t  CurrentFrame     = 0;
+        std::uint32_t  CurrentSemaphore = 0;
 
         glm::vec3    LightPos(-2.0f, 4.0f, -1.0f);
         glm::mat4x4  LightProjection  = glm::infinitePerspective(glm::radians(60.0f), 1.0f, 1.0f);
@@ -386,7 +393,7 @@ namespace Npgs
 
             CameraPosUpdater[CurrentFrame] << Camera_->GetVector(FCamera::EVector::kPosition);
 
-            VulkanContext_->SwapImage(*Semaphores_ImageAvailable[CurrentFrame]);
+            VulkanContext_->SwapImage(*Semaphores_ImageAvailable[CurrentSemaphore]);
             std::uint32_t ImageIndex = VulkanContext_->GetCurrentImageIndex();
 
             // Record commands
@@ -498,8 +505,17 @@ namespace Npgs
                 DepthSubresourceRange
             );
 
-            std::array InitBarriers{ InitSwapchainBarrier, InitPositionAoBarrier, InitNormalRoughBarrier, InitShadowBarrier,
-                                     InitAlbedoMetalBarrier, InitColorAttachmentBarrier, InitResolveAttachmentBarrier, InitDepthMapAttachmentBarrier };
+            std::array InitBarriers
+            {
+                InitSwapchainBarrier,
+                InitPositionAoBarrier,
+                InitNormalRoughBarrier,
+                InitShadowBarrier,
+                InitAlbedoMetalBarrier,
+                InitColorAttachmentBarrier,
+                InitResolveAttachmentBarrier,
+                InitDepthMapAttachmentBarrier
+            };
 
             vk::DependencyInfo InitialDependencyInfo = vk::DependencyInfo()
                 .setDependencyFlags(vk::DependencyFlagBits::eByRegion)
@@ -739,14 +755,15 @@ namespace Npgs
 
             VulkanContext_->SubmitCommandBuffer(FVulkanContext::EQueueType::kGeneral,
                                                 *CurrentBuffer,
-                                                *Semaphores_ImageAvailable[CurrentFrame],
-                                                *Semaphores_RenderFinished[CurrentFrame],
+                                                *Semaphores_ImageAvailable[CurrentSemaphore],
+                                                *Semaphores_RenderFinished[CurrentSemaphore],
                                                 *InFlightFences[CurrentFrame],
                                                 vk::PipelineStageFlagBits::eColorAttachmentOutput);
             
-            VulkanContext_->PresentImage(*Semaphores_RenderFinished[CurrentFrame]);
+            VulkanContext_->PresentImage(*Semaphores_RenderFinished[CurrentSemaphore]);
 
             CurrentFrame = (CurrentFrame + 1) % Config::Graphics::kMaxFrameInFlight;
+            CurrentSemaphore = (CurrentSemaphore + 1) % SwapchainImageCount;
 
             Camera_->ProcessEvent(DeltaTime_);
 

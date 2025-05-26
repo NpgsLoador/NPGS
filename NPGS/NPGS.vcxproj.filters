@@ -129,9 +129,6 @@
     <ClCompile Include="Sources\Engine\Core\System\Services\ResourceServices.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="Sources\Program\main.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
     <ClCompile Include="Sources\Engine\Core\Runtime\Pools\QueuePool.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
@@ -145,6 +142,9 @@
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="Sources\Engine\Core\System\Spatial\Frustum.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="Sources\Program\main.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>

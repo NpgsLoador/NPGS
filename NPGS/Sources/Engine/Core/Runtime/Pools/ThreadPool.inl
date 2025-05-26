@@ -2,15 +2,15 @@
 
 namespace Npgs
 {
-    template <typename Func, typename... Args>
-    inline auto FThreadPool::Submit(Func&& Pred, Args&&... TaskArgs)
+    template <typename Func, typename... Types>
+    inline auto FThreadPool::Submit(Func&& Pred, Types&&... Args)
     {
-        using ReturnType = std::invoke_result_t<Func, Args...>;
-        auto Task = std::make_shared<std::packaged_task<ReturnType()>>(
-            std::bind(std::forward<Func>(Pred), std::forward<Args>(TaskArgs)...));
-        std::future<ReturnType> Future = Task->get_future();
+        using FReturnType = std::invoke_result_t<Func, Types...>;
+        auto Task = std::make_shared<std::packaged_task<FReturnType()>>(
+            std::bind(std::forward<Func>(Pred), std::forward<Types>(Args)...));
+        std::future<FReturnType> Future = Task->get_future();
         {
-            std::unique_lock<std::mutex> Mutex(Mutex_);
+            std::unique_lock<std::mutex> Lock(Mutex_);
             Tasks_.emplace([Task]() -> void { (*Task)(); });
         }
         Condition_.notify_one();

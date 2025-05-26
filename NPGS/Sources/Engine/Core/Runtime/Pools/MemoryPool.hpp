@@ -3,6 +3,7 @@
 #include <cstddef>
 #include <algorithm>
 #include <array>
+#include <limits>
 #include <stdexcept>
 #include <type_traits>
 #include <utility>
@@ -17,14 +18,18 @@ namespace Npgs
     {
         template <typename Ty2>
         static auto Func(int) -> decltype(std::declval<Ty2>().~Ty2(), std::true_type{});
-
+    
         template <typename>
         static std::false_type Func(...);
-
+    
         static constexpr bool kbValue = decltype(Func<Ty1>(0))::value;
     };
 
+    // template <typename Ty>
+    // concept CHasPublicDestructor = requires(Ty* Ptr) { Ptr->~Ty(); };
+
     template <typename MemoryType>
+    // requires CHasPublicDestructor<MemoryType>
     class TMemoryPool
     {
     public:
@@ -33,6 +38,7 @@ namespace Npgs
         class FMemoryGuard
         {
         public:
+            FMemoryGuard() = default;
             FMemoryGuard(TMemoryPool* Pool, FMemoryHandle Handle)
                 : Pool_(Pool), Handle_(Handle)
             {
@@ -47,7 +53,10 @@ namespace Npgs
 
             ~FMemoryGuard()
             {
-                Pool_->Deallocate(Handle_);
+                if (Pool_ != nullptr)
+                {
+                    Pool_->Deallocate(Handle_);
+                }
             }
 
             FMemoryGuard& operator=(const FMemoryGuard&) = delete;
@@ -60,6 +69,11 @@ namespace Npgs
                 }
 
                 return *this;
+            }
+
+            explicit operator bool() const
+            {
+                return operator==(nullptr);
             }
 
             MemoryType* operator->()
@@ -82,9 +96,29 @@ namespace Npgs
                 return *Pool_->GetMemory(Handle_);
             }
 
+            bool operator==(std::nullptr_t) const
+            {
+                return Pool_ == nullptr && Handle_ == std::numeric_limits<FMemoryHandle>::max();
+            }
+
+            bool operator!=(std::nullptr_t) const
+            {
+                return !(*this == nullptr);
+            }
+
+            bool operator==(const FMemoryGuard& Other) const
+            {
+                return Pool_ == Other.Pool_ && Handle_ == Other.Handle_;
+            }
+
+            bool operator!=(const FMemoryGuard& Other) const
+            {
+                return !(*this == Other);
+            }
+
         private:
             TMemoryPool*  Pool_;
-            FMemoryHandle Handle_;
+            FMemoryHandle Handle_{ std::numeric_limits<FMemoryHandle>::max() };
         };
 
         struct alignas(MemoryType) FMemoryBlock
@@ -93,7 +127,7 @@ namespace Npgs
         };
 
     public:
-        explicit TMemoryPool(std::size_t InitialCapacity, bool bDynamicExpand = false)
+        explicit TMemoryPool(std::size_t InitialCapacity, bool bDynamicExpand = true)
             : MemoryBlocks_(InitialCapacity, {})
             , bDynamicExpand_(bDynamicExpand)
         {
@@ -111,14 +145,14 @@ namespace Npgs
         TMemoryPool& operator=(const TMemoryPool&) = delete;
         TMemoryPool& operator=(TMemoryPool&&)      = delete;
 
-        template <typename... Args>
-        FMemoryGuard Allocate(Args... ConstructArgs)
+        template <typename... Types>
+        FMemoryGuard Allocate(Types... Args)
         {
             FMemoryHandle MemoryHandle = 0;
             if (FreeList_.try_dequeue(MemoryHandle))
             {
                 FMemoryBlock* MemoryBlock = &MemoryBlocks_[MemoryHandle];
-                new (MemoryBlock->Memory.data()) MemoryType(std::forward<Args>(ConstructArgs)...);
+                new (MemoryBlock->Memory.data()) MemoryType(std::forward<Types>(Args)...);
                 return FMemoryGuard(this, MemoryHandle);
             }
 
@@ -129,7 +163,7 @@ namespace Npgs
 
             std::size_t NewCapacity = Capacity() + Capacity() / 2;
             MemoryBlocks_.resize(NewCapacity);
-            return std::move(Allocate(std::forward<Args>(ConstructArgs)...));
+            return std::move(Allocate(std::forward<Types>(Args)...));
         }
 
         void Reserve(std::size_t NewCapacity)

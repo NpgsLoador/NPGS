@@ -1697,12 +1697,12 @@ namespace Npgs
         double LuminositySol = StarData.GetLuminosity() / kSolarLuminosity;
         if (LuminositySol > 650000) // 光度高于 650000 Lsun
         {
-            LuminosityClass = Astro::FStellarClass::ELuminosityClass::kLuminosity_0;
+            LuminosityClass = Astro::FStellarClass::ELuminosityClass::kLuminosity_IaPlus;
         }
 
         if (MassLossRateSolPerYear > 1e-4f && MassSol >= 15) // 表面物质流失率大于 1e-4 Msun/yr 并且质量大于等于 15 Msun
         {
-            LuminosityClass = Astro::FStellarClass::ELuminosityClass::kLuminosity_IaPlus;
+            LuminosityClass = Astro::FStellarClass::ELuminosityClass::kLuminosity_0;
         }
 
         if (LuminosityClass != Astro::FStellarClass::ELuminosityClass::kLuminosity_Unknown) // 如果判断为特超巨星，直接返回

@@ -12,12 +12,12 @@ namespace Npgs
         ));
     }
 
-    template <typename AssetType, typename... Args>
+    template <typename AssetType, typename... Types>
     requires CAssetCompatible<AssetType>
-    inline void FAssetManager::AddAsset(const std::string& Name, Args&&... ConstructArgs)
+    inline void FAssetManager::AddAsset(const std::string& Name, Types&&... Args)
     {
         Assets_.emplace(Name, FManagedAsset(
-            static_cast<void*>(new AssetType(VulkanContext_, std::forward<Args>(ConstructArgs)...)),
+            static_cast<void*>(new AssetType(VulkanContext_, std::forward<Types>(Args)...)),
             FTypeErasedDeleter(static_cast<AssetType*>(nullptr))
         ));
     }

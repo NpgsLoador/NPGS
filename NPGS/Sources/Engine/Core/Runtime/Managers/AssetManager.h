@@ -64,9 +64,9 @@ namespace Npgs
         requires CAssetCompatible<AssetType>
         void AddAsset(const std::string& Name, AssetType&& Asset);
 
-        template <typename AssetType, typename... Args>
+        template <typename AssetType, typename... Types>
         requires CAssetCompatible<AssetType>
-        void AddAsset(const std::string& Name, Args&&... ConstructArgs);
+        void AddAsset(const std::string& Name, Types&&... Args);
 
         template <typename AssetType>
         requires CAssetCompatible<AssetType>
