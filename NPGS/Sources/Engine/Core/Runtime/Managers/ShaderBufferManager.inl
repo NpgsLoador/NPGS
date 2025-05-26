@@ -11,9 +11,9 @@ namespace Npgs
 {
     template <typename StructType>
     requires std::is_class_v<StructType>
-    inline void FShaderBufferManager::CreateDataBuffers(const FDataBufferCreateInfo& DataBufferCreateInfo,
-                                                        const VmaAllocationCreateInfo* AllocationCreateInfo,
-                                                        std::uint32_t BufferCount)
+    void FShaderBufferManager::CreateDataBuffers(const FDataBufferCreateInfo& DataBufferCreateInfo,
+                                                 const VmaAllocationCreateInfo* AllocationCreateInfo,
+                                                 std::uint32_t BufferCount)
     {
         FDataBufferInfo BufferInfo;
         BufferInfo.CreateInfo = DataBufferCreateInfo;
@@ -74,20 +74,9 @@ namespace Npgs
         DataBuffers_.emplace(DataBufferCreateInfo.Name, std::move(BufferInfo));
     }
 
-    NPGS_INLINE void FShaderBufferManager::RemoveDataBuffer(const std::string& Name)
-    {
-        auto it = DataBuffers_.find(Name);
-        if (it == DataBuffers_.end())
-        {
-            return;
-        }
-
-        DataBuffers_.erase(it);
-    }
-
     template <typename StructType>
     requires std::is_class_v<StructType>
-    inline void FShaderBufferManager::UpdateDataBuffers(const std::string& Name, const StructType& Data)
+    void FShaderBufferManager::UpdateDataBuffers(const std::string& Name, const StructType& Data)
     {
         auto& BufferInfo = DataBuffers_.at(Name);
         for (std::uint32_t i = 0; i != Config::Graphics::kMaxFrameInFlight; ++i)
@@ -98,14 +87,14 @@ namespace Npgs
 
     template <typename StructType>
     requires std::is_class_v<StructType>
-    inline void FShaderBufferManager::UpdateDataBuffer(std::uint32_t FrameIndex, const std::string& Name, const StructType& Data)
+    void FShaderBufferManager::UpdateDataBuffer(std::uint32_t FrameIndex, const std::string& Name, const StructType& Data)
     {
         auto& BufferInfo = DataBuffers_.at(Name);
         BufferInfo.Buffers[FrameIndex].CopyData(0, 0, BufferInfo.Size, &Data);
     }
 
     template <typename FieldType>
-    NPGS_INLINE std::vector<FShaderBufferManager::TUpdater<FieldType>>
+    std::vector<FShaderBufferManager::TUpdater<FieldType>>
     FShaderBufferManager::GetFieldUpdaters(const std::string& BufferName, const std::string& FieldName) const
     {
         auto& BufferInfo = DataBuffers_.at(BufferName);
@@ -119,7 +108,7 @@ namespace Npgs
     }
 
     template <typename FieldType>
-    NPGS_INLINE FShaderBufferManager::TUpdater<FieldType>
+    FShaderBufferManager::TUpdater<FieldType>
     FShaderBufferManager::GetFieldUpdater(std::uint32_t FrameIndex, const std::string& BufferName, const std::string& FieldName) const
     {
         auto& BufferInfo = DataBuffers_.at(BufferName);
@@ -127,7 +116,7 @@ namespace Npgs
     }
 
     template <typename... Args>
-    NPGS_INLINE std::vector<vk::DeviceSize>
+    std::vector<vk::DeviceSize>
     FShaderBufferManager::GetDescriptorBindingOffsets(const std::string& BufferName, Args... Sets)
     {
         std::vector<vk::DeviceSize> Offsets;
@@ -139,32 +128,21 @@ namespace Npgs
         return Offsets;
     }
 
-    NPGS_INLINE const FDeviceLocalBuffer&
+    inline const FDeviceLocalBuffer&
     FShaderBufferManager::GetDataBuffer(std::uint32_t FrameIndex, const std::string& BufferName)
     {
         auto& BufferInfo = DataBuffers_.at(BufferName);
         return BufferInfo.Buffers[FrameIndex];
     }
 
-    NPGS_INLINE void FShaderBufferManager::RemoveDescriptorBuffer(const std::string& Name)
-    {
-        auto it = DescriptorBuffers_.find(Name);
-        if (it == DescriptorBuffers_.end())
-        {
-            return;
-        }
-
-        DescriptorBuffers_.erase(it);
-    }
-
-    NPGS_INLINE vk::DeviceSize
+    inline vk::DeviceSize
     FShaderBufferManager::GetDescriptorBindingOffset(const std::string& BufferName, std::uint32_t Set, std::uint32_t Binding) const
     {
         auto Pair = std::make_pair(Set, Binding);
         return OffsetsMap_.at(BufferName).at(Pair);
     }
 
-    NPGS_INLINE const FDeviceLocalBuffer&
+    inline const FDeviceLocalBuffer&
     FShaderBufferManager::GetDescriptorBuffer(std::uint32_t FrameIndex, const std::string& BufferName)
     {
         auto& BufferInfo = DescriptorBuffers_.at(BufferName);

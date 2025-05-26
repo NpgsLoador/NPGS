@@ -295,7 +295,6 @@
     <ClCompile Include="Sources\ExternalImpl\vma_impl.cpp" />
     <ClCompile Include="Sources\Program\Application.cpp" />
     <ClCompile Include="Sources\Program\main.cpp" />
-    <ClCompile Include="Sources\Program\Universe.cpp" />
     <ClCompile Include="Sources\stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>

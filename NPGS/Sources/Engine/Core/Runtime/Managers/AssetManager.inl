@@ -4,7 +4,7 @@ namespace Npgs
 {
     template <typename AssetType>
     requires CAssetCompatible<AssetType>
-    inline void FAssetManager::AddAsset(const std::string& Name, AssetType&& Asset)
+    void FAssetManager::AddAsset(const std::string& Name, AssetType&& Asset)
     {
         Assets_.emplace(Name, FManagedAsset(
             static_cast<void*>(new AssetType(std::move(Asset))),
@@ -14,7 +14,7 @@ namespace Npgs
 
     template <typename AssetType, typename... Types>
     requires CAssetCompatible<AssetType>
-    inline void FAssetManager::AddAsset(const std::string& Name, Types&&... Args)
+    void FAssetManager::AddAsset(const std::string& Name, Types&&... Args)
     {
         Assets_.emplace(Name, FManagedAsset(
             static_cast<void*>(new AssetType(VulkanContext_, std::forward<Types>(Args)...)),
@@ -24,7 +24,7 @@ namespace Npgs
 
     template <typename AssetType>
     requires CAssetCompatible<AssetType>
-    inline AssetType* FAssetManager::GetAsset(const std::string& Name)
+    AssetType* FAssetManager::GetAsset(const std::string& Name)
     {
         if (auto it = Assets_.find(Name); it != Assets_.end())
         {
@@ -36,7 +36,7 @@ namespace Npgs
 
     template <typename AssetType>
     requires CAssetCompatible<AssetType>
-    inline std::vector<AssetType*> FAssetManager::GetAssets()
+    std::vector<AssetType*> FAssetManager::GetAssets()
     {
         std::vector<AssetType*> Result;
         for (const auto& [Name, Asset] : Assets_)

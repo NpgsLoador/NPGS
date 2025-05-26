@@ -3,7 +3,7 @@
 namespace Npgs
 {
     template <typename Func, typename... Types>
-    inline auto FThreadPool::Submit(Func&& Pred, Types&&... Args)
+    auto FThreadPool::Submit(Func&& Pred, Types&&... Args)
     {
         using FReturnType = std::invoke_result_t<Func, Types...>;
         auto Task = std::make_shared<std::packaged_task<FReturnType()>>(
@@ -28,9 +28,9 @@ namespace Npgs
     }
 
     template <typename DataType, typename ResultType>
-    inline void MakeChunks(int MaxThread, std::vector<DataType>& Data, std::vector<std::vector<DataType>>& DataLists,
-                           std::vector<std::promise<std::vector<ResultType>>>& Promises,
-                           std::vector<std::future<std::vector<ResultType>>>& ChunkFutures)
+    void MakeChunks(int MaxThread, std::vector<DataType>& Data, std::vector<std::vector<DataType>>& DataLists,
+                    std::vector<std::promise<std::vector<ResultType>>>& Promises,
+                    std::vector<std::future<std::vector<ResultType>>>& ChunkFutures)
     {
         for (std::size_t i = 0; i != Data.size(); ++i)
         {

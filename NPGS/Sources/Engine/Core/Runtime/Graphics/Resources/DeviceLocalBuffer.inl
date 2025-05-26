@@ -20,7 +20,7 @@ namespace Npgs
 
     template <typename ContainerType>
     requires std::is_class_v<ContainerType>
-    NPGS_INLINE void FDeviceLocalBuffer::CopyData(const ContainerType& Data) const
+    void FDeviceLocalBuffer::CopyData(const ContainerType& Data) const
     {
         using ValueType = typename ContainerType::value_type;
         static_assert(std::is_standard_layout_v<ValueType>, "Container value_type must be standard layout type");
@@ -31,7 +31,7 @@ namespace Npgs
 
     template <typename ContainerType>
     requires std::is_class_v<ContainerType>
-    NPGS_INLINE void FDeviceLocalBuffer::UpdateData(const FVulkanCommandBuffer& CommandBuffer, const ContainerType& Data) const
+    void FDeviceLocalBuffer::UpdateData(const FVulkanCommandBuffer& CommandBuffer, const ContainerType& Data) const
     {
         using ValueType = typename ContainerType::value_type;
         static_assert(std::is_standard_layout_v<ValueType>, "Container value_type must be standard layout type");

@@ -10,48 +10,48 @@ namespace Npgs
 {
 #ifdef NPGS_ENABLE_ENUM_BIT_OPERATOR
     template <typename EnumType>
-    inline constexpr EnumType operator&(EnumType Lhs, EnumType Rhs)
+    constexpr EnumType operator&(EnumType Lhs, EnumType Rhs)
     {
         return static_cast<EnumType>(static_cast<std::underlying_type_t<EnumType>>(Lhs) &
                                      static_cast<std::underlying_type_t<EnumType>>(Rhs));
     }
 
     template <typename EnumType>
-    inline constexpr EnumType operator|(EnumType Lhs, EnumType Rhs)
+    constexpr EnumType operator|(EnumType Lhs, EnumType Rhs)
     {
         return static_cast<EnumType>(static_cast<std::underlying_type_t<EnumType>>(Lhs) |
                                      static_cast<std::underlying_type_t<EnumType>>(Rhs));
     }
 
     template <typename EnumType>
-    inline constexpr EnumType operator^(EnumType Lhs, EnumType Rhs)
+    constexpr EnumType operator^(EnumType Lhs, EnumType Rhs)
     {
         return static_cast<EnumType>(static_cast<std::underlying_type_t<EnumType>>(Lhs) ^
                                      static_cast<std::underlying_type_t<EnumType>>(Rhs));
     }
 
     template <typename EnumType>
-    inline constexpr EnumType operator~(EnumType Value)
+    constexpr EnumType operator~(EnumType Value)
     {
         return static_cast<EnumType>(~static_cast<std::underlying_type_t<EnumType>>(Value));
     }
 
     template <typename EnumType>
-    inline constexpr EnumType operator&=(EnumType Lhs, EnumType Rhs)
+    constexpr EnumType operator&=(EnumType Lhs, EnumType Rhs)
     {
         return static_cast<EnumType>(static_cast<std::underlying_type_t<EnumType>>(Lhs) &=
                                      static_cast<std::underlying_type_t<EnumType>>(Rhs));
     }
 
     template <typename EnumType>
-    inline constexpr EnumType operator|=(EnumType Lhs, EnumType Rhs)
+    constexpr EnumType operator|=(EnumType Lhs, EnumType Rhs)
     {
         return static_cast<EnumType>(static_cast<std::underlying_type_t<EnumType>>(Lhs) |=
                                      static_cast<std::underlying_type_t<EnumType>>(Rhs));
     }
 
     template <typename EnumType>
-    inline constexpr EnumType operator^=(EnumType Lhs, EnumType Rhs)
+    constexpr EnumType operator^=(EnumType Lhs, EnumType Rhs)
     {
         return static_cast<EnumType>(static_cast<std::underlying_type_t<EnumType>>(Lhs) ^=
                                      static_cast<std::underlying_type_t<EnumType>>(Rhs));

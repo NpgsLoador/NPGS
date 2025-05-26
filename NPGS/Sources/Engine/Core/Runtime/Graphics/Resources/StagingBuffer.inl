@@ -22,7 +22,7 @@ namespace Npgs
         return BufferMemory_->GetMemory();
     }
 
-    NPGS_INLINE void* FStagingBuffer::MapMemory(vk::DeviceSize Size)
+    inline void* FStagingBuffer::MapMemory(vk::DeviceSize Size)
     {
         Expand(Size);
         void* Target = nullptr;
@@ -31,13 +31,13 @@ namespace Npgs
         return Target;
     }
 
-    NPGS_INLINE void FStagingBuffer::UnmapMemory()
+    inline void FStagingBuffer::UnmapMemory()
     {
         BufferMemory_->UnmapMemory(0, MemoryUsage_);
         MemoryUsage_ = 0;
     }
 
-    NPGS_INLINE void FStagingBuffer::SubmitBufferData(vk::DeviceSize MapOffset, vk::DeviceSize SubmitOffset, vk::DeviceSize Size, const void* Data)
+    inline void FStagingBuffer::SubmitBufferData(vk::DeviceSize MapOffset, vk::DeviceSize SubmitOffset, vk::DeviceSize Size, const void* Data)
     {
         Expand(Size);
         BufferMemory_->SubmitBufferData(MapOffset, SubmitOffset, Size, Data);

@@ -26,6 +26,17 @@ namespace Npgs
         vmaDestroyAllocator(Allocator_);
     }
 
+    void FShaderBufferManager::RemoveDataBuffer(const std::string& Name)
+    {
+        auto it = DataBuffers_.find(Name);
+        if (it == DataBuffers_.end())
+        {
+            return;
+        }
+
+        DataBuffers_.erase(it);
+    }
+
     void FShaderBufferManager::CreateDescriptorBuffer(const FDescriptorBufferCreateInfo& DescriptorBufferCreateInfo,
                                                       const VmaAllocationCreateInfo* AllocationCreateInfo)
     {
@@ -64,6 +75,17 @@ namespace Npgs
         NpgsCoreTrace("Created descriptor buffer \"{}\" with size {} bytes.", DescriptorBufferCreateInfo.Name, BufferSize);
 
         BindResourceToDescriptorBuffersInternal(DescriptorBufferCreateInfo);
+    }
+
+    void FShaderBufferManager::RemoveDescriptorBuffer(const std::string& Name)
+    {
+        auto it = DescriptorBuffers_.find(Name);
+        if (it == DescriptorBuffers_.end())
+        {
+            return;
+        }
+
+        DescriptorBuffers_.erase(it);
     }
 
     vk::DeviceSize FShaderBufferManager::CalculateDescriptorBufferSize(const FDescriptorBufferCreateInfo& DescriptorBufferCreateInfo)

@@ -12,17 +12,6 @@ namespace Npgs
         return PushConstantOffsetsMap_.at(Name);
     }
 
-    NPGS_INLINE std::map<std::uint32_t, vk::DeviceSize> FShader::GetDescriptorSetSizes() const
-    {
-        std::map<std::uint32_t, vk::DeviceSize> SetSizes;
-        for (const auto& [Set, Info] : DescriptorSetInfos_)
-        {
-            SetSizes.emplace(Set, Info.Size);
-        }
-
-        return SetSizes;
-    }
-
     NPGS_INLINE const std::vector<vk::VertexInputBindingDescription>& FShader::GetVertexInputBindings() const
     {
         return ReflectionInfo_.VertexInputBindings;

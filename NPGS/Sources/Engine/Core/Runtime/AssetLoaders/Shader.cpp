@@ -175,6 +175,17 @@ namespace Npgs
         return NativeTypeLayouts;
     }
 
+    std::map<std::uint32_t, vk::DeviceSize> FShader::GetDescriptorSetSizes() const
+    {
+        std::map<std::uint32_t, vk::DeviceSize> SetSizes;
+        for (const auto& [Set, Info] : DescriptorSetInfos_)
+        {
+            SetSizes.emplace(Set, Info.Size);
+        }
+
+        return SetSizes;
+    }
+
     void FShader::InitializeShaders(const std::vector<std::string>& ShaderFiles, const FResourceInfo& ResourceInfo)
     {
         for (const auto& Filename : ShaderFiles)

@@ -961,6 +961,19 @@ namespace Npgs
     {
     }
 
+    void FVulkanDescriptorSet::Write(const vk::ArrayProxy<FVulkanBufferView>& BufferViews, vk::DescriptorType Type,
+                                     std::uint32_t BindingPoint, std::uint32_t ArrayElement)
+    {
+        std::vector<vk::BufferView> NativeArray;
+        NativeArray.reserve(BufferViews.size());
+        for (const auto& BufferView : BufferViews)
+        {
+            NativeArray.push_back(*BufferView);
+        }
+
+        Write(NativeArray, Type, BindingPoint, ArrayElement);
+    }
+
     // Wrapper for vk::DescriptorSetLayout
     // -----------------------------------
     FVulkanDescriptorSetLayout::FVulkanDescriptorSetLayout(vk::Device Device, const vk::DescriptorSetLayoutCreateInfo& CreateInfo)

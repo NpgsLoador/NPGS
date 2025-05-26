@@ -7,7 +7,7 @@ namespace Npgs::Astro
 {
     template <typename ObjectType>
     requires std::is_class_v<ObjectType>
-    NPGS_INLINE FOrbit::FOrbitalObject& FOrbit::FOrbitalObject::SetObject(ObjectType* Object)
+    FOrbit::FOrbitalObject& FOrbit::FOrbitalObject::SetObject(ObjectType* Object)
     {
         static_assert(std::is_same_v<ObjectType, FBaryCenter> ||
                       std::is_same_v<ObjectType, AStar> ||
@@ -39,7 +39,7 @@ namespace Npgs::Astro
 
     template <typename ObjectType>
     requires std::is_class_v<ObjectType>
-    NPGS_INLINE ObjectType* FOrbit::FOrbitalObject::GetObject() const
+    ObjectType* FOrbit::FOrbitalObject::GetObject() const
     {
         static_assert(std::is_same_v<ObjectType, FBaryCenter> ||
                       std::is_same_v<ObjectType, AStar> ||

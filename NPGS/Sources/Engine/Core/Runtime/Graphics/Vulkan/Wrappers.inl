@@ -18,7 +18,7 @@ namespace Npgs
     // ----------------------------
     template <typename ContainerType>
     requires std::is_class_v<ContainerType>
-    NPGS_INLINE vk::Result FVulkanDeviceMemory::SubmitData(const ContainerType& Data)
+    vk::Result FVulkanDeviceMemory::SubmitData(const ContainerType& Data)
     {
         using ValueType = typename ContainerType::value_type;
         static_assert(std::is_standard_layout_v<ValueType>, "Container value_type must be standard layout type");
@@ -29,7 +29,7 @@ namespace Npgs
 
     template <typename ContainerType>
     requires std::is_class_v<ContainerType>
-    NPGS_INLINE vk::Result FVulkanDeviceMemory::FetchData(ContainerType& Data)
+    vk::Result FVulkanDeviceMemory::FetchData(ContainerType& Data)
     {
         using ValueType = typename ContainerType::value_type;
         static_assert(std::is_standard_layout_v<ValueType>, "Container value_type must be standard layout type");
@@ -110,19 +110,6 @@ namespace Npgs
         Update(WriteDescriptorSet);
     }
 
-    NPGS_INLINE void FVulkanDescriptorSet::Write(const vk::ArrayProxy<FVulkanBufferView>& BufferViews, vk::DescriptorType Type,
-                                                 std::uint32_t BindingPoint, std::uint32_t ArrayElement)
-    {
-        std::vector<vk::BufferView> NativeArray;
-        NativeArray.reserve(BufferViews.size());
-        for (const auto& BufferView : BufferViews)
-        {
-            NativeArray.push_back(*BufferView);
-        }
-
-        Write(NativeArray, Type, BindingPoint, ArrayElement);
-    }
-
     NPGS_INLINE void FVulkanDescriptorSet::Update(const vk::ArrayProxy<vk::WriteDescriptorSet>& Writes,
                                                   const vk::ArrayProxy<vk::CopyDescriptorSet>& Copies)
     {
@@ -149,7 +136,7 @@ namespace Npgs
     // Wrapper for vk::QueryPool
     // -------------------------
     template <typename DataType>
-    NPGS_INLINE std::vector<DataType>
+    std::vector<DataType>
     FVulkanQueryPool::GetResult(std::uint32_t FirstQuery, std::uint32_t QueryCount, std::size_t DataSize, vk::DeviceSize Stride, vk::QueryResultFlags Flags)
     {
         try

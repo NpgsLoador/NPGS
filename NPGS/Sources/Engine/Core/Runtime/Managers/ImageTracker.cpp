@@ -29,6 +29,23 @@ namespace Npgs
         }
     }
 
+    void FImageTracker::TrackImage(vk::Image Image, const vk::ImageSubresourceRange& Range, const FImageState& ImageState)
+    {
+        FImageKey ImageKey = std::make_pair(Image, Range);
+        auto [it, bInserted] = ImageStateMap_.try_emplace(ImageKey, ImageState);
+        if (bInserted)
+        {
+            auto ImageIt = ImageStateMap_.find(Image);
+            if (ImageIt != ImageStateMap_.end())
+            {
+                ImageStateMap_.erase(ImageIt);
+            }
+        }
+
+        it->second = ImageState;
+        ImageSet_.insert(Image);
+    }
+
     void FImageTracker::FlushImageAllStates(vk::Image Image, const FImageState& ImageState)
     {
         for (auto& [Key, State] : ImageStateMap_)
