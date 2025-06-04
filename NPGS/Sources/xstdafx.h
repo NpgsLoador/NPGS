@@ -1,6 +1,6 @@
 // C++ includes used for precompiling -*- C++ -*-
 
-// Copyright (C) 2003-2024 Free Software Foundation, Inc.
+// Copyright (C) 2003-2025 Free Software Foundation, Inc.
 //
 // This file is part of the GNU ISO C++ Library.  This library is free
 // software; you can redistribute it and/or modify it under the
@@ -23,7 +23,7 @@
 // <http://www.gnu.org/licenses/>.
 
 /** @file xstdafx.h
- *  This is an modified implementation for Visual Studio.
+ *  This is an implementation file for a precompiled header.
  */
 
 // 17.4.1.2 Headers
@@ -49,14 +49,16 @@
 #include <cwctype>
 
 #if _MSVC_LANG >= 201103L
-#include <ccomplex>
 #include <cfenv>
 #include <cinttypes>
+#include <cstdint>
+#include <cuchar>
+#if _MSVC_LANG < 201703L
+#include <ccomplex>
 #include <cstdalign>
 #include <cstdbool>
-#include <cstdint>
 #include <ctgmath>
-#include <cuchar>
+#endif
 #endif
 
 // C++
@@ -149,24 +151,29 @@
 #endif
 
 #if _MSVC_LANG > 202002L
-#if __cpp_impl_coroutine
-# include <coroutine>
-#endif
 #include <expected>
-#if __has_include(<generator>)
-# include <generator>
+#if __has_include(<flat_map>)
+#include <flat_map>
 #endif
+#if __has_include(<flat_set>)
+#include <flat_set>
+#endif
+#include <generator>
 #include <print>
 #include <spanstream>
-#if __has_include(<stacktrace>)
-# include <stacktrace>
-#endif
+#include <stacktrace>
 #include <stdatomic.h>
 #include <stdfloat>
 #endif
 
 #if _MSVC_LANG > 202302L
 #if __has_include(<text_encoding>)
-# include <text_encoding>
+#include <text_encoding>
+#endif
+#if __has_include(<stdbit.h>)
+#include <stdbit.h>
+#endif
+#if __has_include(<stdckdint.h>)
+#include <stdckdint.h>
 #endif
 #endif

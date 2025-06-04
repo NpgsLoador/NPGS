@@ -147,8 +147,8 @@ namespace Npgs::Astro
         static const std::vector<std::pair<int, int>>                                            kSpectralSubclassMap_L_;
         static const std::vector<std::pair<int, int>>                                            kSpectralSubclassMap_T_;
         static const std::vector<std::pair<int, int>>                                            kSpectralSubclassMap_Y_;
-        static const std::vector<std::pair<int, int>>                                            kSpectralSubclassMap_WC_;
         static const std::vector<std::pair<int, int>>                                            kSpectralSubclassMap_WN_;
+        static const std::vector<std::pair<int, int>>                                            kSpectralSubclassMap_WC_;
         static const std::vector<std::pair<int, int>>                                            kSpectralSubclassMap_WO_;
         static const std::vector<std::pair<int, int>>                                            kSpectralSubclassMap_WNxh_;
         static const std::vector<std::pair<int, std::vector<std::pair<int, int>>>>               kInitialCommonMap_;

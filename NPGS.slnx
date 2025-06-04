@@ -1,8 +1,5 @@
 <Solution>
   <Configurations>
-    <BuildType Name="Debug" />
-    <BuildType Name="Release" />
-    <BuildType Name="Shipping" />
     <Platform Name="x64" />
     <Platform Name="x86" />
   </Configurations>

@@ -79,8 +79,8 @@ namespace Npgs
 
             for (std::size_t i = 0; i != ElementCount; ++i)
             {
-                std::copy_n(static_cast<const std::byte*>(Data) + SrcStride * (i + ElementIndex), ElementSize,
-                            static_cast<std::byte*>(Target)     + DstStride * (i + ElementIndex));
+                std::ranges::copy_n(static_cast<const std::byte*>(Data) + SrcStride * (i + ElementIndex), ElementSize,
+                                    static_cast<std::byte*>(Target)     + DstStride * (i + ElementIndex));
             }
 
             if (!BufferMemory_->GetMemory().IsPereistentlyMapped())

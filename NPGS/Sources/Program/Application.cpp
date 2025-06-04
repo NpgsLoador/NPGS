@@ -553,8 +553,13 @@ namespace Npgs
 
             CurrentBuffer->pipelineBarrier2(DepthMapRenderEndDependencyInfo);
 
-            std::array GBufferAttachments{ PositionAoAttachmentInfo_, NormalRoughAttachmentInfo_,
-                                           AlbedoMetalAttachmentInfo_, ShadowAttachmentInfo_ };
+            std::array GBufferAttachments
+            {
+                PositionAoAttachmentInfo_,
+                NormalRoughAttachmentInfo_,
+                AlbedoMetalAttachmentInfo_,
+                ShadowAttachmentInfo_
+            };
 
             vk::RenderingInfo SceneRenderingInfo = vk::RenderingInfo()
                 .setFlags(vk::RenderingFlagBits::eContentsSecondaryCommandBuffers)
@@ -629,8 +634,13 @@ namespace Npgs
                 ColorSubresourceRange
             );
 
-            std::array GBufferRenderEndBarriers{ PositionAoRenderEndBarrier, ShadowRenderEndBarrier,
-                                                 NormalRoughRenderEndBarrier, AlbedoMetalRenderEndBarrier };
+            std::array GBufferRenderEndBarriers
+            {
+                PositionAoRenderEndBarrier,
+                ShadowRenderEndBarrier,
+                NormalRoughRenderEndBarrier,
+                AlbedoMetalRenderEndBarrier
+            };
 
             vk::DependencyInfo GBufferRenderEndDependencyInfo = vk::DependencyInfo()
                 .setDependencyFlags(vk::DependencyFlagBits::eByRegion)

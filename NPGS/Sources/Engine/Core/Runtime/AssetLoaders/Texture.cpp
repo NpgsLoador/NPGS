@@ -74,7 +74,7 @@ namespace Npgs
             ImageData.Size   = static_cast<vk::DeviceSize>(Width) * Height * FormatInfo.PixelSize;
             ImageData.Extent = vk::Extent3D(Width, Height, 1);
             ImageData.Data.resize(ImageData.Size);
-            std::copy_n(static_cast<std::byte*>(PixelData), ImageData.Size, ImageData.Data.data());
+            std::ranges::copy_n(static_cast<std::byte*>(PixelData), ImageData.Size, ImageData.Data.data());
 
             return ImageData;
         }
@@ -109,7 +109,7 @@ namespace Npgs
             }
 
             ImageData.Data.resize(Size);
-            std::copy_n(static_cast<std::byte*>(PixelData), Size, ImageData.Data.data());
+            std::ranges::copy_n(static_cast<std::byte*>(PixelData), Size, ImageData.Data.data());
 
             return ImageData;
         }
@@ -145,7 +145,7 @@ namespace Npgs
 
                     ImageData.Size = static_cast<vk::DeviceSize>(Width) * Height * FormatInfo.PixelSize;
                     ImageData.Data.resize(ImageData.Size);
-                    std::copy_n(reinterpret_cast<std::byte*>(Pixels.data()), ImageData.Size, ImageData.Data.data());
+                    std::ranges::copy_n(reinterpret_cast<std::byte*>(Pixels.data()), ImageData.Size, ImageData.Data.data());
                 }
                 else if (TileDesc.mode == Imf::MIPMAP_LEVELS)
                 {
@@ -183,7 +183,7 @@ namespace Npgs
                     }
 
                     ImageData.LevelOffsets = std::move(LevelOffsets);
-                    std::copy_n(reinterpret_cast<std::byte*>(Pixels.data()), ImageData.Size, ImageData.Data.data());
+                    std::ranges::copy_n(reinterpret_cast<std::byte*>(Pixels.data()), ImageData.Size, ImageData.Data.data());
                 }
             }
             else
@@ -200,7 +200,7 @@ namespace Npgs
                 ImageData.Extent = vk::Extent3D(Width, Height, 1);
                 ImageData.Size   = static_cast<vk::DeviceSize>(Width) * Height * FormatInfo.PixelSize;
                 ImageData.Data.resize(ImageData.Size);
-                std::copy_n(reinterpret_cast<std::byte*>(Pixels.data()), ImageData.Size, ImageData.Data.data());
+                std::ranges::copy_n(reinterpret_cast<std::byte*>(Pixels.data()), ImageData.Size, ImageData.Data.data());
             }
 
             return ImageData;
@@ -225,7 +225,7 @@ namespace Npgs
             ImageData.Data.resize(ImageData.Size);
             if (Channels == 4)
             {
-                std::copy_n(reinterpret_cast<std::byte*>(PixelData), ImageData.Size, ImageData.Data.data());
+                std::ranges::copy_n(reinterpret_cast<std::byte*>(PixelData), ImageData.Size, ImageData.Data.data());
             }
             else
             {
@@ -261,7 +261,7 @@ namespace Npgs
             return ImageData;
         }
 
-        FImageData LoadKtxFormat(std::string_view Filename, FFormatInfo FormatInfo)
+        FImageData LoadKtxFormat(std::string_view Filename, FFormatInfo FormatInfoHint)
         {
             bool bIsKtx2 = Filename.ends_with("ktx2");
             if (!bIsKtx2)
@@ -288,7 +288,7 @@ namespace Npgs
                 }
 
                 ImageData.Data.resize(Size);
-                std::copy_n(static_cast<std::byte*>(PixelData), Size, ImageData.Data.data());
+                std::ranges::copy_n(static_cast<std::byte*>(PixelData), Size, ImageData.Data.data());
 
                 return ImageData;
             }
@@ -304,7 +304,7 @@ namespace Npgs
             if (ktxTexture2_NeedsTranscoding(Texture))
             {
                 ktx_transcode_fmt_e TranscodeFormat;
-                if (FormatInfo.ComponentSize == 1)
+                if (FormatInfoHint.ComponentSize == 1)
                 {
                     TranscodeFormat = KTX_TTF_BC7_RGBA;
                 }
@@ -348,30 +348,28 @@ namespace Npgs
             }
 
             ImageData.Data.resize(Size);
-            std::copy_n(reinterpret_cast<std::byte*>(PixelData), Size, ImageData.Data.data());
+            std::ranges::copy_n(reinterpret_cast<std::byte*>(PixelData), Size, ImageData.Data.data());
+            ImageData.FormatInfo = FFormatInfo(static_cast<vk::Format>(Texture->vkFormat));
 
+            ktxTexture_Destroy(ktxTexture(Texture));
             return ImageData;
         }
 
         FImageData LoadImage(std::string_view Filename, vk::Format ImageFormat)
         {
-            bool bIsDds = Filename.ends_with(".dds");
-            bool bIsExr = Filename.ends_with(".exr");
-            bool bIsHdr = Filename.ends_with(".hdr");
-            bool bIsKmg = Filename.ends_with(".kmg");
-            bool bIsKtx = Filename.ends_with(".ktx") || Filename.ends_with("ktx2");
-
             FFormatInfo FormatInfo(ImageFormat);
             FImageData ImageData;
-            if (bIsDds)
+            if (Filename.ends_with(".dds"))
             {
                 ImageData = LoadDdsFormat(Filename, FormatInfo);
+                ImageData.FormatInfo = FormatInfo;
             }
-            else if (bIsExr)
+            else if (Filename.ends_with(".exr"))
             {
                 try
                 {
                     ImageData = LoadExrFormat(Filename, FormatInfo);
+                    ImageData.FormatInfo = FormatInfo;
                 }
                 catch (const Iex::BaseExc& e)
                 {
@@ -379,20 +377,25 @@ namespace Npgs
                     return {};
                 }
             }
-            else if (bIsHdr)
+            else if (Filename.ends_with(".hdr"))
             {
                 ImageData = LoadHdrFormat(Filename, FormatInfo);
+                ImageData.FormatInfo = FormatInfo;
             }
-            else if (bIsKmg || bIsKtx)
+            else if (Filename.ends_with(".kmg") || (Filename.ends_with(".ktx") || Filename.ends_with("ktx2")))
             {
                 ImageData = LoadKtxFormat(Filename, FormatInfo);
+                if (!Filename.ends_with("ktx2"))
+                {
+                    ImageData.FormatInfo = FormatInfo;
+                }
             }
             else
             {
                 ImageData = LoadCommonFormat(Filename, FormatInfo);
+                ImageData.FormatInfo = FormatInfo;
             }
 
-            ImageData.FormatInfo = FormatInfo;
             return ImageData;
         }
     }

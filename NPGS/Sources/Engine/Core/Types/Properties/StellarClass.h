@@ -40,8 +40,8 @@ namespace Npgs::Astro
             kSpectral_S           = 11,
             // 沃尔夫—拉叶星
             // -----------
-            kSpectral_WC          = 12,
-            kSpectral_WN          = 13,
+            kSpectral_WN          = 12,
+            kSpectral_WC          = 13,
             kSpectral_WO          = 14,
             // 棕矮星
             // -----

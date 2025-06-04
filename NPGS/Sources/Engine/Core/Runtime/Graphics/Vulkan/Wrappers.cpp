@@ -662,7 +662,7 @@ namespace Npgs
             Target = MappedTargetMemory_;
         }
 
-        std::copy_n(static_cast<const std::byte*>(Data), Size, static_cast<std::byte*>(Target) + SubmitOffset);
+        std::ranges::copy_n(static_cast<const std::byte*>(Data), Size, static_cast<std::byte*>(Target) + SubmitOffset);
 
         if (!(MemoryPropertyFlags_ & vk::MemoryPropertyFlagBits::eHostCoherent))
         {
@@ -712,7 +712,7 @@ namespace Npgs
             Data = MappedDataMemory_;
         }
 
-        std::copy_n(static_cast<const std::byte*>(Data) + FetchOffset, Size, static_cast<std::byte*>(Target));
+        std::ranges::copy_n(static_cast<const std::byte*>(Data) + FetchOffset, Size, static_cast<std::byte*>(Target));
 
         if (!(MemoryPropertyFlags_ & vk::MemoryPropertyFlagBits::eHostCoherent))
         {

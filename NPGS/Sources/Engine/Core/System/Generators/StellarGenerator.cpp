@@ -545,7 +545,8 @@ namespace Npgs
             }
             catch (const std::exception& e)
             {
-                NpgsCoreError("Failed to generate star: {}", e.what());
+                NpgsCoreError("Failed to generate star at Age={}, FeH={}, InMass={}: {}",
+                              Properties.Age, Properties.FeH, Properties.InitialMassSol, e.what());
                 return {};
             }
 
@@ -560,7 +561,8 @@ namespace Npgs
             }
             catch (const std::exception& e)
             {
-                NpgsCoreError("Failed to generate giant star: {}", e.what());
+                NpgsCoreError("Failed to generate giant star at Age={}, FeH={}, InMass={}: {}",
+                              Properties.Age, Properties.FeH, Properties.InitialMassSol, e.what());
                 return {};
             }
 
@@ -1034,7 +1036,8 @@ namespace Npgs
         std::vector<FDataArray> Result;
         {
             std::shared_lock Lock(kCacheMutex_);
-            if (kPhaseChangesCache_.contains(DataSheet))
+            auto it = kPhaseChangesCache_.find(DataSheet);
+            if (it != kPhaseChangesCache_.end())
             {
                 return kPhaseChangesCache_[DataSheet];
             }
@@ -1450,9 +1453,11 @@ namespace Npgs
         SpectralType.bIsAmStar = false;
 
         std::vector<std::pair<int, int>> SpectralSubclassMap;
-        float Subclass     = 0.0f;
-        float SurfaceH1    = StarData.GetSurfaceH1();
-        float MinSurfaceH1 = Astro::AStar::kFeHSurfaceH1Map_.at(FeH) - 0.01f;
+        float InitialMassSol = StarData.GetInitialMass() / kSolarMass;
+        float Subclass       = 0.0f;
+        float SurfaceH1      = StarData.GetSurfaceH1();
+        float SurfaceZ       = StarData.GetSurfaceZ();
+        float MinSurfaceH1   = Astro::AStar::kFeHSurfaceH1Map_.at(FeH) - 0.01f;
 
         std::function<void(Astro::AStar::EEvolutionPhase)> CalculateSpectralSubclass =
         [&](Astro::AStar::EEvolutionPhase BasePhase) -> void
@@ -1463,9 +1468,9 @@ namespace Npgs
             {
                 if (BasePhase == Astro::AStar::EEvolutionPhase::kMainSequence)
                 {
-                    // 如果表面氢质量分数低于 0.5 并且还是主序星阶段，转为 WR 星
+                    // 如果表面氢质量分数低于 0.5 且还是主序星阶段，或初始质量超过太阳的 120 倍，转为 WR 星
                     // 该情况只有 O 型星会出现
-                    if (SurfaceH1 < 0.5f)
+                    if (SurfaceH1 < 0.5f || InitialMassSol > 120)
                     {
                         EvolutionPhase = Astro::AStar::EEvolutionPhase::kWolfRayet;
                         StarData.SetEvolutionPhase(EvolutionPhase);
@@ -1487,37 +1492,34 @@ namespace Npgs
             }
             else
             {
-                if (Teff >= 200000)
+                if (SurfaceZ <= 0.05)
                 {
-                    // 温度超过 20 万 K，直接赋值为 WO2
-                    SpectralType.HSpectralClass = Astro::FStellarClass::ESpectralClass::kSpectral_WO;
-                    SpectralType.Subclass = 2.0f;
-                    return;
+                    SpectralSubclassMap      = Astro::AStar::kSpectralSubclassMap_WNxh_;
+                    SpectralClass            = std::to_underlying(Astro::FStellarClass::ESpectralClass::kSpectral_WN);
+                    SpectralType.SpecialMark = std::to_underlying(Astro::FStellarClass::ESpecialMark::kCode_h);
                 }
-                else
+                else if (SurfaceZ <= 0.1f)
                 {
-                    if (SurfaceH1 >= 0.2f)
+                    SpectralSubclassMap      = Astro::AStar::kSpectralSubclassMap_WN_;
+                    SpectralClass            = std::to_underlying(Astro::FStellarClass::ESpectralClass::kSpectral_WN);
+                }
+                else if (SurfaceZ <= 0.6f)
+                {
+                    if (InitialMassSol <= 140)
                     {
-                        // 根据表面氢质量分数来判断处于的 WR 阶段
-                        SpectralSubclassMap      = Astro::AStar::kSpectralSubclassMap_WNxh_;
-                        SpectralClass            = std::to_underlying(Astro::FStellarClass::ESpectralClass::kSpectral_WN);
-                        SpectralType.SpecialMark = std::to_underlying(Astro::FStellarClass::ESpecialMark::kCode_h);
-                    }
-                    else if (SurfaceH1 >= 0.1f)
-                    {
-                        SpectralSubclassMap      = Astro::AStar::kSpectralSubclassMap_WN_;
-                        SpectralClass            = std::to_underlying(Astro::FStellarClass::ESpectralClass::kSpectral_WN);
-                    }
-                    else if (SurfaceH1 < 0.1f && SurfaceH1 > 0.05f)
-                    {
-                        SpectralSubclassMap      = Astro::AStar::kSpectralSubclassMap_WC_;
-                        SpectralClass            = std::to_underlying(Astro::FStellarClass::ESpectralClass::kSpectral_WC);
+                        SpectralSubclassMap  = Astro::AStar::kSpectralSubclassMap_WC_;
+                        SpectralClass        = std::to_underlying(Astro::FStellarClass::ESpectralClass::kSpectral_WC);
                     }
                     else
                     {
-                        SpectralSubclassMap      = Astro::AStar::kSpectralSubclassMap_WO_;
-                        SpectralClass            = std::to_underlying(Astro::FStellarClass::ESpectralClass::kSpectral_WO);
+                        SpectralSubclassMap  = Astro::AStar::kSpectralSubclassMap_WN_;
+                        SpectralClass        = std::to_underlying(Astro::FStellarClass::ESpectralClass::kSpectral_WN);
                     }
+                }
+                else
+                {
+                    SpectralSubclassMap      = Astro::AStar::kSpectralSubclassMap_WO_;
+                    SpectralClass            = std::to_underlying(Astro::FStellarClass::ESpectralClass::kSpectral_WO);
                 }
             }
 
@@ -1525,33 +1527,22 @@ namespace Npgs
 
             if (SpectralSubclassMap.empty())
             {
-                NpgsCoreError("Failed to find match subclass map of Age: {}, FeH: {}, Mass: {}, Teff: {}",
+                NpgsCoreError("Failed to find match subclass map of Age={}, FeH={}, Mass={}, Teff={}",
                               StarData.GetAge(), StarData.GetFeH(), StarData.GetMass() / kSolarMass, StarData.GetTeff());
             }
 
-            for (auto it = SpectralSubclassMap.begin(); it != SpectralSubclassMap.end() - 1; ++it)
+            Subclass = static_cast<float>(SpectralSubclassMap.front().second);
+            if (Teff < std::next(SpectralSubclassMap.begin(), 1)->first)
             {
-                if (it->first >= Teff && (it + 1)->first < Teff)
+                Subclass = static_cast<float>(std::next(SpectralSubclassMap.begin(), 1)->second);
+                for (auto it = SpectralSubclassMap.begin() + 1; it != SpectralSubclassMap.end() - 1; ++it)
                 {
-                    Subclass = static_cast<float>(it->second);
-                    break;
-                }
-            }
-
-            if (SpectralType.HSpectralClass == Astro::FStellarClass::ESpectralClass::kSpectral_WN &&
-                SpectralType.SpecialMark & std::to_underlying(Astro::FStellarClass::ESpecialMark::kCode_h))
-            {
-                if (Subclass < 5)
-                {
-                    Subclass = 5.0f;
-                }
-            }
-
-            if (SpectralType.HSpectralClass == Astro::FStellarClass::ESpectralClass::kSpectral_WO)
-            {
-                if (Subclass > 4)
-                {
-                    Subclass = 4.0f;
+                    if (it->first >= Teff && (it + 1)->first < Teff)
+                    {
+                        Subclass = static_cast<float>(it->second);
+                        break;
+                    }
+                    ++Subclass;
                 }
             }
 
@@ -1572,7 +1563,7 @@ namespace Npgs
                     {
                         if (EvolutionPhase == Astro::AStar::EEvolutionPhase::kPrevMainSequence)
                         {
-                            SpectralType.LuminosityClass = CalculateLuminosityClass(StarData);
+                            SpectralType.LuminosityClass = Astro::FStellarClass::ELuminosityClass::kLuminosity_Unknown;
                         }
                         else if (EvolutionPhase == Astro::AStar::EEvolutionPhase::kMainSequence)
                         {
@@ -1598,18 +1589,25 @@ namespace Npgs
                 }
                 else
                 {
-                    // 高于 O2 上限，转到通过表面氢质量分数判断阶段
-                    if (SurfaceH1 > MinSurfaceH1)
+                    // 前主序恒星温度达不到 O2 上限
+                    if (InitialMassSol <= 120)
                     {
-                        SpectralType.HSpectralClass  = Astro::FStellarClass::ESpectralClass::kSpectral_O;
-                        SpectralType.Subclass        = 2.0f;
-                        SpectralType.LuminosityClass = Astro::FStellarClass::ELuminosityClass::kLuminosity_V;
-                    }
-                    else if (SurfaceH1 > 0.5f)
-                    {
-                        SpectralType.HSpectralClass  = Astro::FStellarClass::ESpectralClass::kSpectral_O;
-                        SpectralType.Subclass        = 2.0f;
-                        SpectralType.LuminosityClass = CalculateLuminosityClass(StarData);
+                        if (SurfaceH1 > MinSurfaceH1)
+                        {
+                            SpectralType.HSpectralClass  = Astro::FStellarClass::ESpectralClass::kSpectral_O;
+                            SpectralType.Subclass        = 2.0f;
+                            SpectralType.LuminosityClass = Astro::FStellarClass::ELuminosityClass::kLuminosity_V;
+                        }
+                        else if (SurfaceH1 > 0.5f)
+                        {
+                            SpectralType.HSpectralClass  = Astro::FStellarClass::ESpectralClass::kSpectral_O;
+                            SpectralType.Subclass        = 2.0f;
+                            SpectralType.LuminosityClass = CalculateLuminosityClass(StarData);
+                        }
+                        else
+                        {
+                            CalculateSpectralSubclass(Astro::AStar::EEvolutionPhase::kWolfRayet);
+                        }
                     }
                     else
                     {
