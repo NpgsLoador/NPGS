@@ -47,7 +47,7 @@ namespace Npgs
             FMemoryGuard(const FMemoryGuard&) = delete;
             FMemoryGuard(FMemoryGuard&& Other) noexcept
                 : Pool_(std::exchange(Other.Pool_, nullptr))
-                , Handle_(std::exchange(Other.Handle_, nullptr))
+                , Handle_(std::exchange(Other.Handle_, 0))
             {
             }
 
@@ -73,17 +73,17 @@ namespace Npgs
 
             explicit operator bool() const
             {
-                return operator==(nullptr);
+                return !operator==(nullptr);
             }
 
             MemoryType* operator->()
             {
-                return Pool_->GetMemory(Handle_);
+                return Pool_ != nullptr ? Pool_->GetMemory(Handle_) : nullptr;
             }
 
             const MemoryType* operator->() const
             {
-                return Pool_->GetMemory(Handle_);
+                return Pool_ != nullptr ? Pool_->GetMemory(Handle_) : nullptr;
             }
 
             MemoryType& operator*()
@@ -116,8 +116,18 @@ namespace Npgs
                 return !(*this == Other);
             }
 
+            MemoryType* Get()
+            {
+                return Pool_ != nullptr ? Pool_->GetMemory(Handle_) : nullptr;
+            }
+
+            const MemoryType* Get() const
+            {
+                return Pool_ != nullptr ? Pool_->GetMemory(Handle_) : nullptr;
+            }
+
         private:
-            TMemoryPool*  Pool_;
+            TMemoryPool*  Pool_{ nullptr };
             FMemoryHandle Handle_{ std::numeric_limits<FMemoryHandle>::max() };
         };
 
@@ -182,7 +192,7 @@ namespace Npgs
             }
         }
 
-        void ShrinkToFit()
+        void ShrinkToFit() // TODO
         {
             std::size_t TargetCapacity = std::max(FreeList_.size_approx(), SizeApprox());
             if (MemoryBlocks_.size() <= TargetCapacity)

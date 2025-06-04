@@ -693,7 +693,7 @@ namespace Npgs
 
         std::vector<Astro::AStar> Stars = InterpolateStars(MaxThread, Generators, BasicProperties);
 
-        NpgsCoreInfo("Building stellar octree in 8 threads...");
+        NpgsCoreInfo("Generating stellar slots...");
         GenerateSlots(0.1f, StarCount_, 0.004f);
 
         NpgsCoreInfo("Linking positions in octree to stellar systems...");
@@ -848,10 +848,13 @@ namespace Npgs
         float LeafRadius = LeafSize * 0.5f;
         float RootRadius = LeafSize * static_cast<float>(std::pow(2, Exponent));
 
+        NpgsCoreInfo("Initializing octree...");
         Octree_ = std::make_unique<TOctree<Astro::FStellarSystem>>(glm::vec3(0.0), RootRadius);
+        NpgsCoreInfo("Building empty octree...");
         Octree_->BuildEmptyTree(LeafRadius); // 快速构建一个空树，每个叶子节点作为一个格子，用于生成恒星
 
         // 遍历八叉树，将距离原点大于半径的叶子节点标记为无效，保证恒星只会在范围内生成
+        NpgsCoreInfo("Traversing octree to generate slots...");
         Octree_->Traverse([Radius](FNodeType& Node) -> void
         {
             if (Node.IsLeafNode() && glm::length(Node.GetCenter()) > Radius)
@@ -872,6 +875,7 @@ namespace Npgs
         };
 
         // 使用栅格采样，八叉树的每个叶子节点作为一个格子，在这个格子中生成一个恒星
+        NpgsCoreInfo("Sampling slots...");
         while (ValidLeafCount != SampleCount)
         {
             LeafNodes.clear();
