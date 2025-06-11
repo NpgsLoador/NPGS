@@ -3,9 +3,11 @@
 #include <cmath>
 #include <algorithm>
 #include <array>
+#include <atomic>
 #include <concepts>
 #include <functional>
 #include <future>
+#include <mutex>
 #include <type_traits>
 #include <utility>
 #include <vector>
@@ -286,12 +288,15 @@ namespace Npgs
         requires std::is_invocable_r_v<void, Func, const FNodeType&> || std::is_invocable_r_v<void, Func, FNodeType&>
         void Traverse(Func&& Pred) const
         {
-            TraverseImpl(Root_.get(), std::forward<Func>(Pred));
+            std::mutex Mutex;
+            bool bParallel = MaxDepth_ >= 10 ? true : false;
+            TraverseImpl(Root_.get(), Mutex, bParallel, std::forward<Func>(Pred));
         }
 
         std::size_t GetCapacity() const
         {
-            return GetCapacityImpl(Root_.get());
+            bool bParallel = MaxDepth_ >= 10 ? true : false;
+            return GetCapacityImpl(Root_.get(), bParallel);
         }
 
         std::size_t GetSize() const
@@ -366,7 +371,7 @@ namespace Npgs
                 return;
             }
 
-            if (Node->GetNext(0) == nullptr)
+            if (Node->IsLeafNode())
             {
                 for (int i = 0; i != 8; ++i)
                 {
@@ -506,22 +511,46 @@ namespace Npgs
         }
 
         template <typename Func>
-        void TraverseImpl(FNodeType* Node, Func&& Pred) const
+        void TraverseImpl(FNodeType* Node, std::mutex& Mutex, bool bParallel, Func&& Pred) const
         {
             if (Node == nullptr)
             {
                 return;
             }
 
-            Pred(*Node);
-
-            for (int i = 0; i != 8; ++i)
             {
-                TraverseImpl(GetNextNode(Node, i), Pred);
+                std::lock_guard Lock(Mutex);
+                Pred(*Node);
+            }
+
+            if (bParallel)
+            {
+                bParallel = false;
+                std::vector<std::future<void>> Futures;
+                for (int i = 0; i != 8; ++i)
+                {
+                    auto* NextNode = GetNextNode(Node, i);
+                    Futures.push_back(ThreadPool_->Submit([this, NextNode, &Mutex, bParallel, Pred]() -> void
+                    {
+                        this->TraverseImpl(NextNode, Mutex, bParallel, Pred);
+                    }));
+                }
+
+                for (auto& Future : Futures)
+                {
+                    Future.get();
+                }
+            }
+            else
+            {
+                for (int i = 0; i != 8; ++i)
+                {
+                    TraverseImpl(GetNextNode(Node, i), Mutex, bParallel, Pred);
+                }
             }
         }
 
-        std::size_t GetCapacityImpl(const FNodeType* Node) const
+        std::size_t GetCapacityImpl(const FNodeType* Node, bool bParallel) const
         {
             if (Node == nullptr)
             {
@@ -533,10 +562,27 @@ namespace Npgs
                 return Node->IsValid() ? 1 : 0;
             }
 
-            std::size_t Capacity = 0;
-            for (int i = 0; i != 8; ++i)
+            std::atomic<std::size_t> Capacity = 0;
+            if (bParallel)
             {
-                Capacity += GetCapacityImpl(GetNextNode(Node, i));
+                bParallel = false;
+                std::vector<std::future<std::size_t>> Futures;
+                for (int i = 0; i != 8; ++i)
+                {
+                    Futures.push_back(ThreadPool_->Submit(&TOctree::GetCapacityImpl, this, GetNextNode(Node, i), bParallel));
+                }
+
+                for (auto& Future : Futures)
+                {
+                    Capacity += Future.get();
+                }
+            }
+            else
+            {
+                for (int i = 0; i != 8; ++i)
+                {
+                    Capacity += GetCapacityImpl(GetNextNode(Node, i), bParallel);
+                }
             }
 
             return Capacity;

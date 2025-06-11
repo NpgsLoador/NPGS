@@ -863,6 +863,7 @@ namespace Npgs
             }
         });
 
+        NpgsCoreInfo("Get valid leafs");
         std::size_t ValidLeafCount = Octree_->GetCapacity();
         std::vector<FNodeType*> LeafNodes;
 
