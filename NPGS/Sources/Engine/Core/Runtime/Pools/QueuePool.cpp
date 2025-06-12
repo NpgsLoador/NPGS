@@ -62,11 +62,13 @@ namespace Npgs
             return FQueueGuard(this, { Queue, QueueFlags });
         }
 
-        std::unique_lock Lock(Mutex_);
+        auto& Mutex     = Pool.Mutex;
+        auto& WaitQueue = Pool.WaitQueue;
+        std::unique_lock Lock(Mutex);
         if (Pool.BusyQueueCount.load() >= Pool.TotalQueueCount)
         {
             auto CurrentThread = std::make_shared<std::condition_variable>();
-            WaitQueue_.push(CurrentThread);
+            WaitQueue.push(CurrentThread);
 
             CurrentThread->wait(Lock, [this, &Pool, &Queue]() -> bool { return Pool.Queues.try_dequeue(Queue); });
 
@@ -98,17 +100,27 @@ namespace Npgs
     void FQueuePool::ReleaseQueue(FQueueInfo&& QueueInfo)
     {
         std::uint32_t Index = QueueFamilyIndices_.at(QueueInfo.QueueFlags);
-        auto& Pool = QueueFamilyPools_.at(Index);
+        auto& Pool          = QueueFamilyPools_.at(Index);
+        auto& Mutex         = Pool.Mutex;
+        auto& WaitQueue     = Pool.WaitQueue;
 
         if (Pool.Queues.try_enqueue(QueueInfo.Queue))
         {
-            if (!WaitQueue_.empty())
+            --Pool.BusyQueueCount;
+            std::shared_ptr<std::condition_variable> TopThread = nullptr;
             {
-                auto TopThread = WaitQueue_.front();
-                WaitQueue_.pop();
+                std::lock_guard Lock(Mutex);
+                if (!WaitQueue.empty())
+                {
+                    TopThread = WaitQueue.front();
+                    WaitQueue.pop();
+                }
+            }
+
+            if (TopThread != nullptr)
+            {
                 TopThread->notify_one();
             }
-            --Pool.BusyQueueCount;
 
             return;
         }

@@ -127,7 +127,7 @@ namespace Npgs
 
     private:
         std::unique_ptr<FVulkanCore>                                           VulkanCore_;
-        std::unordered_map<std::uint32_t, std::shared_ptr<FCommandBufferPool>> CommandBufferPools_;
+        std::unordered_map<std::uint32_t, std::unique_ptr<FCommandBufferPool>> CommandBufferPools_;
         std::array<std::unique_ptr<FStagingBufferPool>, 2>                     StagingBufferPools_;
         std::vector<std::pair<ECallbackType, std::string>>                     AutoRemovedCallbacks_;
         // std::array<vk::FormatProperties, magic_enum::enum_count<vk::Format>()> FormatProperties_;

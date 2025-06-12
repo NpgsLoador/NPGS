@@ -4,7 +4,7 @@
 using namespace Npgs;
 using namespace Npgs::Util;
 
-int main1()
+int main()
 {
     FLogger::Initialize();
     FEngineServices::GetInstance()->InitializeCoreServices();
@@ -22,7 +22,7 @@ int main1()
 #include "Npgs.h"
 #include "Universe.h"
 
-int main() {
+int main1() {
     using namespace Npgs;
     using namespace Npgs::Astro;
     using namespace Npgs::Util;

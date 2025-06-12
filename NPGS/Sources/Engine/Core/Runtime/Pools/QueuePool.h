@@ -49,9 +49,11 @@ namespace Npgs
     private:
         struct FQueueFamilyPool
         {
-            moodycamel::ConcurrentQueue<vk::Queue> Queues;
-            std::atomic<std::size_t> BusyQueueCount{};
-            std::size_t              TotalQueueCount{};
+            moodycamel::ConcurrentQueue<vk::Queue>               Queues;
+            std::mutex                                           Mutex;
+            std::queue<std::shared_ptr<std::condition_variable>> WaitQueue;
+            std::atomic<std::size_t>                             BusyQueueCount{};
+            std::size_t                                          TotalQueueCount{};
         };
 
         struct FQueueHash
@@ -75,10 +77,8 @@ namespace Npgs
         void ReleaseQueue(FQueueInfo&& QueueInfo);
 
     private:
-        std::mutex                                                    Mutex_;
         std::unordered_map<vk::QueueFlags, std::uint32_t, FQueueHash> QueueFamilyIndices_;
         std::unordered_map<std::uint32_t, FQueueFamilyPool>           QueueFamilyPools_;
-        std::queue<std::shared_ptr<std::condition_variable>>          WaitQueue_;
         vk::Device                                                    Device_;
     };
 } // namespace Npgs
