@@ -56,8 +56,10 @@ namespace Npgs
         auto StagingBuffer = VulkanContext_->AcquireStagingBuffer(Size);
         StagingBuffer->SubmitBufferData(MapOffset, TargetOffset, Size, Data);
 
-        auto  BufferGuard = VulkanContext_->AcquireCommandBuffer(FVulkanContext::EQueueType::kTransfer);
-        auto& TransferCommandBuffer = *BufferGuard;
+        auto  PoolGuard   = VulkanContext_->AcquireCommandPool(FVulkanContext::EQueueType::kTransfer);
+        auto& CommandPool = *PoolGuard;
+        FVulkanCommandBuffer TransferCommandBuffer;
+        CommandPool.AllocateBuffer(vk::CommandBufferLevel::ePrimary, TransferCommandBuffer);
         TransferCommandBuffer.Begin(vk::CommandBufferUsageFlagBits::eOneTimeSubmit);
         vk::BufferCopy Region(0, TargetOffset, Size);
         TransferCommandBuffer->copyBuffer(*StagingBuffer->GetBuffer(), *BufferMemory_->GetResource(), Region);
@@ -94,8 +96,10 @@ namespace Npgs
         auto StagingBuffer = VulkanContext_->AcquireStagingBuffer(DstStride * ElementSize);
         StagingBuffer->SubmitBufferData(MapOffset, SrcStride * ElementIndex, SrcStride * ElementSize, Data);
 
-        auto  BufferGuard = VulkanContext_->AcquireCommandBuffer(FVulkanContext::EQueueType::kTransfer);
-        auto& TransferCommandBuffer = *BufferGuard;
+        auto  PoolGuard   = VulkanContext_->AcquireCommandPool(FVulkanContext::EQueueType::kTransfer);
+        auto& CommandPool = *PoolGuard;
+        FVulkanCommandBuffer TransferCommandBuffer;
+        CommandPool.AllocateBuffer(vk::CommandBufferLevel::ePrimary, TransferCommandBuffer);
         TransferCommandBuffer.Begin(vk::CommandBufferUsageFlagBits::eOneTimeSubmit);
 
         std::vector<vk::BufferCopy> Regions(ElementCount);

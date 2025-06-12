@@ -270,10 +270,10 @@ namespace Npgs
         return VulkanCore_->GetCurrentImageIndex();
     }
 
-    NPGS_INLINE FCommandBufferPool::FBufferGuard
-    FVulkanContext::AcquireCommandBuffer(EQueueType QueueType, vk::CommandBufferLevel Level)
+    NPGS_INLINE FCommandPoolPool::FPoolGuard
+    FVulkanContext::AcquireCommandPool(EQueueType QueueType, vk::CommandPoolCreateFlags Flags)
     {
-        return std::move(CommandBufferPools_.at(VulkanCore_->GetQueueFamilyIndex(QueueType))->AcquireBuffer(Level));
+        return std::move(CommandPoolPools_.at(VulkanCore_->GetQueueFamilyIndex(QueueType))->AcquirePool(Flags));
     }
 
     NPGS_INLINE FStagingBufferPool::FBufferGuard

@@ -129,7 +129,7 @@
     <ClCompile Include="Sources\Engine\Core\Runtime\Pools\QueuePool.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="Sources\Engine\Core\Runtime\Pools\CommandBufferPool.cpp">
+    <ClCompile Include="Sources\Engine\Core\Runtime\Pools\CommandPoolPool.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="Sources\Engine\Core\System\Events\Event.cpp">
@@ -302,7 +302,7 @@
     <ClInclude Include="Sources\Engine\Core\Runtime\Pools\QueuePool.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="Sources\Engine\Core\Runtime\Pools\CommandBufferPool.h">
+    <ClInclude Include="Sources\Engine\Core\Runtime\Pools\CommandPoolPool.h">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="Sources\Engine\Core\System\Events\Event.h">
@@ -429,7 +429,7 @@
     <None Include="Sources\Engine\Core\Runtime\Pools\QueuePool.inl">
       <Filter>头文件</Filter>
     </None>
-    <None Include="Sources\Engine\Core\Runtime\Pools\CommandBufferPool.inl">
+    <None Include="Sources\Engine\Core\Runtime\Pools\CommandPoolPool.inl">
       <Filter>头文件</Filter>
     </None>
   </ItemGroup>

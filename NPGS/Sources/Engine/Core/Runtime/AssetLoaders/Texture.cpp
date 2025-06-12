@@ -588,8 +588,10 @@ namespace Npgs
         bool bGenerateMipmaps = MipLevels > 1;
         bool bNeedBlit        = DstImageSrcBlit != DstImageDstBlit;
 
-        auto  BufferGuard   = VulkanContext_->AcquireCommandBuffer(FVulkanContext::EQueueType::kGeneral);
-        auto& CommandBuffer = *BufferGuard;
+        auto  PoolGuard   = VulkanContext_->AcquireCommandPool(FVulkanContext::EQueueType::kGeneral);
+        auto& CommandPool = *PoolGuard;
+        FVulkanCommandBuffer CommandBuffer;
+        CommandPool.AllocateBuffer(vk::CommandBufferLevel::ePrimary, CommandBuffer);
         CommandBuffer.Begin(vk::CommandBufferUsageFlagBits::eOneTimeSubmit);
 
         vk::ImageSubresourceLayers Subresource(vk::ImageAspectFlagBits::eColor, 0, 0, ArrayLayers);
@@ -624,8 +626,10 @@ namespace Npgs
                                         const std::vector<std::size_t>& LevelOffsets,
                                         std::uint32_t ArrayLayers, vk::Filter Filter, vk::Image DstImage)
     {
-        auto  BufferGuard   = VulkanContext_->AcquireCommandBuffer(FVulkanContext::EQueueType::kGeneral);
-        auto& CommandBuffer = *BufferGuard;
+        auto  PoolGuard   = VulkanContext_->AcquireCommandPool(FVulkanContext::EQueueType::kGeneral);
+        auto& CommandPool = *PoolGuard;
+        FVulkanCommandBuffer CommandBuffer;
+        CommandPool.AllocateBuffer(vk::CommandBufferLevel::ePrimary, CommandBuffer);
         CommandBuffer.Begin(vk::CommandBufferUsageFlagBits::eOneTimeSubmit);
 
         FImageMemoryMaskPack PostTransferState(
@@ -684,8 +688,10 @@ namespace Npgs
         bool bGenerateMipmaps = MipLevels > 1;
         bool bNeedBlit = SrcImage != DstImage;
 
-        auto  BufferGuard   = VulkanContext_->AcquireCommandBuffer(FVulkanContext::EQueueType::kGeneral);
-        auto& CommandBuffer = *BufferGuard;
+        auto  PoolGuard   = VulkanContext_->AcquireCommandPool(FVulkanContext::EQueueType::kGeneral);
+        auto& CommandPool = *PoolGuard;
+        FVulkanCommandBuffer CommandBuffer;
+        CommandPool.AllocateBuffer(vk::CommandBufferLevel::ePrimary, CommandBuffer);
         CommandBuffer.Begin(vk::CommandBufferUsageFlagBits::eOneTimeSubmit);
 
         if (bNeedBlit)
@@ -722,8 +728,10 @@ namespace Npgs
             ImageTracker->TrackImage(DstImage, FImageTracker::FImageState());
         }
 
-        auto  BufferGuard   = VulkanContext_->AcquireCommandBuffer(FVulkanContext::EQueueType::kGeneral);
-        auto& CommandBuffer = *BufferGuard;
+        auto  PoolGuard   = VulkanContext_->AcquireCommandPool(FVulkanContext::EQueueType::kGeneral);
+        auto& CommandPool = *PoolGuard;
+        FVulkanCommandBuffer CommandBuffer;
+        CommandPool.AllocateBuffer(vk::CommandBufferLevel::ePrimary, CommandBuffer);
         CommandBuffer.Begin(vk::CommandBufferUsageFlagBits::eOneTimeSubmit);
 
         std::vector<vk::ImageBlit> Regions;

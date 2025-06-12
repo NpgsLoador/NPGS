@@ -20,7 +20,7 @@
 #include "Engine/Core/Runtime/Managers/AssetManager.h"
 #include "Engine/Core/Runtime/Managers/PipelineManager.h"
 #include "Engine/Core/Runtime/Managers/ShaderBufferManager.h"
-#include "Engine/Core/Runtime/Pools/CommandBufferPool.h"
+#include "Engine/Core/Runtime/Pools/CommandPoolPool.h"
 #include "Engine/Core/Runtime/Pools/ResourcePool.hpp"
 #include "Engine/Core/Runtime/Pools/StagingBufferPool.h"
 #include "Engine/Core/Runtime/Pools/ThreadPool.h"

@@ -176,7 +176,7 @@
     <ClCompile Include="Sources\Engine\Core\Runtime\AssetLoaders\Texture.cpp" />
     <ClCompile Include="Sources\Engine\Core\Runtime\Graphics\Resources\Attachment.cpp" />
     <ClCompile Include="Sources\Engine\Core\Runtime\Graphics\Resources\DeviceLocalBuffer.cpp" />
-    <ClCompile Include="Sources\Engine\Core\Runtime\Pools\CommandBufferPool.cpp" />
+    <ClCompile Include="Sources\Engine\Core\Runtime\Pools\CommandPoolPool.cpp" />
     <ClCompile Include="Sources\Engine\Core\Runtime\Pools\StagingBufferPool.cpp" />
     <ClCompile Include="Sources\Engine\Core\Runtime\Graphics\Resources\StagingBuffer.cpp" />
     <ClCompile Include="Sources\Engine\Core\Runtime\Graphics\Vulkan\Context.cpp" />
@@ -232,7 +232,7 @@
     <ClInclude Include="Sources\Engine\Core\Runtime\AssetLoaders\Texture.h" />
     <ClInclude Include="Sources\Engine\Core\Runtime\Graphics\Resources\Attachment.h" />
     <ClInclude Include="Sources\Engine\Core\Runtime\Graphics\Resources\DeviceLocalBuffer.h" />
-    <ClInclude Include="Sources\Engine\Core\Runtime\Pools\CommandBufferPool.h" />
+    <ClInclude Include="Sources\Engine\Core\Runtime\Pools\CommandPoolPool.h" />
     <ClInclude Include="Sources\Engine\Core\Runtime\Pools\ResourcePool.hpp" />
     <ClInclude Include="Sources\Engine\Core\Runtime\Graphics\Resources\Pools\ResourcePoolBase.hpp" />
     <ClInclude Include="Sources\Engine\Core\Runtime\Pools\StagingBufferPool.h" />
@@ -282,7 +282,7 @@
     <None Include="Sources\Engine\Core\Runtime\AssetLoaders\Texture.inl" />
     <None Include="Sources\Engine\Core\Runtime\Graphics\Resources\Attachment.inl" />
     <None Include="Sources\Engine\Core\Runtime\Graphics\Resources\DeviceLocalBuffer.inl" />
-    <None Include="Sources\Engine\Core\Runtime\Pools\CommandBufferPool.inl" />
+    <None Include="Sources\Engine\Core\Runtime\Pools\CommandPoolPool.inl" />
     <None Include="Sources\Engine\Core\Runtime\Graphics\Resources\StagingBuffer.inl" />
     <None Include="Sources\Engine\Core\Runtime\Graphics\Vulkan\Context.inl" />
     <None Include="Sources\Engine\Core\Runtime\Graphics\Vulkan\Core.inl" />
