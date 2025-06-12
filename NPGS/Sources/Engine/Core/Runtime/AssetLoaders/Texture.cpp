@@ -455,18 +455,24 @@ namespace Npgs
         CreateImageMemory(Flags, ImageType, InitialFormat, Extent, MipLevels, ArrayLayers);
         CreateImageView({}, ImageViewType, InitialFormat, MipLevels, ArrayLayers);
 
+        auto  PoolGuard   = VulkanContext_->AcquireCommandPool(FVulkanContext::EQueueType::kGeneral);
+        auto& CommandPool = *PoolGuard;
+
         if (InitialFormat == FinalFormat)
         {
+            FVulkanFence Fence(VulkanContext_->GetDevice());
             if (!bImageMipmapped)
             {
-                CopyBlitGenerateTexture(*StagingBuffer->GetBuffer(), Extent, MipLevels, ArrayLayers, vk::Filter::eLinear,
-                                        *ImageMemory_->GetResource(), *ImageMemory_->GetResource());
+                CopyBlitGenerateTexture(CommandPool, *StagingBuffer->GetBuffer(), Extent, MipLevels, ArrayLayers,
+                                        vk::Filter::eLinear, *ImageMemory_->GetResource(), *ImageMemory_->GetResource(), nullptr, &Fence);
             }
             else
             {
-                CopyBlitApplyTexture(*StagingBuffer->GetBuffer(), Extent, MipLevels, ImageData.LevelOffsets,
-                                     ArrayLayers, vk::Filter::eLinear, *ImageMemory_->GetResource());
+                CopyBlitApplyTexture(CommandPool, *StagingBuffer->GetBuffer(), Extent, MipLevels, ImageData.LevelOffsets,
+                                     ArrayLayers, vk::Filter::eLinear, *ImageMemory_->GetResource(), nullptr, &Fence);
             }
+
+            Fence.Wait();
         }
         else
         {
@@ -485,26 +491,33 @@ namespace Npgs
 
             if (ConvertedImage)
             {
+                FVulkanFence Fence(VulkanContext_->GetDevice());
                 if (!bImageMipmapped)
                 {
-                    BlitGenerateTexture(Extent, MipLevels, ArrayLayers, vk::Filter::eLinear, **ConvertedImage, *ImageMemory_->GetResource());
+                    BlitGenerateTexture(CommandPool, Extent, MipLevels, ArrayLayers, vk::Filter::eLinear,
+                                        **ConvertedImage, *ImageMemory_->GetResource(), nullptr, &Fence);
                 }
                 else
                 {
-                    BlitApplyTexture(Extent, MipLevels, ArrayLayers, vk::Filter::eLinear, **ConvertedImage, *ImageMemory_->GetResource());
+                    BlitApplyTexture(CommandPool, Extent, MipLevels, ArrayLayers, vk::Filter::eLinear,
+                                     **ConvertedImage, *ImageMemory_->GetResource(), nullptr, &Fence);
                 }
+
+                Fence.Wait();
             }
             else
             {
+                FVulkanSemaphore Semaphore(VulkanContext_->GetDevice());
+                FVulkanFence Fence(VulkanContext_->GetDevice());
                 if (!bImageMipmapped)
                 {
-                    CopyBlitGenerateTexture(*StagingBuffer->GetBuffer(), Extent, MipLevels, ArrayLayers, vk::Filter::eLinear,
-                                            *ImageMemory_->GetResource(), *ImageMemory_->GetResource());
+                    CopyBlitGenerateTexture(CommandPool, *StagingBuffer->GetBuffer(), Extent, MipLevels, ArrayLayers, vk::Filter::eLinear,
+                                            *ImageMemory_->GetResource(), *ImageMemory_->GetResource(), &Semaphore, nullptr);
                 }
                 else
                 {
-                    CopyBlitApplyTexture(*StagingBuffer->GetBuffer(), Extent, MipLevels, ImageData.LevelOffsets,
-                                         ArrayLayers, vk::Filter::eLinear, *ImageMemory_->GetResource());
+                    CopyBlitApplyTexture(CommandPool, *StagingBuffer->GetBuffer(), Extent, MipLevels, ImageData.LevelOffsets,
+                                         ArrayLayers, vk::Filter::eLinear, *ImageMemory_->GetResource(), &Semaphore, nullptr);
                 }
 
                 FVulkanImageMemory VanillaImageMemory(std::move(*ImageMemory_));
@@ -518,14 +531,16 @@ namespace Npgs
 
                 if (!bImageMipmapped)
                 {
-                    BlitGenerateTexture(Extent, MipLevels, ArrayLayers, vk::Filter::eLinear,
-                                        *VanillaImageMemory.GetResource(), *ImageMemory_->GetResource());
+                    BlitGenerateTexture(CommandPool, Extent, MipLevels, ArrayLayers, vk::Filter::eLinear,
+                                        *VanillaImageMemory.GetResource(), *ImageMemory_->GetResource(), &Semaphore, &Fence);
                 }
                 else
                 {
-                    BlitApplyTexture(Extent, MipLevels, ArrayLayers, vk::Filter::eLinear,
-                                     *VanillaImageMemory.GetResource(), *ImageMemory_->GetResource());
+                    BlitApplyTexture(CommandPool, Extent, MipLevels, ArrayLayers, vk::Filter::eLinear,
+                                     *VanillaImageMemory.GetResource(), *ImageMemory_->GetResource(), &Semaphore, &Fence);
                 }
+
+                Fence.Wait();
             }
         }
     }
@@ -567,8 +582,10 @@ namespace Npgs
             Format, vk::ComponentMapping(), ImageSubresourceRange, Flags);
     }
 
-    void FTexture::CopyBlitGenerateTexture(vk::Buffer SrcBuffer, vk::Extent3D Extent, std::uint32_t MipLevels, std::uint32_t ArrayLayers,
-                                           vk::Filter Filter, vk::Image DstImageSrcBlit, vk::Image DstImageDstBlit)
+    void FTexture::CopyBlitGenerateTexture(const FVulkanCommandPool& CommandPool, vk::Buffer SrcBuffer, vk::Extent3D Extent,
+                                           std::uint32_t MipLevels, std::uint32_t ArrayLayers, vk::Filter Filter,
+                                           vk::Image DstImageSrcBlit, vk::Image DstImageDstBlit,
+                                           FVulkanSemaphore* SignalSemaphore, FVulkanFence* Fence)
     {
         static constexpr std::array kPostTransferStates
         {
@@ -588,8 +605,6 @@ namespace Npgs
         bool bGenerateMipmaps = MipLevels > 1;
         bool bNeedBlit        = DstImageSrcBlit != DstImageDstBlit;
 
-        auto  PoolGuard   = VulkanContext_->AcquireCommandPool(FVulkanContext::EQueueType::kGeneral);
-        auto& CommandPool = *PoolGuard;
         FVulkanCommandBuffer CommandBuffer;
         CommandPool.AllocateBuffer(vk::CommandBufferLevel::ePrimary, CommandBuffer);
         CommandBuffer.Begin(vk::CommandBufferUsageFlagBits::eOneTimeSubmit);
@@ -619,15 +634,17 @@ namespace Npgs
         }
 
         CommandBuffer.End();
-        VulkanContext_->ExecuteCommands(FVulkanContext::EQueueType::kGeneral, CommandBuffer);
+        VulkanContext_->SubmitCommandBuffer(FVulkanContext::EQueueType::kGeneral, CommandBuffer,
+                                            nullptr, vk::PipelineStageFlagBits2::eNone,
+                                            SignalSemaphore, vk::PipelineStageFlagBits2::eBlit | vk::PipelineStageFlagBits2::eCopy,
+                                            Fence, true);
     }
 
-    void FTexture::CopyBlitApplyTexture(vk::Buffer SrcBuffer, vk::Extent3D Extent, std::uint32_t MipLevels,
-                                        const std::vector<std::size_t>& LevelOffsets,
-                                        std::uint32_t ArrayLayers, vk::Filter Filter, vk::Image DstImage)
+    void FTexture::CopyBlitApplyTexture(const FVulkanCommandPool& CommandPool, vk::Buffer SrcBuffer, vk::Extent3D Extent,
+                                        std::uint32_t MipLevels, const std::vector<std::size_t>& LevelOffsets,
+                                        std::uint32_t ArrayLayers, vk::Filter Filter, vk::Image DstImage,
+                                        FVulkanSemaphore* SignalSemaphore, FVulkanFence* Fence)
     {
-        auto  PoolGuard   = VulkanContext_->AcquireCommandPool(FVulkanContext::EQueueType::kGeneral);
-        auto& CommandPool = *PoolGuard;
         FVulkanCommandBuffer CommandBuffer;
         CommandPool.AllocateBuffer(vk::CommandBufferLevel::ePrimary, CommandBuffer);
         CommandBuffer.Begin(vk::CommandBufferUsageFlagBits::eOneTimeSubmit);
@@ -658,11 +675,15 @@ namespace Npgs
         CopyBufferToImage(CommandBuffer, SrcBuffer, DstImage, PostTransferState, Regions);
 
         CommandBuffer.End();
-        VulkanContext_->ExecuteCommands(FVulkanContext::EQueueType::kGeneral, CommandBuffer);
+        VulkanContext_->SubmitCommandBuffer(FVulkanContext::EQueueType::kGeneral, CommandBuffer,
+                                            nullptr, vk::PipelineStageFlagBits2::eNone,
+                                            SignalSemaphore, vk::PipelineStageFlagBits2::eCopy,
+                                            Fence, true);
     }
 
-    void FTexture::BlitGenerateTexture(vk::Extent3D Extent, std::uint32_t MipLevels, std::uint32_t ArrayLayers,
-                                       vk::Filter Filter, vk::Image SrcImage, vk::Image DstImage)
+    void FTexture::BlitGenerateTexture(const FVulkanCommandPool& CommandPool, vk::Extent3D Extent, std::uint32_t MipLevels,
+                                       std::uint32_t ArrayLayers, vk::Filter Filter, vk::Image SrcImage,
+                                       vk::Image DstImage, const FVulkanSemaphore* WaitSemaphore, FVulkanFence* Fence)
     {
         static constexpr std::array kPostTransferStates
         {
@@ -688,8 +709,6 @@ namespace Npgs
         bool bGenerateMipmaps = MipLevels > 1;
         bool bNeedBlit = SrcImage != DstImage;
 
-        auto  PoolGuard   = VulkanContext_->AcquireCommandPool(FVulkanContext::EQueueType::kGeneral);
-        auto& CommandPool = *PoolGuard;
         FVulkanCommandBuffer CommandBuffer;
         CommandPool.AllocateBuffer(vk::CommandBufferLevel::ePrimary, CommandBuffer);
         CommandBuffer.Begin(vk::CommandBufferUsageFlagBits::eOneTimeSubmit);
@@ -712,11 +731,15 @@ namespace Npgs
         }
 
         CommandBuffer.End();
-        VulkanContext_->ExecuteCommands(FVulkanContext::EQueueType::kGeneral, CommandBuffer);
+        VulkanContext_->SubmitCommandBuffer(FVulkanContext::EQueueType::kGeneral, CommandBuffer,
+                                            WaitSemaphore, vk::PipelineStageFlagBits2::eBlit,
+                                            nullptr, vk::PipelineStageFlagBits2::eNone,
+                                            Fence, true);
     }
 
-    void FTexture::BlitApplyTexture(vk::Extent3D Extent, std::uint32_t MipLevels, std::uint32_t ArrayLayers,
-                                    vk::Filter Filter, vk::Image SrcImage, vk::Image DstImage)
+    void FTexture::BlitApplyTexture(const FVulkanCommandPool& CommandPool, vk::Extent3D Extent, std::uint32_t MipLevels,
+                                    std::uint32_t ArrayLayers, vk::Filter Filter, vk::Image SrcImage,
+                                    vk::Image DstImage, const FVulkanSemaphore* WaitSemaphore, FVulkanFence* Fence)
     {
         auto* ImageTracker = EngineResourceServices->GetImageTracker();
         if (!ImageTracker->IsExisting(SrcImage))
@@ -728,8 +751,6 @@ namespace Npgs
             ImageTracker->TrackImage(DstImage, FImageTracker::FImageState());
         }
 
-        auto  PoolGuard   = VulkanContext_->AcquireCommandPool(FVulkanContext::EQueueType::kGeneral);
-        auto& CommandPool = *PoolGuard;
         FVulkanCommandBuffer CommandBuffer;
         CommandPool.AllocateBuffer(vk::CommandBufferLevel::ePrimary, CommandBuffer);
         CommandBuffer.Begin(vk::CommandBufferUsageFlagBits::eOneTimeSubmit);
@@ -754,7 +775,10 @@ namespace Npgs
         BlitImage(CommandBuffer, SrcImage, PostTransferState, DstImage, PostTransferState, Regions, Filter);
 
         CommandBuffer.End();
-        VulkanContext_->ExecuteCommands(FVulkanContext::EQueueType::kGeneral, CommandBuffer);
+        VulkanContext_->SubmitCommandBuffer(FVulkanContext::EQueueType::kGeneral, CommandBuffer,
+                                            WaitSemaphore, vk::PipelineStageFlagBits2::eBlit,
+                                            nullptr, vk::PipelineStageFlagBits2::eNone,
+                                            Fence, true);
     }
 
     void FTexture::CopyBufferToImage(const FVulkanCommandBuffer& CommandBuffer,
@@ -777,7 +801,7 @@ namespace Npgs
         vk::ImageMemoryBarrier2 InitDstImageBarrier(
             ImageState.StageMask,
             ImageState.AccessMask,
-            vk::PipelineStageFlagBits2::eTransfer,
+            vk::PipelineStageFlagBits2::eCopy,
             vk::AccessFlagBits2::eTransferWrite,
             ImageState.ImageLayout,
             vk::ImageLayout::eTransferDstOptimal,
@@ -787,7 +811,7 @@ namespace Npgs
             ImageSubresourceRange
         );
 
-        ImageState.StageMask   = vk::PipelineStageFlagBits2::eTransfer;
+        ImageState.StageMask   = vk::PipelineStageFlagBits2::eCopy;
         ImageState.AccessMask  = vk::AccessFlagBits2::eTransferWrite;
         ImageState.ImageLayout = vk::ImageLayout::eTransferDstOptimal;
         ImageTracker->FlushImageAllStates(DstImage, ImageState);
@@ -801,12 +825,12 @@ namespace Npgs
 
         if (PostTransferState.kbEnable)
         {
-            InitDstImageBarrier.setSrcStageMask(vk::PipelineStageFlagBits2::eTransfer)
-                .setSrcAccessMask(vk::AccessFlagBits2::eTransferWrite)
-                .setDstStageMask(PostTransferState.kStageMask)
-                .setDstAccessMask(PostTransferState.kAccessMask)
-                .setOldLayout(vk::ImageLayout::eTransferDstOptimal)
-                .setNewLayout(PostTransferState.kImageLayout);
+            InitDstImageBarrier.setSrcStageMask(vk::PipelineStageFlagBits2::eCopy)
+                               .setSrcAccessMask(vk::AccessFlagBits2::eTransferWrite)
+                               .setDstStageMask(PostTransferState.kStageMask)
+                               .setDstAccessMask(PostTransferState.kAccessMask)
+                               .setOldLayout(vk::ImageLayout::eTransferDstOptimal)
+                               .setNewLayout(PostTransferState.kImageLayout);
 
             ImageTracker->FlushImageAllStates(DstImage, PostTransferState);
 
@@ -844,7 +868,7 @@ namespace Npgs
         vk::ImageMemoryBarrier2 SrcPreTransferBarrier(
             SrcImageState.StageMask,
             SrcImageState.AccessMask,
-            vk::PipelineStageFlagBits2::eTransfer,
+            vk::PipelineStageFlagBits2::eBlit,
             vk::AccessFlagBits2::eTransferRead,
             SrcImageState.ImageLayout,
             vk::ImageLayout::eTransferSrcOptimal,
@@ -854,7 +878,7 @@ namespace Npgs
             SrcImageSubresourceRange
         );
 
-        SrcImageState.StageMask   = vk::PipelineStageFlagBits2::eTransfer;
+        SrcImageState.StageMask   = vk::PipelineStageFlagBits2::eBlit;
         SrcImageState.AccessMask  = vk::AccessFlagBits2::eTransferRead;
         SrcImageState.ImageLayout = vk::ImageLayout::eTransferSrcOptimal;
         ImageTracker->TrackImage(SrcImage, SrcImageSubresourceRange, SrcImageState);
@@ -862,7 +886,7 @@ namespace Npgs
         vk::ImageMemoryBarrier2 DstPreTransferBarrier(
             DstImageState.StageMask,
             DstImageState.AccessMask,
-            vk::PipelineStageFlagBits2::eTransfer,
+            vk::PipelineStageFlagBits2::eBlit,
             vk::AccessFlagBits2::eTransferWrite,
             DstImageState.ImageLayout,
             vk::ImageLayout::eTransferDstOptimal,
@@ -872,7 +896,7 @@ namespace Npgs
             DstImageSubresourceRange
         );
 
-        DstImageState.StageMask   = vk::PipelineStageFlagBits2::eTransfer;
+        DstImageState.StageMask   = vk::PipelineStageFlagBits2::eBlit;
         DstImageState.AccessMask  = vk::AccessFlagBits2::eTransferWrite;
         DstImageState.ImageLayout = vk::ImageLayout::eTransferDstOptimal;
         ImageTracker->TrackImage(DstImage, DstImageSubresourceRange, DstImageState);
@@ -894,7 +918,7 @@ namespace Npgs
             if (SrcPostTransferState.kbEnable)
             {
                 PostTransferBarriers.emplace_back(
-                    vk::PipelineStageFlagBits2::eTransfer,
+                    vk::PipelineStageFlagBits2::eBlit,
                     vk::AccessFlagBits2::eTransferRead,
                     SrcPostTransferState.kStageMask,
                     SrcPostTransferState.kAccessMask,
@@ -912,7 +936,7 @@ namespace Npgs
             if (DstPostTransferState.kbEnable)
             {
                 PostTransferBarriers.emplace_back(
-                    vk::PipelineStageFlagBits2::eTransfer,
+                    vk::PipelineStageFlagBits2::eBlit,
                     vk::AccessFlagBits2::eTransferWrite,
                     DstPostTransferState.kStageMask,
                     DstPostTransferState.kAccessMask,
@@ -958,7 +982,7 @@ namespace Npgs
             vk::ImageSubresourceRange LastMipRange(vk::ImageAspectFlagBits::eColor, MipLevels - 1, 1, 0, ArrayLayers);
 
             vk::ImageMemoryBarrier2 PartFinalBarrier(
-                vk::PipelineStageFlagBits2::eTransfer,
+                vk::PipelineStageFlagBits2::eBlit,
                 vk::AccessFlagBits2::eTransferRead,
                 FinalState.kStageMask,
                 FinalState.kAccessMask,
@@ -971,7 +995,7 @@ namespace Npgs
             );
 
             vk::ImageMemoryBarrier2 LastFinalBarrier(
-                vk::PipelineStageFlagBits2::eTransfer,
+                vk::PipelineStageFlagBits2::eBlit,
                 vk::AccessFlagBits2::eTransferWrite,
                 FinalState.kStageMask,
                 FinalState.kAccessMask,

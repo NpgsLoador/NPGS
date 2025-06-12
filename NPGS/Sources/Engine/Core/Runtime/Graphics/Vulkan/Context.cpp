@@ -8,24 +8,37 @@ namespace Npgs
 {
     namespace
     {
-        vk::SubmitInfo CreateSubmitInfo(const vk::CommandBuffer& CommandBuffer, const vk::Semaphore& WaitSemaphore,
-                                        const vk::Semaphore& SignalSemaphore, vk::PipelineStageFlags Flags)
+        struct FSubmitInfoPackage
         {
-            vk::SubmitInfo SubmitInfo;
-            SubmitInfo.setCommandBuffers(CommandBuffer);
+            vk::SubmitInfo2             SubmitInfo;
+            vk::CommandBufferSubmitInfo CommandBufferSubmitInfo;
+            vk::SemaphoreSubmitInfo     WaitSemaphoreSubmitInfo;
+            vk::SemaphoreSubmitInfo     SignalSemaphoreSubmitInfo;
+        };
+
+        FSubmitInfoPackage CreateSubmitInfo(const vk::CommandBuffer& CommandBuffer, vk::SubmitFlags Flags,
+                                            const vk::Semaphore& WaitSemaphore, vk::PipelineStageFlags2 WaitStageMask,
+                                            const vk::Semaphore& SignalSemaphore, vk::PipelineStageFlags2 SignalStageMask)
+        {
+            FSubmitInfoPackage Package;
+            Package.CommandBufferSubmitInfo.setCommandBuffer(CommandBuffer);
+            Package.SubmitInfo.setCommandBufferInfos(Package.CommandBufferSubmitInfo);
 
             if (WaitSemaphore)
             {
-                SubmitInfo.setWaitSemaphores(WaitSemaphore);
-                SubmitInfo.setWaitDstStageMask(Flags);
+                Package.WaitSemaphoreSubmitInfo.setSemaphore(WaitSemaphore);
+                Package.WaitSemaphoreSubmitInfo.setStageMask(WaitStageMask);
+                Package.SubmitInfo.setWaitSemaphoreInfos(Package.WaitSemaphoreSubmitInfo);
             }
 
             if (SignalSemaphore)
             {
-                SubmitInfo.setSignalSemaphores(SignalSemaphore);
+                Package.SignalSemaphoreSubmitInfo.setSemaphore(SignalSemaphore);
+                Package.SignalSemaphoreSubmitInfo.setStageMask(SignalStageMask);
+                Package.SubmitInfo.setSignalSemaphoreInfos(Package.SignalSemaphoreSubmitInfo);
             }
 
-            return SubmitInfo;
+            return Package;
         }
     }
 
@@ -144,11 +157,20 @@ namespace Npgs
         return vk::Result::eSuccess;
     }
 
-    vk::Result FVulkanContext::SubmitCommandBuffer(EQueueType QueueType, const vk::SubmitInfo& SubmitInfo, vk::Fence Fence) const
+    vk::Result FVulkanContext::SubmitCommandBuffer(EQueueType QueueType, const vk::SubmitInfo2& SubmitInfo,
+                                                   vk::Fence Fence, bool bUseFixedQueue) const
     {
         try
         {
-            VulkanCore_->GetQueue(QueueType).submit(SubmitInfo, Fence);
+            if (bUseFixedQueue)
+            {
+                VulkanCore_->GetQueue(QueueType).submit2(SubmitInfo, Fence);
+            }
+            else
+            {
+                auto Queue = VulkanCore_->GetQueuePool().AcquireQueue(VulkanCore_->GetQueueFamilyProperties(QueueType).queueFlags);
+                Queue->submit2(SubmitInfo, Fence);
+            }
         }
         catch (const vk::SystemError& e)
         {
@@ -159,17 +181,21 @@ namespace Npgs
         return vk::Result::eSuccess;
     }
 
-    vk::Result FVulkanContext::SubmitCommandBuffer(EQueueType QueueType, vk::CommandBuffer Buffer, vk::Fence Fence) const
+    vk::Result FVulkanContext::SubmitCommandBuffer(EQueueType QueueType, vk::CommandBuffer Buffer, vk::Fence Fence, bool bUseFixedQueue) const
     {
-        vk::SubmitInfo SubmitInfo({}, {}, Buffer, {});
-        return SubmitCommandBuffer(QueueType, SubmitInfo, Fence);
+        vk::CommandBufferSubmitInfo CommandBufferSubmitInfo(Buffer);
+        vk::SubmitInfo2 SubmitInfo({}, {}, CommandBufferSubmitInfo, {});
+        return SubmitCommandBuffer(QueueType, SubmitInfo, Fence, bUseFixedQueue);
     }
 
-    vk::Result FVulkanContext::SubmitCommandBuffer(EQueueType QueueType, vk::CommandBuffer Buffer, vk::Semaphore WaitSemaphore,
-                                                   vk::Semaphore SignalSemaphore, vk::Fence Fence, vk::PipelineStageFlags Flags) const
+    vk::Result
+    FVulkanContext::SubmitCommandBuffer(EQueueType QueueType, vk::CommandBuffer Buffer,
+                                        vk::Semaphore WaitSemaphore, vk::PipelineStageFlags2 WaitStageMask,
+                                        vk::Semaphore SignalSemaphore, vk::PipelineStageFlags2 SignalStageMask,
+                                        vk::Fence Fence, bool bUseFixedQueue) const
     {
-        vk::SubmitInfo SubmitInfo = CreateSubmitInfo(Buffer, WaitSemaphore, SignalSemaphore, Flags);
-        return SubmitCommandBuffer(QueueType, SubmitInfo, Fence);
+        vk::SubmitInfo2 SubmitInfo = CreateSubmitInfo(Buffer, {}, WaitSemaphore, WaitStageMask, SignalSemaphore, SignalStageMask).SubmitInfo;
+        return SubmitCommandBuffer(QueueType, SubmitInfo, Fence, bUseFixedQueue);
     }
 
     vk::SampleCountFlagBits FVulkanContext::GetMaxUsableSampleCount() const

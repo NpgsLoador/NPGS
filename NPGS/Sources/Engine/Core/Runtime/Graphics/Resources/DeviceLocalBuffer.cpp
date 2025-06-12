@@ -66,6 +66,7 @@ namespace Npgs
         TransferCommandBuffer.End();
 
         VulkanContext_->ExecuteCommands(FVulkanContext::EQueueType::kTransfer, TransferCommandBuffer);
+        CommandPool.FreeBuffer(TransferCommandBuffer);
     }
 
     void FDeviceLocalBuffer::CopyData(vk::DeviceSize ElementIndex, vk::DeviceSize ElementCount, vk::DeviceSize ElementSize,
@@ -112,6 +113,7 @@ namespace Npgs
         TransferCommandBuffer.End();
         
         VulkanContext_->ExecuteCommands(FVulkanContext::EQueueType::kTransfer, TransferCommandBuffer);
+        CommandPool.FreeBuffer(TransferCommandBuffer);
     }
 
     vk::Result FDeviceLocalBuffer::CreateBuffer(vk::DeviceSize Size, vk::BufferUsageFlags Usage)

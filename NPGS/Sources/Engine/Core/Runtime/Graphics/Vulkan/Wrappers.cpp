@@ -386,6 +386,21 @@ namespace Npgs
         return FreeBuffers(CommandBuffers);
     }
 
+    vk::Result FVulkanCommandPool::Reset(vk::CommandPoolResetFlags Flags) const
+    {
+        try
+        {
+            Device_.resetCommandPool(Handle_, Flags);
+        }
+        catch (const vk::SystemError& e)
+        {
+            NpgsCoreError("Failed to reset command pool: {}", e.what());
+            return static_cast<vk::Result>(e.code().value());
+        }
+
+        return vk::Result::eSuccess;
+    }
+
     vk::Result FVulkanCommandPool::CreateCommandPool(const vk::CommandPoolCreateInfo& CreateInfo)
     {
         try

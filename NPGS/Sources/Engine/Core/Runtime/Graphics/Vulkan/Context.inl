@@ -118,26 +118,29 @@ namespace Npgs
     }
 
     NPGS_INLINE vk::Result
-    FVulkanContext::SubmitCommandBuffer(EQueueType QueueType, const vk::SubmitInfo& SubmitInfo, const FVulkanFence* Fence) const
+    FVulkanContext::SubmitCommandBuffer(EQueueType QueueType, const vk::SubmitInfo2& SubmitInfo,
+                                        const FVulkanFence* Fence, bool bUseFixedQueue) const
     {
-        return SubmitCommandBuffer(QueueType, SubmitInfo, Fence ? **Fence : vk::Fence());
+        return SubmitCommandBuffer(QueueType, SubmitInfo, Fence ? **Fence : vk::Fence(), bUseFixedQueue);
     }
 
     NPGS_INLINE vk::Result
-    FVulkanContext::SubmitCommandBuffer(EQueueType QueueType, const FVulkanCommandBuffer& Buffer, const FVulkanFence* Fence) const
+    FVulkanContext::SubmitCommandBuffer(EQueueType QueueType, const FVulkanCommandBuffer& Buffer,
+                                        const FVulkanFence* Fence, bool bUseFixedQueue) const
     {
-        return SubmitCommandBuffer(QueueType, *Buffer, Fence ? **Fence : vk::Fence());
+        return SubmitCommandBuffer(QueueType, *Buffer, Fence ? **Fence : vk::Fence(), bUseFixedQueue);
     }
 
     NPGS_INLINE vk::Result
-    FVulkanContext::SubmitCommandBuffer(EQueueType QueueType, const FVulkanCommandBuffer& Buffer, const FVulkanSemaphore* WaitSemaphore,
-                                        const FVulkanSemaphore* SignalSemaphore, const FVulkanFence* Fence, vk::PipelineStageFlags Flags) const
+    FVulkanContext::SubmitCommandBuffer(EQueueType QueueType, const FVulkanCommandBuffer& Buffer,
+                                        const FVulkanSemaphore* WaitSemaphore, vk::PipelineStageFlags2 WaitStageMask,
+                                        const FVulkanSemaphore* SignalSemaphore, vk::PipelineStageFlags2 SignalStageMask,
+                                        const FVulkanFence* Fence, bool bUseFixedQueue) const
     {
         return SubmitCommandBuffer(QueueType, *Buffer,
-                                   WaitSemaphore   ? **WaitSemaphore   : vk::Semaphore(),
-                                   SignalSemaphore ? **SignalSemaphore : vk::Semaphore(),
-                                   Fence           ? **Fence           : vk::Fence(),
-                                   Flags);
+                                   WaitSemaphore   ? **WaitSemaphore   : vk::Semaphore(), WaitStageMask,
+                                   SignalSemaphore ? **SignalSemaphore : vk::Semaphore(), SignalStageMask,
+                                   Fence           ? **Fence           : vk::Fence(),     bUseFixedQueue);
     }
 
     NPGS_INLINE vk::Result FVulkanContext::SwapImage(vk::Semaphore Semaphore)

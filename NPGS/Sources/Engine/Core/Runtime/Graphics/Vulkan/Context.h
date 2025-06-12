@@ -71,16 +71,20 @@ namespace Npgs
         vk::Result ExecuteCommands(EQueueType QueueType, vk::CommandBuffer CommandBuffer) const;
         vk::Result ExecuteCommands(EQueueType QueueType, const FVulkanCommandBuffer& CommandBuffer) const;
 
-        vk::Result SubmitCommandBuffer(EQueueType QueueType, const vk::SubmitInfo& SubmitInfo, vk::Fence Fence) const;
-        vk::Result SubmitCommandBuffer(EQueueType QueueType, const vk::SubmitInfo& SubmitInfo, const FVulkanFence* Fence) const;
-        vk::Result SubmitCommandBuffer(EQueueType QueueType, vk::CommandBuffer Buffer, vk::Fence Fence) const;
-        vk::Result SubmitCommandBuffer(EQueueType QueueType, const FVulkanCommandBuffer& Buffer, const FVulkanFence* Fence) const;
+        vk::Result SubmitCommandBuffer(EQueueType QueueType, const vk::SubmitInfo2& SubmitInfo, vk::Fence Fence, bool bUseFixedQueue) const;
+        vk::Result SubmitCommandBuffer(EQueueType QueueType, const vk::SubmitInfo2& SubmitInfo, const FVulkanFence* Fence, bool bUseFixedQueue) const;
+        vk::Result SubmitCommandBuffer(EQueueType QueueType, vk::CommandBuffer Buffer, vk::Fence Fence, bool bUseFixedQueue) const;
+        vk::Result SubmitCommandBuffer(EQueueType QueueType, const FVulkanCommandBuffer& Buffer, const FVulkanFence* Fence, bool bUseFixedQueue) const;
 
-        vk::Result SubmitCommandBuffer(EQueueType QueueType, vk::CommandBuffer Buffer, vk::Semaphore WaitSemaphore,
-                                       vk::Semaphore SignalSemaphore, vk::Fence Fence, vk::PipelineStageFlags Flags) const;
+        vk::Result SubmitCommandBuffer(EQueueType QueueType, vk::CommandBuffer Buffer,
+                                       vk::Semaphore WaitSemaphore, vk::PipelineStageFlags2 WaitStageMask,
+                                       vk::Semaphore SignalSemaphore, vk::PipelineStageFlags2 SignalStageMask,
+                                       vk::Fence Fence, bool bUseFixedQueue) const;
 
-        vk::Result SubmitCommandBuffer(EQueueType QueueType, const FVulkanCommandBuffer& Buffer, const FVulkanSemaphore* WaitSemaphore,
-                                       const FVulkanSemaphore* SignalSemaphore, const FVulkanFence* Fence, vk::PipelineStageFlags Flags) const;
+        vk::Result SubmitCommandBuffer(EQueueType QueueType, const FVulkanCommandBuffer& Buffer,
+                                       const FVulkanSemaphore* WaitSemaphore, vk::PipelineStageFlags2 WaitStageMask,
+                                       const FVulkanSemaphore* SignalSemaphore, vk::PipelineStageFlags2 SignalStageMask,
+                                       const FVulkanFence* Fence, bool bUseFixedQueue) const;
 
         vk::Result SwapImage(vk::Semaphore Semaphore);
         vk::Result SwapImage(const FVulkanSemaphore& Semaphore);

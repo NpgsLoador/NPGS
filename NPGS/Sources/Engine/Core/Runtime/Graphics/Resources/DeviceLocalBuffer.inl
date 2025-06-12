@@ -40,14 +40,9 @@ namespace Npgs
         return UpdateData(CommandBuffer, 0, DataSize, static_cast<const void*>(Data.data()));
     }
 
-    NPGS_INLINE void FDeviceLocalBuffer::EnablePersistentMapping() const
+    NPGS_INLINE void FDeviceLocalBuffer::SetPersistentMapping(bool bFlag) const
     {
-        BufferMemory_->GetMemory().SetPersistentMapping(true);
-    }
-
-    NPGS_INLINE void FDeviceLocalBuffer::DisablePersistentMapping() const
-    {
-        BufferMemory_->GetMemory().SetPersistentMapping(false);
+        BufferMemory_->GetMemory().SetPersistentMapping(bFlag);
     }
 
     NPGS_INLINE FVulkanBuffer& FDeviceLocalBuffer::GetBuffer()

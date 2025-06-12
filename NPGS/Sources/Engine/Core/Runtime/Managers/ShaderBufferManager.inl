@@ -67,7 +67,7 @@ namespace Npgs
             }
 
             StructType EmptyData{};
-            BufferInfo.Buffers[i].EnablePersistentMapping();
+            BufferInfo.Buffers[i].SetPersistentMapping(true);
             BufferInfo.Buffers[i].CopyData(0, 0, BufferInfo.Size, &EmptyData);
         }
 

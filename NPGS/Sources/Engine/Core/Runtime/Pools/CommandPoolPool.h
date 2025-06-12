@@ -36,6 +36,7 @@ namespace Npgs
     private:
         void CreateResource(const FCommandPoolCreateInfo& CreateInfo) override;
         bool HandleResourceEmergency(FCommandPoolInfo& LowUsageResource, const FCommandPoolCreateInfo& CreateInfo) override;
+        void OnReleaseResource(FCommandPoolInfo& ResourceInfo) override;
 
     private:
         vk::Device    Device_;

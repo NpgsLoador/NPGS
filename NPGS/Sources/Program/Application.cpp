@@ -404,7 +404,7 @@ namespace Npgs
             vk::ImageMemoryBarrier2 InitSwapchainBarrier(
                 vk::PipelineStageFlagBits2::eTopOfPipe,
                 vk::AccessFlagBits2::eNone,
-                vk::PipelineStageFlagBits2::eTransfer,
+                vk::PipelineStageFlagBits2::eBlit,
                 vk::AccessFlagBits2::eTransferWrite,
                 vk::ImageLayout::eUndefined,
                 vk::ImageLayout::eTransferDstOptimal,
@@ -585,7 +585,7 @@ namespace Npgs
             vk::ImageMemoryBarrier2 PositionAoRenderEndBarrier(
                 vk::PipelineStageFlagBits2::eColorAttachmentOutput,
                 vk::AccessFlagBits2::eColorAttachmentWrite,
-                vk::PipelineStageFlagBits2::eFragmentShader,
+                vk::PipelineStageFlagBits2::eComputeShader,
                 vk::AccessFlagBits2::eShaderRead,
                 vk::ImageLayout::eColorAttachmentOptimal,
                 vk::ImageLayout::eShaderReadOnlyOptimal,
@@ -598,7 +598,7 @@ namespace Npgs
             vk::ImageMemoryBarrier2 NormalRoughRenderEndBarrier(
                 vk::PipelineStageFlagBits2::eColorAttachmentOutput,
                 vk::AccessFlagBits2::eColorAttachmentWrite,
-                vk::PipelineStageFlagBits2::eFragmentShader,
+                vk::PipelineStageFlagBits2::eComputeShader,
                 vk::AccessFlagBits2::eShaderRead,
                 vk::ImageLayout::eColorAttachmentOptimal,
                 vk::ImageLayout::eShaderReadOnlyOptimal,
@@ -611,7 +611,7 @@ namespace Npgs
             vk::ImageMemoryBarrier2 AlbedoMetalRenderEndBarrier(
                 vk::PipelineStageFlagBits2::eColorAttachmentOutput,
                 vk::AccessFlagBits2::eColorAttachmentWrite,
-                vk::PipelineStageFlagBits2::eFragmentShader,
+                vk::PipelineStageFlagBits2::eComputeShader,
                 vk::AccessFlagBits2::eShaderRead,
                 vk::ImageLayout::eColorAttachmentOptimal,
                 vk::ImageLayout::eShaderReadOnlyOptimal,
@@ -624,7 +624,7 @@ namespace Npgs
             vk::ImageMemoryBarrier2 ShadowRenderEndBarrier(
                 vk::PipelineStageFlagBits2::eColorAttachmentOutput,
                 vk::AccessFlagBits2::eColorAttachmentWrite,
-                vk::PipelineStageFlagBits2::eFragmentShader,
+                vk::PipelineStageFlagBits2::eComputeShader,
                 vk::AccessFlagBits2::eShaderRead,
                 vk::ImageLayout::eColorAttachmentOptimal,
                 vk::ImageLayout::eShaderReadOnlyOptimal,
@@ -715,7 +715,7 @@ namespace Npgs
             vk::ImageMemoryBarrier2 PreBlitBarrier(
                 vk::PipelineStageFlagBits2::eColorAttachmentOutput,
                 vk::AccessFlagBits2::eColorAttachmentWrite,
-                vk::PipelineStageFlagBits2::eTransfer,
+                vk::PipelineStageFlagBits2::eBlit,
                 vk::AccessFlagBits2::eTransferRead,
                 vk::ImageLayout::eColorAttachmentOptimal,
                 vk::ImageLayout::eTransferSrcOptimal,
@@ -744,7 +744,7 @@ namespace Npgs
                                      BlitRegion, vk::Filter::eLinear);
 
             vk::ImageMemoryBarrier2 PresentBarrier(
-                vk::PipelineStageFlagBits2::eTransfer,
+                vk::PipelineStageFlagBits2::eBlit,
                 vk::AccessFlagBits2::eTransferWrite,
                 vk::PipelineStageFlagBits2::eBottomOfPipe,
                 vk::AccessFlagBits2::eNone,
@@ -766,9 +766,10 @@ namespace Npgs
             VulkanContext_->SubmitCommandBuffer(FVulkanContext::EQueueType::kGeneral,
                                                 *CurrentBuffer,
                                                 *Semaphores_ImageAvailable[CurrentSemaphore],
+                                                vk::PipelineStageFlagBits2::eBlit,
                                                 *Semaphores_RenderFinished[CurrentSemaphore],
-                                                *InFlightFences[CurrentFrame],
-                                                vk::PipelineStageFlagBits::eColorAttachmentOutput);
+                                                vk::PipelineStageFlagBits2::eBottomOfPipe,
+                                                *InFlightFences[CurrentFrame], true);
             
             VulkanContext_->PresentImage(*Semaphores_RenderFinished[CurrentSemaphore]);
 
@@ -783,7 +784,7 @@ namespace Npgs
         }
 
         VulkanContext_->WaitIdle();
-        // GraphicsCommandPool.FreeBuffers(CommandBuffers);
+        CommandPool.FreeBuffers(CommandBuffers);
     }
 
     void FApplication::CreateAttachments()
@@ -823,13 +824,13 @@ namespace Npgs
         DepthStencilAttachmentInfo_
             .setImageLayout(vk::ImageLayout::eDepthStencilAttachmentOptimal)
             .setLoadOp(vk::AttachmentLoadOp::eClear)
-            .setStoreOp(vk::AttachmentStoreOp::eDontCare)
+            .setStoreOp(vk::AttachmentStoreOp::eStore)
             .setClearValue(vk::ClearDepthStencilValue(1.0f, 0));
 
         DepthMapAttachmentInfo_
             .setImageLayout(vk::ImageLayout::eDepthAttachmentOptimal)
             .setLoadOp(vk::AttachmentLoadOp::eClear)
-            .setStoreOp(vk::AttachmentStoreOp::eDontCare)
+            .setStoreOp(vk::AttachmentStoreOp::eStore)
             .setClearValue(vk::ClearDepthStencilValue(1.0f, 0));
 
         PostProcessAttachmentInfo_
@@ -1406,7 +1407,7 @@ namespace Npgs
         {
             .flags = VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT,
             .usage = VMA_MEMORY_USAGE_GPU_ONLY,
-            .requiredFlags = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT
+            .requiredFlags = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT | VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT
         };
 
         Math::CalculateAllTangents(CubeVertices);

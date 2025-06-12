@@ -2,6 +2,7 @@
 #include <utility>
 
 #include "Engine/Core/Base/Base.h"
+#include "CommandPoolPool.h"
 
 namespace Npgs
 {
@@ -15,4 +16,9 @@ namespace Npgs
     {
         return true;
     }
-} // namespace Npgsg
+
+    NPGS_INLINE void Npgs::FCommandPoolPool::OnReleaseResource(FCommandPoolInfo& ResourceInfo)
+    {
+        ResourceInfo.Resource->Reset(vk::CommandPoolResetFlagBits::eReleaseResources);
+    }
+} // namespace Npgs

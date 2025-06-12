@@ -47,8 +47,7 @@ namespace Npgs
         requires std::is_class_v<ContainerType>
         void UpdateData(const FVulkanCommandBuffer& CommandBuffer, const ContainerType& Data) const;
 
-        void EnablePersistentMapping() const;
-        void DisablePersistentMapping() const;
+        void SetPersistentMapping(bool bFlag) const;
 
         FVulkanBuffer& GetBuffer();
         const FVulkanBuffer& GetBuffer() const;

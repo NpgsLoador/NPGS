@@ -526,6 +526,7 @@ namespace Npgs
         vk::Result FreeBuffer(FVulkanCommandBuffer& Buffer) const;
         vk::Result FreeBuffers(const vk::ArrayProxy<vk::CommandBuffer>& Buffers) const;
         vk::Result FreeBuffers(const vk::ArrayProxy<FVulkanCommandBuffer>& Buffers) const;
+        vk::Result Reset(vk::CommandPoolResetFlags Flags) const;
 
     private:
         vk::Result CreateCommandPool(const vk::CommandPoolCreateInfo& CreateInfo);
