@@ -16,9 +16,9 @@ namespace Npgs
     class FStagingBuffer
     {
     public:
-        FStagingBuffer(vk::PhysicalDevice PhysicalDevice, vk::Device Device, vk::DeviceSize Size);
         FStagingBuffer(vk::PhysicalDevice, vk::Device Device, VmaAllocator Allocator,
-                       const VmaAllocationCreateInfo* AllocationCreateInfo, const vk::BufferCreateInfo& BufferCreateInfo);
+                       const VmaAllocationCreateInfo& AllocationCreateInfo,
+                       const vk::BufferCreateInfo& BufferCreateInfo);
 
         FStagingBuffer(const FStagingBuffer&) = delete;
         FStagingBuffer(FStagingBuffer&& Other) noexcept;
@@ -37,7 +37,6 @@ namespace Npgs
         void  SubmitBufferData(vk::DeviceSize MapOffset, vk::DeviceSize SubmitOffset, vk::DeviceSize Size, const void* Data);
         void  FetchBufferData(vk::DeviceSize MapOffset, vk::DeviceSize FetchOffset, vk::DeviceSize Size, void* Target) const;
         void  Release();
-        bool  AllocatedByVma() const;
 
         FVulkanImage* CreateAliasedImage(vk::Format OriginFormat, const vk::ImageCreateInfo& ImageCreateInfo);
 
@@ -58,7 +57,7 @@ namespace Npgs
         std::unique_ptr<FVulkanImage>        AliasedImage_;
         vk::DeviceSize                       MemoryUsage_;
         VmaAllocator                         Allocator_;
-        const VmaAllocationCreateInfo*       AllocationCreateInfo_;
+        VmaAllocationCreateInfo              AllocationCreateInfo_;
     };
 } // namespace Npgs
 

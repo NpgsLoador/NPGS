@@ -15,7 +15,6 @@ namespace Npgs
         , PhysicalDevice_(PhysicalDevice)
         , Device_(Device)
         , Allocator_(Allocator)
-        , bUsingVma_(bUsingVma)
     {
         AllocationCreateInfo_.usage = PoolUsage == EPoolUsage::kSubmit
                                     ? VMA_MEMORY_USAGE_CPU_TO_GPU
@@ -25,12 +24,7 @@ namespace Npgs
         std::size_t InitialCount = std::min(static_cast<std::size_t>(MinAvailableBufferLimit), InitialSizes.size());
         for (std::size_t i = 0; i != InitialCount; ++i)
         {
-            FStagingBufferCreateInfo CreateInfo
-            {
-                .Size = InitialSizes[i % InitialSizes.size()],
-                .AllocationCreateInfo = bUsingVma_ ? &AllocationCreateInfo_ : nullptr
-            };
-
+            FStagingBufferCreateInfo CreateInfo{ InitialSizes[i % InitialSizes.size()] };
             CreateResource(CreateInfo);
         }
     }
@@ -39,7 +33,7 @@ namespace Npgs
     {
         vk::DeviceSize AlignedSize = AlignSize(RequestedSize);
 
-        FStagingBufferCreateInfo CreateInfo{ AlignedSize, &AllocationCreateInfo_ };
+        FStagingBufferCreateInfo CreateInfo{ AlignedSize };
         return AcquireResource(CreateInfo, [RequestedSize, AlignedSize](const std::unique_ptr<FStagingBufferInfo>& Info) -> bool
         {
             return Info->Size >= RequestedSize && (Info->Size <= AlignedSize * 2 || Info->Size <= RequestedSize + 1ull * 1024 * 1024);
@@ -51,18 +45,10 @@ namespace Npgs
         auto BufferInfoPtr = std::make_unique<FStagingBufferInfo>();
 
         vk::DeviceSize AlignedSize = AlignSize(CreateInfo.Size);
-        if (CreateInfo.AllocationCreateInfo != nullptr)
-        {
-            vk::BufferCreateInfo BufferCreateInfo({}, AlignedSize, vk::BufferUsageFlagBits::eTransferSrc | vk::BufferUsageFlagBits::eTransferDst);
-            BufferInfoPtr->Resource = std::make_unique<FStagingBuffer>(
-                PhysicalDevice_, Device_, Allocator_, &AllocationCreateInfo_, BufferCreateInfo);
-            BufferInfoPtr->bAllocatedByVma = true;
-        }
-        else
-        {
-            BufferInfoPtr->Resource = std::make_unique<FStagingBuffer>(PhysicalDevice_, Device_, AlignedSize);
-            BufferInfoPtr->bAllocatedByVma = false;
-        }
+        vk::BufferCreateInfo BufferCreateInfo({}, AlignedSize, vk::BufferUsageFlagBits::eTransferSrc | vk::BufferUsageFlagBits::eTransferDst);
+        
+        BufferInfoPtr->Resource = std::make_unique<FStagingBuffer>(
+            PhysicalDevice_, Device_, Allocator_, AllocationCreateInfo_, BufferCreateInfo);
 
         BufferInfoPtr->Resource->GetMemory().SetPersistentMapping(true);
         BufferInfoPtr->Size              = AlignedSize;
@@ -75,8 +61,7 @@ namespace Npgs
     bool FStagingBufferPool::HandleResourceEmergency(FStagingBufferInfo& LowUsageResource, const FStagingBufferCreateInfo& CreateInfo)
     {
         auto& BufferInfo = static_cast<FStagingBufferInfo&>(LowUsageResource);
-        bool bRequestVma = (CreateInfo.AllocationCreateInfo != nullptr);
-        if (BufferInfo.bAllocatedByVma == bRequestVma && BufferInfo.Size < CreateInfo.Size)
+        if (BufferInfo.Size < CreateInfo.Size)
         {
             vk::DeviceSize NewSize = std::max(AlignSize(CreateInfo.Size), BufferInfo.Size * 2);
             if (NewSize > kSizeTiers.back())
@@ -84,7 +69,7 @@ namespace Npgs
                 NewSize = static_cast<vk::DeviceSize>(BufferInfo.Size * 1.5);
             }
 
-            FStagingBufferCreateInfo NewCreateInfo{ NewSize, CreateInfo.AllocationCreateInfo };
+            FStagingBufferCreateInfo NewCreateInfo{ NewSize };
             CreateResource(NewCreateInfo);
             return true;
         }
@@ -101,7 +86,6 @@ namespace Npgs
         BufferInfoPtr->LastUsedTimestamp = GetCurrentTimeMs();
         BufferInfoPtr->UsageCount        = UsageCount;
         BufferInfoPtr->Size              = Buffer->GetMemory().GetAllocationSize();
-        BufferInfoPtr->bAllocatedByVma   = Buffer->AllocatedByVma();
         BufferInfoPtr->Resource          = std::make_unique<FStagingBuffer>(std::move(*Buffer));
 
         AvailableResources_.push_back(std::move(BufferInfoPtr));
@@ -125,12 +109,7 @@ namespace Npgs
             std::size_t ExtraCount    = std::min(MinExtraCount, MaxExtraCount);
             for (std::size_t i = 0; i != ExtraCount; ++i)
             {
-                FStagingBufferCreateInfo CreateInfo
-                {
-                    .Size = kSizeTiers[3],
-                    .AllocationCreateInfo = bUsingVma_ ? &AllocationCreateInfo_ : nullptr
-                };
-
+                FStagingBufferCreateInfo CreateInfo{ kSizeTiers[3] };
                 CreateResource(CreateInfo);
             }
 

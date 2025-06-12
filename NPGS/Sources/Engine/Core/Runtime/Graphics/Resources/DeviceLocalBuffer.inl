@@ -64,9 +64,4 @@ namespace Npgs
     {
         return BufferMemory_->GetMemory();
     }
-
-    NPGS_INLINE bool FDeviceLocalBuffer::IsUsingVma() const
-    {
-        return Allocator_ != nullptr;
-    }
 } // namespace Npgs

@@ -13,24 +13,6 @@
 
 namespace Npgs
 {
-    namespace
-    {
-        std::uint32_t GetMemoryTypeIndex(const vk::PhysicalDeviceMemoryProperties& PhysicalDeviceMemoryProperties,
-                                         const vk::MemoryRequirements& MemoryRequirements, vk::MemoryPropertyFlags MemoryPropertyFlags)
-        {
-            for (std::size_t i = 0; i != PhysicalDeviceMemoryProperties.memoryTypeCount; ++i)
-            {
-                if (MemoryRequirements.memoryTypeBits & static_cast<std::uint32_t>(Bit(i)) &&
-                    (PhysicalDeviceMemoryProperties.memoryTypes[i].propertyFlags & MemoryPropertyFlags) == MemoryPropertyFlags)
-                {
-                    return static_cast<std::uint32_t>(i);
-                }
-            }
-
-            return std::numeric_limits<std::uint32_t>::max();
-        }
-    }
-
     FGraphicsPipelineCreateInfoPack::FGraphicsPipelineCreateInfoPack()
     {
         LinkToGraphicsPipelineCreateInfo();
@@ -425,50 +407,12 @@ namespace Npgs
 
     // Wrapper for vk::DeviceMemory
     // ----------------------------
-    FVulkanDeviceMemory::FVulkanDeviceMemory(vk::Device Device, const vk::PhysicalDeviceProperties& PhysicalDeviceProperties,
-                                             const vk::PhysicalDeviceMemoryProperties& PhysicalDeviceMemoryProperties,
-                                             const vk::MemoryAllocateInfo& AllocateInfo)
-        : Base(Device)
-        , Allocator_(nullptr)
-        , Allocation_(nullptr)
-        , AllocationInfo_{}
-        , PhysicalDeviceProperties_(PhysicalDeviceProperties)
-        , PhysicalDeviceMemoryProperties_(PhysicalDeviceMemoryProperties)
-        , AllocationSize_{}
-        , bHostingVma_(false)
-    {
-        ReleaseInfo_ = "Device memory freed successfully.";
-        Status_      = AllocateDeviceMemory(AllocateInfo);
-    }
-
-    FVulkanDeviceMemory::FVulkanDeviceMemory(vk::Device Device, VmaAllocator Allocator,
-                                             const VmaAllocationCreateInfo& AllocationCreateInfo,
-                                             const vk::PhysicalDeviceProperties& PhysicalDeviceProperties,
-                                             const vk::PhysicalDeviceMemoryProperties& PhysicalDeviceMemoryProperties,
-                                             const vk::MemoryRequirements& MemoryRequirements)
-        : Base(Device)
-        , Allocator_(Allocator)
-        , Allocation_(nullptr)
-        , AllocationInfo_{}
-        , PhysicalDeviceProperties_(PhysicalDeviceProperties)
-        , PhysicalDeviceMemoryProperties_(PhysicalDeviceMemoryProperties)
-        , AllocationSize_{}
-        , bHostingVma_(false)
-    {
-        ReleaseInfo_ = "Device memory freed successfully.";
-        Status_      = AllocateDeviceMemory(AllocationCreateInfo, MemoryRequirements);
-    }
-
     FVulkanDeviceMemory::FVulkanDeviceMemory(vk::Device Device, VmaAllocator Allocator, VmaAllocation Allocation,
                                              const VmaAllocationInfo& AllocationInfo, vk::DeviceMemory Handle)
         : Base(Device)
         , Allocator_(Allocator)
         , Allocation_(Allocation)
         , AllocationInfo_(AllocationInfo)
-        , PhysicalDeviceProperties_{}
-        , PhysicalDeviceMemoryProperties_{}
-        , AllocationSize_(AllocationInfo.size)
-        , bHostingVma_(true)
     {
         ReleaseInfo_ = "Device memory freed successfully.";
         Handle_      = Handle;
@@ -483,70 +427,26 @@ namespace Npgs
         , Allocator_(std::exchange(Other.Allocator_, nullptr))
         , Allocation_(std::exchange(Other.Allocation_, nullptr))
         , AllocationInfo_(std::exchange(Other.AllocationInfo_, {}))
-        , PhysicalDeviceProperties_(std::exchange(Other.PhysicalDeviceProperties_, {}))
-        , PhysicalDeviceMemoryProperties_(std::exchange(Other.PhysicalDeviceMemoryProperties_, {}))
-        , AllocationSize_(std::exchange(Other.AllocationSize_, 0))
         , MemoryPropertyFlags_(std::exchange(Other.MemoryPropertyFlags_, {}))
         , MappedDataMemory_(std::exchange(Other.MappedDataMemory_, nullptr))
         , MappedTargetMemory_(std::exchange(Other.MappedTargetMemory_, nullptr))
         , bPersistentlyMapped_(std::exchange(Other.bPersistentlyMapped_, false))
-        , bHostingVma_(std::exchange(Other.bHostingVma_, false))
     {
     }
 
     FVulkanDeviceMemory::~FVulkanDeviceMemory()
     {
-        if (bHostingVma_)
+        if (bPersistentlyMapped_ && AllocationInfo_.pMappedData != nullptr)
         {
-            if (bPersistentlyMapped_ && AllocationInfo_.pMappedData != nullptr)
-            {
-                vmaUnmapMemory(Allocator_, Allocation_);
-            }
-
-            Handle_              = vk::DeviceMemory();
-            MappedDataMemory_    = nullptr;
-            MappedTargetMemory_  = nullptr;
-            bPersistentlyMapped_ = false;
-
-            return;
+            vmaUnmapMemory(Allocator_, Allocation_);
         }
 
-        if (bPersistentlyMapped_ && (MappedDataMemory_ != nullptr || MappedTargetMemory_ != nullptr))
-        {
-            if (Allocator_ != nullptr && Allocation_ != nullptr)
-            {
-                vmaUnmapMemory(Allocator_, Allocation_);
-            }
-            else
-            {
-                UnmapMemory(0, AllocationSize_);
-            }
+        Handle_              = vk::DeviceMemory();
+        MappedDataMemory_    = nullptr;
+        MappedTargetMemory_  = nullptr;
+        bPersistentlyMapped_ = false;
 
-            MappedDataMemory_    = nullptr;
-            MappedTargetMemory_  = nullptr;
-            bPersistentlyMapped_ = false;
-        }
-
-        if (Allocator_ != nullptr && Allocation_ != nullptr)
-        {
-            if (Handle_ == AllocationInfo_.deviceMemory)
-            {
-                auto it = HandleTracker_.find(Handle_);
-                if (it != HandleTracker_.end())
-                {
-                    if (--it->second == 0)
-                    {
-                        HandleTracker_.erase(it);
-                    }
-                    else
-                    {
-                        Handle_ = vk::DeviceMemory();
-                    }
-                }
-            }
-
-            vmaFreeMemory(Allocator_, Allocation_);
-        }
+        return;
     }
 
     FVulkanDeviceMemory& FVulkanDeviceMemory::operator=(FVulkanDeviceMemory&& Other) noexcept
@@ -555,17 +455,13 @@ namespace Npgs
         {
             Base::operator=(std::move(Other));
 
-            Allocator_                      = std::exchange(Other.Allocator_, nullptr);
-            Allocation_                     = std::exchange(Other.Allocation_, nullptr);
-            AllocationInfo_                 = std::exchange(Other.AllocationInfo_, {});
-            PhysicalDeviceProperties_       = std::exchange(Other.PhysicalDeviceProperties_, {});
-            PhysicalDeviceMemoryProperties_ = std::exchange(Other.PhysicalDeviceMemoryProperties_, {});
-            AllocationSize_                 = std::exchange(Other.AllocationSize_, 0);
-            MemoryPropertyFlags_            = std::exchange(Other.MemoryPropertyFlags_, {});
-            MappedDataMemory_               = std::exchange(Other.MappedDataMemory_, nullptr);
-            MappedTargetMemory_             = std::exchange(Other.MappedTargetMemory_, nullptr);
-            bPersistentlyMapped_            = std::exchange(Other.bPersistentlyMapped_, false);
-            bHostingVma_                    = std::exchange(Other.bHostingVma_, false);
+            Allocator_           = std::exchange(Other.Allocator_, nullptr);
+            Allocation_          = std::exchange(Other.Allocation_, nullptr);
+            AllocationInfo_      = std::exchange(Other.AllocationInfo_, {});
+            MemoryPropertyFlags_ = std::exchange(Other.MemoryPropertyFlags_, {});
+            MappedDataMemory_    = std::exchange(Other.MappedDataMemory_, nullptr);
+            MappedTargetMemory_  = std::exchange(Other.MappedTargetMemory_, nullptr);
+            bPersistentlyMapped_ = std::exchange(Other.bPersistentlyMapped_, false);
         }
 
         return *this;
@@ -573,87 +469,34 @@ namespace Npgs
 
     vk::Result FVulkanDeviceMemory::MapMemoryForSubmit(vk::DeviceSize Offset, vk::DeviceSize Size, void*& Target)
     {
-        if (Allocator_ != nullptr && Allocation_ != nullptr)
+        VulkanCheck(vmaMapMemory(Allocator_, Allocation_, &Target));
+        vmaGetAllocationInfo(Allocator_, Allocation_, &AllocationInfo_);
+        if (Offset > 0)
         {
-            VulkanCheck(vmaMapMemory(Allocator_, Allocation_, &Target));
-            vmaGetAllocationInfo(Allocator_, Allocation_, &AllocationInfo_);
-            if (Offset > 0)
-            {
-                Target = static_cast<std::byte*>(Target) + Offset;
-            }
-
-            MappedTargetMemory_ = Target;
-            return vk::Result::eSuccess;
-        }
-
-        vk::DeviceSize AdjustedOffset = 0;
-        if (!(MemoryPropertyFlags_ & vk::MemoryPropertyFlagBits::eHostCoherent))
-        {
-            AdjustedOffset = AlignNonCoherentMemoryRange(Offset, Size);
-        }
-
-        vk::Result Result = MapMemory(Offset, Size, Target);
-        if (Result == vk::Result::eSuccess && !(MemoryPropertyFlags_ & vk::MemoryPropertyFlagBits::eHostCoherent))
-        {
-            Target = static_cast<std::byte*>(Target) + AdjustedOffset;
+            Target = static_cast<std::byte*>(Target) + Offset;
         }
 
         MappedTargetMemory_ = Target;
-        return Result;
+        return vk::Result::eSuccess;
     }
 
     vk::Result FVulkanDeviceMemory::MapMemoryForFetch(vk::DeviceSize Offset, vk::DeviceSize Size, void*& Data)
     {
-        if (Allocator_ != nullptr && Allocation_ != nullptr)
+        VulkanCheck(vmaMapMemory(Allocator_, Allocation_, &Data));
+        vmaGetAllocationInfo(Allocator_, Allocation_, &AllocationInfo_);
+        if (Offset > 0)
         {
-            VulkanCheck(vmaMapMemory(Allocator_, Allocation_, &Data));
-            vmaGetAllocationInfo(Allocator_, Allocation_, &AllocationInfo_);
-            if (Offset > 0)
-            {
-                Data = static_cast<std::byte*>(Data) + Offset;
-            }
-
-            MappedDataMemory_ = Data;
-            return vk::Result::eSuccess;
-        }
-
-        vk::DeviceSize AdjustedOffset = 0;
-        if (!(MemoryPropertyFlags_ & vk::MemoryPropertyFlagBits::eHostCoherent))
-        {
-            AdjustedOffset = AlignNonCoherentMemoryRange(Offset, Size);
-        }
-
-        vk::Result Result = MapMemory(Offset, Size, Data);
-        if (Result == vk::Result::eSuccess && !(MemoryPropertyFlags_ & vk::MemoryPropertyFlagBits::eHostCoherent))
-        {
-            Data = static_cast<std::byte*>(Data) + AdjustedOffset;
-            vk::MappedMemoryRange MappedMemoryRange(Handle_, Offset, Size);
-            try
-            {
-                Device_.invalidateMappedMemoryRanges(MappedMemoryRange);
-            }
-            catch (const vk::SystemError& e)
-            {
-                NpgsCoreError("Failed to invalidate mapped memory range: {}", e.what());
-                return static_cast<vk::Result>(e.code().value());
-            }
+            Data = static_cast<std::byte*>(Data) + Offset;
         }
 
         MappedDataMemory_ = Data;
-        return Result;
+        return vk::Result::eSuccess;
     }
 
     vk::Result FVulkanDeviceMemory::UnmapMemory(vk::DeviceSize Offset, vk::DeviceSize Size)
     {
-        if (Allocator_ != nullptr && Allocation_ != nullptr)
-        {
-            vmaUnmapMemory(Allocator_, Allocation_);
-            vmaGetAllocationInfo(Allocator_, Allocation_, &AllocationInfo_);
-        }
-        else
-        {
-            Device_.unmapMemory(Handle_);
-        }
+        vmaUnmapMemory(Allocator_, Allocation_);
+        vmaGetAllocationInfo(Allocator_, Allocation_, &AllocationInfo_);
 
         MappedDataMemory_   = nullptr;
         MappedTargetMemory_ = nullptr;
@@ -681,25 +524,7 @@ namespace Npgs
 
         if (!(MemoryPropertyFlags_ & vk::MemoryPropertyFlagBits::eHostCoherent))
         {
-            if (Allocator_ != nullptr && Allocation_ != nullptr)
-            {
-                VulkanCheckWithMessage(vmaFlushAllocation(Allocator_, Allocation_, SubmitOffset, Size), "Failed to flush allocation");
-            }
-            else
-            {
-                // TODO
-                AlignNonCoherentMemoryRange(SubmitOffset, Size);
-                vk::MappedMemoryRange MappedMemoryRange(Handle_, SubmitOffset, Size);
-                try
-                {
-                    Device_.flushMappedMemoryRanges(MappedMemoryRange);
-                }
-                catch (const vk::SystemError& e)
-                {
-                    NpgsCoreError("Failed to flush mapped memory range: {}", e.what());
-                    return static_cast<vk::Result>(e.code().value());
-                }
-            }
+            VulkanCheckWithMessage(vmaFlushAllocation(Allocator_, Allocation_, SubmitOffset, Size), "Failed to flush allocation");
         }
 
         if (!bPersistentlyMapped_)
@@ -731,25 +556,7 @@ namespace Npgs
 
         if (!(MemoryPropertyFlags_ & vk::MemoryPropertyFlagBits::eHostCoherent))
         {
-            if (Allocator_ != nullptr && Allocation_ != nullptr)
-            {
-                VulkanCheckWithMessage(vmaInvalidateAllocation(Allocator_, Allocation_, FetchOffset, Size), "Failed to invalidate allocation");
-            }
-            else
-            {
-                // TODO
-                AlignNonCoherentMemoryRange(FetchOffset, Size);
-                vk::MappedMemoryRange MappedMemoryRange(Handle_, FetchOffset, Size);
-                try
-                {
-                    Device_.invalidateMappedMemoryRanges(MappedMemoryRange);
-                }
-                catch (const vk::SystemError& e)
-                {
-                    NpgsCoreError("Failed to invalidate mapped memory range: {}", e.what());
-                    return static_cast<vk::Result>(e.code().value());
-                }
-            }
+            VulkanCheckWithMessage(vmaInvalidateAllocation(Allocator_, Allocation_, FetchOffset, Size), "Failed to invalidate allocation");
         }
 
         if (!bPersistentlyMapped_)
@@ -760,107 +567,12 @@ namespace Npgs
         return vk::Result::eSuccess;
     }
 
-    vk::Result FVulkanDeviceMemory::AllocateDeviceMemory(const vk::MemoryAllocateInfo& AllocateInfo)
-    {
-        if (AllocateInfo.memoryTypeIndex >= PhysicalDeviceMemoryProperties_.memoryTypeCount)
-        {
-            NpgsCoreError("Invalid memory type index: {}.", AllocateInfo.memoryTypeIndex);
-            return vk::Result::eErrorMemoryMapFailed;
-        }
-
-        try
-        {
-            Handle_ = Device_.allocateMemory(AllocateInfo);
-        }
-        catch (const vk::SystemError& e)
-        {
-            NpgsCoreError("Failed to allocate memory: {}", e.what());
-            return static_cast<vk::Result>(e.code().value());
-        }
-        AllocationSize_      = AllocateInfo.allocationSize;
-        MemoryPropertyFlags_ = PhysicalDeviceMemoryProperties_.memoryTypes[AllocateInfo.memoryTypeIndex].propertyFlags;
-
-        NpgsCoreTrace("Device memory allocated successfully.");
-        return vk::Result::eSuccess;
-    }
-
-    vk::Result FVulkanDeviceMemory::AllocateDeviceMemory(const VmaAllocationCreateInfo& AllocationCreateInfo,
-                                                         const vk::MemoryRequirements& MemoryRequirements)
-    {
-        VulkanCheckWithMessage(vmaAllocateMemory(Allocator_, reinterpret_cast<const VkMemoryRequirements*>(&MemoryRequirements),
-                                                 &AllocationCreateInfo, &Allocation_, &AllocationInfo_), "Failed to allocate memory");
-
-        Handle_         = AllocationInfo_.deviceMemory;
-        AllocationSize_ = MemoryRequirements.size;
-
-        ++HandleTracker_[Handle_];
-
-        VmaAllocationInfo AllocationInfo;
-        vmaGetAllocationInfo(Allocator_, Allocation_, &AllocationInfo);
-        vmaGetMemoryTypeProperties(Allocator_, AllocationInfo.memoryType,
-                                   reinterpret_cast<VkMemoryPropertyFlags*>(&MemoryPropertyFlags_));
-
-        if (AllocationInfo_.pMappedData != nullptr)
-        {
-            NpgsAssert(false, "Don't use VMA_ALLOCATION_CREATE_MAPPED_BIT, try to use SetPersistentMapping");
-        }
-
-        NpgsCoreTrace("Device memory allocated successfully.");
-        return vk::Result::eSuccess;
-    }
-
-    vk::Result FVulkanDeviceMemory::MapMemory(vk::DeviceSize Offset, vk::DeviceSize Size, void*& Data) const
-    {
-        try
-        {
-            Data = Device_.mapMemory(Handle_, Offset, Size, {});
-        }
-        catch (const vk::SystemError& e)
-        {
-            NpgsCoreError("Failed to map memory: {}", e.what());
-            return static_cast<vk::Result>(e.code().value());
-        }
-
-        // NpgsCoreTrace("Memory mapped successfully.");
-        return vk::Result::eSuccess;
-    }
-
-    vk::DeviceSize FVulkanDeviceMemory::AlignNonCoherentMemoryRange(vk::DeviceSize& Offset, vk::DeviceSize& Size) const
-    {
-        vk::DeviceSize NonCoherentAtomSize = PhysicalDeviceProperties_.limits.nonCoherentAtomSize;
-        vk::DeviceSize OriginalOffset      = Offset;
-        vk::DeviceSize RangeBegin          = Offset;
-        vk::DeviceSize RangeEnd            = Offset + Size;
-
-        RangeBegin = RangeBegin                           / NonCoherentAtomSize * NonCoherentAtomSize;
-        RangeEnd   = (RangeEnd + NonCoherentAtomSize - 1) / NonCoherentAtomSize * NonCoherentAtomSize;
-        RangeEnd   = std::min(RangeEnd, AllocationSize_);
-
-        Offset = RangeBegin;
-        Size   = RangeEnd - RangeBegin;
-
-        return OriginalOffset - RangeBegin;
-    }
-
-    std::unordered_map<vk::DeviceMemory, std::size_t, FVulkanDeviceMemory::FVulkanDeviceMemoryHash> FVulkanDeviceMemory::HandleTracker_;
-
     // Wrapper for vk::Buffer
     // ----------------------
-    FVulkanBuffer::FVulkanBuffer(vk::Device Device, const vk::PhysicalDeviceMemoryProperties& PhysicalDeviceMemoryProperties,
-                                 const vk::BufferCreateInfo& CreateInfo)
-        : Base(Device)
-        , PhysicalDeviceMemoryProperties_(PhysicalDeviceMemoryProperties)
-        , Allocator_(nullptr)
-    {
-        ReleaseInfo_ = "Buffer destroyed successfully.";
-        Status_      = CreateBuffer(CreateInfo);
-    }
-
     FVulkanBuffer::FVulkanBuffer(vk::Device Device, VmaAllocator Allocator,
                                  const VmaAllocationCreateInfo& AllocationCreateInfo,
                                  const vk::BufferCreateInfo& CreateInfo)
         : Base(Device)
-        , PhysicalDeviceMemoryProperties_{}
         , Allocator_(Allocator)
     {
         ReleaseInfo_ = "Buffer destroyed successfully.";
@@ -877,15 +589,6 @@ namespace Npgs
         }
     }
 
-    vk::MemoryAllocateInfo FVulkanBuffer::CreateMemoryAllocateInfo(vk::MemoryPropertyFlags Flags) const
-    {
-        vk::MemoryRequirements MemoryRequirements = Device_.getBufferMemoryRequirements(Handle_);
-        std::uint32_t MemoryTypeIndex = GetMemoryTypeIndex(PhysicalDeviceMemoryProperties_, MemoryRequirements, Flags);
-        vk::MemoryAllocateInfo MemoryAllocateInfo(MemoryRequirements.size, MemoryTypeIndex);
-
-        return MemoryAllocateInfo;
-    }
-
     vk::Result FVulkanBuffer::BindMemory(const FVulkanDeviceMemory& DeviceMemory, vk::DeviceSize Offset) const
     {
         try
@@ -897,24 +600,8 @@ namespace Npgs
             NpgsCoreError("Failed to bind buffer memory: {}", e.what());
             return static_cast<vk::Result>(e.code().value());
         }
-
+    
         NpgsCoreTrace("Buffer memory bound successfully.");
-        return vk::Result::eSuccess;
-    }
-
-    vk::Result FVulkanBuffer::CreateBuffer(const vk::BufferCreateInfo& CreateInfo)
-    {
-        try
-        {
-            Handle_ = Device_.createBuffer(CreateInfo);
-        }
-        catch (const vk::SystemError& e)
-        {
-            NpgsCoreError("Failed to create buffer: {}", e.what());
-            return static_cast<vk::Result>(e.code().value());
-        }
-
-        NpgsCoreTrace("Buffer created successfully.");
         return vk::Result::eSuccess;
     }
 
@@ -1275,21 +962,12 @@ namespace Npgs
 
     // Wrapper for vk::Image
     // ---------------------
-    FVulkanImage::FVulkanImage(vk::Device Device, const vk::PhysicalDeviceMemoryProperties& PhysicalDeviceMemoryProperties,
-                               const vk::ImageCreateInfo& CreateInfo)
-        : Base(Device)
-        , PhysicalDeviceMemoryProperties_(PhysicalDeviceMemoryProperties)
-        , Allocator_(nullptr)
-    {
-        ReleaseInfo_ = "Image destroyed successfully.";
-        Status_      = CreateImage(CreateInfo);
-    }
 
     FVulkanImage::FVulkanImage(vk::Device Device, VmaAllocator Allocator,
                                const VmaAllocationCreateInfo& AllocationCreateInfo,
                                const vk::ImageCreateInfo& CreateInfo)
         : Base(Device)
-        , PhysicalDeviceMemoryProperties_{}
+        // , PhysicalDeviceMemoryProperties_{}
         , Allocator_(Allocator)
     {
         ReleaseInfo_ = "Image destroyed successfully.";
@@ -1306,23 +984,6 @@ namespace Npgs
         }
     }
 
-    vk::MemoryAllocateInfo FVulkanImage::CreateMemoryAllocateInfo(vk::MemoryPropertyFlags Flags) const
-    {
-        vk::MemoryRequirements MemoryRequirements = Device_.getImageMemoryRequirements(Handle_);
-        std::uint32_t MemoryTypeIndex = GetMemoryTypeIndex(PhysicalDeviceMemoryProperties_, MemoryRequirements, Flags);
-
-        if (MemoryTypeIndex == std::numeric_limits<std::uint32_t>::max() &&
-            Flags & vk::MemoryPropertyFlagBits::eLazilyAllocated)
-        {
-            Flags &= ~vk::MemoryPropertyFlagBits::eLazilyAllocated;
-            MemoryTypeIndex = GetMemoryTypeIndex(PhysicalDeviceMemoryProperties_, MemoryRequirements, Flags);
-        }
-
-        vk::MemoryAllocateInfo MemoryAllocateInfo(MemoryRequirements.size, MemoryTypeIndex);
-
-        return MemoryAllocateInfo;
-    }
-
     vk::Result FVulkanImage::BindMemory(const FVulkanDeviceMemory& DeviceMemory, vk::DeviceSize Offset) const
     {
         try
@@ -1334,24 +995,8 @@ namespace Npgs
             NpgsCoreError("Failed to bind image memory: {}", e.what());
             return static_cast<vk::Result>(e.code().value());
         }
-
+    
         NpgsCoreTrace("Image memory bound successfully.");
-        return vk::Result::eSuccess;
-    }
-
-    vk::Result FVulkanImage::CreateImage(const vk::ImageCreateInfo& CreateInfo)
-    {
-        try
-        {
-            Handle_ = Device_.createImage(CreateInfo);
-        }
-        catch (const vk::SystemError& e)
-        {
-            NpgsCoreError("Failed to create image: {}", e.what());
-            return static_cast<vk::Result>(e.code().value());
-        }
-
-        NpgsCoreTrace("Image created successfully.");
         return vk::Result::eSuccess;
     }
 
@@ -1716,24 +1361,6 @@ namespace Npgs
     // -------------------
     // Native wrappers end
 
-    FVulkanBufferMemory::FVulkanBufferMemory(vk::Device Device, const vk::PhysicalDeviceProperties& PhysicalDeviceProperties,
-                                             const vk::PhysicalDeviceMemoryProperties& PhysicalDeviceMemoryProperties,
-                                             const vk::BufferCreateInfo& BufferCreateInfo, vk::MemoryPropertyFlags MemoryPropertyFlags)
-        : Base(std::make_unique<FVulkanBuffer>(Device, PhysicalDeviceMemoryProperties, BufferCreateInfo), nullptr)
-    {
-        auto MemoryAllocateInfo = Resource_->CreateMemoryAllocateInfo(MemoryPropertyFlags);
-        vk::MemoryAllocateFlagsInfo MemoryAllocateFlagsInfo;
-        if (BufferCreateInfo.usage & vk::BufferUsageFlagBits::eShaderDeviceAddress)
-        {
-            MemoryAllocateFlagsInfo.setFlags(vk::MemoryAllocateFlagBits::eDeviceAddress);
-            MemoryAllocateInfo.setPNext(&MemoryAllocateFlagsInfo);
-        }
-
-        Memory_ = std::make_unique<FVulkanDeviceMemory>(
-            Device, PhysicalDeviceProperties, PhysicalDeviceMemoryProperties, MemoryAllocateInfo);
-        bMemoryBound_ = Memory_->IsValid() && (Resource_->BindMemory(*Memory_) == vk::Result::eSuccess);
-    }
-
     FVulkanBufferMemory::FVulkanBufferMemory(vk::Device Device, VmaAllocator Allocator,
                                              const VmaAllocationCreateInfo& AllocationCreateInfo,
                                              const vk::BufferCreateInfo& BufferCreateInfo)
@@ -1742,18 +1369,6 @@ namespace Npgs
         auto  Allocation     = Resource_->GetAllocation();
         auto& AllocationInfo = Resource_->GetAllocationInfo();
         Memory_ = std::make_unique<FVulkanDeviceMemory>(Device, Allocator, Allocation, AllocationInfo, AllocationInfo.deviceMemory);
-        bMemoryBound_ = true;
-    }
-
-    FVulkanImageMemory::FVulkanImageMemory(vk::Device Device, const vk::PhysicalDeviceProperties& PhysicalDeviceProperties,
-                                           const vk::PhysicalDeviceMemoryProperties& PhysicalDeviceMemoryProperties,
-                                           const vk::ImageCreateInfo& ImageCreateInfo, vk::MemoryPropertyFlags MemoryPropertyFlags)
-        : Base(std::make_unique<FVulkanImage>(Device, PhysicalDeviceMemoryProperties, ImageCreateInfo), nullptr)
-    {
-        auto MemoryAllocateInfo = Resource_->CreateMemoryAllocateInfo(MemoryPropertyFlags);
-        Memory_ = std::make_unique<FVulkanDeviceMemory>(
-            Device, PhysicalDeviceProperties, PhysicalDeviceMemoryProperties, MemoryAllocateInfo);
-        bMemoryBound_ = Memory_->IsValid() && (Resource_->BindMemory(*Memory_) == vk::Result::eSuccess);
     }
 
     FVulkanImageMemory::FVulkanImageMemory(vk::Device Device, VmaAllocator Allocator,
@@ -1764,6 +1379,5 @@ namespace Npgs
         auto  Allocation     = Resource_->GetAllocation();
         auto& AllocationInfo = Resource_->GetAllocationInfo();
         Memory_ = std::make_unique<FVulkanDeviceMemory>(Device, Allocator, Allocation, AllocationInfo, AllocationInfo.deviceMemory);
-        bMemoryBound_ = true;
     }
 } // namespace Npgs

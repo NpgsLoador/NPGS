@@ -10,13 +10,6 @@
 
 namespace Npgs
 {
-    FDeviceLocalBuffer::FDeviceLocalBuffer(FVulkanContext* VulkanContext, vk::DeviceSize Size, vk::BufferUsageFlags Usage)
-        : VulkanContext_(VulkanContext)
-        , Allocator_(nullptr)
-    {
-        CreateBuffer(Size, Usage);
-    }
-
     FDeviceLocalBuffer::FDeviceLocalBuffer(FVulkanContext* VulkanContext, VmaAllocator Allocator,
                                            const VmaAllocationCreateInfo& AllocationCreateInfo,
                                            const vk::BufferCreateInfo& BufferCreateInfo)
@@ -58,8 +51,10 @@ namespace Npgs
 
         auto  PoolGuard   = VulkanContext_->AcquireCommandPool(FVulkanContext::EQueueType::kTransfer);
         auto& CommandPool = *PoolGuard;
+
         FVulkanCommandBuffer TransferCommandBuffer;
         CommandPool.AllocateBuffer(vk::CommandBufferLevel::ePrimary, TransferCommandBuffer);
+
         TransferCommandBuffer.Begin(vk::CommandBufferUsageFlagBits::eOneTimeSubmit);
         vk::BufferCopy Region(0, TargetOffset, Size);
         TransferCommandBuffer->copyBuffer(*StagingBuffer->GetBuffer(), *BufferMemory_->GetResource(), Region);
@@ -99,8 +94,10 @@ namespace Npgs
 
         auto  PoolGuard   = VulkanContext_->AcquireCommandPool(FVulkanContext::EQueueType::kTransfer);
         auto& CommandPool = *PoolGuard;
+
         FVulkanCommandBuffer TransferCommandBuffer;
         CommandPool.AllocateBuffer(vk::CommandBufferLevel::ePrimary, TransferCommandBuffer);
+
         TransferCommandBuffer.Begin(vk::CommandBufferUsageFlagBits::eOneTimeSubmit);
 
         std::vector<vk::BufferCopy> Regions(ElementCount);
@@ -116,33 +113,6 @@ namespace Npgs
         CommandPool.FreeBuffer(TransferCommandBuffer);
     }
 
-    vk::Result FDeviceLocalBuffer::CreateBuffer(vk::DeviceSize Size, vk::BufferUsageFlags Usage)
-    {
-        vk::BufferCreateInfo BufferCreateInfo({}, Size, Usage | vk::BufferUsageFlagBits::eTransferDst);
-
-        vk::MemoryPropertyFlags PreferredMemoryFlags =
-            vk::MemoryPropertyFlagBits::eDeviceLocal | vk::MemoryPropertyFlagBits::eHostVisible;
-        vk::MemoryPropertyFlags FallbackMemoryFlags  = vk::MemoryPropertyFlagBits::eDeviceLocal;
-
-        BufferMemory_ = std::make_unique<FVulkanBufferMemory>(
-            VulkanContext_->GetDevice(), VulkanContext_->GetPhysicalDeviceProperties(),
-            VulkanContext_->GetPhysicalDeviceMemoryProperties(), BufferCreateInfo, PreferredMemoryFlags);
-
-        if (!BufferMemory_->IsValid())
-        {
-            BufferMemory_ = std::make_unique<FVulkanBufferMemory>(
-                VulkanContext_->GetDevice(), VulkanContext_->GetPhysicalDeviceProperties(),
-                VulkanContext_->GetPhysicalDeviceMemoryProperties(), BufferCreateInfo, FallbackMemoryFlags);
-
-            if (!BufferMemory_->IsValid())
-            {
-                return vk::Result::eErrorInitializationFailed;
-            }
-        }
-
-        return vk::Result::eSuccess;
-    }
-
     vk::Result FDeviceLocalBuffer::CreateBuffer(const VmaAllocationCreateInfo& AllocationCreateInfo,
                                                 const vk::BufferCreateInfo& BufferCreateInfo)
     {
@@ -153,13 +123,6 @@ namespace Npgs
         }
 
         return vk::Result::eSuccess;
-    }
-
-    vk::Result FDeviceLocalBuffer::RecreateBuffer(vk::DeviceSize Size, vk::BufferUsageFlags Usage)
-    {
-        VulkanContext_->WaitIdle();
-        BufferMemory_.reset();
-        return CreateBuffer(Size, Usage);
     }
 
     vk::Result FDeviceLocalBuffer::RecreateBuffer(const VmaAllocationCreateInfo& AllocationCreateInfo,

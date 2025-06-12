@@ -40,7 +40,7 @@ namespace Npgs
         static vk::SamplerCreateInfo CreateDefaultSamplerCreateInfo(FVulkanContext* VulkanContext);
 
     protected:
-        FTexture(FVulkanContext* VulkanContext, VmaAllocator Allocator, const VmaAllocationCreateInfo* AllocationCreateInfo);
+        FTexture(FVulkanContext* VulkanContext, VmaAllocator Allocator, const VmaAllocationCreateInfo& AllocationCreateInfo);
         FTexture(const FTexture&) = delete;
         FTexture(FTexture&& Other) noexcept;
         virtual ~FTexture() = default;
@@ -97,7 +97,7 @@ namespace Npgs
         std::unique_ptr<FVulkanImageMemory> ImageMemory_;
         std::unique_ptr<FVulkanImageView>   ImageView_;
         VmaAllocator                        Allocator_;
-        const VmaAllocationCreateInfo*      AllocationCreateInfo_;
+        VmaAllocationCreateInfo             AllocationCreateInfo_;
     };
 
     class FTexture2D : public FTexture
@@ -105,9 +105,6 @@ namespace Npgs
     public:
         using Base = FTexture;
         using Base::Base;
-
-        FTexture2D(FVulkanContext* VulkanContext, std::string_view Filename, vk::Format InitialFormat,
-                   vk::Format FinalFormat, vk::ImageCreateFlags Flags = {}, bool bGenerateMipmaps = true);
 
         FTexture2D(FVulkanContext* VulkanContext, VmaAllocator Allocator, const VmaAllocationCreateInfo& AllocationCreateInfo, std::string_view Filename,
                    vk::Format InitialFormat, vk::Format FinalFormat, vk::ImageCreateFlags Flags = {}, bool bGenerateMipmaps = true);
@@ -138,9 +135,6 @@ namespace Npgs
     public:
         using Base = FTexture;
         using Base::Base;
-
-        FTextureCube(FVulkanContext* VulkanContext, std::string_view Filename, vk::Format InitialFormat,
-                     vk::Format FinalFormat, vk::ImageCreateFlags Flags = {}, bool bGenerateMipmaps = true);
 
         FTextureCube(FVulkanContext* VulkanContext, VmaAllocator Allocator, const VmaAllocationCreateInfo& AllocationCreateInfo, std::string_view Filename,
                      vk::Format InitialFormat, vk::Format FinalFormat, vk::ImageCreateFlags Flags = {}, bool bGenerateMipmaps = true);

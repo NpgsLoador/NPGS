@@ -138,16 +138,8 @@ namespace Npgs
         }
     }
 
-    FStagingBuffer::FStagingBuffer(vk::PhysicalDevice PhysicalDevice, vk::Device Device, vk::DeviceSize Size)
-        : PhysicalDevice_(PhysicalDevice_)
-        , Device_(Device)
-        , Allocator_(nullptr)
-    {
-        Expand(Size);
-    }
-
     FStagingBuffer::FStagingBuffer(vk::PhysicalDevice PhysicalDevice, vk::Device Device, VmaAllocator Allocator,
-                                   const VmaAllocationCreateInfo* AllocationCreateInfo, const vk::BufferCreateInfo& BufferCreateInfo)
+                                   const VmaAllocationCreateInfo& AllocationCreateInfo, const vk::BufferCreateInfo& BufferCreateInfo)
         : PhysicalDevice_(PhysicalDevice)
         , Device_(Device)
         , Allocator_(Allocator)
@@ -163,7 +155,7 @@ namespace Npgs
         , AliasedImage_(std::move(Other.AliasedImage_))
         , MemoryUsage_(std::exchange(Other.MemoryUsage_, 0))
         , Allocator_(std::exchange(Other.Allocator_, nullptr))
-        , AllocationCreateInfo_(std::exchange(Other.AllocationCreateInfo_, nullptr))
+        , AllocationCreateInfo_(std::exchange(Other.AllocationCreateInfo_, {}))
     {
     }
 
@@ -177,7 +169,7 @@ namespace Npgs
             AliasedImage_         = std::move(Other.AliasedImage_);
             MemoryUsage_          = std::exchange(Other.MemoryUsage_, 0);
             Allocator_            = std::exchange(Other.Allocator_, nullptr);
-            AllocationCreateInfo_ = std::exchange(Other.AllocationCreateInfo_, nullptr);
+            AllocationCreateInfo_ = std::exchange(Other.AllocationCreateInfo_, {});
         }
 
         return *this;
@@ -216,14 +208,7 @@ namespace Npgs
             return nullptr;
         }
 
-        if (Allocator_ == nullptr)
-        {
-            AliasedImage_ = std::make_unique<FVulkanImage>(Device_, PhysicalDevice_.getMemoryProperties(), ImageCreateInfo);
-        }
-        else
-        {
-            AliasedImage_ = std::make_unique<FVulkanImage>(Device_, Allocator_, *AllocationCreateInfo_, ImageCreateInfo);
-        }
+        AliasedImage_ = std::make_unique<FVulkanImage>(Device_, Allocator_, AllocationCreateInfo_, ImageCreateInfo);
 
         vk::ImageSubresource ImageSubresource(vk::ImageAspectFlagBits::eColor, ImageCreateInfo.mipLevels, ImageCreateInfo.arrayLayers);
         vk::SubresourceLayout SubresourceLayout = Device_.getImageSubresourceLayout(**AliasedImage_, ImageSubresource);
@@ -247,16 +232,6 @@ namespace Npgs
         Release();
 
         vk::BufferCreateInfo BufferCreateInfo({}, Size, vk::BufferUsageFlagBits::eTransferSrc | vk::BufferUsageFlagBits::eTransferDst);
-
-        if (Allocator_ != nullptr)
-        {
-            BufferMemory_ = std::make_unique<FVulkanBufferMemory>(Device_, Allocator_, *AllocationCreateInfo_, BufferCreateInfo);
-        }
-        else
-        {
-            BufferMemory_ = std::make_unique<FVulkanBufferMemory>(
-                Device_, PhysicalDevice_.getProperties(), PhysicalDevice_.getMemoryProperties(),
-                BufferCreateInfo, vk::MemoryPropertyFlagBits::eHostVisible);
-        }
+        BufferMemory_ = std::make_unique<FVulkanBufferMemory>(Device_, Allocator_, AllocationCreateInfo_, BufferCreateInfo);
     }
 } // namespace Npgs

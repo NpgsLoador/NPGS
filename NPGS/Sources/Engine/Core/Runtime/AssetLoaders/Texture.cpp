@@ -400,7 +400,7 @@ namespace Npgs
         }
     }
 
-    FTexture::FTexture(FVulkanContext* VulkanContext, VmaAllocator Allocator, const VmaAllocationCreateInfo* AllocationCreateInfo)
+    FTexture::FTexture(FVulkanContext* VulkanContext, VmaAllocator Allocator, const VmaAllocationCreateInfo& AllocationCreateInfo)
         : VulkanContext_(VulkanContext)
         , Allocator_(Allocator)
         , AllocationCreateInfo_(AllocationCreateInfo)
@@ -559,17 +559,8 @@ namespace Npgs
             .setUsage(vk::ImageUsageFlagBits::eTransferSrc | vk::ImageUsageFlagBits::eTransferDst | vk::ImageUsageFlagBits::eSampled)
             .setInitialLayout(vk::ImageLayout::eUndefined);
 
-        if (Allocator_ != nullptr)
-        {
-            ImageMemory_ = std::make_unique<FVulkanImageMemory>(
-                VulkanContext_->GetDevice(), Allocator_, *AllocationCreateInfo_, ImageCreateInfo);
-        }
-        else
-        {
-            ImageMemory_ = std::make_unique<FVulkanImageMemory>(
-                VulkanContext_->GetDevice(), VulkanContext_->GetPhysicalDeviceProperties(),
-                VulkanContext_->GetPhysicalDeviceMemoryProperties(), ImageCreateInfo, vk::MemoryPropertyFlagBits::eDeviceLocal);
-        }
+        ImageMemory_ = std::make_unique<FVulkanImageMemory>(
+            VulkanContext_->GetDevice(), Allocator_, AllocationCreateInfo_, ImageCreateInfo);
     }
 
     void FTexture::CreateImageView(vk::ImageViewCreateFlags Flags, vk::ImageViewType ImageViewType, vk::Format Format,
@@ -637,7 +628,7 @@ namespace Npgs
         VulkanContext_->SubmitCommandBuffer(FVulkanContext::EQueueType::kGeneral, CommandBuffer,
                                             nullptr, vk::PipelineStageFlagBits2::eNone,
                                             SignalSemaphore, vk::PipelineStageFlagBits2::eBlit | vk::PipelineStageFlagBits2::eCopy,
-                                            Fence, true);
+                                            Fence, false);
     }
 
     void FTexture::CopyBlitApplyTexture(const FVulkanCommandPool& CommandPool, vk::Buffer SrcBuffer, vk::Extent3D Extent,
@@ -678,7 +669,7 @@ namespace Npgs
         VulkanContext_->SubmitCommandBuffer(FVulkanContext::EQueueType::kGeneral, CommandBuffer,
                                             nullptr, vk::PipelineStageFlagBits2::eNone,
                                             SignalSemaphore, vk::PipelineStageFlagBits2::eCopy,
-                                            Fence, true);
+                                            Fence, false);
     }
 
     void FTexture::BlitGenerateTexture(const FVulkanCommandPool& CommandPool, vk::Extent3D Extent, std::uint32_t MipLevels,
@@ -734,7 +725,7 @@ namespace Npgs
         VulkanContext_->SubmitCommandBuffer(FVulkanContext::EQueueType::kGeneral, CommandBuffer,
                                             WaitSemaphore, vk::PipelineStageFlagBits2::eBlit,
                                             nullptr, vk::PipelineStageFlagBits2::eNone,
-                                            Fence, true);
+                                            Fence, false);
     }
 
     void FTexture::BlitApplyTexture(const FVulkanCommandPool& CommandPool, vk::Extent3D Extent, std::uint32_t MipLevels,
@@ -778,7 +769,7 @@ namespace Npgs
         VulkanContext_->SubmitCommandBuffer(FVulkanContext::EQueueType::kGeneral, CommandBuffer,
                                             WaitSemaphore, vk::PipelineStageFlagBits2::eBlit,
                                             nullptr, vk::PipelineStageFlagBits2::eNone,
-                                            Fence, true);
+                                            Fence, false);
     }
 
     void FTexture::CopyBufferToImage(const FVulkanCommandBuffer& CommandBuffer,
@@ -1020,16 +1011,9 @@ namespace Npgs
         }
     }
 
-    FTexture2D::FTexture2D(FVulkanContext* VulkanContext, std::string_view Filename, vk::Format InitialFormat,
-                           vk::Format FinalFormat, vk::ImageCreateFlags Flags, bool bGenerateMipmaps)
-        : Base(VulkanContext, nullptr, nullptr)
-    {
-        CreateTexture(GetAssetFullPath(EAssetType::kTexture, Filename.data()), InitialFormat, FinalFormat, Flags, bGenerateMipmaps);
-    }
-
     FTexture2D::FTexture2D(FVulkanContext* VulkanContext, VmaAllocator Allocator, const VmaAllocationCreateInfo& AllocationCreateInfo,
                            std::string_view Filename, vk::Format InitialFormat, vk::Format FinalFormat, vk::ImageCreateFlags Flags, bool bGenerateMipmaps)
-        : Base(VulkanContext, Allocator, &AllocationCreateInfo)
+        : Base(VulkanContext, Allocator, AllocationCreateInfo)
     {
         CreateTexture(GetAssetFullPath(EAssetType::kTexture, Filename.data()), InitialFormat, FinalFormat, Flags, bGenerateMipmaps);
     }
@@ -1065,15 +1049,9 @@ namespace Npgs
         Base::CreateTexture(ImageData, Flags, vk::ImageType::e2D, vk::ImageViewType::e2D, InitialFormat, FinalFormat, 1, bGenerateMipmaps);
     }
 
-    FTextureCube::FTextureCube(FVulkanContext* VulkanContext, std::string_view Filename, vk::Format InitialFormat,
-                               vk::Format FinalFormat, vk::ImageCreateFlags Flags, bool bGenerateMipmaps)
-        : FTextureCube(VulkanContext, nullptr, {}, Filename, InitialFormat, FinalFormat, Flags, bGenerateMipmaps)
-    {
-    }
-
     FTextureCube::FTextureCube(FVulkanContext* VulkanContext, VmaAllocator Allocator, const VmaAllocationCreateInfo& AllocationCreateInfo, std::string_view Filename,
                                vk::Format InitialFormat, vk::Format FinalFormat, vk::ImageCreateFlags Flags, bool bGenerateMipmaps)
-        : Base(VulkanContext, Allocator, &AllocationCreateInfo)
+        : Base(VulkanContext, Allocator, AllocationCreateInfo)
     {
         std::string FullPath = GetAssetFullPath(EAssetType::kTexture, Filename.data());
         if (std::filesystem::is_directory(FullPath))

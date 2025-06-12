@@ -15,13 +15,11 @@ namespace Npgs
     struct FStagingBufferCreateInfo
     {
         vk::DeviceSize Size;
-        const VmaAllocationCreateInfo* AllocationCreateInfo;
     };
 
     struct FStagingBufferInfo : public TResourceInfo<FStagingBuffer>
     {
         vk::DeviceSize Size{};
-        bool bAllocatedByVma{ false };
     };
 
     class FStagingBufferPool : public TResourcePool<FStagingBuffer, FStagingBufferCreateInfo, FStagingBufferInfo>
@@ -57,7 +55,6 @@ namespace Npgs
         vk::Device              Device_;
         VmaAllocator            Allocator_;
         VmaAllocationCreateInfo AllocationCreateInfo_;
-        bool                    bUsingVma_{ true };
 
         static constexpr std::array kSizeTiers
         {

@@ -53,11 +53,6 @@ namespace Npgs
         BufferMemory_.reset();
     }
 
-    NPGS_INLINE bool FStagingBuffer::AllocatedByVma() const
-    {
-        return Allocator_ != nullptr;
-    }
-
     NPGS_INLINE FVulkanBuffer& FStagingBuffer::GetBuffer()
     {
         return BufferMemory_->GetResource();

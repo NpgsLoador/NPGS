@@ -38,7 +38,7 @@ namespace Npgs
     }
 
     void FShaderBufferManager::CreateDescriptorBuffer(const FDescriptorBufferCreateInfo& DescriptorBufferCreateInfo,
-                                                      const VmaAllocationCreateInfo* AllocationCreateInfo)
+                                                      const VmaAllocationCreateInfo& AllocationCreateInfo)
     {
         vk::DeviceSize BufferSize = CalculateDescriptorBufferSize(DescriptorBufferCreateInfo);
         if (BufferSize == 0)
@@ -57,17 +57,8 @@ namespace Npgs
         for (std::uint32_t i = 0; i != Config::Graphics::kMaxFrameInFlight; ++i)
         {
             auto BufferUsage = vk::BufferUsageFlagBits::eResourceDescriptorBufferEXT | vk::BufferUsageFlagBits::eShaderDeviceAddress;
-
-            if (AllocationCreateInfo != nullptr)
-            {
-                vk::BufferCreateInfo BufferCreateInfo({}, BufferSize, BufferUsage);
-                BufferInfo.Buffers.emplace_back(VulkanContext_, Allocator_, *AllocationCreateInfo, BufferCreateInfo);
-            }
-            else
-            {
-                BufferInfo.Buffers.emplace_back(VulkanContext_, BufferSize, BufferUsage);
-            }
-
+            vk::BufferCreateInfo BufferCreateInfo({}, BufferSize, BufferUsage);
+            BufferInfo.Buffers.emplace_back(VulkanContext_, Allocator_, AllocationCreateInfo, BufferCreateInfo);
             BufferInfo.Buffers[i].CopyData(0, 0, BufferSize, EmptyData.data());
         }
 

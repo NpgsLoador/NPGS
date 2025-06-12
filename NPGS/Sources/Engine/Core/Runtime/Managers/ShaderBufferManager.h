@@ -127,7 +127,7 @@ namespace Npgs
         template <typename StructType>
         requires std::is_class_v<StructType>
         void CreateDataBuffers(const FDataBufferCreateInfo& DataBufferCreateInfo,
-                               const VmaAllocationCreateInfo* AllocationCreateInfo = nullptr,
+                               const VmaAllocationCreateInfo& AllocationCreateInfo,
                                std::uint32_t BufferCount = 0);
 
         void RemoveDataBuffer(const std::string& Name);
@@ -149,7 +149,7 @@ namespace Npgs
         const FDeviceLocalBuffer& GetDataBuffer(std::uint32_t FrameIndex, const std::string& BufferName);
 
         void CreateDescriptorBuffer(const FDescriptorBufferCreateInfo& DescriptorBufferCreateInfo,
-                                    const VmaAllocationCreateInfo* AllocationCreateInfo = nullptr);
+                                    const VmaAllocationCreateInfo& AllocationCreateInfo);
 
         void RemoveDescriptorBuffer(const std::string& Name);
         vk::DeviceSize GetDescriptorBindingOffset(const std::string& BufferName, std::uint32_t Set, std::uint32_t Binding) const;

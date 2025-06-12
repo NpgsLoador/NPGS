@@ -12,7 +12,7 @@ namespace Npgs
     template <typename StructType>
     requires std::is_class_v<StructType>
     void FShaderBufferManager::CreateDataBuffers(const FDataBufferCreateInfo& DataBufferCreateInfo,
-                                                 const VmaAllocationCreateInfo* AllocationCreateInfo,
+                                                 const VmaAllocationCreateInfo& AllocationCreateInfo,
                                                  std::uint32_t BufferCount)
     {
         FDataBufferInfo BufferInfo;
@@ -56,15 +56,8 @@ namespace Npgs
 
         for (std::uint32_t i = 0; i != BufferCount; ++i)
         {
-            if (AllocationCreateInfo != nullptr)
-            {
-                vk::BufferCreateInfo BufferCreateInfo({}, BufferInfo.Size, BufferUsage | vk::BufferUsageFlagBits::eTransferDst);
-                BufferInfo.Buffers.emplace_back(VulkanContext_, Allocator_, *AllocationCreateInfo, BufferCreateInfo);
-            }
-            else
-            {
-                BufferInfo.Buffers.emplace_back(VulkanContext_, BufferInfo.Size, BufferUsage);
-            }
+            vk::BufferCreateInfo BufferCreateInfo({}, BufferInfo.Size, BufferUsage | vk::BufferUsageFlagBits::eTransferDst);
+            BufferInfo.Buffers.emplace_back(VulkanContext_, Allocator_, AllocationCreateInfo, BufferCreateInfo);
 
             StructType EmptyData{};
             BufferInfo.Buffers[i].SetPersistentMapping(true);

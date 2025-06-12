@@ -17,7 +17,6 @@ namespace Npgs
     class FDeviceLocalBuffer
     {
     public:
-        FDeviceLocalBuffer(FVulkanContext* VulkanContext, vk::DeviceSize Size, vk::BufferUsageFlags Usage);
         FDeviceLocalBuffer(FVulkanContext* VulkanContext, VmaAllocator Allocator,
                            const VmaAllocationCreateInfo& AllocationCreateInfo,
                            const vk::BufferCreateInfo& BufferCreateInfo);
@@ -54,14 +53,10 @@ namespace Npgs
         FVulkanDeviceMemory& GetMemory();
         const FVulkanDeviceMemory& GetMemory() const;
 
-        bool IsUsingVma() const;
-
     private:
-        vk::Result CreateBuffer(vk::DeviceSize Size, vk::BufferUsageFlags Usage);
         vk::Result CreateBuffer(const VmaAllocationCreateInfo& AllocationCreateInfo,
                                 const vk::BufferCreateInfo& BufferCreateInfo);
 
-        vk::Result RecreateBuffer(vk::DeviceSize Size, vk::BufferUsageFlags Usage);
         vk::Result RecreateBuffer(const VmaAllocationCreateInfo& AllocationCreateInfo,
                                   const vk::BufferCreateInfo& BufferCreateInfo);
 

@@ -1160,9 +1160,9 @@ namespace Npgs
         };
 
         auto* ShaderBufferManager = EngineResourceServices->GetShaderBufferManager();
-        ShaderBufferManager->CreateDataBuffers<FMatrices>(MatricesCreateInfo, &AllocationCreateInfo);
-        ShaderBufferManager->CreateDataBuffers<FMvpMatrices>(MvpMatricesCreateInfo, &AllocationCreateInfo);
-        ShaderBufferManager->CreateDataBuffers<FLightArgs>(LightArgsCreateInfo, &AllocationCreateInfo);
+        ShaderBufferManager->CreateDataBuffers<FMatrices>(MatricesCreateInfo, AllocationCreateInfo);
+        ShaderBufferManager->CreateDataBuffers<FMvpMatrices>(MvpMatricesCreateInfo, AllocationCreateInfo);
+        ShaderBufferManager->CreateDataBuffers<FLightArgs>(LightArgsCreateInfo, AllocationCreateInfo);
     }
 
     void FApplication::BindDescriptors()
@@ -1279,10 +1279,10 @@ namespace Npgs
             SceneMergeDescriptorBufferCreateInfo.StorageImageInfos.emplace_back(1u, 0u, ColorStorageImageInfo);
             PostDescriptorBufferCreateInfo.CombinedImageSamplerInfos.emplace_back(0u, 0u, ColorImageInfo);
 
-            ShaderBufferManager->CreateDescriptorBuffer(SceneGBufferDescriptorBufferCreateInfo, &AllocationCreateInfo);
-            ShaderBufferManager->CreateDescriptorBuffer(SceneMergeDescriptorBufferCreateInfo, &AllocationCreateInfo);
-            ShaderBufferManager->CreateDescriptorBuffer(SkyboxDescriptorBufferCreateInfo, &AllocationCreateInfo);
-            ShaderBufferManager->CreateDescriptorBuffer(PostDescriptorBufferCreateInfo, &AllocationCreateInfo);
+            ShaderBufferManager->CreateDescriptorBuffer(SceneGBufferDescriptorBufferCreateInfo, AllocationCreateInfo);
+            ShaderBufferManager->CreateDescriptorBuffer(SceneMergeDescriptorBufferCreateInfo, AllocationCreateInfo);
+            ShaderBufferManager->CreateDescriptorBuffer(SkyboxDescriptorBufferCreateInfo, AllocationCreateInfo);
+            ShaderBufferManager->CreateDescriptorBuffer(PostDescriptorBufferCreateInfo, AllocationCreateInfo);
         };
 
         auto DestroyAttachmentDescriptors = [=]() mutable -> void

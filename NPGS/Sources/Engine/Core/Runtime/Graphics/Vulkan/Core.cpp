@@ -239,13 +239,13 @@ namespace Npgs
         NpgsCoreInfo("Logical device created successfully.");
         NpgsCoreInfo("Renderer: {}", PhysicalDeviceProperties_.deviceName.data());
 
+        VulkanHppCheck(GetDeviceExtFunctionProcAddress());
+        VulkanHppCheck(InitializeVmaAllocator());
+
         for (auto& Callback : CreateDeviceCallbacks_)
         {
             Callback.second();
         }
-
-        VulkanHppCheck(GetDeviceExtFunctionProcAddress());
-        VulkanHppCheck(InitializeVmaAllocator());
 
         return vk::Result::eSuccess;
     }

@@ -11,22 +11,13 @@ namespace Npgs
     {
     }
 
-    FColorAttachment::FColorAttachment(FVulkanContext* VulkanContext, VmaAllocator Allocator, const VmaAllocationCreateInfo& AllocationCreateInfo, vk::Format Format,
-                                       vk::Extent2D Extent, std::uint32_t LayerCount, vk::SampleCountFlagBits SampleCount, vk::ImageUsageFlags ExtraUsage)
+    FColorAttachment::FColorAttachment(FVulkanContext* VulkanContext, VmaAllocator Allocator,
+                                       const VmaAllocationCreateInfo& AllocationCreateInfo, vk::Format Format,
+                                       vk::Extent2D Extent, std::uint32_t LayerCount,
+                                       vk::SampleCountFlagBits SampleCount, vk::ImageUsageFlags ExtraUsage)
         : Base(VulkanContext, Allocator)
     {
-        vk::Result Result = CreateAttachment(&AllocationCreateInfo, Format, Extent, LayerCount, SampleCount, ExtraUsage);
-        if (Result != vk::Result::eSuccess)
-        {
-            NpgsCoreError("Failed to create color attachment: {}", vk::to_string(Result));
-        }
-    }
-
-    FColorAttachment::FColorAttachment(FVulkanContext* VulkanContext, vk::Format Format, vk::Extent2D Extent, std::uint32_t LayerCount,
-                                       vk::SampleCountFlagBits SampleCount, vk::ImageUsageFlags ExtraUsage)
-        : Base(VulkanContext, nullptr)
-    {
-        vk::Result Result = CreateAttachment(nullptr, Format, Extent, LayerCount, SampleCount, ExtraUsage);
+        vk::Result Result = CreateAttachment(AllocationCreateInfo, Format, Extent, LayerCount, SampleCount, ExtraUsage);
         if (Result != vk::Result::eSuccess)
         {
             NpgsCoreError("Failed to create color attachment: {}", vk::to_string(Result));
@@ -54,17 +45,19 @@ namespace Npgs
         return false;
     }
 
-    vk::Result FColorAttachment::CreateAttachment(const VmaAllocationCreateInfo* AllocationCreateInfo, vk::Format Format, vk::Extent2D Extent,
-                                                  std::uint32_t LayerCount, vk::SampleCountFlagBits SampleCount, vk::ImageUsageFlags ExtraUsage)
+    vk::Result FColorAttachment::CreateAttachment(const VmaAllocationCreateInfo& AllocationCreateInfo,
+                                                  vk::Format Format, vk::Extent2D Extent,
+                                                  std::uint32_t LayerCount, vk::SampleCountFlagBits SampleCount,
+                                                  vk::ImageUsageFlags ExtraUsage)
     {
         vk::ImageCreateInfo ImageCreateInfo;
         ImageCreateInfo.setImageType(vk::ImageType::e2D)
-            .setFormat(Format)
-            .setExtent({ Extent.width, Extent.height, 1 })
-            .setMipLevels(1)
-            .setArrayLayers(LayerCount)
-            .setSamples(SampleCount)
-            .setUsage(vk::ImageUsageFlagBits::eColorAttachment | ExtraUsage);
+                       .setFormat(Format)
+                       .setExtent({ Extent.width, Extent.height, 1 })
+                       .setMipLevels(1)
+                       .setArrayLayers(LayerCount)
+                       .setSamples(SampleCount)
+                       .setUsage(vk::ImageUsageFlagBits::eColorAttachment | ExtraUsage);
 
         vk::MemoryPropertyFlags MemoryPropertyFlags = vk::MemoryPropertyFlagBits::eDeviceLocal;
         if (ExtraUsage & vk::ImageUsageFlagBits::eTransientAttachment)
@@ -72,17 +65,8 @@ namespace Npgs
             MemoryPropertyFlags |= vk::MemoryPropertyFlagBits::eLazilyAllocated;
         }
 
-        if (AllocationCreateInfo != nullptr)
-        {
-            ImageMemory_ = std::make_unique<FVulkanImageMemory>(
-                VulkanContext_->GetDevice(), Allocator_, *AllocationCreateInfo, ImageCreateInfo);
-        }
-        else
-        {
-            ImageMemory_ = std::make_unique<FVulkanImageMemory>(
-                VulkanContext_->GetDevice(), VulkanContext_->GetPhysicalDeviceProperties(),
-                VulkanContext_->GetPhysicalDeviceMemoryProperties(), ImageCreateInfo, MemoryPropertyFlags);
-        }
+        ImageMemory_ = std::make_unique<FVulkanImageMemory>(
+            VulkanContext_->GetDevice(), Allocator_, AllocationCreateInfo, ImageCreateInfo);
 
         if (!ImageMemory_->IsValid())
         {
@@ -103,23 +87,14 @@ namespace Npgs
         return vk::Result::eSuccess;
     }
 
-    FDepthStencilAttachment::FDepthStencilAttachment(FVulkanContext* VulkanContext, VmaAllocator Allocator, const VmaAllocationCreateInfo& AllocationCreateInfo,
-                                                     vk::Format Format, vk::Extent2D Extent, std::uint32_t LayerCount,
-                                                     vk::SampleCountFlagBits SampleCount, vk::ImageUsageFlags ExtraUsage, bool bStencilOnly)
+    FDepthStencilAttachment::FDepthStencilAttachment(FVulkanContext* VulkanContext, VmaAllocator Allocator,
+                                                     const VmaAllocationCreateInfo& AllocationCreateInfo,
+                                                     vk::Format Format, vk::Extent2D Extent,
+                                                     std::uint32_t LayerCount, vk::SampleCountFlagBits SampleCount,
+                                                     vk::ImageUsageFlags ExtraUsage, bool bStencilOnly)
         : Base(VulkanContext, Allocator)
     {
-        vk::Result Result = CreateAttachment(&AllocationCreateInfo, Format, Extent, LayerCount, SampleCount, ExtraUsage, bStencilOnly);
-        if (Result != vk::Result::eSuccess)
-        {
-            NpgsCoreError("Failed to create depth-stencil attachment: {}", vk::to_string(Result));
-        }
-    }
-
-    FDepthStencilAttachment::FDepthStencilAttachment(FVulkanContext* VulkanContext, vk::Format Format, vk::Extent2D Extent, std::uint32_t LayerCount,
-                                                     vk::SampleCountFlagBits SampleCount, vk::ImageUsageFlags ExtraUsage, bool bStencilOnly)
-        : Base(VulkanContext, nullptr)
-    {
-        vk::Result Result = CreateAttachment(nullptr, Format, Extent, LayerCount, SampleCount, ExtraUsage, bStencilOnly);
+        vk::Result Result = CreateAttachment(AllocationCreateInfo, Format, Extent, LayerCount, SampleCount, ExtraUsage, bStencilOnly);
         if (Result != vk::Result::eSuccess)
         {
             NpgsCoreError("Failed to create depth-stencil attachment: {}", vk::to_string(Result));
@@ -137,8 +112,10 @@ namespace Npgs
         return false;
     }
 
-    vk::Result FDepthStencilAttachment::CreateAttachment(const VmaAllocationCreateInfo* AllocationCreateInfo, vk::Format Format, vk::Extent2D Extent,
-                                                         std::uint32_t LayerCount, vk::SampleCountFlagBits SampleCount, vk::ImageUsageFlags ExtraUsage, bool bStencilOnly)
+    vk::Result FDepthStencilAttachment::CreateAttachment(const VmaAllocationCreateInfo& AllocationCreateInfo,
+                                                         vk::Format Format, vk::Extent2D Extent, std::uint32_t LayerCount,
+                                                         vk::SampleCountFlagBits SampleCount, vk::ImageUsageFlags ExtraUsage,
+                                                         bool bStencilOnly)
     {
         vk::ImageCreateInfo ImageCreateInfo;
         ImageCreateInfo.setImageType(vk::ImageType::e2D)
@@ -155,17 +132,8 @@ namespace Npgs
             MemoryPropertyFlags |= vk::MemoryPropertyFlagBits::eLazilyAllocated;
         }
 
-        if (AllocationCreateInfo != nullptr)
-        {
-            ImageMemory_ = std::make_unique<FVulkanImageMemory>(
-                VulkanContext_->GetDevice(), Allocator_, *AllocationCreateInfo, ImageCreateInfo);
-        }
-        else
-        {
-            ImageMemory_ = std::make_unique<FVulkanImageMemory>(
-                VulkanContext_->GetDevice(), VulkanContext_->GetPhysicalDeviceProperties(),
-                VulkanContext_->GetPhysicalDeviceMemoryProperties(), ImageCreateInfo, MemoryPropertyFlags);
-        }
+        ImageMemory_ = std::make_unique<FVulkanImageMemory>(
+            VulkanContext_->GetDevice(), Allocator_, AllocationCreateInfo, ImageCreateInfo);
 
         if (!ImageMemory_->IsValid())
         {

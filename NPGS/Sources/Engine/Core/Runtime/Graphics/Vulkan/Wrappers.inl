@@ -34,9 +34,9 @@ namespace Npgs
         using ValueType = typename ContainerType::value_type;
         static_assert(std::is_standard_layout_v<ValueType>, "Container value_type must be standard layout type");
 
-        Data.reserve(AllocationSize_ / sizeof(ValueType));
-        Data.resize(AllocationSize_  / sizeof(ValueType));
-        return FetchData(0, 0, AllocationSize_, static_cast<void*>(Data.data()));
+        Data.reserve(AllocationInfo_.size / sizeof(ValueType));
+        Data.resize(AllocationInfo_.size / sizeof(ValueType));
+        return FetchData(0, 0, AllocationInfo_.size, static_cast<void*>(Data.data()));
     }
 
     NPGS_INLINE const void* FVulkanDeviceMemory::GetMappedDataMemory() const
@@ -51,7 +51,7 @@ namespace Npgs
 
     NPGS_INLINE vk::DeviceSize FVulkanDeviceMemory::GetAllocationSize() const
     {
-        return AllocationSize_;
+        return AllocationInfo_.size;
     }
 
     NPGS_INLINE vk::MemoryPropertyFlags FVulkanDeviceMemory::GetMemoryPropertyFlags() const
