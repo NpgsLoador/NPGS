@@ -3,8 +3,6 @@
 #include <utility>
 #include <vulkan/vulkan_to_string.hpp>
 
-#include "Engine/Core/Runtime/Graphics/Vulkan/Core.h"
-
 namespace Npgs
 {
     namespace

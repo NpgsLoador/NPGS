@@ -6,7 +6,6 @@
 #include <vector>
 
 #include "Engine/Core/Runtime/Pools/StagingBufferPool.h"
-#include "Engine/Core/System/Services/EngineServices.h"
 
 namespace Npgs
 {

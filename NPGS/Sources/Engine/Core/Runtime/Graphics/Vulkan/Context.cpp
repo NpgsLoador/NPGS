@@ -142,10 +142,11 @@ namespace Npgs
     {
         FVulkanFence Fence(VulkanCore_->GetDevice());
         auto Queue = VulkanCore_->GetQueuePool().AcquireQueue(VulkanCore_->GetQueueFamilyProperties(QueueType).queueFlags);
-        vk::SubmitInfo SubmitInfo({}, {}, CommandBuffer, {});
+        vk::CommandBufferSubmitInfo CommandBufferSubmitInfo(CommandBuffer);
+        vk::SubmitInfo2 SubmitInfo({}, {}, CommandBufferSubmitInfo, {});
         try
         {
-            Queue->submit(SubmitInfo, *Fence);
+            Queue->submit2(SubmitInfo, *Fence);
             Fence.Wait();
         }
         catch (const vk::SystemError& e)

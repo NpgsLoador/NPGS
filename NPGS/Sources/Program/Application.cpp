@@ -1144,14 +1144,6 @@ namespace Npgs
             .Usage   = vk::DescriptorType::eUniformBuffer
         };
 
-        VmaAllocatorCreateInfo AllocatorCreateInfo
-        {
-            .flags          = VMA_ALLOCATOR_CREATE_BUFFER_DEVICE_ADDRESS_BIT,
-            .physicalDevice = VulkanContext_->GetPhysicalDevice(),
-            .device         = VulkanContext_->GetDevice(),
-            .instance       = VulkanContext_->GetInstance()
-        };
-
         VmaAllocationCreateInfo AllocationCreateInfo
         {
             .flags = VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT,

@@ -576,7 +576,7 @@ namespace Npgs
     void FTexture::CopyBlitGenerateTexture(const FVulkanCommandPool& CommandPool, vk::Buffer SrcBuffer, vk::Extent3D Extent,
                                            std::uint32_t MipLevels, std::uint32_t ArrayLayers, vk::Filter Filter,
                                            vk::Image DstImageSrcBlit, vk::Image DstImageDstBlit,
-                                           FVulkanSemaphore* SignalSemaphore, FVulkanFence* Fence)
+                                           const FVulkanSemaphore* SignalSemaphore, const FVulkanFence* Fence)
     {
         static constexpr std::array kPostTransferStates
         {
@@ -634,7 +634,7 @@ namespace Npgs
     void FTexture::CopyBlitApplyTexture(const FVulkanCommandPool& CommandPool, vk::Buffer SrcBuffer, vk::Extent3D Extent,
                                         std::uint32_t MipLevels, const std::vector<std::size_t>& LevelOffsets,
                                         std::uint32_t ArrayLayers, vk::Filter Filter, vk::Image DstImage,
-                                        FVulkanSemaphore* SignalSemaphore, FVulkanFence* Fence)
+                                        const FVulkanSemaphore* SignalSemaphore, const FVulkanFence* Fence)
     {
         FVulkanCommandBuffer CommandBuffer;
         CommandPool.AllocateBuffer(vk::CommandBufferLevel::ePrimary, CommandBuffer);
@@ -668,13 +668,12 @@ namespace Npgs
         CommandBuffer.End();
         VulkanContext_->SubmitCommandBuffer(FVulkanContext::EQueueType::kGeneral, CommandBuffer,
                                             nullptr, vk::PipelineStageFlagBits2::eNone,
-                                            SignalSemaphore, vk::PipelineStageFlagBits2::eCopy,
-                                            Fence, false);
+                                            SignalSemaphore, vk::PipelineStageFlagBits2::eCopy, Fence, false);
     }
 
     void FTexture::BlitGenerateTexture(const FVulkanCommandPool& CommandPool, vk::Extent3D Extent, std::uint32_t MipLevels,
-                                       std::uint32_t ArrayLayers, vk::Filter Filter, vk::Image SrcImage,
-                                       vk::Image DstImage, const FVulkanSemaphore* WaitSemaphore, FVulkanFence* Fence)
+                                       std::uint32_t ArrayLayers, vk::Filter Filter, vk::Image SrcImage, vk::Image DstImage,
+                                       const FVulkanSemaphore* WaitSemaphore, const FVulkanFence* Fence)
     {
         static constexpr std::array kPostTransferStates
         {
@@ -724,13 +723,12 @@ namespace Npgs
         CommandBuffer.End();
         VulkanContext_->SubmitCommandBuffer(FVulkanContext::EQueueType::kGeneral, CommandBuffer,
                                             WaitSemaphore, vk::PipelineStageFlagBits2::eBlit,
-                                            nullptr, vk::PipelineStageFlagBits2::eNone,
-                                            Fence, false);
+                                            nullptr, vk::PipelineStageFlagBits2::eNone, Fence, false);
     }
 
     void FTexture::BlitApplyTexture(const FVulkanCommandPool& CommandPool, vk::Extent3D Extent, std::uint32_t MipLevels,
-                                    std::uint32_t ArrayLayers, vk::Filter Filter, vk::Image SrcImage,
-                                    vk::Image DstImage, const FVulkanSemaphore* WaitSemaphore, FVulkanFence* Fence)
+                                    std::uint32_t ArrayLayers, vk::Filter Filter, vk::Image SrcImage, vk::Image DstImage,
+                                    const FVulkanSemaphore* WaitSemaphore, const FVulkanFence* Fence)
     {
         auto* ImageTracker = EngineResourceServices->GetImageTracker();
         if (!ImageTracker->IsExisting(SrcImage))
@@ -768,8 +766,7 @@ namespace Npgs
         CommandBuffer.End();
         VulkanContext_->SubmitCommandBuffer(FVulkanContext::EQueueType::kGeneral, CommandBuffer,
                                             WaitSemaphore, vk::PipelineStageFlagBits2::eBlit,
-                                            nullptr, vk::PipelineStageFlagBits2::eNone,
-                                            Fence, false);
+                                            nullptr, vk::PipelineStageFlagBits2::eNone, Fence, false);
     }
 
     void FTexture::CopyBufferToImage(const FVulkanCommandBuffer& CommandBuffer,
