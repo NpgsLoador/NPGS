@@ -1189,7 +1189,7 @@ namespace Npgs
             };
 
             FShaderBufferManager::FDescriptorBufferCreateInfo SceneGBufferDescriptorBufferCreateInfo;
-            SceneGBufferDescriptorBufferCreateInfo.Name = "SceneGBufferDescriptorBuffer";
+            SceneGBufferDescriptorBufferCreateInfo.Name     = "SceneGBufferDescriptorBuffer";
             SceneGBufferDescriptorBufferCreateInfo.SetSizes = std::move(PbrSceneGBufferShader->GetDescriptorSetSizes());
 
             vk::SamplerCreateInfo SamplerCreateInfo = FTexture::CreateDefaultSamplerCreateInfo(VulkanContext_);

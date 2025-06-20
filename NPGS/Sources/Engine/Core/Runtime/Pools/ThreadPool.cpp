@@ -81,20 +81,20 @@ namespace Npgs
     void FThreadPool::Terminate()
     {
         {
-            std::unique_lock<std::mutex> Mutex(Mutex_);
+            std::unique_lock<std::mutex> Lock(Mutex_);
             bTerminate_ = true;
         }
         Condition_.notify_all();
-        for (auto& Thread : Threads_)
-        {
-            if (Thread.joinable())
-            {
-                Thread.join();
-            }
-        }
+        // for (auto& Thread : Threads_)
+        // {
+        //     if (Thread.joinable())
+        //     {
+        //         Thread.join();
+        //     }
+        // }
     }
 
-    void FThreadPool::SetThreadAffinity(std::thread& Thread, std::size_t CoreId) const
+    void FThreadPool::SetThreadAffinity(std::jthread& Thread, std::size_t CoreId) const
     {
         CoreId = CoreId % PhysicalCoreCount_;
         HANDLE Handle = Thread.native_handle();

@@ -6,42 +6,6 @@
 
 namespace Npgs
 {
-    namespace
-    {
-        struct FSubmitInfoPackage
-        {
-            vk::SubmitInfo2             SubmitInfo;
-            vk::CommandBufferSubmitInfo CommandBufferSubmitInfo;
-            vk::SemaphoreSubmitInfo     WaitSemaphoreSubmitInfo;
-            vk::SemaphoreSubmitInfo     SignalSemaphoreSubmitInfo;
-        };
-
-        FSubmitInfoPackage CreateSubmitInfo(const vk::CommandBuffer& CommandBuffer, vk::SubmitFlags Flags,
-                                            const vk::Semaphore& WaitSemaphore, vk::PipelineStageFlags2 WaitStageMask,
-                                            const vk::Semaphore& SignalSemaphore, vk::PipelineStageFlags2 SignalStageMask)
-        {
-            FSubmitInfoPackage Package;
-            Package.CommandBufferSubmitInfo.setCommandBuffer(CommandBuffer);
-            Package.SubmitInfo.setCommandBufferInfos(Package.CommandBufferSubmitInfo);
-
-            if (WaitSemaphore)
-            {
-                Package.WaitSemaphoreSubmitInfo.setSemaphore(WaitSemaphore);
-                Package.WaitSemaphoreSubmitInfo.setStageMask(WaitStageMask);
-                Package.SubmitInfo.setWaitSemaphoreInfos(Package.WaitSemaphoreSubmitInfo);
-            }
-
-            if (SignalSemaphore)
-            {
-                Package.SignalSemaphoreSubmitInfo.setSemaphore(SignalSemaphore);
-                Package.SignalSemaphoreSubmitInfo.setStageMask(SignalStageMask);
-                Package.SubmitInfo.setSignalSemaphoreInfos(Package.SignalSemaphoreSubmitInfo);
-            }
-
-            return Package;
-        }
-    }
-
     FVulkanContext::FVulkanContext()
         : VulkanCore_(std::make_unique<FVulkanCore>())
     {
@@ -195,7 +159,23 @@ namespace Npgs
                                         vk::Semaphore SignalSemaphore, vk::PipelineStageFlags2 SignalStageMask,
                                         vk::Fence Fence, bool bUseFixedQueue) const
     {
-        vk::SubmitInfo2 SubmitInfo = CreateSubmitInfo(Buffer, {}, WaitSemaphore, WaitStageMask, SignalSemaphore, SignalStageMask).SubmitInfo;
+        vk::SubmitInfo2 SubmitInfo;
+        vk::CommandBufferSubmitInfo CommandBufferSubmitInfo(Buffer);
+        SubmitInfo.setCommandBufferInfos(CommandBufferSubmitInfo);
+
+        vk::SemaphoreSubmitInfo WaitSemaphoreSubmitInfo(WaitSemaphore, 0, WaitStageMask);
+        vk::SemaphoreSubmitInfo SignalSemaphoreSubmitInfo(SignalSemaphore, 0, SignalStageMask);
+
+        if (WaitSemaphore)
+        {
+            SubmitInfo.setWaitSemaphoreInfos(WaitSemaphoreSubmitInfo);
+        }
+
+        if (SignalSemaphore)
+        {
+            SubmitInfo.setSignalSemaphoreInfos(SignalSemaphoreSubmitInfo);
+        }
+
         return SubmitCommandBuffer(QueueType, SubmitInfo, Fence, bUseFixedQueue);
     }
 

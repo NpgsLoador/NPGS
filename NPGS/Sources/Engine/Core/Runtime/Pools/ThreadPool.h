@@ -33,10 +33,10 @@ namespace Npgs
         int GetMaxThreadCount() const;
 
     private:
-        void SetThreadAffinity(std::thread& Thread, std::size_t CoreId) const;
+        void SetThreadAffinity(std::jthread& Thread, std::size_t CoreId) const;
 
     private:
-        std::vector<std::thread>          Threads_;
+        std::vector<std::jthread>         Threads_;
         std::queue<std::function<void()>> Tasks_;
         std::mutex                        Mutex_;
         std::condition_variable           Condition_;
