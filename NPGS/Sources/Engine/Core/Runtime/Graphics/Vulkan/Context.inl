@@ -125,19 +125,19 @@ namespace Npgs
     }
 
     NPGS_INLINE vk::Result
-    FVulkanContext::SubmitCommandBuffer(EQueueType QueueType, const FVulkanCommandBuffer& Buffer,
+    FVulkanContext::SubmitCommandBuffer(EQueueType QueueType, const FVulkanCommandBuffer& CommandBuffer,
                                         const FVulkanFence* Fence, bool bUseFixedQueue) const
     {
-        return SubmitCommandBuffer(QueueType, *Buffer, Fence ? **Fence : vk::Fence(), bUseFixedQueue);
+        return SubmitCommandBuffer(QueueType, *CommandBuffer, Fence ? **Fence : vk::Fence(), bUseFixedQueue);
     }
 
     NPGS_INLINE vk::Result
-    FVulkanContext::SubmitCommandBuffer(EQueueType QueueType, const FVulkanCommandBuffer& Buffer,
+    FVulkanContext::SubmitCommandBuffer(EQueueType QueueType, const FVulkanCommandBuffer& CommandBuffer,
                                         const FVulkanSemaphore* WaitSemaphore, vk::PipelineStageFlags2 WaitStageMask,
                                         const FVulkanSemaphore* SignalSemaphore, vk::PipelineStageFlags2 SignalStageMask,
                                         const FVulkanFence* Fence, bool bUseFixedQueue) const
     {
-        return SubmitCommandBuffer(QueueType, *Buffer,
+        return SubmitCommandBuffer(QueueType, *CommandBuffer,
                                    WaitSemaphore   ? **WaitSemaphore   : vk::Semaphore(), WaitStageMask,
                                    SignalSemaphore ? **SignalSemaphore : vk::Semaphore(), SignalStageMask,
                                    Fence           ? **Fence           : vk::Fence(),     bUseFixedQueue);

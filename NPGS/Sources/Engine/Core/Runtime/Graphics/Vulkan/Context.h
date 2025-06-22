@@ -73,15 +73,15 @@ namespace Npgs
 
         vk::Result SubmitCommandBuffer(EQueueType QueueType, const vk::SubmitInfo2& SubmitInfo, vk::Fence Fence, bool bUseFixedQueue) const;
         vk::Result SubmitCommandBuffer(EQueueType QueueType, const vk::SubmitInfo2& SubmitInfo, const FVulkanFence* Fence, bool bUseFixedQueue) const;
-        vk::Result SubmitCommandBuffer(EQueueType QueueType, vk::CommandBuffer Buffer, vk::Fence Fence, bool bUseFixedQueue) const;
-        vk::Result SubmitCommandBuffer(EQueueType QueueType, const FVulkanCommandBuffer& Buffer, const FVulkanFence* Fence, bool bUseFixedQueue) const;
+        vk::Result SubmitCommandBuffer(EQueueType QueueType, vk::CommandBuffer CommandBuffer, vk::Fence Fence, bool bUseFixedQueue) const;
+        vk::Result SubmitCommandBuffer(EQueueType QueueType, const FVulkanCommandBuffer& CommandBuffer, const FVulkanFence* Fence, bool bUseFixedQueue) const;
 
-        vk::Result SubmitCommandBuffer(EQueueType QueueType, vk::CommandBuffer Buffer,
+        vk::Result SubmitCommandBuffer(EQueueType QueueType, vk::CommandBuffer CommandBuffer,
                                        vk::Semaphore WaitSemaphore, vk::PipelineStageFlags2 WaitStageMask,
                                        vk::Semaphore SignalSemaphore, vk::PipelineStageFlags2 SignalStageMask,
                                        vk::Fence Fence, bool bUseFixedQueue) const;
 
-        vk::Result SubmitCommandBuffer(EQueueType QueueType, const FVulkanCommandBuffer& Buffer,
+        vk::Result SubmitCommandBuffer(EQueueType QueueType, const FVulkanCommandBuffer& CommandBuffer,
                                        const FVulkanSemaphore* WaitSemaphore, vk::PipelineStageFlags2 WaitStageMask,
                                        const FVulkanSemaphore* SignalSemaphore, vk::PipelineStageFlags2 SignalStageMask,
                                        const FVulkanFence* Fence, bool bUseFixedQueue) const;

@@ -146,21 +146,22 @@ namespace Npgs
         return vk::Result::eSuccess;
     }
 
-    vk::Result FVulkanContext::SubmitCommandBuffer(EQueueType QueueType, vk::CommandBuffer Buffer, vk::Fence Fence, bool bUseFixedQueue) const
+    vk::Result FVulkanContext::SubmitCommandBuffer(EQueueType QueueType, vk::CommandBuffer CommandBuffer,
+                                                   vk::Fence Fence, bool bUseFixedQueue) const
     {
-        vk::CommandBufferSubmitInfo CommandBufferSubmitInfo(Buffer);
+        vk::CommandBufferSubmitInfo CommandBufferSubmitInfo(CommandBuffer);
         vk::SubmitInfo2 SubmitInfo({}, {}, CommandBufferSubmitInfo, {});
         return SubmitCommandBuffer(QueueType, SubmitInfo, Fence, bUseFixedQueue);
     }
 
     vk::Result
-    FVulkanContext::SubmitCommandBuffer(EQueueType QueueType, vk::CommandBuffer Buffer,
+    FVulkanContext::SubmitCommandBuffer(EQueueType QueueType, vk::CommandBuffer CommandBuffer,
                                         vk::Semaphore WaitSemaphore, vk::PipelineStageFlags2 WaitStageMask,
                                         vk::Semaphore SignalSemaphore, vk::PipelineStageFlags2 SignalStageMask,
                                         vk::Fence Fence, bool bUseFixedQueue) const
     {
         vk::SubmitInfo2 SubmitInfo;
-        vk::CommandBufferSubmitInfo CommandBufferSubmitInfo(Buffer);
+        vk::CommandBufferSubmitInfo CommandBufferSubmitInfo(CommandBuffer);
         SubmitInfo.setCommandBufferInfos(CommandBufferSubmitInfo);
 
         vk::SemaphoreSubmitInfo WaitSemaphoreSubmitInfo(WaitSemaphore, 0, WaitStageMask);
