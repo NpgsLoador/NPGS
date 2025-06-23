@@ -89,29 +89,32 @@ namespace Npgs
 
     // Wrapper for vk::DescriptorSet
     // -----------------------------
-    NPGS_INLINE void FVulkanDescriptorSet::Write(const vk::ArrayProxy<vk::DescriptorImageInfo>& ImageInfos, vk::DescriptorType Type,
-                                                 std::uint32_t BindingPoint, std::uint32_t ArrayElement)
+    NPGS_INLINE void
+    FVulkanDescriptorSet::Write(const vk::ArrayProxy<const vk::DescriptorImageInfo>& ImageInfos, vk::DescriptorType Type,
+                                std::uint32_t BindingPoint, std::uint32_t ArrayElement)
     {
         vk::WriteDescriptorSet WriteDescriptorSet(Handle_, BindingPoint, ArrayElement, Type, ImageInfos);
         Update(WriteDescriptorSet);
     }
 
-    NPGS_INLINE void FVulkanDescriptorSet::Write(const vk::ArrayProxy<vk::DescriptorBufferInfo>& BufferInfos, vk::DescriptorType Type,
-                                                 std::uint32_t BindingPoint, std::uint32_t ArrayElement)
+    NPGS_INLINE void
+    FVulkanDescriptorSet::Write(const vk::ArrayProxy<const vk::DescriptorBufferInfo>& BufferInfos, vk::DescriptorType Type,
+                                std::uint32_t BindingPoint, std::uint32_t ArrayElement)
     {
         vk::WriteDescriptorSet WriteDescriptorSet(Handle_, BindingPoint, ArrayElement, Type, {}, BufferInfos);
         Update(WriteDescriptorSet);
     }
 
-    NPGS_INLINE void FVulkanDescriptorSet::Write(const vk::ArrayProxy<vk::BufferView>& BufferViews, vk::DescriptorType Type,
-                                                 std::uint32_t BindingPoint, std::uint32_t ArrayElement)
+    NPGS_INLINE void
+    FVulkanDescriptorSet::Write(const vk::ArrayProxy<const vk::BufferView>& BufferViews, vk::DescriptorType Type,
+                                std::uint32_t BindingPoint, std::uint32_t ArrayElement)
     {
         vk::WriteDescriptorSet WriteDescriptorSet(Handle_, BindingPoint, ArrayElement, Type, {}, {}, BufferViews);
         Update(WriteDescriptorSet);
     }
 
-    NPGS_INLINE void FVulkanDescriptorSet::Update(const vk::ArrayProxy<vk::WriteDescriptorSet>& Writes,
-                                                  const vk::ArrayProxy<vk::CopyDescriptorSet>& Copies)
+    NPGS_INLINE void FVulkanDescriptorSet::Update(const vk::ArrayProxy<const vk::WriteDescriptorSet>& Writes,
+                                                  const vk::ArrayProxy<const vk::CopyDescriptorSet>& Copies)
     {
         Device_.updateDescriptorSets(Writes, Copies);
     }

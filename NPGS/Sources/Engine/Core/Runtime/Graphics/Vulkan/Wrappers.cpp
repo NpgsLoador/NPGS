@@ -348,14 +348,14 @@ namespace Npgs
         return FreeBuffer(*Buffer);
     }
 
-    vk::Result FVulkanCommandPool::FreeBuffers(const vk::ArrayProxy<vk::CommandBuffer>& Buffers) const
+    vk::Result FVulkanCommandPool::FreeBuffers(const vk::ArrayProxy<const vk::CommandBuffer>& Buffers) const
     {
         Device_.freeCommandBuffers(Handle_, Buffers);
         NpgsCoreTrace("Command buffers freed successfully.");
         return vk::Result::eSuccess;
     }
 
-    vk::Result FVulkanCommandPool::FreeBuffers(const vk::ArrayProxy<FVulkanCommandBuffer>& Buffers) const
+    vk::Result FVulkanCommandPool::FreeBuffers(const vk::ArrayProxy<const FVulkanCommandBuffer>& Buffers) const
     {
         std::vector<vk::CommandBuffer> CommandBuffers;
         CommandBuffers.reserve(Buffers.size());
@@ -663,8 +663,8 @@ namespace Npgs
     {
     }
 
-    void FVulkanDescriptorSet::Write(const vk::ArrayProxy<FVulkanBufferView>& BufferViews, vk::DescriptorType Type,
-                                     std::uint32_t BindingPoint, std::uint32_t ArrayElement)
+    void FVulkanDescriptorSet::Write(const vk::ArrayProxy<const FVulkanBufferView>& BufferViews,
+                                     vk::DescriptorType Type, std::uint32_t BindingPoint, std::uint32_t ArrayElement)
     {
         std::vector<vk::BufferView> NativeArray;
         NativeArray.reserve(BufferViews.size());
@@ -686,7 +686,7 @@ namespace Npgs
     }
 
     std::vector<vk::DescriptorSetLayout>
-        FVulkanDescriptorSetLayout::GetNativeTypeArray(const vk::ArrayProxy<FVulkanDescriptorSetLayout>& WrappedTypeArray)
+        FVulkanDescriptorSetLayout::GetNativeTypeArray(const vk::ArrayProxy<const FVulkanDescriptorSetLayout>& WrappedTypeArray)
     {
         std::vector<vk::DescriptorSetLayout> NativeArray(WrappedTypeArray.size());
         for (std::size_t i = 0; i != WrappedTypeArray.size(); ++i)
@@ -722,7 +722,8 @@ namespace Npgs
         Status_      = CreateDescriptorPool(CreateInfo);
     }
 
-    FVulkanDescriptorPool::FVulkanDescriptorPool(vk::Device Device, std::uint32_t MaxSets, const vk::ArrayProxy<vk::DescriptorPoolSize>& PoolSizes,
+    FVulkanDescriptorPool::FVulkanDescriptorPool(vk::Device Device, std::uint32_t MaxSets,
+                                                 const vk::ArrayProxy<const vk::DescriptorPoolSize>& PoolSizes,
                                                  vk::DescriptorPoolCreateFlags Flags)
         : Base(Device)
     {
@@ -730,7 +731,7 @@ namespace Npgs
         Status_      = CreateDescriptorPool(MaxSets, PoolSizes, Flags);
     }
 
-    vk::Result FVulkanDescriptorPool::AllocateSets(const vk::ArrayProxy<vk::DescriptorSetLayout>& Layouts,
+    vk::Result FVulkanDescriptorPool::AllocateSets(const vk::ArrayProxy<const vk::DescriptorSetLayout>& Layouts,
                                                    std::vector<vk::DescriptorSet>& Sets) const
     {
         if (Layouts.size() > Sets.size())
@@ -754,7 +755,7 @@ namespace Npgs
         return vk::Result::eSuccess;
     }
 
-    vk::Result FVulkanDescriptorPool::AllocateSets(const vk::ArrayProxy<vk::DescriptorSetLayout>& Layouts,
+    vk::Result FVulkanDescriptorPool::AllocateSets(const vk::ArrayProxy<const vk::DescriptorSetLayout>& Layouts,
                                                    std::vector<FVulkanDescriptorSet>& Sets) const
     {
         std::vector<vk::DescriptorSet> DescriptorSets(Layouts.size());
@@ -769,7 +770,7 @@ namespace Npgs
         return vk::Result::eSuccess;
     }
 
-    vk::Result FVulkanDescriptorPool::AllocateSets(const vk::ArrayProxy<FVulkanDescriptorSetLayout>& Layouts,
+    vk::Result FVulkanDescriptorPool::AllocateSets(const vk::ArrayProxy<const FVulkanDescriptorSetLayout>& Layouts,
                                                    std::vector<vk::DescriptorSet>& Sets) const
     {
         std::vector<vk::DescriptorSetLayout> DescriptorSetLayouts;
@@ -782,7 +783,7 @@ namespace Npgs
         return AllocateSets(DescriptorSetLayouts, Sets);
     }
 
-    vk::Result FVulkanDescriptorPool::AllocateSets(const vk::ArrayProxy<FVulkanDescriptorSetLayout>& Layouts,
+    vk::Result FVulkanDescriptorPool::AllocateSets(const vk::ArrayProxy<const FVulkanDescriptorSetLayout>& Layouts,
                                                    std::vector<FVulkanDescriptorSet>& Sets) const
     {
         std::vector<vk::DescriptorSetLayout> DescriptorSetLayouts;
@@ -804,7 +805,7 @@ namespace Npgs
         return vk::Result::eSuccess;
     }
 
-    vk::Result FVulkanDescriptorPool::FreeSets(const vk::ArrayProxy<vk::DescriptorSet>& Sets) const
+    vk::Result FVulkanDescriptorPool::FreeSets(const vk::ArrayProxy<const vk::DescriptorSet>& Sets) const
     {
         if (!Sets.empty())
         {
@@ -814,7 +815,7 @@ namespace Npgs
         return vk::Result::eSuccess;
     }
 
-    vk::Result FVulkanDescriptorPool::FreeSets(const vk::ArrayProxy<FVulkanDescriptorSet>& Sets) const
+    vk::Result FVulkanDescriptorPool::FreeSets(const vk::ArrayProxy<const FVulkanDescriptorSet>& Sets) const
     {
         if (!Sets.empty())
         {
@@ -847,7 +848,8 @@ namespace Npgs
         return vk::Result::eSuccess;
     }
 
-    vk::Result FVulkanDescriptorPool::CreateDescriptorPool(std::uint32_t MaxSets, const vk::ArrayProxy<vk::DescriptorPoolSize>& PoolSizes,
+    vk::Result FVulkanDescriptorPool::CreateDescriptorPool(std::uint32_t MaxSets,
+                                                           const vk::ArrayProxy<const vk::DescriptorPoolSize>& PoolSizes,
                                                            vk::DescriptorPoolCreateFlags Flags)
     {
         vk::DescriptorPoolCreateInfo CreateInfo(Flags, MaxSets, PoolSizes);
@@ -1063,7 +1065,7 @@ namespace Npgs
     }
 
     FVulkanPipelineCache::FVulkanPipelineCache(vk::Device Device, vk::PipelineCacheCreateFlags Flags,
-                                               const vk::ArrayProxy<std::byte>& InitialData)
+                                               const vk::ArrayProxyNoTemporaries<const std::byte>& InitialData)
         : Base(Device)
     {
         ReleaseInfo_ = "Pipeline cache destroyed successfully.";
@@ -1083,12 +1085,10 @@ namespace Npgs
         return CreatePipelineCache(CreateInfo);
     }
 
-    vk::Result FVulkanPipelineCache::CreatePipelineCache(vk::PipelineCacheCreateFlags Flags, const vk::ArrayProxy<std::byte>& InitialData)
+    vk::Result FVulkanPipelineCache::CreatePipelineCache(vk::PipelineCacheCreateFlags Flags,
+                                                         const vk::ArrayProxyNoTemporaries<const std::byte>& InitialData)
     {
-        vk::PipelineCacheCreateInfo CreateInfo = vk::PipelineCacheCreateInfo()
-            .setFlags(Flags)
-            .setInitialData<std::byte>(InitialData);
-
+        vk::PipelineCacheCreateInfo CreateInfo(Flags, InitialData);
         return CreatePipelineCache(CreateInfo);
     }
 
@@ -1248,7 +1248,7 @@ namespace Npgs
     }
 
     void FVulkanRenderPass::CommandBegin(const FVulkanCommandBuffer& CommandBuffer, const FVulkanFramebuffer& Framebuffer,
-                                         const vk::Rect2D& RenderArea, const vk::ArrayProxy<vk::ClearValue>& ClearValues,
+                                         const vk::Rect2D& RenderArea, const vk::ArrayProxy<const vk::ClearValue>& ClearValues,
                                          const vk::SubpassContents& SubpassContents) const
     {
         vk::RenderPassBeginInfo RenderPassBeginInfo(Handle_, *Framebuffer, RenderArea, ClearValues);
