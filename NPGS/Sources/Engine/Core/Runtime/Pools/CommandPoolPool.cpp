@@ -21,4 +21,4 @@ namespace Npgs
 
         AvailableResources_.push_back(std::move(ResourceInfoPtr));
     }
-} // namespace Npgs/
+} // namespace Npgs

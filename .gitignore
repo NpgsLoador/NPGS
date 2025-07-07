@@ -373,6 +373,9 @@ NPGS/Tools/ShaderCompiler/ShaderMeta.json
 NPGS/vcpkg_installed/
 .vcpkg/
 
+# NuGet
+packages/
+
 # Vcpkg manifest mode
 vcpkg-manifest-install.log
 /NPGS/Assets/Textures/CliffSide

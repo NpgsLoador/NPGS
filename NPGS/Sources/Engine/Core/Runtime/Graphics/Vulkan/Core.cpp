@@ -433,8 +433,8 @@ namespace Npgs
             }
         }
 
-        SurfaceFormats.emplace_back(vk::Format::eR8G8B8A8Srgb, vk::ColorSpaceKHR::eSrgbNonlinear);
         SurfaceFormats.emplace_back(vk::Format::eB8G8R8A8Srgb, vk::ColorSpaceKHR::eSrgbNonlinear);
+        SurfaceFormats.emplace_back(vk::Format::eR8G8B8A8Srgb, vk::ColorSpaceKHR::eSrgbNonlinear);
 
         if (SwapchainCreateInfo_.imageFormat == vk::Format::eUndefined)
         {
@@ -1107,8 +1107,7 @@ namespace Npgs
 
         if (HdrMetadata_.maxLuminance != 0.0f)
         {
-            vkSetHdrMetadataEXT(Device_, 1, reinterpret_cast<const VkSwapchainKHR*>(&Swapchain_),
-                                reinterpret_cast<const VkHdrMetadataEXT*>(&HdrMetadata_));
+            Device_.setHdrMetadataEXT(Swapchain_, HdrMetadata_);
         }
 
         try

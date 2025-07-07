@@ -1,6 +1,3 @@
-#include "StellarSystem.h"
-
-#include "Engine/Core/Base/Assert.h"
 #include "Engine/Core/Base/Base.h"
 
 namespace Npgs::Astro

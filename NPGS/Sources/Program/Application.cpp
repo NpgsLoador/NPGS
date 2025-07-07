@@ -18,6 +18,11 @@
 #include <stb_image.h>
 #include <vulkan/vulkan.hpp>
 #include <Windows.h>
+#include <winrt/Windows.Devices.Display.h>
+#include <winrt/Windows.Devices.Enumeration.h>
+#include <winrt/Windows.Foundation.h>
+#include <winrt/Windows.Foundation.Collections.h>
+#include <winrt/Windows.Graphics.Display.h>
 
 #include "Engine/Core/Base/Config/EngineConfig.h"
 #include "Engine/Core/Math/NumericConstants.h"
@@ -32,6 +37,56 @@
 
 namespace Npgs
 {
+    namespace
+    {
+        struct FLuminancePack
+        {
+            float MaxAverageFullFrameLuminance{};
+            float MaxLuminance{};
+            float MinLuminance{};
+        };
+
+        winrt::fire_and_forget GetLuminanceAsync(std::promise<FLuminancePack>& Promise) // TODO: select monitor
+        {
+            winrt::hstring PropertyName = TEXT("System.Devices.DeviceInstanceId");
+
+            auto DeviceInformations = co_await winrt::Windows::Devices::Enumeration::DeviceInformation::FindAllAsync(
+                winrt::Windows::Devices::Display::DisplayMonitor::GetDeviceSelector(),
+                winrt::single_threaded_vector<winrt::hstring>({ PropertyName }));
+
+            for (const auto& DeviceInformation : DeviceInformations)
+            {
+                if (DeviceInformation.Kind() != winrt::Windows::Devices::Enumeration::DeviceInformationKind::DeviceInterface)
+                {
+                    continue;
+                }
+
+                auto DisplayMonitor = co_await winrt::Windows::Devices::Display::DisplayMonitor::FromIdAsync(
+                    winrt::unbox_value<winrt::hstring>(DeviceInformation.Properties().Lookup(PropertyName)));
+
+                FLuminancePack LuminancePack;
+                LuminancePack.MaxAverageFullFrameLuminance = DisplayMonitor.MaxAverageFullFrameLuminanceInNits();
+                LuminancePack.MaxLuminance = DisplayMonitor.MaxLuminanceInNits();
+                LuminancePack.MinLuminance = DisplayMonitor.MinLuminanceInNits();
+
+                Promise.set_value(LuminancePack);
+                co_return;
+            }
+
+            co_return;
+        }
+
+        FLuminancePack GetLuminanceSync()
+        {
+            winrt::init_apartment();
+            std::promise<FLuminancePack> Promise;
+            std::future<FLuminancePack> Future = Promise.get_future();
+
+            GetLuminanceAsync(Promise);
+            return Future.get();
+        }
+    }
+
     FApplication::FApplication(const vk::Extent2D& WindowSize, const std::string& WindowTitle,
                                bool bEnableVSync, bool bEnableFullscreen, bool bEnableHdr)
         : VulkanContext_(EngineCoreServices->GetVulkanContext())
@@ -767,11 +822,11 @@ namespace Npgs
                                                 *CurrentBuffer,
                                                 *Semaphores_ImageAvailable[CurrentSemaphore],
                                                 vk::PipelineStageFlagBits2::eBlit,
-                                                *Semaphores_RenderFinished[CurrentSemaphore],
+                                                *Semaphores_RenderFinished[ImageIndex],
                                                 vk::PipelineStageFlagBits2::eBottomOfPipe,
                                                 *InFlightFences[CurrentFrame], true);
             
-            VulkanContext_->PresentImage(*Semaphores_RenderFinished[CurrentSemaphore]);
+            VulkanContext_->PresentImage(*Semaphores_RenderFinished[ImageIndex]);
 
             CurrentFrame = (CurrentFrame + 1) % Config::Graphics::kMaxFrameInFlight;
             CurrentSemaphore = (CurrentSemaphore + 1) % SwapchainImageCount;
@@ -1004,7 +1059,7 @@ namespace Npgs
         std::vector<std::string> PbrSceneMergeShaderFiles({ "PbrSceneMerge.comp.spv" });
         std::vector<std::string> PbrSceneShaderFiles({ "PbrScene.vert.spv", "PbrScene.frag.spv" });
         std::vector<std::string> LampShaderFiles({ "PbrScene.vert.spv", "PbrScene_Lamp.frag.spv" });
-        std::vector<std::string> DepthMapShaderFiles({ "DepthMap.vert.spv", "DepthMap.frag.spv" });
+        std::vector<std::string> DepthMapShaderFiles({ "DepthMap.vert.spv" });
         std::vector<std::string> TerrainShaderFiles({ "Terrain.vert.spv", "Terrain.tesc.spv", "Terrain.tese.spv", "Terrain.frag.spv" });
         std::vector<std::string> SkyboxShaderFiles({ "Skybox.vert.spv", "Skybox.frag.spv" });
         std::vector<std::string> PostShaderFiles({ "PostProcess.vert.spv", "PostProcess.frag.spv" });
@@ -1592,11 +1647,11 @@ namespace Npgs
         DepthMapPipelineCreateInfoPack.GraphicsPipelineCreateInfo.setPNext(&DepthMapRenderingCreateInfo);
         DepthMapPipelineCreateInfoPack.RasterizationStateCreateInfo = vk::PipelineRasterizationStateCreateInfo();
         DepthMapPipelineCreateInfoPack.MultisampleStateCreateInfo   = vk::PipelineMultisampleStateCreateInfo();
+        DepthMapPipelineCreateInfoPack.ColorBlendAttachmentStates.clear();
 
         PipelineManager->CreateGraphicsPipeline("DepthMapPipeline", "DepthMapShader", DepthMapPipelineCreateInfoPack);
 
-        vk::ComputePipelineCreateInfo PbrMergePipelineCreateInfo;
-        PbrMergePipelineCreateInfo.setFlags(vk::PipelineCreateFlagBits::eDescriptorBufferEXT);
+        vk::ComputePipelineCreateInfo PbrMergePipelineCreateInfo(vk::PipelineCreateFlagBits::eDescriptorBufferEXT);
         PipelineManager->CreateComputePipeline("PbrSceneMergePipeline", "PbrSceneMergeShader", &PbrMergePipelineCreateInfo);
     }
 
@@ -1618,7 +1673,15 @@ namespace Npgs
 
         glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
 
-        Window_ = glfwCreateWindow(WindowSize_.width, WindowSize_.height, WindowTitle_.c_str(), nullptr, nullptr);
+        GLFWmonitor* PrimaryMonitor = bEnableFullscreen_ ? glfwGetPrimaryMonitor() : nullptr;
+        if (PrimaryMonitor != nullptr)
+        {
+            const GLFWvidmode* Mode = glfwGetVideoMode(PrimaryMonitor);
+            WindowSize_.width       = Mode->width;
+            WindowSize_.height      = Mode->height;
+        }
+
+        Window_ = glfwCreateWindow(WindowSize_.width, WindowSize_.height, WindowTitle_.c_str(), PrimaryMonitor, nullptr);
         if (Window_ == nullptr)
         {
             NpgsCoreError("Failed to create GLFW window.");
@@ -1661,19 +1724,22 @@ namespace Npgs
         }
         VulkanContext_->SetSurface(Surface);
 
-        if (bEnableHdr_)
-        {
-            VulkanContext_->SetHdrMetadata(GetHdrMetadata());
-        }
-
         // TODO config physical device select
-        if (VulkanContext_->CreateDevice(0) != vk::Result::eSuccess ||
-            VulkanContext_->CreateSwapchain(WindowSize_, bEnableVSync_, bEnableHdr_) != vk::Result::eSuccess)
+        if (VulkanContext_->CreateDevice(0) != vk::Result::eSuccess)
         {
             NpgsCoreError("Failed to create Vulkan device.");
             glfwDestroyWindow(Window_);
             glfwTerminate();
             return false;
+        }
+
+        VulkanContext_->CreateSwapchain(WindowSize_, bEnableVSync_, bEnableHdr_);
+
+        if (bEnableHdr_)
+        {
+            // Create temporary swapchain to query HDR support
+            VulkanContext_->SetHdrMetadata(GetHdrMetadata());
+            VulkanContext_->RecreateSwapchain();
         }
 
         FEngineServices::GetInstance()->InitializeResourceServices();
@@ -1756,12 +1822,13 @@ namespace Npgs
             return {};
         }
 
-        HMONITOR       Monitor      = MonitorFromWindow(glfwGetWin32Window(Window_), MONITOR_DEFAULTTOPRIMARY);
-        IDXGIAdapter1* Adapter1     = nullptr;
-        IDXGIOutput*   Output       = nullptr;
-        IDXGIOutput6*  Output6      = nullptr;
-        UINT           AdapterIndex = 0;
-        bool           bFound       = false;
+        FLuminancePack LuminancePack = GetLuminanceSync();
+        HMONITOR       Monitor       = MonitorFromWindow(glfwGetWin32Window(Window_), MONITOR_DEFAULTTOPRIMARY);
+        IDXGIAdapter1* Adapter1      = nullptr;
+        IDXGIOutput*   Output        = nullptr;
+        IDXGIOutput6*  Output6       = nullptr;
+        UINT           AdapterIndex  = 0;
+        bool           bFound        = false;
 
         while (Factory6->EnumAdapters1(AdapterIndex++, &Adapter1) != DXGI_ERROR_NOT_FOUND)
         {
@@ -1800,10 +1867,10 @@ namespace Npgs
                                .setDisplayPrimaryGreen({ Desc1.GreenPrimary[0], Desc1.GreenPrimary[1] })
                                .setDisplayPrimaryBlue({ Desc1.BluePrimary[0], Desc1.BluePrimary[1] })
                                .setWhitePoint({ Desc1.WhitePoint[0], Desc1.WhitePoint[1] })
-                               .setMaxLuminance(Desc1.MaxLuminance)
-                               .setMinLuminance(Desc1.MinLuminance)
-                               .setMaxContentLightLevel(Desc1.MaxLuminance)
-                               .setMaxFrameAverageLightLevel(Desc1.MaxFullFrameLuminance);
+                               .setMaxLuminance(LuminancePack.MaxLuminance)
+                               .setMinLuminance(LuminancePack.MinLuminance)
+                               .setMaxContentLightLevel(10000.0f)
+                               .setMaxFrameAverageLightLevel(LuminancePack.MaxAverageFullFrameLuminance);
                 }
 
                 Output6->Release();

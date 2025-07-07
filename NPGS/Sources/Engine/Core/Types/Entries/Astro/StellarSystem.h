@@ -171,6 +171,6 @@ namespace Npgs::Astro
         std::vector<std::unique_ptr<Astro::AAsteroidCluster>> AsteroidClusters_;
         std::vector<std::unique_ptr<FOrbit>>                  Orbits_;
     };
-}
+} // namespace Npgs::Astro
 
 #include "StellarSystem.inl"

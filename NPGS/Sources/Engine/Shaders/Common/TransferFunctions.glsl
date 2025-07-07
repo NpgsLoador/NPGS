@@ -15,7 +15,7 @@ float PqEotf(float Vx)
     const float kCx2 = 2413.0 / 4096.0 * 32.0;
     const float kCx3 = 2392.0 / 4096.0 * 32.0;
 
-    Vx = pow(Vx, 1 / kMx2);
+    Vx = pow(Vx, 1.0 / kMx2);
 
     if (Vx <= kCx1)
     {
@@ -40,7 +40,7 @@ float InversePqEotf(float Vx)
 
     Vx = pow(Vx, kMx1);
 
-    return pow((kCx1 + kCx2 * Vx) / (1 + kCx3 * Vx), kMx2);
+    return pow((kCx1 + kCx2 * Vx) / (1 + kCx3 * Vx), 1.0 / kMx2);
 }
 
 vec3 InversePqEotf(vec3 Color)

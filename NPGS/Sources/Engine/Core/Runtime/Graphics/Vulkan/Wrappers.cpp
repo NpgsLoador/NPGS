@@ -9,6 +9,7 @@
 #include "Engine/Core/Base/Assert.h"
 #include "Engine/Core/Base/Base.h"
 #include "Engine/Utils/Logger.h"
+#include "Engine/Utils/Utils.h"
 #include "Engine/Utils/VulkanCheck.h"
 
 namespace Npgs

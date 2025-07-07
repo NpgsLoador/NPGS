@@ -276,13 +276,13 @@ namespace Npgs
     NPGS_INLINE FCommandPoolPool::FPoolGuard
     FVulkanContext::AcquireCommandPool(EQueueType QueueType, vk::CommandPoolCreateFlags Flags)
     {
-        return std::move(CommandPoolPools_.at(VulkanCore_->GetQueueFamilyIndex(QueueType))->AcquirePool(Flags));
+        return CommandPoolPools_.at(VulkanCore_->GetQueueFamilyIndex(QueueType))->AcquirePool(Flags);
     }
 
     NPGS_INLINE FStagingBufferPool::FBufferGuard
     FVulkanContext::AcquireStagingBuffer(std::size_t Size, FStagingBufferPool::EPoolUsage Usage)
     {
-        return std::move(StagingBufferPools_[std::to_underlying(Usage)]->AcquireBuffer(Size));
+        return StagingBufferPools_[std::to_underlying(Usage)]->AcquireBuffer(Size);
     }
 
     // NPGS_INLINE const vk::FormatProperties& FVulkanContext::GetFormatProperties(vk::Format Format) const

@@ -1,6 +1,5 @@
 #pragma once
 
-#include <array>
 #include <memory>
 
 #include <vma/vk_mem_alloc.h>

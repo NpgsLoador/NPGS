@@ -4,5 +4,5 @@
 
 namespace Config::Graphics
 {
-    inline constexpr std::uint32_t kMaxFrameInFlight = 2;
+    constexpr std::uint32_t kMaxFrameInFlight = 2;
 } // namespace Config::Graphics

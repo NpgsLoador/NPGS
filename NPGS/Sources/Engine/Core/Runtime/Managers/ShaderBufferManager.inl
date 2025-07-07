@@ -1,6 +1,5 @@
 #include <utility>
 
-#include "Engine/Core/Base/Base.h"
 #include "Engine/Core/Base/Config/EngineConfig.h"
 #include "Engine/Core/Runtime/Graphics/Vulkan/Context.h"
 #include "Engine/Core/Runtime/Managers/AssetManager.h"

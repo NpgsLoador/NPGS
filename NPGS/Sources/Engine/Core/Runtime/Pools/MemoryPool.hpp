@@ -173,7 +173,7 @@ namespace Npgs
 
             std::size_t NewCapacity = Capacity() + Capacity() / 2;
             MemoryBlocks_.resize(NewCapacity);
-            return std::move(Allocate(std::forward<Types>(Args)...));
+            return Allocate(std::forward<Types>(Args)...);
         }
 
         void Reserve(std::size_t NewCapacity)
