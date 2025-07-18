@@ -126,7 +126,7 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>dxgi.lib;spirv-cross-cored.lib;spirv-cross-cppd.lib;spirv-cross-glsld.lib;spirv-cross-reflectd.lib;vulkan-1.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>dxgi.lib;WindowsApp.lib;spirv-cross-cored.lib;spirv-cross-cppd.lib;spirv-cross-glsld.lib;spirv-cross-reflectd.lib;vulkan-1.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PreBuildEvent>
       <Command>
@@ -158,7 +158,7 @@
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <Profile>true</Profile>
-      <AdditionalDependencies>dxgi.lib;spirv-cross-core.lib;spirv-cross-cpp.lib;spirv-cross-glsl.lib;spirv-cross-reflect.lib;vulkan-1.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>dxgi.lib;WindowsApp.lib;spirv-cross-core.lib;spirv-cross-cpp.lib;spirv-cross-glsl.lib;spirv-cross-reflect.lib;vulkan-1.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PreBuildEvent>
       <Command>

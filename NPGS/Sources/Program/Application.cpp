@@ -1064,12 +1064,6 @@ namespace Npgs
         std::vector<std::string> SkyboxShaderFiles({ "Skybox.vert.spv", "Skybox.frag.spv" });
         std::vector<std::string> PostShaderFiles({ "PostProcess.vert.spv", "PostProcess.frag.spv" });
 
-        VmaAllocationCreateInfo TextureAllocationCreateInfo
-        {
-            .flags = VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT,
-            .usage = VMA_MEMORY_USAGE_GPU_ONLY
-        };
-
         auto* AssetManager = EngineCoreServices->GetAssetManager();
         AssetManager->AddAsset<FShader>("PbrSceneGBufferShader", PbrSceneGBufferShaderFiles, PbrSceneGBufferResourceInfo);
         AssetManager->AddAsset<FShader>("PbrSceneMergeShader", PbrSceneMergeShaderFiles, PbrSceneMergeResourceInfo);
@@ -1139,6 +1133,12 @@ namespace Npgs
 #endif
 
         auto Allocator = VulkanContext_->GetVmaAllocator();
+
+        VmaAllocationCreateInfo TextureAllocationCreateInfo
+        {
+            .flags = VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT,
+            .usage = VMA_MEMORY_USAGE_GPU_ONLY
+        };
 
         AssetManager->AddAsset<FTextureCube>(
             "Skybox", Allocator, TextureAllocationCreateInfo, "Skybox",
