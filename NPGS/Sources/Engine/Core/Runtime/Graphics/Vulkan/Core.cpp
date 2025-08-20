@@ -131,6 +131,7 @@ namespace Npgs
         AddDeviceExtension(vk::EXTHdrMetadataExtensionName);
         AddDeviceExtension(vk::KHRMaintenance6ExtensionName);
         AddDeviceExtension(vk::KHRSwapchainExtensionName);
+        AddDeviceExtension(vk::KHRUnifiedImageLayoutsExtensionName);
 
         VulkanHppCheck(EnumeratePhysicalDevices());
         VulkanHppCheck(DeterminePhysicalDevice(PhysicalDeviceIndex, true, true));
@@ -167,8 +168,9 @@ namespace Npgs
         vk::PhysicalDeviceVulkan13Features Features13;
         vk::PhysicalDeviceVulkan14Features Features14;
 
-        vk::PhysicalDeviceCustomBorderColorFeaturesEXT CustomBorderColorFeatures(vk::True, vk::True);
-        vk::PhysicalDeviceDescriptorBufferFeaturesEXT  DescriptorBufferFeatures(vk::True, vk::True, vk::True, vk::True);
+        vk::PhysicalDeviceCustomBorderColorFeaturesEXT   CustomBorderColorFeatures(vk::True, vk::True);
+        vk::PhysicalDeviceDescriptorBufferFeaturesEXT    DescriptorBufferFeatures(vk::True, vk::True, vk::True, vk::True);
+        vk::PhysicalDeviceUnifiedImageLayoutsFeaturesKHR UnifiedImageLayoutsFeatures(vk::True, vk::True);
 
         Features2.setPNext(&Features11);
         Features11.setPNext(&Features12);
@@ -176,6 +178,7 @@ namespace Npgs
         Features13.setPNext(&Features14);
         Features14.setPNext(&CustomBorderColorFeatures);
         CustomBorderColorFeatures.setPNext(&DescriptorBufferFeatures);
+        DescriptorBufferFeatures.setPNext(&UnifiedImageLayoutsFeatures);
 
         PhysicalDevice_.getFeatures2(&Features2);
 
@@ -908,7 +911,7 @@ namespace Npgs
     vk::Result FVulkanCore::CreateDebugMessenger()
     {
         vk::PFN_DebugUtilsMessengerCallbackEXT DebugCallback =
-        [](vk::DebugUtilsMessageSeverityFlagBitsEXT      MessageSeverity,
+        [](vk::DebugUtilsMessageSeverityFlagBitsEXT   MessageSeverity,
         vk::DebugUtilsMessageTypeFlagsEXT             MessageType,
         const vk::DebugUtilsMessengerCallbackDataEXT* CallbackData,
         void*                                         UserData) -> vk::Bool32

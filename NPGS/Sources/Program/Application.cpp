@@ -410,6 +410,28 @@ namespace Npgs
         VulkanContext_->RegisterAutoRemovedCallbacks(
             FVulkanContext::ECallbackType::kCreateSwapchain, "RecordSecondaryCommands", RecordSecondaryCommands);
 
+        vk::ImageMemoryBarrier2 PrepareBarrier(
+            vk::PipelineStageFlagBits2::eTopOfPipe,
+            vk::AccessFlagBits2::eNone,
+            vk::PipelineStageFlagBits2::eColorAttachmentOutput,
+            vk::AccessFlagBits2::eColorAttachmentWrite,
+            vk::ImageLayout::eUndefined,
+            vk::ImageLayout::eTransferSrcOptimal,
+            vk::QueueFamilyIgnored,
+            vk::QueueFamilyIgnored,
+            *ResolveAttachment_->GetImage(),
+            ColorSubresourceRange
+        );
+
+        vk::DependencyInfo PrepareDependencyInfo = vk::DependencyInfo()
+            .setImageMemoryBarriers(PrepareBarrier);
+
+        auto& PrepareCommandBuffer = CommandBuffers.front();
+        PrepareCommandBuffer.Begin();
+        PrepareCommandBuffer->pipelineBarrier2(PrepareDependencyInfo);
+        PrepareCommandBuffer.End();
+        VulkanContext_->ExecuteCommands(FVulkanContext::EQueueType::kGeneral, PrepareCommandBuffer);
+
         // Main rendering loop
         while (!glfwWindowShouldClose(Window_))
         {
@@ -457,7 +479,7 @@ namespace Npgs
             CurrentBuffer.Begin(vk::CommandBufferUsageFlagBits::eOneTimeSubmit);
 
             vk::ImageMemoryBarrier2 InitSwapchainBarrier(
-                vk::PipelineStageFlagBits2::eTopOfPipe,
+                vk::PipelineStageFlagBits2::eBlit,
                 vk::AccessFlagBits2::eNone,
                 vk::PipelineStageFlagBits2::eBlit,
                 vk::AccessFlagBits2::eTransferWrite,
@@ -535,11 +557,11 @@ namespace Npgs
             );
 
             vk::ImageMemoryBarrier2 InitResolveAttachmentBarrier(
-                vk::PipelineStageFlagBits2::eTopOfPipe,
-                vk::AccessFlagBits2::eNone,
+                vk::PipelineStageFlagBits2::eBlit,
+                vk::AccessFlagBits2::eTransferRead,
                 vk::PipelineStageFlagBits2::eColorAttachmentOutput,
                 vk::AccessFlagBits2::eColorAttachmentWrite,
-                vk::ImageLayout::eUndefined,
+                vk::ImageLayout::eTransferSrcOptimal,
                 vk::ImageLayout::eColorAttachmentOptimal,
                 vk::QueueFamilyIgnored,
                 vk::QueueFamilyIgnored,
@@ -550,7 +572,7 @@ namespace Npgs
             vk::ImageMemoryBarrier2 InitDepthMapAttachmentBarrier(
                 vk::PipelineStageFlagBits2::eTopOfPipe,
                 vk::AccessFlagBits2::eNone,
-                vk::PipelineStageFlagBits2::eLateFragmentTests,
+                vk::PipelineStageFlagBits2::eEarlyFragmentTests,
                 vk::AccessFlagBits2::eDepthStencilAttachmentWrite,
                 vk::ImageLayout::eUndefined,
                 vk::ImageLayout::eDepthAttachmentOptimal,
@@ -710,7 +732,7 @@ namespace Npgs
                 vk::PipelineStageFlagBits2::eComputeShader,
                 vk::AccessFlagBits2::eShaderWrite,
                 vk::PipelineStageFlagBits2::eColorAttachmentOutput,
-                vk::AccessFlagBits2::eColorAttachmentWrite,
+                vk::AccessFlagBits2::eColorAttachmentWrite | vk::AccessFlagBits2::eColorAttachmentRead,
                 vk::ImageLayout::eGeneral,
                 vk::ImageLayout::eColorAttachmentOptimal,
                 vk::QueueFamilyIgnored,

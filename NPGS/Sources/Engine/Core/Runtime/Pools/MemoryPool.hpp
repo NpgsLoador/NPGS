@@ -9,7 +9,7 @@
 #include <utility>
 #include <vector>
 
-#include <concurrentqueue/concurrentqueue.h>
+#include <concurrentqueue/moodycamel/concurrentqueue.h>
 
 namespace Npgs
 {

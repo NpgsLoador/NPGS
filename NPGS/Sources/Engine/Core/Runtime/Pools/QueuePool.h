@@ -9,7 +9,7 @@
 #include <queue>
 #include <unordered_map>
 
-#include <concurrentqueue/concurrentqueue.h>
+#include <concurrentqueue/moodycamel/concurrentqueue.h>
 #include <vulkan/vulkan.hpp>
 
 namespace Npgs
