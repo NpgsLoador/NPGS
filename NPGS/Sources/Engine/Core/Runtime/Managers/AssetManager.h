@@ -31,15 +31,9 @@ namespace Npgs
     public:
         template <typename OriginalType>
         requires std::is_class_v<OriginalType>
-        FTypeErasedDeleter(OriginalType*)
-            : Deleter_([](void* Ptr) -> void { delete static_cast<OriginalType*>(Ptr); })
-        {
-        }
+        FTypeErasedDeleter(OriginalType*);
 
-        void operator()(void* Ptr) const
-        {
-            Deleter_(Ptr);
-        }
+        void operator()(void* Ptr) const;
 
     private:
         std::function<void(void*)> Deleter_;

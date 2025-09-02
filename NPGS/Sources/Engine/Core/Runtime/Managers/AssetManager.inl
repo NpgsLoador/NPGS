@@ -2,6 +2,18 @@
 
 namespace Npgs
 {
+    template<typename OriginalType>
+    requires std::is_class_v<OriginalType>
+    FTypeErasedDeleter::FTypeErasedDeleter(OriginalType*)
+        : Deleter_([](void* Ptr) -> void { delete static_cast<OriginalType*>(Ptr); })
+    {
+    }
+
+    NPGS_INLINE void FTypeErasedDeleter::operator()(void* Ptr) const
+    {
+        Deleter_(Ptr);
+    }
+
     template <typename AssetType>
     requires CAssetCompatible<AssetType>
     void FAssetManager::AddAsset(const std::string& Name, AssetType&& Asset)
