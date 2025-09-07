@@ -2,6 +2,7 @@
 
 #include <cstddef>
 #include <array>
+#include <expected>
 #include <memory>
 #include <random>
 #include <tuple>
@@ -55,6 +56,43 @@ namespace Npgs
     private:
         void GenerateBinaryOrbit(Astro::FStellarSystem& System);
         void GeneratePlanets(std::size_t StarIndex, Astro::FOrbit::FOrbitalDetails& ParentStar, Astro::FStellarSystem& System);
+        std::expected<FPlanetaryDisk, int> GeneratePlanetaryDisk(const Astro::AStar* Star);
+        std::size_t GeneratePlanetCount(const Astro::AStar* Star);
+        std::vector<float> GenerateCoreMassesSol(const FPlanetaryDisk& PlanetaryDisk, std::size_t PlanetCount);
+
+        std::vector<std::unique_ptr<Astro::FOrbit>>
+        GenerateOrbits(Astro::AStar* Star, const std::vector<float>& CoreMassesSol,
+                       const FPlanetaryDisk& PlanetaryDisk, std::size_t PlanetCount);
+
+        float CalculatePlanetaryDiskAgeAndDetermineProtoplanetTypes(
+            const Astro::AStar* Star, const std::vector<std::unique_ptr<Astro::FOrbit>>& Orbits,
+            std::size_t PlanetCount, std::vector<float>& CoreMassesSol,
+            std::vector<std::unique_ptr<Astro::APlanet>>& Planets);
+
+        void EraseUnstablePlanets(Astro::FStellarSystem& System, std::size_t StarIndex, float BinarySemiMajorAxis,
+                                  std::size_t PlanetCount, std::vector<float>& CoreMassesSol, 
+                                  std::vector<std::unique_ptr<Astro::FOrbit>>& Orbits,
+                                  std::vector<std::unique_ptr<Astro::APlanet>>& Planets);
+
+        void EraseLimitedPlanets(float Limit, std::size_t& PlanetCount,
+                                 std::vector<float>& CoreMassesSol, std::vector<float>& NewCoreMassesSol,
+                                 std::vector<std::unique_ptr<Astro::FOrbit>>& Orbits,
+                                 std::vector<std::unique_ptr<Astro::APlanet>>& Planets);
+
+        std::pair<float, float> CalculateHabitableZone(Astro::FStellarSystem& System, std::size_t StarIndex, float BinarySemiMajorAxis);
+        float CalculateFrostLine(Astro::FStellarSystem& System, std::size_t StarIndex, float StarInitialMassSol, float BinarySemiMajorAxis);
+        
+        void MigratePlanets(const Astro::AStar* Star, const FPlanetaryDisk& PlanetaryDisk,
+                            std::size_t PlanetCount, float MigratedOriginSemiMajorAxisAu,
+                            std::vector<float>& CoreMassesSol, std::vector<float>& NewCoreMassesSol,
+                            std::vector<std::unique_ptr<Astro::FOrbit>>& Orbits,
+                            std::vector<std::unique_ptr<Astro::APlanet>>& Planets);
+
+        void DevourPlanets(const Astro::AStar* Star, std::size_t PlanetCount,
+                           std::vector<float>& CoreMassesSol, std::vector<float>& NewCoreMassesSol,
+                           std::vector<std::unique_ptr<Astro::FOrbit>>& Orbits,
+                           std::vector<std::unique_ptr<Astro::APlanet>>& Planets);
+        
         void GenerateOrbitElements(Astro::FOrbit& Orbit);
 
         std::size_t JudgeLargePlanets(std::size_t StarIndex, const std::vector<std::unique_ptr<Astro::AStar>>& StarData,
@@ -84,6 +122,10 @@ namespace Npgs
         void GenerateTrojan(const Astro::AStar* Star, float FrostLineAu, Astro::FOrbit* Orbit,
                             Astro::FOrbit::FOrbitalDetails& ParentPlanet,
                             std::vector<std::unique_ptr<Astro::AAsteroidCluster>>& AsteroidClusters);
+
+        void GenerateKuiperBelt(Astro::AStar* Star, float FrostLineAu, const FPlanetaryDisk& PlanetaryDisk,
+                                std::vector<std::unique_ptr<Astro::FOrbit>>& Orbits,
+                                std::vector<std::unique_ptr<Astro::AAsteroidCluster>>& AsteroidClusters);
 
         void GenerateCivilization(const Astro::AStar* Star, float PoyntingVector, const std::pair<float, float>& HabitableZoneAu,
                                   const Astro::FOrbit* Orbit, Astro::APlanet* Planet);
