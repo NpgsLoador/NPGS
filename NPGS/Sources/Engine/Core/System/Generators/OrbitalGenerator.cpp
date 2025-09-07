@@ -20,7 +20,7 @@
 
 #define DEBUG_OUTPUT // Temp
 // For short function call
-#define CalculatePlanetMassByIndex(Index) CalculatePlanetMass(kSolarMass * CoreMassesSol[Index], kSolarMass * NewCoreMassesSol[Index], Planets[Index]->IsMigrated() ? MigratedOriginSemiMajorAxisAu : Orbits[Index]->GetSemiMajorAxis() / kAuToMeter, PlanetaryDisk, Star, Planets[Index].get())
+// #define CalculatePlanetMassByIndex(Index) CalculatePlanetMass(kSolarMass * CoreMassesSol[Index], kSolarMass * NewCoreMassesSol[Index], Planets[Index]->IsMigrated() ? MigratedOriginSemiMajorAxisAu : Orbits[Index]->GetSemiMajorAxis() / kAuToMeter, PlanetaryDisk, Star, Planets[Index].get())
 
 namespace Npgs
 {
@@ -944,6 +944,17 @@ namespace Npgs
             {
                 Planets[i]->SetAge(DiskAge);
             }
+
+            auto CalculatePlanetMassByIndex = [&, this](std::size_t Index) -> float
+            {
+                return CalculatePlanetMass(
+                    kSolarMass * CoreMassesSol[Index],
+                    kSolarMass * NewCoreMassesSol[Index],
+                    Planets[Index]->IsMigrated()
+                    ? MigratedOriginSemiMajorAxisAu
+                    : Orbits[Index]->GetSemiMajorAxis() / kAuToMeter,
+                    PlanetaryDisk, Star, Planets[Index].get());
+            };
 
             for (std::size_t i = 0; i < PlanetCount; ++i)
             {
@@ -2595,5 +2606,3 @@ namespace Npgs
         }
     }
 } // namespace Npgs
-
-#undef CalculatePlanetMassByIndex
