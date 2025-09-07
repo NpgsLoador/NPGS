@@ -18,7 +18,8 @@
 #include "Engine/Core/Types/Properties/StellarClass.h"
 #include "Engine/Utils/Utils.h"
 
-#define DEBUG_OUTPUT
+#define DEBUG_OUTPUT // Temp
+// For short function call
 #define CalculatePlanetMassByIndex(Index) CalculatePlanetMass(kSolarMass * CoreMassesSol[Index], kSolarMass * NewCoreMassesSol[Index], Planets[Index]->IsMigrated() ? MigratedOriginSemiMajorAxisAu : Orbits[Index]->GetSemiMajorAxis() / kAuToMeter, PlanetaryDisk, Star, Planets[Index].get())
 
 namespace Npgs
@@ -2594,3 +2595,5 @@ namespace Npgs
         }
     }
 } // namespace Npgs
+
+#undef CalculatePlanetMassByIndex
