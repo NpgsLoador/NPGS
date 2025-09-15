@@ -61,6 +61,15 @@
 #endif
 #endif
 
+#if _MSVC_LANG >= 202302L
+#include <stdatomic.h>
+#endif
+
+#if _MSVC_LANG >= 202602L
+#include <stdbit.h>
+#include <stdckdint.h>
+#endif
+
 // C++
 #include <algorithm>
 #include <bitset>
@@ -150,7 +159,7 @@
 #include <version>
 #endif
 
-#if _MSVC_LANG > 202002L
+#if _MSVC_LANG >= 202302L
 #include <expected>
 #if __has_include(<flat_map>)
 #include <flat_map>
@@ -159,21 +168,21 @@
 #include <flat_set>
 #endif
 #include <generator>
+#include <mdspan>
 #include <print>
 #include <spanstream>
 #include <stacktrace>
-#include <stdatomic.h>
 #include <stdfloat>
 #endif
 
-#if _MSVC_LANG > 202302L
-#if __has_include(<text_encoding>)
+#if _MSVC_LANG >= 202602L
+#include <contracts>
+#include <debugging>
+#include <hazard_pointer>
+#include <hive>
+#include <inplace_vector>
+#include <linalg>
+#include <rcu>
+#include <simd>
 #include <text_encoding>
-#endif
-#if __has_include(<stdbit.h>)
-#include <stdbit.h>
-#endif
-#if __has_include(<stdckdint.h>)
-#include <stdckdint.h>
-#endif
 #endif

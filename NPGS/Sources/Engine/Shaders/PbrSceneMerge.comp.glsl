@@ -73,7 +73,7 @@ void main()
 	vec3  TexAlbedo    = RgbAlbedoAMetal.rgb;
 	float TexMetallic  = RgbAlbedoAMetal.a;
 
-	vec3 Fx     = vec3(0.04);
+	vec3 Fx = vec3(0.04);
 	Fx = mix(Fx, TexAlbedo, TexMetallic);
 
 	vec3 RadianceSum = vec3(0.0);
@@ -104,7 +104,7 @@ void main()
 	vec3 Diffuse  = vec3(1.0) - Specular;
 	Diffuse      *= 1.0 - TexMetallic;
 
-	float NdotL = max(dot(TexNormal, LightDir), 0.0);
+	float NdotL  = max(dot(TexNormal, LightDir), 0.0);
 	RadianceSum += (Diffuse * TexAlbedo / kPi + CookTorranceSpec) * Radiance * NdotL;
 
 	float Shadow = texelFetch(iRShadowGbaNull, TexelCoord, 0).r;
