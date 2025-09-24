@@ -1,3 +1,4 @@
+#include "stdafx.h"
 #include "Npgs.h"
 #include "Application.h"
 

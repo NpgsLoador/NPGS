@@ -1,3 +1,4 @@
+#include "stdafx.h"
 #include "Attachment.h"
 
 #include <vulkan/vulkan_to_string.hpp>

@@ -1,3 +1,4 @@
+#include "stdafx.h"
 #include "Wrappers.h"
 
 #include <algorithm>

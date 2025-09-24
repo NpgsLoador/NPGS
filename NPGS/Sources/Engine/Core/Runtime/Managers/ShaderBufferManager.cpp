@@ -1,3 +1,4 @@
+#include "stdafx.h"
 #include "ShaderBufferManager.h"
 
 #include "Engine/Core/Base/Config/EngineConfig.h"

@@ -1,3 +1,4 @@
+#include "stdafx.h"
 #include "CivilizationGenerator.h"
 
 #include <cmath>

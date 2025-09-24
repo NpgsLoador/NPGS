@@ -1,3 +1,4 @@
+#include "stdafx.h"
 #include "StellarClass.h"
 
 #include <cctype>

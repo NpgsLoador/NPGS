@@ -1,3 +1,4 @@
+#include "stdafx.h"
 #include "StagingBufferPool.h"
 
 #include <algorithm>

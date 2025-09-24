@@ -1,3 +1,4 @@
+#include "stdafx.h"
 #include "AssetManager.h"
 
 #include "Engine/Core/Base/Assert.h"

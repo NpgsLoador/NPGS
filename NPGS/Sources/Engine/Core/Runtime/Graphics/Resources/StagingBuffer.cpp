@@ -1,3 +1,4 @@
+#include "stdafx.h"
 #include "StagingBuffer.h"
 
 #include <utility>

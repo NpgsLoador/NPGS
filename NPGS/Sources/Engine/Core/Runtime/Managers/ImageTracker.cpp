@@ -1,3 +1,4 @@
+#include "stdafx.h"
 #include "ImageTracker.h"
 
 namespace Npgs

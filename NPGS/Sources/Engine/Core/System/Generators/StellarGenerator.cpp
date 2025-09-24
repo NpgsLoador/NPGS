@@ -1,3 +1,4 @@
+#include "stdafx.h"
 #include "StellarGenerator.h"
 
 #include <cmath>

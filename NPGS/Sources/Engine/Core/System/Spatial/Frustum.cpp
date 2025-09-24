@@ -1,3 +1,4 @@
+#include "stdafx.h"
 #include "Frustum.h"
 
 namespace Npgs

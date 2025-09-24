@@ -1,3 +1,4 @@
+#include "stdafx.h"
 #include "Civilization.h"
 
 namespace Npgs::Intelli

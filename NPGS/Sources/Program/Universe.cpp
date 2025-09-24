@@ -1,3 +1,4 @@
+#include "stdafx.h"
 #include "Universe.h"
 
 #include <cstdlib>

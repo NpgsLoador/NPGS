@@ -1,3 +1,4 @@
+#include "stdafx.h"
 #include "PipelineManager.h"
 
 #include <functional>

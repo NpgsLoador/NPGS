@@ -1,3 +1,4 @@
+#include "stdafx.h"
 #include "Artifact.h"
 
 namespace Npgs::Intelli

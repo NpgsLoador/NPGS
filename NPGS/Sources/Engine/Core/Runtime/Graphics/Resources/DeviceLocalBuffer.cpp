@@ -1,3 +1,4 @@
+#include "stdafx.h"
 #include "DeviceLocalBuffer.h"
 
 #include <cstddef>

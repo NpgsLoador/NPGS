@@ -1,3 +1,4 @@
+#include "stdafx.h"
 #include "TangentSpaceTools.h"
 
 #include <cmath>

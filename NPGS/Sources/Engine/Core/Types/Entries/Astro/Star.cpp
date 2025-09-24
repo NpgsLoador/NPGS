@@ -1,3 +1,4 @@
+#include "stdafx.h"
 #include "Star.h"
 
 namespace Npgs::Astro

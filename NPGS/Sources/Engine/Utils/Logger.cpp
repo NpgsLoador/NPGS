@@ -1,3 +1,4 @@
+#include "stdafx.h"
 #include "Logger.h"
 
 #include <spdlog/sinks/basic_file_sink.h>

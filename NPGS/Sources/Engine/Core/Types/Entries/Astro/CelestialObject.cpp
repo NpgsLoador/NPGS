@@ -1,3 +1,4 @@
+#include "stdafx.h"
 #include "CelestialObject.h"
 
 namespace Npgs::Astro
