@@ -11,7 +11,12 @@ namespace Npgs
     {
         using FReturnType = std::invoke_result_t<Func, Types...>;
         auto Task = std::make_shared<std::packaged_task<FReturnType()>>(
-            std::bind(std::forward<Func>(Pred), std::forward<Types>(Args)...));
+        [Pred = std::forward<Func>(Pred), ...Args = std::forward<Types>(Args)]() mutable
+        {
+            return std::invoke(std::move(Pred), std::move(Args)...);
+        });
+
+
         std::future<FReturnType> Future = Task->get_future();
         {
             std::unique_lock<std::mutex> Lock(Mutex_);
