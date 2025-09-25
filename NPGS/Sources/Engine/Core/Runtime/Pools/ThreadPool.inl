@@ -1,3 +1,7 @@
+#include <memory>
+#include <type_traits>
+#include <utility>
+
 #include "Engine/Core/Base/Base.h"
 
 namespace Npgs
