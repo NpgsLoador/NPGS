@@ -4,6 +4,10 @@
 #include <cstdint>
 #include <cstdlib>
 #include <algorithm>
+#include <condition_variable>
+#include <functional>
+#include <mutex>
+#include <queue>
 
 #include <Windows.h>
 #include "Engine/Core/Base/Base.h"
@@ -28,9 +32,8 @@ namespace Npgs
                     ++CoreCount;
                 }
 
-                Length -= BufferPtr->Size;
-                BufferPtr = reinterpret_cast<PSYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX>(
-                    reinterpret_cast<std::uint8_t*>(BufferPtr) + BufferPtr->Size);
+                Length   -= BufferPtr->Size;
+                BufferPtr = reinterpret_cast<PSYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX>(reinterpret_cast<std::uint8_t*>(BufferPtr) + BufferPtr->Size);
             }
 
             return CoreCount;
@@ -44,23 +47,36 @@ namespace Npgs
         , PhysicalCoreCount_(GetPhysicalCoreCount())
         , bEnableHyperThread_(bEnableHyperThread)
     {
+        Threads_.reserve(MaxThreadCount_);
+        Workers_.reserve(MaxThreadCount_);
+
         for (std::size_t i = 0; i != MaxThreadCount_; ++i)
         {
-            Threads_.emplace_back([this]() -> void
+            Workers_.emplace_back(std::make_unique<FWorker>());
+        }
+
+        for (std::size_t i = 0; i != MaxThreadCount_; ++i)
+        {
+            Threads_.emplace_back([this, i]() -> void
             {
+                FWorker& Worker = *Workers_[i];
                 while (true)
                 {
                     std::function<void()> Task;
                     {
-                        std::unique_lock<std::mutex> Lock(Mutex_);
-                        Condition_.wait(Lock, [this]() -> bool { return !Tasks_.empty() || bTerminate_; });
-                        if (bTerminate_ && Tasks_.empty())
+                        std::unique_lock<std::mutex> Lock(Worker.Mutex);
+                        Worker.Condition.wait(Lock, [this, &Worker]() -> bool
+                        {
+                            return !Worker.Tasks.empty() || bTerminate_.load();
+                        });
+
+                        if (bTerminate_.load() && Worker.Tasks.empty())
                         {
                             return;
                         }
 
-                        Task = std::move(Tasks_.front());
-                        Tasks_.pop();
+                        Task = std::move(Worker.Tasks.front());
+                        Worker.Tasks.pop();
                     }
 
                     Task();
@@ -76,23 +92,11 @@ namespace Npgs
 
     FThreadPool::~FThreadPool()
     {
-        Terminate();
-    }
-
-    void FThreadPool::Terminate()
-    {
+        bTerminate_.store(true);
+        for (auto& Worker : Workers_)
         {
-            std::unique_lock<std::mutex> Lock(Mutex_);
-            bTerminate_ = true;
+            Worker->Condition.notify_one();
         }
-        Condition_.notify_all();
-        // for (auto& Thread : Threads_)
-        // {
-        //     if (Thread.joinable())
-        //     {
-        //         Thread.join();
-        //     }
-        // }
     }
 
     void FThreadPool::SetThreadAffinity(std::jthread& Thread, std::size_t CoreId) const

@@ -1,4 +1,4 @@
-#include <memory>
+#include <mutex>
 #include <type_traits>
 #include <utility>
 
@@ -10,25 +10,33 @@ namespace Npgs
     auto FThreadPool::Submit(Func&& Pred, Types&&... Args)
     {
         using FReturnType = std::invoke_result_t<Func, Types...>;
+
+        if (Threads_.empty())
+        {
+            return std::future<FReturnType>();
+        }
+
         auto Task = std::make_shared<std::packaged_task<FReturnType()>>(
         [Pred = std::forward<Func>(Pred), ...Args = std::forward<Types>(Args)]() mutable -> FReturnType
         {
             return std::invoke(std::move(Pred), std::move(Args)...);
         });
-
-
         std::future<FReturnType> Future = Task->get_future();
+
+        std::size_t ThreadIndex = NextThreadIndex_++ % MaxThreadCount_;
+        auto& TargetWorker = Workers_[ThreadIndex];
         {
-            std::unique_lock<std::mutex> Lock(Mutex_);
-            Tasks_.emplace([Task]() -> void { (*Task)(); });
+            std::unique_lock<std::mutex> Lock(TargetWorker->Mutex);
+            TargetWorker->Tasks.emplace([Task]() -> void { (*Task)(); });
         }
-        Condition_.notify_one();
+        TargetWorker->Condition.notify_one();
+
         return Future;
     }
 
     NPGS_INLINE void FThreadPool::SwitchHyperThread()
     {
-        HyperThreadIndex_ = 1 - HyperThreadIndex_;
+        HyperThreadIndex_.store(1 - HyperThreadIndex_.load());
     }
 
     NPGS_INLINE int FThreadPool::GetMaxThreadCount() const
@@ -37,7 +45,8 @@ namespace Npgs
     }
 
     template <typename DataType, typename ResultType>
-    void MakeChunks(int MaxThread, std::vector<DataType>& Data, std::vector<std::vector<DataType>>& DataLists,
+    void MakeChunks(int MaxThread, std::vector<DataType>& Data,
+                    std::vector<std::vector<DataType>>& DataLists,
                     std::vector<std::promise<std::vector<ResultType>>>& Promises,
                     std::vector<std::future<std::vector<ResultType>>>& ChunkFutures)
     {

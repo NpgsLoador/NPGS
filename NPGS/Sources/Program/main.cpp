@@ -40,7 +40,7 @@ int main1() {
     std::cin >> Seed;
 
     try {
-        FUniverse Space(Seed, StarCount, 0, StarCount);
+        FUniverse Space(Seed, StarCount);
         Space.FillUniverse();
         Space.CountStars();
     }
