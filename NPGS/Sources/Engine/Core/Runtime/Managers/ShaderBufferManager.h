@@ -26,21 +26,9 @@ namespace Npgs
         class TUpdater
         {
         public:
-            TUpdater(const FDeviceLocalBuffer& Buffer, vk::DeviceSize Offset, vk::DeviceSize Size)
-                : Buffer_(&Buffer), Offset_(Offset), Size_(Size)
-            {
-            }
-
-            const TUpdater& operator<<(const DataType& Data) const
-            {
-                Submit(Data);
-                return *this;
-            }
-
-            void Submit(const DataType& Data) const
-            {
-                Buffer_->CopyData(0, Offset_, Size_, &Data);
-            }
+            TUpdater(const FDeviceLocalBuffer& Buffer, vk::DeviceSize Offset, vk::DeviceSize Size);
+            const TUpdater& operator<<(const DataType& Data) const;
+            void Submit(const DataType& Data) const;
 
         private:
             const FDeviceLocalBuffer* Buffer_;
@@ -109,10 +97,7 @@ namespace Npgs
 
         struct FSetBindingHash
         {
-            std::size_t operator()(const std::pair<std::uint32_t, std::uint32_t>& SetBinding) const noexcept
-            {
-                return std::hash<std::uint32_t>()(SetBinding.first) ^ std::hash<std::uint32_t>()(SetBinding.second);
-            }
+            std::size_t operator()(const std::pair<std::uint32_t, std::uint32_t>& SetBinding) const noexcept;
         };
 
     public:

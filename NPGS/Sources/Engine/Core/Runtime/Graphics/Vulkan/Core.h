@@ -29,12 +29,7 @@ namespace Npgs
         };
 
     private:
-        struct FQueueFamilyIndicesComplex
-        {
-            std::uint32_t GeneralQueueFamilyIndex{ vk::QueueFamilyIgnored };
-            std::uint32_t ComputeQueueFamilyIndex{ vk::QueueFamilyIgnored };
-            std::uint32_t TransferQueueFamilyIndex{ vk::QueueFamilyIgnored };
-        };
+        struct FQueueFamilyIndicesComplex;
 
     public:
         FVulkanCore();

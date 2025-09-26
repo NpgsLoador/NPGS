@@ -2,6 +2,17 @@
 
 namespace Npgs
 {
+    NPGS_INLINE FStellarGenerator::FBasicProperties::operator Astro::AStar() const
+    {
+        Astro::AStar Star;
+        Star.SetAge(Age);
+        Star.SetFeH(FeH);
+        Star.SetInitialMass(InitialMassSol * kSolarMass);
+        Star.SetSingleton(bIsSingleStar);
+
+        return Star;
+    }
+
     NPGS_INLINE FStellarGenerator&
     FStellarGenerator::SetLogMassSuggestDistribution(std::unique_ptr<Util::TDistribution<>>&& Distribution)
     {

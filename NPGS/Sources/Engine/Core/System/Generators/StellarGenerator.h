@@ -65,16 +65,7 @@ namespace Npgs
             float InitialMassSol{};
             bool  bIsSingleStar{ true };
 
-            explicit operator Astro::AStar() const
-            {
-                Astro::AStar Star;
-                Star.SetAge(Age);
-                Star.SetFeH(FeH);
-                Star.SetInitialMass(InitialMassSol * kSolarMass);
-                Star.SetSingleton(bIsSingleStar);
-
-                return Star;
-            }
+            explicit operator Astro::AStar() const;
         };
 
         struct FGenerationInfo

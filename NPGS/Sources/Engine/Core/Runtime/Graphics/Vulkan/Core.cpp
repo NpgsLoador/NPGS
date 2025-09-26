@@ -11,6 +11,13 @@
 
 namespace Npgs
 {
+    struct FVulkanCore::FQueueFamilyIndicesComplex
+    {
+        std::uint32_t GeneralQueueFamilyIndex{ vk::QueueFamilyIgnored };
+        std::uint32_t ComputeQueueFamilyIndex{ vk::QueueFamilyIgnored };
+        std::uint32_t TransferQueueFamilyIndex{ vk::QueueFamilyIgnored };
+    };
+
     FVulkanCore::FVulkanCore()
     {
         UseLatestApiVersion();

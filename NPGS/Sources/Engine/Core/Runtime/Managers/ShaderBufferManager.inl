@@ -8,6 +8,31 @@
 
 namespace Npgs
 {
+    template <typename DataType>
+    FShaderBufferManager::TUpdater<DataType>::TUpdater(const FDeviceLocalBuffer& Buffer, vk::DeviceSize Offset, vk::DeviceSize Size)
+        : Buffer_(&Buffer), Offset_(Offset), Size_(Size)
+    {
+    }
+
+    template <typename DataType>
+    NPGS_INLINE const FShaderBufferManager::TUpdater<DataType>&
+    FShaderBufferManager::TUpdater<DataType>::operator<<(const DataType& Data) const
+    {
+        Submit(Data);
+        return *this;
+    }
+
+    template <typename DataType>
+    NPGS_INLINE void FShaderBufferManager::TUpdater<DataType>::Submit(const DataType& Data) const
+    {
+        Buffer_->CopyData(0, Offset_, Size_, &Data);
+    }
+
+    NPGS_INLINE std::size_t FShaderBufferManager::FSetBindingHash::operator()(const std::pair<std::uint32_t, std::uint32_t>& SetBinding) const noexcept
+    {
+        return std::hash<std::uint32_t>()(SetBinding.first) ^ std::hash<std::uint32_t>()(SetBinding.second);
+    }
+
     template <typename StructType>
     requires std::is_class_v<StructType>
     void FShaderBufferManager::CreateDataBuffers(const FDataBufferCreateInfo& DataBufferCreateInfo,
