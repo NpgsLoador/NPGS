@@ -1,10 +1,11 @@
 #include "stdafx.h"
-#include "Camera.h"
+#include "Camera.hpp"
 
 #include <cmath>
 #include <algorithm>
-#include "Engine/Core/Base/Assert.h"
-#include "Engine/Utils/Utils.h"
+
+#include "Engine/Core/Base/Assert.hpp"
+#include "Engine/Utils/Utils.hpp"
 
 namespace Npgs
 {

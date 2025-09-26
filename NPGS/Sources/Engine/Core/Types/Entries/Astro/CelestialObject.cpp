@@ -1,5 +1,5 @@
 #include "stdafx.h"
-#include "CelestialObject.h"
+#include "CelestialObject.hpp"
 
 namespace Npgs::Astro
 {

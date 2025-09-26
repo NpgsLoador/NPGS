@@ -1,5 +1,5 @@
 #include "stdafx.h"
-#include "OrbitalGenerator.h"
+#include "OrbitalGenerator.hpp"
 
 #include <cmath>
 #include <cstdlib>
@@ -13,15 +13,13 @@
 #include <boost/multiprecision/cpp_int.hpp>
 #include <glm/glm.hpp>
 
-#include "Engine/Core/Base/Assert.h"
-#include "Engine/Core/Base/Base.h"
-#include "Engine/Core/Math/NumericConstants.h"
-#include "Engine/Core/Types/Properties/StellarClass.h"
-#include "Engine/Utils/Utils.h"
+#include "Engine/Core/Base/Assert.hpp"
+#include "Engine/Core/Base/Base.hpp"
+#include "Engine/Core/Math/NumericConstants.hpp"
+#include "Engine/Core/Types/Properties/StellarClass.hpp"
+#include "Engine/Utils/Utils.hpp"
 
 #define DEBUG_OUTPUT // Temp
-// For short function call
-// #define CalculatePlanetMassByIndex(Index) CalculatePlanetMass(kSolarMass * CoreMassesSol[Index], kSolarMass * NewCoreMassesSol[Index], Planets[Index]->IsMigrated() ? MigratedOriginSemiMajorAxisAu : Orbits[Index]->GetSemiMajorAxis() / kAuToMeter, PlanetaryDisk, Star, Planets[Index].get())
 
 namespace Npgs
 {

@@ -42,4 +42,4 @@
 #define GLM_FORCE_INLINE
 #define NPGS_ENABLE_FILE_LOGGER
 #endif // _RELEASE
-#include "Engine/Utils/Logger.h"
+#include "Engine/Utils/Logger.hpp"

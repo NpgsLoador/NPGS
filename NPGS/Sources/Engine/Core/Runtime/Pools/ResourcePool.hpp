@@ -15,7 +15,7 @@
 #include <utility>
 #include <vector>
 
-#include "Engine/Core/Base/Assert.h"
+#include "Engine/Core/Base/Assert.hpp"
 
 namespace Npgs
 {

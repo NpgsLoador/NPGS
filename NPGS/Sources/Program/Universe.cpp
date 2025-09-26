@@ -1,5 +1,5 @@
 #include "stdafx.h"
-#include "Universe.h"
+#include "Universe.hpp"
 
 #include <cstdlib>
 #include <algorithm>
@@ -13,11 +13,11 @@
 #include <string>
 #include <utility>
 
-#include "Engine/Core/Base/Base.h"
-#include "Engine/Core/Math/NumericConstants.h"
-#include "Engine/Core/System/Generators/OrbitalGenerator.h"
-#include "Engine/Core/System/Services/EngineServices.h"
-#include "Engine/Utils/Logger.h"
+#include "Engine/Core/Base/Base.hpp"
+#include "Engine/Core/Math/NumericConstants.hpp"
+#include "Engine/Core/System/Generators/OrbitalGenerator.hpp"
+#include "Engine/Core/System/Services/EngineServices.hpp"
+#include "Engine/Utils/Logger.hpp"
 
 namespace Npgs
 {

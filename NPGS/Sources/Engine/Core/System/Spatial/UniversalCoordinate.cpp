@@ -1,5 +1,5 @@
 #include "stdafx.h"
-#include "UniversalCoordinate.h"
+#include "UniversalCoordinate.hpp"
 
 namespace Npgs
 {

@@ -1,8 +1,8 @@
 #include "stdafx.h"
-#include "Attachment.h"
+#include "Attachment.hpp"
 
 #include <vulkan/vulkan_to_string.hpp>
-#include "Engine/Utils/Logger.h"
+#include "Engine/Utils/Logger.hpp"
 
 namespace Npgs
 {

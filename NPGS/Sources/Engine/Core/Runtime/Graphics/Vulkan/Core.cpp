@@ -1,13 +1,13 @@
 #include "stdafx.h"
-#include "Core.h"
+#include "Core.hpp"
 
 #include <cstdlib>
 #include <algorithm>
 #include <ranges>
 
 #include "Engine/Core/Runtime/Graphics/Vulkan/ExtFunctionsImpl.h"
-#include "Engine/Utils/VulkanCheck.h"
-#include "Engine/Utils/Utils.h"
+#include "Engine/Utils/VulkanCheck.hpp"
+#include "Engine/Utils/Utils.hpp"
 
 namespace Npgs
 {
@@ -919,10 +919,10 @@ namespace Npgs
     vk::Result FVulkanCore::CreateDebugMessenger()
     {
         vk::PFN_DebugUtilsMessengerCallbackEXT DebugCallback =
-        [](vk::DebugUtilsMessageSeverityFlagBitsEXT   MessageSeverity,
-        vk::DebugUtilsMessageTypeFlagsEXT             MessageType,
-        const vk::DebugUtilsMessengerCallbackDataEXT* CallbackData,
-        void*                                         UserData) -> vk::Bool32
+        [](vk::DebugUtilsMessageSeverityFlagBitsEXT      MessageSeverity,
+           vk::DebugUtilsMessageTypeFlagsEXT             MessageType,
+           const vk::DebugUtilsMessengerCallbackDataEXT* CallbackData,
+           void*                                         UserData) -> vk::Bool32
         {
             std::string Severity;
             if (MessageSeverity & vk::DebugUtilsMessageSeverityFlagBitsEXT::eVerbose) Severity = "VERBOSE";
@@ -930,14 +930,10 @@ namespace Npgs
             if (MessageSeverity & vk::DebugUtilsMessageSeverityFlagBitsEXT::eWarning) Severity = "WARNING";
             if (MessageSeverity & vk::DebugUtilsMessageSeverityFlagBitsEXT::eError)   Severity = "ERROR";
 
-            if (Severity == "VERBOSE")
-                NpgsCoreTrace("Validation layer: {}", CallbackData->pMessage);
-            else if (Severity == "INFO")
-                NpgsCoreInfo("Validation layer: {}", CallbackData->pMessage);
-            else if (Severity == "ERROR")
-                NpgsCoreError("Validation layer: {}", CallbackData->pMessage);
-            else if (Severity == "WARNING")
-                NpgsCoreWarn("Validation layer: {}", CallbackData->pMessage);
+            if      (Severity == "VERBOSE") NpgsCoreTrace("Validation layer: {}", CallbackData->pMessage);
+            else if (Severity == "INFO")    NpgsCoreInfo("Validation layer: {}",  CallbackData->pMessage);
+            else if (Severity == "ERROR")   NpgsCoreError("Validation layer: {}", CallbackData->pMessage);
+            else if (Severity == "WARNING") NpgsCoreWarn("Validation layer: {}",  CallbackData->pMessage);
 
             // if (CallbackData->queueLabelCount > 0)
             // 	NpgsCoreTrace("Queue Labels: {}", CallbackData->queueLabelCount);

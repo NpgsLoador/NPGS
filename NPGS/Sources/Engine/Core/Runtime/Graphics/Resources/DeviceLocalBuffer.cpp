@@ -1,12 +1,12 @@
 #include "stdafx.h"
-#include "DeviceLocalBuffer.h"
+#include "DeviceLocalBuffer.hpp"
 
 #include <cstddef>
 #include <algorithm>
 #include <utility>
 #include <vector>
 
-#include "Engine/Core/Runtime/Pools/StagingBufferPool.h"
+#include "Engine/Core/Runtime/Pools/StagingBufferPool.hpp"
 
 namespace Npgs
 {

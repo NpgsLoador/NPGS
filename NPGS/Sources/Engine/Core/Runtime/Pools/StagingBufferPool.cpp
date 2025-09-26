@@ -1,5 +1,5 @@
 #include "stdafx.h"
-#include "StagingBufferPool.h"
+#include "StagingBufferPool.hpp"
 
 #include <algorithm>
 #include <functional>

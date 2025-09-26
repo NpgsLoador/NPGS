@@ -1,11 +1,11 @@
 #include "stdafx.h"
-#include "QueuePool.h"
+#include "QueuePool.hpp"
 
 #include <stdexcept>
 #include <utility>
 
 #include <vulkan/vulkan_to_string.hpp>
-#include "Engine/Utils/Logger.h"
+#include "Engine/Utils/Logger.hpp"
 
 namespace Npgs
 {

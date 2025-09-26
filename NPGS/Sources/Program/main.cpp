@@ -1,6 +1,6 @@
 #include "stdafx.h"
 #include "Npgs.h"
-#include "Application.h"
+#include "Application.hpp"
 
 using namespace Npgs;
 using namespace Npgs::Util;
@@ -21,7 +21,7 @@ int main()
 
 #define NPGS_ENABLE_CONSOLE_LOGGER
 #include "Npgs.h"
-#include "Universe.h"
+#include "Universe.hpp"
 
 int main1() {
     using namespace Npgs;

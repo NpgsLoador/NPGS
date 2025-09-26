@@ -1,5 +1,5 @@
 #include "stdafx.h"
-#include "Texture.h"
+#include "Texture.hpp"
 
 #include <cmath>
 #include <algorithm>
@@ -16,9 +16,9 @@
 #include <OpenEXR/ImfTiledRgbaFile.h>
 #include <stb_image.h>
 
-#include "Engine/Core/Runtime/Managers/AssetManager.h"
-#include "Engine/Core/System/Services/EngineServices.h"
-#include "Engine/Utils/Logger.h"
+#include "Engine/Core/Runtime/Managers/AssetManager.hpp"
+#include "Engine/Core/System/Services/EngineServices.hpp"
+#include "Engine/Utils/Logger.hpp"
 
 namespace Npgs
 {

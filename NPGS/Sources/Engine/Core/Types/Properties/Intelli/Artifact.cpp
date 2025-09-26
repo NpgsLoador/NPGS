@@ -1,5 +1,5 @@
 #include "stdafx.h"
-#include "Artifact.h"
+#include "Artifact.hpp"
 
 namespace Npgs::Intelli
 {

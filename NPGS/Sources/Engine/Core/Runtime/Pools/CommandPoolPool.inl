@@ -1,12 +1,11 @@
 #include <memory>
 #include <utility>
 
-#include "Engine/Core/Base/Base.h"
-#include "CommandPoolPool.h"
+#include "Engine/Core/Base/Base.hpp"
 
 namespace Npgs
 {
-    inline FCommandPoolPool::FPoolGuard FCommandPoolPool::AcquirePool(vk::CommandPoolCreateFlags Flags)
+    NPGS_INLINE FCommandPoolPool::FPoolGuard FCommandPoolPool::AcquirePool(vk::CommandPoolCreateFlags Flags)
     {
         FCommandPoolCreateInfo CreateInfo{ Flags };
         return AcquireResource(CreateInfo, [](const std::unique_ptr<FCommandPoolInfo>&) -> bool { return true; });

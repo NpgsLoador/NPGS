@@ -1,8 +1,8 @@
 #include "stdafx.h"
-#include "ShaderBufferManager.h"
+#include "ShaderBufferManager.hpp"
 
-#include "Engine/Core/Base/Config/EngineConfig.h"
-#include "Engine/Utils/Logger.h"
+#include "Engine/Core/Base/Config/EngineConfig.hpp"
+#include "Engine/Utils/Logger.hpp"
 
 namespace Npgs
 {

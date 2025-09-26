@@ -1,13 +1,13 @@
 #include "stdafx.h"
-#include "CivilizationGenerator.h"
+#include "CivilizationGenerator.hpp"
 
 #include <cmath>
 #include <algorithm>
 #include <print>
 #include <utility>
 
-#include "Engine/Core/Math/NumericConstants.h"
-#include "Engine/Core/Types/Properties/Intelli/Civilization.h"
+#include "Engine/Core/Math/NumericConstants.hpp"
+#include "Engine/Core/Types/Properties/Intelli/Civilization.hpp"
 
 #define DEBUG_OUTPUT
 

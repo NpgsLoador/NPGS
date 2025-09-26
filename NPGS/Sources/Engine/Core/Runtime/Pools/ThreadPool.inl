@@ -1,11 +1,21 @@
+#include <condition_variable>
+#include <functional>
 #include <mutex>
+#include <queue>
 #include <type_traits>
 #include <utility>
 
-#include "Engine/Core/Base/Base.h"
+#include "Engine/Core/Base/Base.hpp"
 
 namespace Npgs
 {
+    struct FThreadPool::FWorker
+    {
+        std::mutex                        Mutex;
+        std::condition_variable           Condition;
+        std::queue<std::function<void()>> Tasks;
+    };
+
     template <typename Func, typename... Types>
     auto FThreadPool::Submit(Func&& Pred, Types&&... Args)
     {

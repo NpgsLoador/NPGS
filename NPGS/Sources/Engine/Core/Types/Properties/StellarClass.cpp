@@ -1,5 +1,5 @@
 #include "stdafx.h"
-#include "StellarClass.h"
+#include "StellarClass.hpp"
 
 #include <cctype>
 #include <cstdint>
@@ -7,7 +7,7 @@
 #include <sstream>
 #include <utility>
 
-#include "Engine/Core/Base/Assert.h"
+#include "Engine/Core/Base/Assert.hpp"
 
 namespace Npgs::Astro
 {

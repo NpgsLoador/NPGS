@@ -1,5 +1,5 @@
 #include "stdafx.h"
-#include "ImageTracker.h"
+#include "ImageTracker.hpp"
 
 namespace Npgs
 {

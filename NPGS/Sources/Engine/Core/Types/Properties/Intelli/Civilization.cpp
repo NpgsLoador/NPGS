@@ -1,5 +1,5 @@
 #include "stdafx.h"
-#include "Civilization.h"
+#include "Civilization.hpp"
 
 namespace Npgs::Intelli
 {

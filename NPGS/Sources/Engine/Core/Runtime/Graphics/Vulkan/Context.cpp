@@ -1,9 +1,9 @@
 #include "stdafx.h"
-#include "Context.h"
+#include "Context.hpp"
 
 // #include <cstddef>
 #include <vulkan/vulkan_to_string.hpp>
-#include "Engine/Core/Runtime/Graphics/Vulkan/Wrappers.h"
+#include "Engine/Core/Runtime/Graphics/Vulkan/Wrappers.hpp"
 
 namespace Npgs
 {
@@ -184,7 +184,7 @@ namespace Npgs
     vk::SampleCountFlagBits FVulkanContext::GetMaxUsableSampleCount() const
     {
         vk::SampleCountFlags Counts = VulkanCore_->GetPhysicalDeviceProperties().limits.framebufferColorSampleCounts &
-            VulkanCore_->GetPhysicalDeviceProperties().limits.framebufferDepthSampleCounts;
+                                      VulkanCore_->GetPhysicalDeviceProperties().limits.framebufferDepthSampleCounts;
 
         if (Counts & vk::SampleCountFlagBits::e64) return vk::SampleCountFlagBits::e64;
         if (Counts & vk::SampleCountFlagBits::e32) return vk::SampleCountFlagBits::e32;

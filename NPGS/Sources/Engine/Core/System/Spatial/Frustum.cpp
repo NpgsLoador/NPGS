@@ -1,5 +1,5 @@
 #include "stdafx.h"
-#include "Frustum.h"
+#include "Frustum.hpp"
 
 namespace Npgs
 {

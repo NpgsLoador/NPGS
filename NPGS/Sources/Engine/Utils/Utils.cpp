@@ -1,9 +1,10 @@
 #include "stdafx.h"
-#include "Utils.h"
+#include "Utils.hpp"
 
 namespace Npgs
 {
-    namespace Util
-    {
-    } // namespace Util
 } // namespace Npgs
+
+namespace Npgs::Util
+{
+} // namespace Npgs::Util

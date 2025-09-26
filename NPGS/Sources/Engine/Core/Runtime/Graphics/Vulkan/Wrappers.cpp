@@ -1,5 +1,5 @@
 #include "stdafx.h"
-#include "Wrappers.h"
+#include "Wrappers.hpp"
 
 #include <algorithm>
 #include <limits>
@@ -7,11 +7,11 @@
 
 #include <vulkan/vulkan_format_traits.hpp>
 
-#include "Engine/Core/Base/Assert.h"
-#include "Engine/Core/Base/Base.h"
-#include "Engine/Utils/Logger.h"
-#include "Engine/Utils/Utils.h"
-#include "Engine/Utils/VulkanCheck.h"
+#include "Engine/Core/Base/Assert.hpp"
+#include "Engine/Core/Base/Base.hpp"
+#include "Engine/Utils/Logger.hpp"
+#include "Engine/Utils/Utils.hpp"
+#include "Engine/Utils/VulkanCheck.hpp"
 
 namespace Npgs
 {

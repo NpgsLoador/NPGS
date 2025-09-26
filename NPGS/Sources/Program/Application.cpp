@@ -1,5 +1,5 @@
 #include "stdafx.h"
-#include "Application.h"
+#include "Application.hpp"
 
 #include <cmath>
 #include <cstddef>
@@ -25,16 +25,16 @@
 #include <winrt/Windows.Foundation.Collections.h>
 #include <winrt/Windows.Graphics.Display.h>
 
-#include "Engine/Core/Base/Config/EngineConfig.h"
-#include "Engine/Core/Math/NumericConstants.h"
-#include "Engine/Core/Math/TangentSpaceTools.h"
-#include "Engine/Core/Runtime/AssetLoaders/Shader.h"
-#include "Engine/Core/Runtime/AssetLoaders/Texture.h"
-#include "Engine/Core/Runtime/Managers/AssetManager.h"
-#include "Engine/Core/Runtime/Managers/PipelineManager.h"
-#include "Engine/Core/Runtime/Managers/ShaderBufferManager.h"
-#include "Engine/Core/System/Services/EngineServices.h"
-#include "Engine/Utils/Logger.h"
+#include "Engine/Core/Base/Config/EngineConfig.hpp"
+#include "Engine/Core/Math/NumericConstants.hpp"
+#include "Engine/Core/Math/TangentSpaceTools.hpp"
+#include "Engine/Core/Runtime/AssetLoaders/Shader.hpp"
+#include "Engine/Core/Runtime/AssetLoaders/Texture.hpp"
+#include "Engine/Core/Runtime/Managers/AssetManager.hpp"
+#include "Engine/Core/Runtime/Managers/PipelineManager.hpp"
+#include "Engine/Core/Runtime/Managers/ShaderBufferManager.hpp"
+#include "Engine/Core/System/Services/EngineServices.hpp"
+#include "Engine/Utils/Logger.hpp"
 
 namespace Npgs
 {

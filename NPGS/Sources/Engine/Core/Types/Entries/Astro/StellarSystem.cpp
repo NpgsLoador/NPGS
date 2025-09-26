@@ -1,5 +1,5 @@
 #include "stdafx.h"
-#include "StellarSystem.h"
+#include "StellarSystem.hpp"
 
 namespace Npgs::Astro
 {

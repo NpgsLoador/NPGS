@@ -15,8 +15,8 @@
 #include <glm/glm.hpp>
 
 #include "Engine/Core/Runtime/Pools/MemoryPool.hpp"
-#include "Engine/Core/Runtime/Pools/ThreadPool.h"
-#include "Engine/Core/System/Services/EngineServices.h"
+#include "Engine/Core/Runtime/Pools/ThreadPool.hpp"
+#include "Engine/Core/System/Services/EngineServices.hpp"
 
 #ifdef OCTREE_USE_MEMORY_POOL
 #define GetNextNode(Node, i) Node->GetNext(i).Get()

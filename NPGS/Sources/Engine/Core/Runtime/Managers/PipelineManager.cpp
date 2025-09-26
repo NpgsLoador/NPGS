@@ -1,10 +1,10 @@
 #include "stdafx.h"
-#include "PipelineManager.h"
+#include "PipelineManager.hpp"
 
 #include <functional>
 #include <utility>
 
-#include "Engine/Core/Runtime/AssetLoaders/Shader.h"
+#include "Engine/Core/Runtime/AssetLoaders/Shader.hpp"
 
 namespace Npgs
 {

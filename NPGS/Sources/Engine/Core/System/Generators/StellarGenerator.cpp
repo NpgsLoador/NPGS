@@ -1,5 +1,5 @@
 #include "stdafx.h"
-#include "StellarGenerator.h"
+#include "StellarGenerator.hpp"
 
 #include <cmath>
 #include <algorithm>
@@ -16,10 +16,10 @@
 #include <glm/glm.hpp>
 
 #include "Engine/Core/Runtime/AssetLoaders/CommaSeparatedValues.hpp"
-#include "Engine/Core/Runtime/Managers/AssetManager.h"
-#include "Engine/Core/System/Services/EngineServices.h"
-#include "Engine/Utils/Logger.h"
-#include "Engine/Utils/Utils.h"
+#include "Engine/Core/Runtime/Managers/AssetManager.hpp"
+#include "Engine/Core/System/Services/EngineServices.hpp"
+#include "Engine/Utils/Logger.hpp"
+#include "Engine/Utils/Utils.hpp"
 
 namespace Npgs
 {

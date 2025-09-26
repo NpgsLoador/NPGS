@@ -1,5 +1,5 @@
 #include "stdafx.h"
-#include "StagingBuffer.h"
+#include "StagingBuffer.hpp"
 
 #include <utility>
 #include <vulkan/vulkan_to_string.hpp>

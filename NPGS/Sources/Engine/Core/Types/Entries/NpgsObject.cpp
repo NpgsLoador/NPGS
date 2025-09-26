@@ -1,5 +1,5 @@
 #include "stdafx.h"
-#include "NpgsObject.h"
+#include "NpgsObject.hpp"
 
 namespace Npgs
 {

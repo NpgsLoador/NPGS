@@ -1,5 +1,5 @@
 #include "stdafx.h"
-#include "Planet.h"
+#include "Planet.hpp"
 
 #include <utility>
 

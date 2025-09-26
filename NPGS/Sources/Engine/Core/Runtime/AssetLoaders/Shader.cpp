@@ -1,5 +1,5 @@
 #include "stdafx.h"
-#include "Shader.h"
+#include "Shader.hpp"
 
 #include <cstddef>
 #include <exception>
@@ -12,8 +12,8 @@
 
 #include <spirv_cross/spirv_reflect.hpp>
 
-#include "Engine/Core/Runtime/Managers/AssetManager.h"
-#include "Engine/Utils/Logger.h"
+#include "Engine/Core/Runtime/Managers/AssetManager.hpp"
+#include "Engine/Utils/Logger.hpp"
 
 namespace Npgs
 {

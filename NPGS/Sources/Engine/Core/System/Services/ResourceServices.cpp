@@ -1,5 +1,5 @@
 #include "stdafx.h"
-#include "ResourceServices.h"
+#include "ResourceServices.hpp"
 
 namespace Npgs
 {

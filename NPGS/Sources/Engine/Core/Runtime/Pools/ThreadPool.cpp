@@ -1,16 +1,14 @@
 #include "stdafx.h"
-#include "ThreadPool.h"
+#include "ThreadPool.hpp"
 
 #include <cstdint>
 #include <cstdlib>
 #include <algorithm>
-#include <condition_variable>
 #include <functional>
 #include <mutex>
-#include <queue>
 
 #include <Windows.h>
-#include "Engine/Core/Base/Base.h"
+#include "Engine/Core/Base/Base.hpp"
 
 namespace Npgs
 {
@@ -64,7 +62,7 @@ namespace Npgs
                 {
                     std::function<void()> Task;
                     {
-                        std::unique_lock<std::mutex> Lock(Worker.Mutex);
+                        std::unique_lock Lock(Worker.Mutex);
                         Worker.Condition.wait(Lock, [this, &Worker]() -> bool
                         {
                             return !Worker.Tasks.empty() || bTerminate_.load();

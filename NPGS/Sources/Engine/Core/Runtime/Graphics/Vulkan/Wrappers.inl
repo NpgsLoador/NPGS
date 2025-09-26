@@ -1,7 +1,88 @@
-#include "Engine/Core/Base/Base.h"
+#include <utility>
+#include "Engine/Core/Base/Base.hpp"
 
 namespace Npgs
 {
+    // TVulkanHandleNoDestroy
+    // ----------------------
+    template <typename HandleType>
+    requires std::is_class_v<HandleType>
+    TVulkanHandleNoDestroy<HandleType>::TVulkanHandleNoDestroy(HandleType Handle)
+        : Handle_(Handle)
+    {
+    }
+
+    template <typename HandleType>
+    requires std::is_class_v<HandleType>
+    TVulkanHandleNoDestroy<HandleType>::TVulkanHandleNoDestroy(TVulkanHandleNoDestroy&& Other) noexcept
+        : Handle_(std::move(Other.Handle_))
+    {
+    }
+
+    template <typename HandleType>
+    requires std::is_class_v<HandleType>
+    NPGS_INLINE TVulkanHandleNoDestroy<HandleType>&
+    TVulkanHandleNoDestroy<HandleType>::operator=(TVulkanHandleNoDestroy&& Other) noexcept
+    {
+        if (this != &Other)
+        {
+            Handle_ = std::move(Other.Handle_);
+        }
+
+        return *this;
+    }
+
+    template <typename HandleType>
+    requires std::is_class_v<HandleType>
+    NPGS_INLINE TVulkanHandleNoDestroy<HandleType>&
+    TVulkanHandleNoDestroy<HandleType>::operator=(HandleType Handle)
+    {
+        Handle_ = Handle;
+        return *this;
+    }
+
+    template <typename HandleType>
+    requires std::is_class_v<HandleType>
+    NPGS_INLINE HandleType* TVulkanHandleNoDestroy<HandleType>::operator->()
+    {
+        return &Handle_;
+    }
+
+    template <typename HandleType>
+    requires std::is_class_v<HandleType>
+    NPGS_INLINE const HandleType* TVulkanHandleNoDestroy<HandleType>::operator->() const
+    {
+        return &Handle_;
+    }
+
+    template <typename HandleType>
+    requires std::is_class_v<HandleType>
+    NPGS_INLINE HandleType& TVulkanHandleNoDestroy<HandleType>::operator*()
+    {
+        return Handle_;
+    }
+
+    template <typename HandleType>
+    requires std::is_class_v<HandleType>
+    NPGS_INLINE const HandleType& TVulkanHandleNoDestroy<HandleType>::operator*() const
+    {
+        return Handle_;
+    }
+
+    template <typename HandleType>
+    requires std::is_class_v<HandleType>
+    NPGS_INLINE TVulkanHandleNoDestroy<HandleType>::operator bool() const
+    {
+        return IsValid();
+    }
+
+    template <typename HandleType>
+    requires std::is_class_v<HandleType>
+    NPGS_INLINE bool TVulkanHandleNoDestroy<HandleType>::IsValid() const
+    {
+        return static_cast<bool>(Handle_);
+    }
+
     NPGS_INLINE FGraphicsPipelineCreateInfoPack::operator vk::GraphicsPipelineCreateInfo& ()
     {
         return GraphicsPipelineCreateInfo;
@@ -10,6 +91,96 @@ namespace Npgs
     NPGS_INLINE FGraphicsPipelineCreateInfoPack::operator const vk::GraphicsPipelineCreateInfo& () const
     {
         return GraphicsPipelineCreateInfo;
+    }
+
+    // TVulkanHandle
+    // -------------
+    template <typename HandleType, bool bEnableReleaseInfoOutput, EVulkanHandleReleaseMethod ReleaseMethod>
+    requires std::is_class_v<HandleType>
+    TVulkanHandle<HandleType, bEnableReleaseInfoOutput, ReleaseMethod>::TVulkanHandle(vk::Device Device, HandleType Handle, const std::string& HandleName)
+        : Base(Handle)
+        , ReleaseInfo_(std::string(HandleName) + " destroyed successfully.")
+        , Device_(Device)
+        , Status_(vk::Result::eSuccess)
+    {
+    }
+
+    template <typename HandleType, bool bEnableReleaseInfoOutput, EVulkanHandleReleaseMethod ReleaseMethod>
+    requires std::is_class_v<HandleType>
+    TVulkanHandle<HandleType, bEnableReleaseInfoOutput, ReleaseMethod>::TVulkanHandle(vk::Device Device)
+        : Device_(Device)
+        , Status_(vk::Result::eSuccess)
+    {
+    }
+
+    template <typename HandleType, bool bEnableReleaseInfoOutput, EVulkanHandleReleaseMethod ReleaseMethod>
+    requires std::is_class_v<HandleType>
+    TVulkanHandle<HandleType, bEnableReleaseInfoOutput, ReleaseMethod>::TVulkanHandle(TVulkanHandle&& Other) noexcept
+        : Base(std::move(Other))
+        , ReleaseInfo_(std::move(Other.ReleaseInfo_))
+        , Device_(std::move(Other.Device_))
+        , Status_(std::exchange(Other.Status_, {}))
+    {
+    }
+
+    template <typename HandleType, bool bEnableReleaseInfoOutput, EVulkanHandleReleaseMethod ReleaseMethod>
+    requires std::is_class_v<HandleType>
+    TVulkanHandle<HandleType, bEnableReleaseInfoOutput, ReleaseMethod>::~TVulkanHandle()
+    {
+        if (this->Handle_)
+        {
+            ReleaseHandle();
+            if constexpr (bEnableReleaseInfoOutput)
+            {
+                NpgsCoreTrace(ReleaseInfo_);
+            }
+        }
+    }
+
+    template <typename HandleType, bool bEnableReleaseInfoOutput, EVulkanHandleReleaseMethod ReleaseMethod>
+    requires std::is_class_v<HandleType>
+    TVulkanHandle<HandleType, bEnableReleaseInfoOutput, ReleaseMethod>&
+    TVulkanHandle<HandleType, bEnableReleaseInfoOutput, ReleaseMethod>::operator=(TVulkanHandle&& Other) noexcept
+    {
+        if (this != &Other)
+        {
+            if (this->Handle_)
+            {
+                ReleaseHandle();
+            }
+
+            Base::operator=(std::move(Other));
+
+            ReleaseInfo_ = std::move(Other.ReleaseInfo_);
+            Device_      = std::move(Other.Device_);
+            Status_      = std::exchange(Other.Status_, {});
+        }
+
+        return *this;
+    }
+
+    template <typename HandleType, bool bEnableReleaseInfoOutput, EVulkanHandleReleaseMethod ReleaseMethod>
+    requires std::is_class_v<HandleType>
+    NPGS_INLINE vk::Result TVulkanHandle<HandleType, bEnableReleaseInfoOutput, ReleaseMethod>::GetStatus() const
+    {
+        return Status_;
+    }
+
+    template <typename HandleType, bool bEnableReleaseInfoOutput, EVulkanHandleReleaseMethod ReleaseMethod>
+    requires std::is_class_v<HandleType>
+    void TVulkanHandle<HandleType, bEnableReleaseInfoOutput, ReleaseMethod>::ReleaseHandle()
+    {
+        if (this->Handle_)
+        {
+            if constexpr (ReleaseMethod == EVulkanHandleReleaseMethod::kDestroy)
+            {
+                Device_.destroy(this->Handle_);
+            }
+            else if constexpr (ReleaseMethod == EVulkanHandleReleaseMethod::kFree)
+            {
+                Device_.free(this->Handle_);
+            }
+        }
     }
 
     // Wrapper for vk::DeviceMemory
@@ -174,11 +345,116 @@ namespace Npgs
     // -------------------
     // Native wrappers end
 
+    // TVulkanResourceMemory
+    // ---------------------
+    template <typename ResourceType, typename MemoryType>
+    requires std::is_class_v<ResourceType>&& std::is_class_v<MemoryType>
+    TVulkanResourceMemory<ResourceType, MemoryType>::TVulkanResourceMemory(std::unique_ptr<ResourceType>&& Resource, std::unique_ptr<MemoryType>&& Memory)
+        : Resource_(std::move(Resource))
+        , Memory_(std::move(Memory))
+    {
+    }
+
+    template <typename ResourceType, typename MemoryType>
+    requires std::is_class_v<ResourceType>&& std::is_class_v<MemoryType>
+    TVulkanResourceMemory<ResourceType, MemoryType>::TVulkanResourceMemory(TVulkanResourceMemory&& Other) noexcept
+        : Resource_(std::move(Other.Resource_))
+        , Memory_(std::move(Other.Memory_))
+    {
+    }
+
+    template <typename ResourceType, typename MemoryType>
+    requires std::is_class_v<ResourceType>&& std::is_class_v<MemoryType>
+    TVulkanResourceMemory<ResourceType, MemoryType>& TVulkanResourceMemory<ResourceType, MemoryType>::operator=(TVulkanResourceMemory&& Other) noexcept
+    {
+        if (this != &Other)
+        {
+            Resource_ = std::move(Other.Resource_);
+            Memory_   = std::move(Other.Memory_);
+        }
+
+        return *this;
+    }
+
+    template <typename ResourceType, typename MemoryType>
+    requires std::is_class_v<ResourceType>&& std::is_class_v<MemoryType>
+    NPGS_INLINE TVulkanResourceMemory<ResourceType, MemoryType>::operator MemoryType& ()
+    {
+        return GetMemory();
+    }
+
+    template <typename ResourceType, typename MemoryType>
+    requires std::is_class_v<ResourceType>&& std::is_class_v<MemoryType>
+    NPGS_INLINE TVulkanResourceMemory<ResourceType, MemoryType>::operator const MemoryType& () const
+    {
+        return GetMemory();
+    }
+
+    template <typename ResourceType, typename MemoryType>
+    requires std::is_class_v<ResourceType>&& std::is_class_v<MemoryType>
+    NPGS_INLINE TVulkanResourceMemory<ResourceType, MemoryType>::operator ResourceType& ()
+    {
+        return GetResource();
+    }
+
+    template <typename ResourceType, typename MemoryType>
+    requires std::is_class_v<ResourceType>&& std::is_class_v<MemoryType>
+    NPGS_INLINE TVulkanResourceMemory<ResourceType, MemoryType>::operator const ResourceType& () const
+    {
+        return GetResource();
+    }
+
+    template <typename ResourceType, typename MemoryType>
+    requires std::is_class_v<ResourceType>&& std::is_class_v<MemoryType>
+    NPGS_INLINE TVulkanResourceMemory<ResourceType, MemoryType>::operator bool() const
+    {
+        return IsValid();
+    }
+
+    template <typename ResourceType, typename MemoryType>
+    requires std::is_class_v<ResourceType>&& std::is_class_v<MemoryType>
+    NPGS_INLINE MemoryType& TVulkanResourceMemory<ResourceType, MemoryType>::GetMemory()
+    {
+        return *Memory_;
+    }
+
+    template <typename ResourceType, typename MemoryType>
+    requires std::is_class_v<ResourceType>&& std::is_class_v<MemoryType>
+    NPGS_INLINE const MemoryType& TVulkanResourceMemory<ResourceType, MemoryType>::GetMemory() const
+    {
+        return *Memory_;
+    }
+
+    template <typename ResourceType, typename MemoryType>
+    requires std::is_class_v<ResourceType>&& std::is_class_v<MemoryType>
+    NPGS_INLINE ResourceType& TVulkanResourceMemory<ResourceType, MemoryType>::GetResource()
+    {
+        return *Resource_;
+    }
+
+    template <typename ResourceType, typename MemoryType>
+    requires std::is_class_v<ResourceType>&& std::is_class_v<MemoryType>
+    NPGS_INLINE const ResourceType& TVulkanResourceMemory<ResourceType, MemoryType>::GetResource() const
+    {
+        return *Resource_;
+    }
+
+    template <typename ResourceType, typename MemoryType>
+    requires std::is_class_v<ResourceType>&& std::is_class_v<MemoryType>
+    NPGS_INLINE bool TVulkanResourceMemory<ResourceType, MemoryType>::IsValid() const
+    {
+        return Resource_ && Memory_ && Resource_->operator bool() && Memory_->operator bool();
+    }
+
+    // FVulkanDeviceMemory
+    // -------------------
     NPGS_INLINE void FVulkanDeviceMemory::SetPersistentMapping(bool bFlag)
     {
         bPersistentlyMapped_ = bFlag;
     }
 
+    // FVulkanBufferMemory
+    // -------------------
     NPGS_INLINE vk::Result FVulkanBufferMemory::MapMemoryForSubmit(vk::DeviceSize Offset, vk::DeviceSize Size, void*& Target) const
     {
         return Memory_->MapMemoryForSubmit(Offset, Size, Target);
