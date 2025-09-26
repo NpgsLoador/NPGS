@@ -1,5 +1,5 @@
 #include "stdafx.h"
-#include "ExtFunctionsImpl.h"
+#include "ExtFunctionsImpl.hpp"
 
 #include <cstddef>
 #include <cstdint>

@@ -239,7 +239,7 @@
     <ClInclude Include="Sources\Engine\Core\Runtime\Graphics\Resources\StagingBuffer.hpp" />
     <ClInclude Include="Sources\Engine\Core\Runtime\Graphics\Vulkan\Context.hpp" />
     <ClInclude Include="Sources\Engine\Core\Runtime\Graphics\Vulkan\Core.hpp" />
-    <ClInclude Include="Sources\Engine\Core\Runtime\Graphics\Vulkan\ExtFunctionsImpl.h" />
+    <ClInclude Include="Sources\Engine\Core\Runtime\Graphics\Vulkan\ExtFunctionsImpl.hpp" />
     <ClInclude Include="Sources\Engine\Core\Runtime\Managers\ImageTracker.hpp" />
     <ClInclude Include="Sources\Engine\Core\Runtime\Managers\PipelineManager.hpp" />
     <ClInclude Include="Sources\Engine\Core\Runtime\Managers\ShaderBufferManager.hpp" />
@@ -270,7 +270,7 @@
     <ClInclude Include="Sources\Engine\Utils\Utils.hpp" />
     <ClInclude Include="Sources\Engine\Utils\VulkanCheck.hpp" />
     <ClInclude Include="Sources\Program\Application.hpp" />
-    <ClInclude Include="Sources\Program\Npgs.h" />
+    <ClInclude Include="Sources\Program\Npgs.hpp" />
     <ClInclude Include="Sources\Engine\Core\Runtime\Graphics\Buffers\BufferStructs.hpp" />
     <ClInclude Include="Sources\Program\Universe.hpp" />
     <ClInclude Include="Sources\stdafx.h" />

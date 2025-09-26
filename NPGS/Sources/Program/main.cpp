@@ -1,5 +1,5 @@
 #include "stdafx.h"
-#include "Npgs.h"
+#include "Npgs.hpp"
 #include "Application.hpp"
 
 using namespace Npgs;
@@ -20,7 +20,6 @@ int main()
 #pragma warning(disable : 4251)
 
 #define NPGS_ENABLE_CONSOLE_LOGGER
-#include "Npgs.h"
 #include "Universe.hpp"
 
 int main1() {

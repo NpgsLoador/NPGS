@@ -227,7 +227,7 @@
     <ClInclude Include="Sources\Engine\Core\Runtime\Graphics\Vulkan\Core.hpp">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="Sources\Engine\Core\Runtime\Graphics\Vulkan\ExtFunctionsImpl.h">
+    <ClInclude Include="Sources\Engine\Core\Runtime\Graphics\Vulkan\ExtFunctionsImpl.hpp">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="Sources\Engine\Core\Runtime\Graphics\Vulkan\Wrappers.hpp">
@@ -236,7 +236,7 @@
     <ClInclude Include="Sources\Program\Application.hpp">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="Sources\Program\Npgs.h">
+    <ClInclude Include="Sources\Program\Npgs.hpp">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="Sources\Program\Universe.hpp">

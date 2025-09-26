@@ -5,7 +5,7 @@
 #include <algorithm>
 #include <ranges>
 
-#include "Engine/Core/Runtime/Graphics/Vulkan/ExtFunctionsImpl.h"
+#include "Engine/Core/Runtime/Graphics/Vulkan/ExtFunctionsImpl.hpp"
 #include "Engine/Utils/VulkanCheck.hpp"
 #include "Engine/Utils/Utils.hpp"
 
