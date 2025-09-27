@@ -33,7 +33,7 @@ namespace Npgs
         });
         std::future<FReturnType> Future = Task->get_future();
 
-        std::size_t ThreadIndex = NextThreadIndex_++ % MaxThreadCount_;
+        std::size_t ThreadIndex = NextThreadIndex_.fetch_add(1) % MaxThreadCount_;
         auto& TargetWorker = Workers_[ThreadIndex];
         {
             std::unique_lock<std::mutex> Lock(TargetWorker->Mutex);
