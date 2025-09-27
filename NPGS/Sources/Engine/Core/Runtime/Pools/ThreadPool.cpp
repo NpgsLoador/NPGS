@@ -45,8 +45,8 @@ namespace Npgs
         , PhysicalCoreCount_(GetPhysicalCoreCount())
         , bEnableHyperThread_(bEnableHyperThread)
     {
-        Threads_.reserve(MaxThreadCount_);
         Workers_.reserve(MaxThreadCount_);
+        Threads_.reserve(MaxThreadCount_);
 
         for (std::size_t i = 0; i != MaxThreadCount_; ++i)
         {
