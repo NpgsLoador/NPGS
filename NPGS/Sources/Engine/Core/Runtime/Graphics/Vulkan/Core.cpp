@@ -95,10 +95,10 @@ namespace Npgs
 
     vk::Result FVulkanCore::CreateInstance(vk::InstanceCreateFlags Flags)
     {
-    #ifdef _DEBUG
+#ifdef _DEBUG
         AddInstanceLayer("VK_LAYER_KHRONOS_validation");
         AddInstanceExtension(vk::EXTDebugUtilsExtensionName);
-    #endif // _DEBUG
+#endif // _DEBUG
 
         AddInstanceExtension(vk::EXTSwapchainColorSpaceExtensionName);
 
@@ -121,9 +121,9 @@ namespace Npgs
 
         VulkanHppCheck(GetInstanceExtFunctionProcAddress());
 
-    #ifdef _DEBUG
+#ifdef _DEBUG
         VulkanHppCheck(CreateDebugMessenger());
-    #endif // _DEBUG
+#endif // _DEBUG
 
         NpgsCoreInfo("Vulkan instance created successfully.");
         return vk::Result::eSuccess;
@@ -831,7 +831,7 @@ namespace Npgs
 
     vk::Result FVulkanCore::GetInstanceExtFunctionProcAddress()
     {
-    #ifdef _DEBUG
+#ifdef _DEBUG
         kVkCreateDebugUtilsMessengerExt =
             reinterpret_cast<PFN_vkCreateDebugUtilsMessengerEXT>(Instance_.getProcAddr("vkCreateDebugUtilsMessengerEXT"));
         if (kVkCreateDebugUtilsMessengerExt == nullptr)
@@ -847,7 +847,7 @@ namespace Npgs
             NpgsCoreError("Failed to get vkDestroyDebugUtilsMessengerEXT function pointer.");
             return vk::Result::eErrorExtensionNotPresent;
         }
-    #endif // _DEBUG
+#endif // _DEBUG
 
         kVkSetHdrMetadataExt = reinterpret_cast<PFN_vkSetHdrMetadataEXT>(Instance_.getProcAddr("vkSetHdrMetadataEXT"));
         if (kVkSetHdrMetadataExt == nullptr)
