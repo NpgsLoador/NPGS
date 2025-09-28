@@ -828,12 +828,12 @@ namespace Npgs
             std::exit(EXIT_FAILURE);
         }
 
-    #pragma warning(push)
-    #pragma warning(disable: 4996) // for deprecated api
-        NpgsCoreInfo("Vulkan API version: {}.{}.{}", vk::versionMajor(ApiVersion_), vk::versionMinor(ApiVersion_), vk::versionPatch(ApiVersion_));
-    #pragma warning(pop)
-        return vk::Result::eSuccess;
-    }
+#pragma warning(push)
+#pragma warning(disable: 4996) // for deprecated api
+		NpgsCoreInfo("Vulkan API version: {}.{}.{}", vk::versionMajor(ApiVersion_), vk::versionMinor(ApiVersion_), vk::versionPatch(ApiVersion_));
+#pragma warning(pop)
+		return vk::Result::eSuccess;
+	}
 
     vk::Result FVulkanCore::GetInstanceExtFunctionProcAddress()
     {
