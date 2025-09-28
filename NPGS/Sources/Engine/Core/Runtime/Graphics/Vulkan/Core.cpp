@@ -102,11 +102,8 @@ namespace Npgs
 
         AddInstanceExtension(vk::EXTSwapchainColorSpaceExtensionName);
 
-    #pragma warning(push)
-    #pragma warning(disable: 4996) // for deprecated api
         vk::ApplicationInfo ApplicationInfo("Von-Neumann in Galaxy Simulator", vk::makeVersion(1, 0, 0),
                                             "No Engine", vk::makeVersion(1, 0, 0), ApiVersion_);
-    #pragma warning(pop)
         vk::InstanceCreateInfo InstanceCreateInfo(Flags, &ApplicationInfo, InstanceLayers_, InstanceExtensions_);
 
         VulkanHppCheck(CheckInstanceLayers());
@@ -828,10 +825,7 @@ namespace Npgs
             std::exit(EXIT_FAILURE);
         }
 
-#pragma warning(push)
-#pragma warning(disable: 4996) // for deprecated api
 		NpgsCoreInfo("Vulkan API version: {}.{}.{}", vk::versionMajor(ApiVersion_), vk::versionMinor(ApiVersion_), vk::versionPatch(ApiVersion_));
-#pragma warning(pop)
 		return vk::Result::eSuccess;
 	}
 
