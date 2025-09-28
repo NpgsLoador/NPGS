@@ -23,7 +23,7 @@
 // <http://www.gnu.org/licenses/>.
 
 /** @file xstdafx.h
- *  This is an implementation file for a precompiled header.
+ *  This is an implementation file for a precompiled header used in MSVC.
  */
 
 // 17.4.1.2 Headers
@@ -62,12 +62,12 @@
 #endif
 
 #if _MSVC_LANG >= 202302L
-#include <stdatomic.h>
-#endif
-
-#if _MSVC_LANG >= 202602L
+#if __has_include(<stdbit.h>)
 #include <stdbit.h>
+#endif
+#if __has_include(<stdckdint.h>)
 #include <stdckdint.h>
+#endif
 #endif
 
 // C++
@@ -147,6 +147,7 @@
 #include <bit>
 #include <compare>
 #include <concepts>
+#include <coroutine>
 #include <format>
 #include <latch>
 #include <numbers>
@@ -172,6 +173,7 @@
 #include <print>
 #include <spanstream>
 #include <stacktrace>
+#include <stdatomic.h>
 #include <stdfloat>
 #endif
 
