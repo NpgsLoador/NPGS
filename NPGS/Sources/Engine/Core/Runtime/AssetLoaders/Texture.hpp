@@ -111,6 +111,7 @@ namespace Npgs
 
         FTexture2D(const FTexture2D&) = delete;
         FTexture2D(FTexture2D&& Other) noexcept;
+        ~FTexture2D() override = default;
 
         FTexture2D& operator=(const FTexture2D&) = delete;
         FTexture2D& operator=(FTexture2D&& Other) noexcept;
@@ -141,6 +142,7 @@ namespace Npgs
 
         FTextureCube(const FTextureCube&) = delete;
         FTextureCube(FTextureCube&& Other) noexcept;
+        ~FTextureCube() override = default;
 
         FTextureCube& operator=(const FTextureCube&) = delete;
         FTextureCube& operator=(FTextureCube&& Other) noexcept;

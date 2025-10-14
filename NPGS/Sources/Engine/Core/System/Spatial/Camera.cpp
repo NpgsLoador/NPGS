@@ -82,46 +82,44 @@ namespace Npgs
         }
     }
 
-    void FCamera::SetVector(EVector Vector, glm::vec3 NewVector)
-    {
-        switch (Vector)
-        {
-        case EVector::kPosition:
-            Position_ = NewVector;
-            break;
-        case EVector::kFront:
-            Front_ = NewVector;
-            break;
-        case EVector::kUp:
-            Up_ = NewVector;
-            break;
-        case EVector::kRight:
-            Right_ = NewVector;
-            break;
-        default:
-            NpgsAssert(false, "Invalid vector type");
-        }
-    }
+	glm::vec3 FCamera::GetVector(EVector Vector) const
+	{
+		switch (Vector)
+		{
+		case EVector::kPosition:
+			return Position_;
+		case EVector::kFront:
+			return Front_;
+		case EVector::kUp:
+			return Up_;
+		case EVector::kRight:
+			return Right_;
+		default:
+			NpgsAssert(false, "Invalid vector type");
+			return {};
+		}
+	}
 
-#pragma warning(push)
-#pragma warning(disable: 4715)
-    glm::vec3 FCamera::GetVector(EVector Vector) const
-    {
-        switch (Vector)
-        {
-        case EVector::kPosition:
-            return Position_;
-        case EVector::kFront:
-            return Front_;
-        case EVector::kUp:
-            return Up_;
-        case EVector::kRight:
-            return Right_;
-        default:
-            NpgsAssert(false, "Invalid vector type");
-        }
-    }
-#pragma warning(pop)
+	void FCamera::SetVector(EVector Vector, glm::vec3 NewVector)
+	{
+		switch (Vector)
+		{
+		case EVector::kPosition:
+			Position_ = NewVector;
+			break;
+		case EVector::kFront:
+			Front_ = NewVector;
+			break;
+		case EVector::kUp:
+			Up_ = NewVector;
+			break;
+		case EVector::kRight:
+			Right_ = NewVector;
+			break;
+		default:
+			NpgsAssert(false, "Invalid vector type");
+		}
+	}
 
     void FCamera::ProcessAlign(double DeltaTime)
     {

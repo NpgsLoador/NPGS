@@ -581,6 +581,14 @@ namespace Npgs
         Status_      = CreateBuffer(AllocationCreateInfo, CreateInfo);
     }
 
+    FVulkanBuffer::FVulkanBuffer(FVulkanBuffer&& Other) noexcept
+        : Base(std::move(Other))
+		, Allocator_(std::exchange(Other.Allocator_, nullptr))
+        , Allocation_(std::exchange(Other.Allocation_, nullptr))
+		, AllocationInfo_(std::exchange(Other.AllocationInfo_, {}))
+    {
+    }
+
     FVulkanBuffer::~FVulkanBuffer()
     {
         if (Allocator_ != nullptr && Allocation_ != nullptr)
@@ -590,6 +598,20 @@ namespace Npgs
             NpgsCoreTrace(ReleaseInfo_);
         }
     }
+
+    FVulkanBuffer& FVulkanBuffer::operator=(FVulkanBuffer&& Other) noexcept
+    {
+		if (this != &Other)
+		{
+			Base::operator=(std::move(Other));
+
+			Allocator_      = std::exchange(Other.Allocator_, nullptr);
+			Allocation_     = std::exchange(Other.Allocation_, nullptr);
+			AllocationInfo_ = std::exchange(Other.AllocationInfo_, {});
+		}
+
+		return *this;
+	}
 
     vk::Result FVulkanBuffer::BindMemory(const FVulkanDeviceMemory& DeviceMemory, vk::DeviceSize Offset) const
     {
@@ -978,6 +1000,13 @@ namespace Npgs
         Status_      = CreateImage(AllocationCreateInfo, CreateInfo);
     }
 
+    FVulkanImage::FVulkanImage(FVulkanImage&& Other) noexcept
+		: Base(std::move(Other))
+        , Allocator_(std::exchange(Other.Allocator_, nullptr))
+		, Allocation_(std::exchange(Other.Allocation_, nullptr))
+    {
+    }
+
     FVulkanImage::~FVulkanImage()
     {
         if (Allocator_ != nullptr && Allocation_ != nullptr)
@@ -987,6 +1016,19 @@ namespace Npgs
             NpgsCoreTrace(ReleaseInfo_);
         }
     }
+
+	FVulkanImage& FVulkanImage::operator=(FVulkanImage&& Other) noexcept
+	{
+		if (this != &Other)
+		{
+			Base::operator=(std::move(Other));
+
+			Allocator_  = std::exchange(Other.Allocator_, nullptr);
+			Allocation_ = std::exchange(Other.Allocation_, nullptr);
+		}
+
+		return *this;
+	}
 
     vk::Result FVulkanImage::BindMemory(const FVulkanDeviceMemory& DeviceMemory, vk::DeviceSize Offset) const
     {

@@ -82,10 +82,9 @@ namespace Npgs::Astro
 
         AStar() = default;
         AStar(const FCelestialBody::FBasicProperties& BasicProperties, const FExtendedProperties& ExtraProperties);
-        ~AStar() = default;
 
-        AStar& SetExtendedProperties(const FExtendedProperties& ExtraProperties);
         const FExtendedProperties& GetExtendedProperties() const;
+        AStar& SetExtendedProperties(FExtendedProperties ExtraProperties);
 
         // Setters
         // Setters for ExtendedProperties
@@ -110,7 +109,7 @@ namespace Npgs::Astro
         AStar& SetHasPlanets(bool bHasPlanets);
         AStar& SetStarFrom(EStarFrom From);
         AStar& SetEvolutionPhase(EEvolutionPhase Phase);
-        AStar& SetStellarClass(const Astro::FStellarClass& Class);
+        AStar& SetStellarClass(Astro::FStellarClass Class);
 
         // Getters
         // Getters for ExtendedProperties

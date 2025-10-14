@@ -17,14 +17,34 @@ namespace Npgs
         Speed_ = std::max(0.0f, Speed_);
     }
 
+    NPGS_INLINE glm::quat FCamera::GetOrientation() const
+    {
+        return Orientation_;
+    }
+
     NPGS_INLINE void FCamera::SetOrientation(glm::quat Orientation)
     {
         Orientation_ = Orientation;
     }
 
-    NPGS_INLINE glm::quat FCamera::GetOrientation() const
+    NPGS_INLINE float FCamera::GetZoom() const
     {
-        return Orientation_;
+        return Zoom_;
+    }
+
+    NPGS_INLINE void FCamera::SetZoom(float Zoom)
+    {
+        Zoom_ = Zoom;
+    }
+
+    NPGS_INLINE FCamera::EMode FCamera::GetMode() const
+    {
+        return Mode_;
+    }
+
+    NPGS_INLINE void FCamera::SetMode(EMode Mode)
+    {
+        Mode_ = Mode;
     }
 
     NPGS_INLINE glm::mat4x4 FCamera::GetViewMatrix() const
@@ -55,25 +75,5 @@ namespace Npgs
     NPGS_INLINE void FCamera::SetTargetOffset(glm::vec2 Offset)
     {
         TargetOffset_ = Offset;
-    }
-
-    NPGS_INLINE void FCamera::SetZoom(float Zoom)
-    {
-        Zoom_ = Zoom;
-    }
-
-    NPGS_INLINE void FCamera::SetMode(EMode Mode)
-    {
-        Mode_ = Mode;
-    }
-
-    NPGS_INLINE float FCamera::GetZoom() const
-    {
-        return Zoom_;
-    }
-
-    NPGS_INLINE FCamera::EMode FCamera::GetMode() const
-    {
-        return Mode_;
     }
 } // namespace Npgs

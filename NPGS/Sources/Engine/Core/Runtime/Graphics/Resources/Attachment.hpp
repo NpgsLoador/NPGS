@@ -18,7 +18,12 @@ namespace Npgs
     {
     public:
         FAttachment(FVulkanContext* VulkanContext, VmaAllocator Allocator);
+		FAttachment(const FAttachment&) = delete;
+		FAttachment(FAttachment&& Other) noexcept;
         virtual ~FAttachment() = default;
+
+		FAttachment& operator=(const FAttachment&) = delete;
+		FAttachment& operator=(FAttachment&& Other) noexcept;
 
         vk::DescriptorImageInfo CreateDescriptorImageInfo(const FVulkanSampler& Sampler) const;
         vk::DescriptorImageInfo CreateDescriptorImageInfo(const vk::Sampler& Sampler) const;

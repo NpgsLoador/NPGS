@@ -74,9 +74,9 @@ namespace Npgs
         return *this;
     }
 
-    NPGS_INLINE FStellarGenerator& FStellarGenerator::SetAgePdf(const std::function<float(glm::vec3, float, float)>& AgePdf)
+    NPGS_INLINE FStellarGenerator& FStellarGenerator::SetAgePdf(std::function<float(glm::vec3, float, float)> AgePdf)
     {
-        AgePdf_ = AgePdf;
+        AgePdf_ = std::move(AgePdf);
         return *this;
     }
 
@@ -86,9 +86,9 @@ namespace Npgs
         return *this;
     }
 
-    NPGS_INLINE FStellarGenerator& FStellarGenerator::SetMassPdfs(const std::array<std::function<float(float)>, 2>& MassPdfs)
+    NPGS_INLINE FStellarGenerator& FStellarGenerator::SetMassPdfs(std::array<std::function<float(float)>, 2> MassPdfs)
     {
-        MassPdfs_ = MassPdfs;
+        MassPdfs_ = std::move(MassPdfs);
         return *this;
     }
 

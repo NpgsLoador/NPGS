@@ -1,6 +1,7 @@
 #include "stdafx.h"
 #include "Attachment.hpp"
 
+#include <utility>
 #include <vulkan/vulkan_to_string.hpp>
 #include "Engine/Utils/Logger.hpp"
 
@@ -11,6 +12,27 @@ namespace Npgs
         , Allocator_(Allocator)
     {
     }
+
+    FAttachment::FAttachment(FAttachment&& Other) noexcept
+        : VulkanContext_(std::exchange(Other.VulkanContext_, nullptr))
+		, ImageMemory_(std::move(Other.ImageMemory_))
+        , ImageView_(std::move(Other.ImageView_))
+		, Allocator_(std::exchange(Other.Allocator_, nullptr))
+    {
+    }
+
+    FAttachment& FAttachment::operator=(FAttachment&& Other) noexcept
+    {
+        if (this != &Other)
+        {
+            VulkanContext_ = std::exchange(Other.VulkanContext_, nullptr);
+            ImageMemory_   = std::move(Other.ImageMemory_);
+            ImageView_     = std::move(Other.ImageView_);
+            Allocator_     = std::exchange(Other.Allocator_, nullptr);
+        }
+
+        return *this;
+	}
 
     FColorAttachment::FColorAttachment(FVulkanContext* VulkanContext, VmaAllocator Allocator,
                                        const VmaAllocationCreateInfo& AllocationCreateInfo, vk::Format Format,

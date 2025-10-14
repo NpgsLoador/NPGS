@@ -58,7 +58,6 @@ namespace Npgs::Astro
         public:
             FOrbitalObject();
             FOrbitalObject(INpgsObject* Object, EObjectType Type);
-            ~FOrbitalObject() = default;
 
             template <typename ObjectType>
             requires std::is_class_v<ObjectType>
@@ -80,7 +79,6 @@ namespace Npgs::Astro
         public:
             FOrbitalDetails();
             FOrbitalDetails(INpgsObject* Object, EObjectType Type, FOrbit* HostOrbit, float InitialTrueAnomaly = 0.0f);
-            ~FOrbitalDetails() = default;
 
             FOrbitalDetails& SetHostOrbit(FOrbit* HostOrbit);
             FOrbitalDetails& SetOrbitalObject(INpgsObject* Object, EObjectType Type);
@@ -100,9 +98,6 @@ namespace Npgs::Astro
         };
 
     public:
-        FOrbit() = default;
-        ~FOrbit() = default;
-
         FOrbit& SetSemiMajorAxis(float SemiMajorAxis);
         FOrbit& SetEccentricity(float Eccentricity);
         FOrbit& SetInclination(float Inclination);
@@ -151,7 +146,7 @@ namespace Npgs::Astro
         FStellarSystem& SetBaryPosition(glm::vec3 Poisition);
         FStellarSystem& SetBaryNormal(glm::vec2 Normal);
         FStellarSystem& SetBaryDistanceRank(std::size_t DistanceRank);
-        FStellarSystem& SetBaryName(const std::string& Name);
+        FStellarSystem& SetBaryName(std::string Name);
 
         glm::vec3 GetBaryPosition() const;
         glm::vec2 GetBaryNormal() const;

@@ -61,13 +61,13 @@ namespace Npgs::Intelli
         // Setters for CivilizationProperties
         // ----------------------------------
         FStandard& SetAtrificalStructureMass(float AtrificalStructureMass);
-        FStandard& SetAtrificalStructureMass(const boost::multiprecision::uint128_t& AtrificalStructureMass);
+        FStandard& SetAtrificalStructureMass(boost::multiprecision::uint128_t AtrificalStructureMass);
         FStandard& SetCitizenBiomass(float CitizenBiomass);
-        FStandard& SetCitizenBiomass(const boost::multiprecision::uint128_t& CitizenBiomass);
+        FStandard& SetCitizenBiomass(boost::multiprecision::uint128_t CitizenBiomass);
         FStandard& SetUseableEnergeticNuclide(float UseableEnergeticNuclide);
-        FStandard& SetUseableEnergeticNuclide(const boost::multiprecision::uint128_t& UseableEnergeticNuclide);
+        FStandard& SetUseableEnergeticNuclide(boost::multiprecision::uint128_t UseableEnergeticNuclide);
         FStandard& SetOrbitAssetsMass(float OrbitAssetsMass);
-        FStandard& SetOrbitAssetsMass(const boost::multiprecision::uint128_t& OrbitAssetsMass);
+        FStandard& SetOrbitAssetsMass(boost::multiprecision::uint128_t OrbitAssetsMass);
         FStandard& SetGeneralintelligenceCount(std::uint64_t GeneralintelligenceCount);
         FStandard& SetGeneralIntelligenceAverageSynapseActivationCount(float GeneralIntelligenceAverageSynapseActivationCount);
         FStandard& SetGeneralIntelligenceSynapseCount(float GeneralIntelligenceSynapseCount);

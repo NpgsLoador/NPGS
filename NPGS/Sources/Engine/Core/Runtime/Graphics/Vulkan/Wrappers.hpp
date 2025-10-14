@@ -92,7 +92,7 @@ namespace Npgs
         ERawDataType RawDataType{ ERawDataType::kOther };
         bool         bIsCompressed{ false };
 
-        FFormatInfo(vk::Format Format);
+        explicit FFormatInfo(vk::Format Format);
         constexpr FFormatInfo(int ComponentCount, int ComponentSize, int PixelSize, ERawDataType RawDataType, bool bIsCompressed)
             : ComponentCount(ComponentCount)
             , ComponentSize(ComponentSize)
@@ -110,7 +110,7 @@ namespace Npgs
     // Maybe replaced by vulkan_format_traits.hpp
     constexpr FFormatInfo kFormatInfos[]
     {
-        { 0, 0, 0, FFormatInfo::ERawDataType::kOther, false },          // vk::Format::eUndefined                = 0,
+        { 0, 0, 0, FFormatInfo::ERawDataType::kOther,   false },        // vk::Format::eUndefined                = 0,
 
         { 2, 0, 1, FFormatInfo::ERawDataType::kInteger, false },        // vk::Format::eR4G4UnormPack8           = 1,
 
@@ -263,7 +263,7 @@ namespace Npgs
         { 1, 1, 1, FFormatInfo::ERawDataType::kInteger, false },        // vk::Format::eS8Uint                   = 127,
         { 2, 0, 3, FFormatInfo::ERawDataType::kInteger, false },        // vk::Format::eD16UnormS8Uint           = 128,
         { 2, 0, 4, FFormatInfo::ERawDataType::kInteger, false },        // vk::Format::eD24UnormS8Uint           = 129,
-        { 2, 0, 8, FFormatInfo::ERawDataType::kOther, false },          // vk::Format::eD32SfloatS8Uint          = 130, // 24 bits are unused if data is of linear tiling therefore PixelSize = 8
+        { 2, 0, 8, FFormatInfo::ERawDataType::kOther,   false },        // vk::Format::eD32SfloatS8Uint          = 130, // 24 bits are unused if data is of linear tiling therefore PixelSize = 8
 
         { 3, 0, 0, FFormatInfo::ERawDataType::kInteger, true },         // vk::Format::eBc1RgbUnormBlock         = 131,
         { 3, 0, 0, FFormatInfo::ERawDataType::kInteger, true },         // vk::Format::eBc1RgbSrgbBlock          = 132,
@@ -339,11 +339,11 @@ namespace Npgs
     public:
         TVulkanHandleNoDestroy() = default;
         explicit TVulkanHandleNoDestroy(HandleType Handle);
-        TVulkanHandleNoDestroy(const TVulkanHandleNoDestroy&) = default;
+        TVulkanHandleNoDestroy(const TVulkanHandleNoDestroy&) = delete;
         TVulkanHandleNoDestroy(TVulkanHandleNoDestroy&& Other) noexcept;
         virtual ~TVulkanHandleNoDestroy() = default;
 
-        TVulkanHandleNoDestroy& operator=(const TVulkanHandleNoDestroy&) = default;
+        TVulkanHandleNoDestroy& operator=(const TVulkanHandleNoDestroy&) = delete;
         TVulkanHandleNoDestroy& operator=(TVulkanHandleNoDestroy&& Other) noexcept;
         TVulkanHandleNoDestroy& operator=(HandleType Handle);
 
@@ -367,14 +367,13 @@ namespace Npgs
         using Base = TVulkanHandleNoDestroy<HandleType>;
         using Base::Base;
 
-        TVulkanHandle() = delete;
         TVulkanHandle(vk::Device Device, HandleType Handle, const std::string& HandleName);
         explicit TVulkanHandle(vk::Device Device);
-        TVulkanHandle(const TVulkanHandle&) = default;
+        TVulkanHandle(const TVulkanHandle&) = delete;
         TVulkanHandle(TVulkanHandle&& Other) noexcept;
         ~TVulkanHandle() override;
 
-        TVulkanHandle& operator=(const TVulkanHandle&) = default;
+        TVulkanHandle& operator=(const TVulkanHandle&) = delete;
         TVulkanHandle& operator=(TVulkanHandle&& Other) noexcept;
 
         vk::Result GetStatus() const;
@@ -438,9 +437,11 @@ namespace Npgs
         FVulkanDeviceMemory(vk::Device Device, VmaAllocator Allocator, VmaAllocation Allocation,
                             const VmaAllocationInfo& AllocationInfo, vk::DeviceMemory Handle);
 
+		FVulkanDeviceMemory(const FVulkanDeviceMemory&) = delete;
         FVulkanDeviceMemory(FVulkanDeviceMemory&& Other) noexcept;
         ~FVulkanDeviceMemory() override;
 
+		FVulkanDeviceMemory& operator=(const FVulkanDeviceMemory&) = delete;
         FVulkanDeviceMemory& operator=(FVulkanDeviceMemory&& Other) noexcept;
 
         void SetPersistentMapping(bool bFlag);
@@ -486,7 +487,12 @@ namespace Npgs
                       const VmaAllocationCreateInfo& AllocationCreateInfo,
                       const vk::BufferCreateInfo& CreateInfo);
 
+		FVulkanBuffer(const FVulkanBuffer&) = delete;
+		FVulkanBuffer(FVulkanBuffer&& Other) noexcept;
         ~FVulkanBuffer() override;
+
+		FVulkanBuffer& operator=(const FVulkanBuffer&) = delete;
+		FVulkanBuffer& operator=(FVulkanBuffer&& Other) noexcept;
 
         vk::Result BindMemory(const FVulkanDeviceMemory& DeviceMemory, vk::DeviceSize Offset = 0) const;
         vk::DeviceSize GetDeviceAddress() const;
@@ -640,7 +646,12 @@ namespace Npgs
                      const VmaAllocationCreateInfo& AllocationCreateInfo,
                      const vk::ImageCreateInfo& CreateInfo);
 
+		FVulkanImage(const FVulkanImage&) = delete;
+		FVulkanImage(FVulkanImage&& Other) noexcept;
         ~FVulkanImage() override;
+
+		FVulkanImage& operator=(const FVulkanImage&) = delete;
+		FVulkanImage& operator=(FVulkanImage&& Other) noexcept;
 
         VmaAllocator GetAllocator() const;
         VmaAllocation GetAllocation() const;
@@ -828,13 +839,12 @@ namespace Npgs
     class TVulkanResourceMemory
     {
     public:
-        TVulkanResourceMemory() = delete;
         TVulkanResourceMemory(std::unique_ptr<ResourceType>&& Resource, std::unique_ptr<MemoryType>&& Memory);
-        TVulkanResourceMemory(const TVulkanResourceMemory&) = default;
+        TVulkanResourceMemory(const TVulkanResourceMemory&) = delete;
         TVulkanResourceMemory(TVulkanResourceMemory&& Other) noexcept;
         virtual ~TVulkanResourceMemory() = default;
 
-        TVulkanResourceMemory& operator=(const TVulkanResourceMemory&) = default;
+        TVulkanResourceMemory& operator=(const TVulkanResourceMemory&) = delete;
         TVulkanResourceMemory& operator=(TVulkanResourceMemory&& Other) noexcept;
 
         operator MemoryType& ();

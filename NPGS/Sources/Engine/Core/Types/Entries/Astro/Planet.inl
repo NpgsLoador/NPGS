@@ -1,33 +1,34 @@
+#include <utility>
 #include "Engine/Core/Base/Base.hpp"
 
 namespace Npgs::Astro
 {
+    NPGS_INLINE const APlanet::FExtendedProperties& APlanet::GetExtendedProperties() const
+    {
+        return ExtraProperties_;
+    }
+
     NPGS_INLINE APlanet& APlanet::SetExtendedProperties(FExtendedProperties&& ExtraProperties)
     {
         ExtraProperties_ = std::move(ExtraProperties);
         return *this;
     }
 
-    NPGS_INLINE const APlanet::FExtendedProperties& APlanet::GetExtendedProperties() const
+    NPGS_INLINE APlanet& APlanet::SetAtmosphereMass(FComplexMass AtmosphereMass)
     {
-        return ExtraProperties_;
-    }
-
-    NPGS_INLINE APlanet& APlanet::SetAtmosphereMass(const FComplexMass& AtmosphereMass)
-    {
-        ExtraProperties_.AtmosphereMass = AtmosphereMass;
+        ExtraProperties_.AtmosphereMass = std::move(AtmosphereMass);
         return *this;
     }
 
-    NPGS_INLINE APlanet& APlanet::SetCoreMass(const FComplexMass& CoreMass)
+    NPGS_INLINE APlanet& APlanet::SetCoreMass(FComplexMass CoreMass)
     {
-        ExtraProperties_.CoreMass = CoreMass;
+        ExtraProperties_.CoreMass = std::move(CoreMass);
         return *this;
     }
 
-    NPGS_INLINE APlanet& APlanet::SetOceanMass(const FComplexMass& OceanMass)
+    NPGS_INLINE APlanet& APlanet::SetOceanMass(FComplexMass OceanMass)
     {
-        ExtraProperties_.OceanMass = OceanMass;
+        ExtraProperties_.OceanMass = std::move(OceanMass);
         return *this;
     }
 
@@ -37,9 +38,9 @@ namespace Npgs::Astro
         return *this;
     }
 
-    NPGS_INLINE APlanet& APlanet::SetCrustMineralMass(const boost::multiprecision::uint128_t& CrustMineralMass)
+    NPGS_INLINE APlanet& APlanet::SetCrustMineralMass(boost::multiprecision::uint128_t CrustMineralMass)
     {
-        ExtraProperties_.CrustMineralMass = CrustMineralMass;
+        ExtraProperties_.CrustMineralMass = std::move(CrustMineralMass);
         return *this;
     }
 
@@ -73,9 +74,9 @@ namespace Npgs::Astro
         return *this;
     }
 
-    NPGS_INLINE APlanet& APlanet::SetAtmosphereMassZ(const boost::multiprecision::uint128_t& AtmosphereMassZ)
+    NPGS_INLINE APlanet& APlanet::SetAtmosphereMassZ(boost::multiprecision::uint128_t AtmosphereMassZ)
     {
-        ExtraProperties_.AtmosphereMass.Z = AtmosphereMassZ;
+        ExtraProperties_.AtmosphereMass.Z = std::move(AtmosphereMassZ);
         return *this;
     }
 
@@ -85,9 +86,9 @@ namespace Npgs::Astro
         return *this;
     }
 
-    NPGS_INLINE APlanet& APlanet::SetAtmosphereMassVolatiles(const boost::multiprecision::uint128_t& AtmosphereMassVolatiles)
+    NPGS_INLINE APlanet& APlanet::SetAtmosphereMassVolatiles(boost::multiprecision::uint128_t AtmosphereMassVolatiles)
     {
-        ExtraProperties_.AtmosphereMass.Volatiles = AtmosphereMassVolatiles;
+        ExtraProperties_.AtmosphereMass.Volatiles = std::move(AtmosphereMassVolatiles);
         return *this;
     }
 
@@ -97,9 +98,9 @@ namespace Npgs::Astro
         return *this;
     }
 
-    NPGS_INLINE APlanet& APlanet::SetAtmosphereMassEnergeticNuclide(const boost::multiprecision::uint128_t& AtmosphereMassEnergeticNuclide)
+    NPGS_INLINE APlanet& APlanet::SetAtmosphereMassEnergeticNuclide(boost::multiprecision::uint128_t AtmosphereMassEnergeticNuclide)
     {
-        ExtraProperties_.AtmosphereMass.EnergeticNuclide = AtmosphereMassEnergeticNuclide;
+        ExtraProperties_.AtmosphereMass.EnergeticNuclide = std::move(AtmosphereMassEnergeticNuclide);
         return *this;
     }
 
@@ -109,9 +110,9 @@ namespace Npgs::Astro
         return *this;
     }
 
-    NPGS_INLINE APlanet& APlanet::SetCoreMassZ(const boost::multiprecision::uint128_t& CoreMassZ)
+    NPGS_INLINE APlanet& APlanet::SetCoreMassZ(boost::multiprecision::uint128_t CoreMassZ)
     {
-        ExtraProperties_.CoreMass.Z = CoreMassZ;
+        ExtraProperties_.CoreMass.Z = std::move(CoreMassZ);
         return *this;
     }
 
@@ -121,9 +122,9 @@ namespace Npgs::Astro
         return *this;
     }
 
-    NPGS_INLINE APlanet& APlanet::SetCoreMassVolatiles(const boost::multiprecision::uint128_t& CoreMassVolatiles)
+    NPGS_INLINE APlanet& APlanet::SetCoreMassVolatiles(boost::multiprecision::uint128_t CoreMassVolatiles)
     {
-        ExtraProperties_.CoreMass.Volatiles = CoreMassVolatiles;
+        ExtraProperties_.CoreMass.Volatiles = std::move(CoreMassVolatiles);
         return *this;
     }
 
@@ -133,9 +134,9 @@ namespace Npgs::Astro
         return *this;
     }
 
-    NPGS_INLINE APlanet& APlanet::SetCoreMassEnergeticNuclide(const boost::multiprecision::uint128_t& CoreMassEnergeticNuclide)
+    NPGS_INLINE APlanet& APlanet::SetCoreMassEnergeticNuclide(boost::multiprecision::uint128_t CoreMassEnergeticNuclide)
     {
-        ExtraProperties_.CoreMass.EnergeticNuclide = CoreMassEnergeticNuclide;
+        ExtraProperties_.CoreMass.EnergeticNuclide = std::move(CoreMassEnergeticNuclide);
         return *this;
     }
 
@@ -145,9 +146,9 @@ namespace Npgs::Astro
         return *this;
     }
 
-    NPGS_INLINE APlanet& APlanet::SetOceanMassZ(const boost::multiprecision::uint128_t& OceanMassZ)
+    NPGS_INLINE APlanet& APlanet::SetOceanMassZ(boost::multiprecision::uint128_t OceanMassZ)
     {
-        ExtraProperties_.OceanMass.Z = OceanMassZ;
+        ExtraProperties_.OceanMass.Z = std::move(OceanMassZ);
         return *this;
     }
 
@@ -157,9 +158,9 @@ namespace Npgs::Astro
         return *this;
     }
 
-    NPGS_INLINE APlanet& APlanet::SetOceanMassVolatiles(const boost::multiprecision::uint128_t& OceanMassVolatiles)
+    NPGS_INLINE APlanet& APlanet::SetOceanMassVolatiles(boost::multiprecision::uint128_t OceanMassVolatiles)
     {
-        ExtraProperties_.OceanMass.Volatiles = OceanMassVolatiles;
+        ExtraProperties_.OceanMass.Volatiles = std::move(OceanMassVolatiles);
         return *this;
     }
 
@@ -169,9 +170,9 @@ namespace Npgs::Astro
         return *this;
     }
 
-    NPGS_INLINE APlanet& APlanet::SetOceanMassEnergeticNuclide(const boost::multiprecision::uint128_t& OceanMassEnergeticNuclide)
+    NPGS_INLINE APlanet& APlanet::SetOceanMassEnergeticNuclide(boost::multiprecision::uint128_t OceanMassEnergeticNuclide)
     {
-        ExtraProperties_.OceanMass.EnergeticNuclide = OceanMassEnergeticNuclide;
+        ExtraProperties_.OceanMass.EnergeticNuclide = std::move(OceanMassEnergeticNuclide);
         return *this;
     }
 
@@ -376,9 +377,9 @@ namespace Npgs::Astro
         return *this;
     }
 
-    NPGS_INLINE AAsteroidCluster& AAsteroidCluster::SetMassZ(const boost::multiprecision::uint128_t& MassZ)
+    NPGS_INLINE AAsteroidCluster& AAsteroidCluster::SetMassZ(boost::multiprecision::uint128_t MassZ)
     {
-        Properties_.Mass.Z = MassZ;
+        Properties_.Mass.Z = std::move(MassZ);
         return *this;
     }
 
@@ -388,9 +389,9 @@ namespace Npgs::Astro
         return *this;
     }
 
-    NPGS_INLINE AAsteroidCluster& AAsteroidCluster::SetMassVolatiles(const boost::multiprecision::uint128_t& MassVolatiles)
+    NPGS_INLINE AAsteroidCluster& AAsteroidCluster::SetMassVolatiles(boost::multiprecision::uint128_t MassVolatiles)
     {
-        Properties_.Mass.Volatiles = MassVolatiles;
+        Properties_.Mass.Volatiles = std::move(MassVolatiles);
         return *this;
     }
 
@@ -400,9 +401,9 @@ namespace Npgs::Astro
         return *this;
     }
 
-    NPGS_INLINE AAsteroidCluster& AAsteroidCluster::SetMassEnergeticNuclide(const boost::multiprecision::uint128_t& MassEnergeticNuclide)
+    NPGS_INLINE AAsteroidCluster& AAsteroidCluster::SetMassEnergeticNuclide(boost::multiprecision::uint128_t MassEnergeticNuclide)
     {
-        Properties_.Mass.EnergeticNuclide = MassEnergeticNuclide;
+        Properties_.Mass.EnergeticNuclide = std::move(MassEnergeticNuclide);
         return *this;
     }
 

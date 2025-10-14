@@ -49,9 +49,9 @@ namespace Npgs
         AddElementChecked(Layer, InstanceLayers_);
     }
 
-    NPGS_INLINE void FVulkanCore::SetInstanceLayers(const std::vector<const char*>& Layers)
+    NPGS_INLINE void FVulkanCore::SetInstanceLayers(std::vector<const char*> Layers)
     {
-        InstanceLayers_ = Layers;
+        InstanceLayers_ = std::move(Layers);
     }
 
     NPGS_INLINE void FVulkanCore::AddInstanceExtension(const char* Extension)
@@ -59,9 +59,9 @@ namespace Npgs
         AddElementChecked(Extension, InstanceExtensions_);
     }
 
-    NPGS_INLINE void FVulkanCore::SetInstanceExtensions(const std::vector<const char*>& Extensions)
+    NPGS_INLINE void FVulkanCore::SetInstanceExtensions(std::vector<const char*> Extensions)
     {
-        InstanceExtensions_ = Extensions;
+        InstanceExtensions_ = std::move(Extensions);
     }
 
     NPGS_INLINE void FVulkanCore::AddDeviceExtension(const char* Extension)
@@ -69,9 +69,9 @@ namespace Npgs
         AddElementChecked(Extension, DeviceExtensions_);
     }
 
-    NPGS_INLINE void FVulkanCore::SetDeviceExtensions(const std::vector<const char*>& Extensions)
+    NPGS_INLINE void FVulkanCore::SetDeviceExtensions(std::vector<const char*> Extensions)
     {
-        DeviceExtensions_ = Extensions;
+        DeviceExtensions_ = std::move(Extensions);
     }
 
     NPGS_INLINE void FVulkanCore::SetSurface(vk::SurfaceKHR Surface)

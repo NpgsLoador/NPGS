@@ -1,3 +1,4 @@
+#include <utility>
 #include "Engine/Core/Base/Base.hpp"
 
 namespace Npgs::Astro
@@ -196,9 +197,9 @@ namespace Npgs::Astro
         return *this;
     }
 
-    NPGS_INLINE FStellarSystem& FStellarSystem::SetBaryName(const std::string& Name)
+    NPGS_INLINE FStellarSystem& FStellarSystem::SetBaryName(std::string Name)
     {
-        SystemBary_.Name = Name;
+        SystemBary_.Name = std::move(Name);
         return *this;
     }
 

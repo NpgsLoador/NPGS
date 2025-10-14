@@ -2,15 +2,15 @@
 
 namespace Npgs::Astro
 {
-    NPGS_INLINE AStar& AStar::SetExtendedProperties(const FExtendedProperties& ExtraProperties)
-    {
-        ExtraProperties_ = ExtraProperties;
-        return *this;
-    }
-
     NPGS_INLINE const AStar::FExtendedProperties& AStar::GetExtendedProperties() const
     {
         return ExtraProperties_;
+    }
+
+    NPGS_INLINE AStar& AStar::SetExtendedProperties(FExtendedProperties ExtraProperties)
+    {
+        ExtraProperties_ = std::move(ExtraProperties);
+        return *this;
     }
 
     NPGS_INLINE AStar& AStar::SetMass(double Mass)
@@ -133,9 +133,9 @@ namespace Npgs::Astro
         return *this;
     }
 
-    NPGS_INLINE AStar& AStar::SetStellarClass(const Astro::FStellarClass& Class)
+    NPGS_INLINE AStar& AStar::SetStellarClass(Astro::FStellarClass Class)
     {
-        ExtraProperties_.Class = Class;
+        ExtraProperties_.Class = std::move(Class);
         return *this;
     }
 

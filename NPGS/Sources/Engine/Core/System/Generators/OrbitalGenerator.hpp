@@ -41,7 +41,6 @@ namespace Npgs
         };
 
     public:
-        FOrbitalGenerator() = delete;
         FOrbitalGenerator(const FGenerationInfo& GenerationInfo);
         FOrbitalGenerator(const FOrbitalGenerator& Other);
         FOrbitalGenerator(FOrbitalGenerator&& Other) noexcept;

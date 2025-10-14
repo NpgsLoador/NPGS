@@ -22,7 +22,6 @@ namespace Npgs
         };
 
     public:
-        FCivilizationGenerator() = delete;
         FCivilizationGenerator(const FGenerationInfo& GenerationInfo);
         FCivilizationGenerator(const FCivilizationGenerator& Other);
         FCivilizationGenerator(FCivilizationGenerator&& Other) noexcept;

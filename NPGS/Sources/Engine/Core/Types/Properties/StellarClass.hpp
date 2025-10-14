@@ -133,7 +133,6 @@ namespace Npgs::Astro
     public:
         FStellarClass();
         FStellarClass(EStellarType StellarType, const FSpectralType& SpectralType);
-        ~FStellarClass() = default;
 
         FSpectralType Data() const;
         bool Load(const FSpectralType& SpectralType);

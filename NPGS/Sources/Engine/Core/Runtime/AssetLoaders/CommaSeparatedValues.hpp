@@ -29,19 +29,12 @@ namespace Npgs
         using FRowArray = std::vector<BaseType>;
 
     public:
-        TCommaSeparatedValues(const std::string& Filename, const std::vector<std::string>& ColNames)
-            : Filename_(Filename), ColNames_(ColNames)
+        TCommaSeparatedValues(std::string Filename, std::vector<std::string> ColNames)
+            : Filename_(std::move(Filename)), ColNames_(std::move(ColNames))
         {
             InitializeHeaderMap();
             ReadData(io::ignore_extra_column);
         }
-
-        TCommaSeparatedValues(const TCommaSeparatedValues&)     = default;
-        TCommaSeparatedValues(TCommaSeparatedValues&&) noexcept = default;
-        ~TCommaSeparatedValues()                                = default;
-
-        TCommaSeparatedValues& operator=(const TCommaSeparatedValues&)     = default;
-        TCommaSeparatedValues& operator=(TCommaSeparatedValues&&) noexcept = default;
 
         FRowArray FindFirstDataArray(const std::string& DataHeader, const BaseType& DataValue) const
         {

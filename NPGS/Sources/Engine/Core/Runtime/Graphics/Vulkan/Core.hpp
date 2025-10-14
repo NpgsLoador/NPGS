@@ -50,11 +50,11 @@ namespace Npgs
         void RemoveDestroySwapchainCallback(const std::string& Name);
 
         void AddInstanceLayer(const char* Layer);
-        void SetInstanceLayers(const std::vector<const char*>& Layers);
+        void SetInstanceLayers(std::vector<const char*> Layers);
         void AddInstanceExtension(const char* Extension);
-        void SetInstanceExtensions(const std::vector<const char*>& Extensions);
+        void SetInstanceExtensions(std::vector<const char*> Extensions);
         void AddDeviceExtension(const char* Extension);
-        void SetDeviceExtensions(const std::vector<const char*>& Extensions);
+        void SetDeviceExtensions(std::vector<const char*> Extensions);
 
         vk::Result CreateInstance(vk::InstanceCreateFlags Flags);
         vk::Result CreateDevice(std::uint32_t PhysicalDeviceIndex, vk::DeviceCreateFlags Flags);

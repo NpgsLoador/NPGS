@@ -92,7 +92,6 @@ namespace Npgs
         };
 
     public:
-        FStellarGenerator() = delete;
         FStellarGenerator(const FGenerationInfo& GenerationInfo);
         FStellarGenerator(const FStellarGenerator& Other);
         FStellarGenerator(FStellarGenerator&& Other) noexcept;
@@ -117,9 +116,9 @@ namespace Npgs
         FStellarGenerator& SetMassUpperLimit(float Limit);
         FStellarGenerator& SetCoilTempLimit(float Limit);
         FStellarGenerator& SetdEpdM(float dEpdM);
-        FStellarGenerator& SetAgePdf(const std::function<float(glm::vec3, float, float)>& AgePdf);
+        FStellarGenerator& SetAgePdf(std::function<float(glm::vec3, float, float)> AgePdf);
         FStellarGenerator& SetAgeMaxPdf(glm::vec2 MaxPdf);
-        FStellarGenerator& SetMassPdfs(const std::array<std::function<float(float)>, 2>& MassPdfs);
+        FStellarGenerator& SetMassPdfs(std::array<std::function<float(float)>, 2> MassPdfs);
         FStellarGenerator& SetMassMaxPdfs(std::array<glm::vec2, 2> MaxPdfs);
         FStellarGenerator& SetAgeDistribution(EGenerationDistribution Distribution);
         FStellarGenerator& SetFeHDistribution(EGenerationDistribution Distribution);

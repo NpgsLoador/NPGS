@@ -1,3 +1,4 @@
+#include <utility>
 #include "Engine/Core/Base/Base.hpp"
 
 namespace Npgs::Intelli
@@ -32,9 +33,9 @@ namespace Npgs::Intelli
         return *this;
     }
 
-    NPGS_INLINE FStandard& FStandard::SetAtrificalStructureMass(const boost::multiprecision::uint128_t& AtrificalStructureMass)
+    NPGS_INLINE FStandard& FStandard::SetAtrificalStructureMass(boost::multiprecision::uint128_t AtrificalStructureMass)
     {
-        CivilizationProperties_.AtrificalStructureMass = AtrificalStructureMass;
+        CivilizationProperties_.AtrificalStructureMass = std::move(AtrificalStructureMass);
         return *this;
     }
 
@@ -44,9 +45,9 @@ namespace Npgs::Intelli
         return *this;
     }
 
-    NPGS_INLINE FStandard& FStandard::SetCitizenBiomass(const boost::multiprecision::uint128_t& CitizenBiomass)
+    NPGS_INLINE FStandard& FStandard::SetCitizenBiomass(boost::multiprecision::uint128_t CitizenBiomass)
     {
-        CivilizationProperties_.CitizenBiomass = CitizenBiomass;
+        CivilizationProperties_.CitizenBiomass = std::move(CitizenBiomass);
         return *this;
     }
 
@@ -56,9 +57,9 @@ namespace Npgs::Intelli
         return *this;
     }
 
-    NPGS_INLINE FStandard& FStandard::SetUseableEnergeticNuclide(const boost::multiprecision::uint128_t& UseableEnergeticNuclide)
+    NPGS_INLINE FStandard& FStandard::SetUseableEnergeticNuclide(boost::multiprecision::uint128_t UseableEnergeticNuclide)
     {
-        CivilizationProperties_.UseableEnergeticNuclide = UseableEnergeticNuclide;
+        CivilizationProperties_.UseableEnergeticNuclide = std::move(UseableEnergeticNuclide);
         return *this;
     }
 
@@ -68,9 +69,9 @@ namespace Npgs::Intelli
         return *this;
     }
 
-    NPGS_INLINE FStandard& FStandard::SetOrbitAssetsMass(const boost::multiprecision::uint128_t& OrbitAssetsMass)
+    NPGS_INLINE FStandard& FStandard::SetOrbitAssetsMass(boost::multiprecision::uint128_t OrbitAssetsMass)
     {
-        CivilizationProperties_.OrbitAssetsMass = OrbitAssetsMass;
+        CivilizationProperties_.OrbitAssetsMass = std::move(OrbitAssetsMass);
         return *this;
     }
 

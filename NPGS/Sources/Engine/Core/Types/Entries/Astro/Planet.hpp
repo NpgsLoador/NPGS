@@ -62,17 +62,17 @@ namespace Npgs::Astro
         APlanet& operator=(const APlanet& Other);
         APlanet& operator=(APlanet&&) noexcept = default;
 
-        APlanet& SetExtendedProperties(FExtendedProperties&& ExtraProperties);
         const FExtendedProperties& GetExtendedProperties() const;
+        APlanet& SetExtendedProperties(FExtendedProperties&& ExtraProperties);
 
         // Setters
         // Setters for ExtendedProperties
         // ------------------------------
-        APlanet& SetAtmosphereMass(const FComplexMass& AtmosphereMass);
-        APlanet& SetCoreMass(const FComplexMass& CoreMass);
-        APlanet& SetOceanMass(const FComplexMass& OceanMass);
+        APlanet& SetAtmosphereMass(FComplexMass AtmosphereMass);
+        APlanet& SetCoreMass(FComplexMass CoreMass);
+        APlanet& SetOceanMass(FComplexMass OceanMass);
         APlanet& SetCrustMineralMass(float CrustMineralMass);
-        APlanet& SetCrustMineralMass(const boost::multiprecision::uint128_t& CrustMineralMass);
+        APlanet& SetCrustMineralMass(boost::multiprecision::uint128_t CrustMineralMass);
         APlanet& SetCivilizationData(std::unique_ptr<Intelli::FStandard>&& CivilizationData);
         APlanet& SetBalanceTemperature(float BalanceTemperature);
         APlanet& SetMigration(bool bIsMigrated);
@@ -81,23 +81,23 @@ namespace Npgs::Astro
         // Setters for every mass property
         // -------------------------------
         APlanet& SetAtmosphereMassZ(float AtmosphereMassZ);
-        APlanet& SetAtmosphereMassZ(const boost::multiprecision::uint128_t& AtmosphereMassZ);
+        APlanet& SetAtmosphereMassZ(boost::multiprecision::uint128_t AtmosphereMassZ);
         APlanet& SetAtmosphereMassVolatiles(float AtmosphereMassVolatiles);
-        APlanet& SetAtmosphereMassVolatiles(const boost::multiprecision::uint128_t& AtmosphereMassVolatiles);
+        APlanet& SetAtmosphereMassVolatiles(boost::multiprecision::uint128_t AtmosphereMassVolatiles);
         APlanet& SetAtmosphereMassEnergeticNuclide(float AtmosphereMassEnergeticNuclide);
-        APlanet& SetAtmosphereMassEnergeticNuclide(const boost::multiprecision::uint128_t& AtmosphereMassEnergeticNuclide);
+        APlanet& SetAtmosphereMassEnergeticNuclide(boost::multiprecision::uint128_t AtmosphereMassEnergeticNuclide);
         APlanet& SetCoreMassZ(float CoreMassZ);
-        APlanet& SetCoreMassZ(const boost::multiprecision::uint128_t& CoreMassZ);
+        APlanet& SetCoreMassZ(boost::multiprecision::uint128_t CoreMassZ);
         APlanet& SetCoreMassVolatiles(float CoreMassVolatiles);
-        APlanet& SetCoreMassVolatiles(const boost::multiprecision::uint128_t& CoreMassVolatiles);
+        APlanet& SetCoreMassVolatiles(boost::multiprecision::uint128_t CoreMassVolatiles);
         APlanet& SetCoreMassEnergeticNuclide(float CoreMassEnergeticNuclide);
-        APlanet& SetCoreMassEnergeticNuclide(const boost::multiprecision::uint128_t& CoreMassEnergeticNuclide);
+        APlanet& SetCoreMassEnergeticNuclide(boost::multiprecision::uint128_t CoreMassEnergeticNuclide);
         APlanet& SetOceanMassZ(float OceanMassZ);
-        APlanet& SetOceanMassZ(const boost::multiprecision::uint128_t& OceanMassZ);
+        APlanet& SetOceanMassZ(boost::multiprecision::uint128_t OceanMassZ);
         APlanet& SetOceanMassVolatiles(float OceanMassVolatiles);
-        APlanet& SetOceanMassVolatiles(const boost::multiprecision::uint128_t& OceanMassVolatiles);
+        APlanet& SetOceanMassVolatiles(boost::multiprecision::uint128_t OceanMassVolatiles);
         APlanet& SetOceanMassEnergeticNuclide(float OceanMassEnergeticNuclide);
-        APlanet& SetOceanMassEnergeticNuclide(const boost::multiprecision::uint128_t& OceanMassEnergeticNuclide);
+        APlanet& SetOceanMassEnergeticNuclide(boost::multiprecision::uint128_t OceanMassEnergeticNuclide);
 
         // Getters
         // Getters for ExtendedProperties
@@ -200,11 +200,11 @@ namespace Npgs::Astro
         // Setters for every mass property
         // -------------------------------
         AAsteroidCluster& SetMassZ(float MassZ);
-        AAsteroidCluster& SetMassZ(const boost::multiprecision::uint128_t& MassZ);
+        AAsteroidCluster& SetMassZ(boost::multiprecision::uint128_t MassZ);
         AAsteroidCluster& SetMassVolatiles(float MassVolatiles);
-        AAsteroidCluster& SetMassVolatiles(const boost::multiprecision::uint128_t& MassVolatiles);
+        AAsteroidCluster& SetMassVolatiles(boost::multiprecision::uint128_t MassVolatiles);
         AAsteroidCluster& SetMassEnergeticNuclide(float MassEnergeticNuclide);
-        AAsteroidCluster& SetMassEnergeticNuclide(const boost::multiprecision::uint128_t& MassEnergeticNuclide);
+        AAsteroidCluster& SetMassEnergeticNuclide(boost::multiprecision::uint128_t MassEnergeticNuclide);
         AAsteroidCluster& SetAsteroidType(EAsteroidType Type);
 
         // Getters

@@ -25,31 +25,28 @@ namespace Npgs
         };
 
     public:
-        FCamera() = delete;
         FCamera(glm::vec3 Position = glm::vec3(0.0f), float Sensitivity = 0.05f, float Speed = 2.5f,
                 float Zoom = 60.0f, float InertiaDecay = 0.5, float SmoothCoefficient = 0.2);
-
-        ~FCamera() = default;
 
         void AlignCamera();
         void ProcessKeyboard(EMovement Direction, double DeltaTime);
         void ProcessMouseScroll(double OffsetY);
         void ProcessEvent(double DeltaTime);
 
-        void SetOrientation(glm::quat Orientation);
-        void SetVector(EVector Vector, glm::vec3 NewVector);
-        void SetOrbitTarget(glm::vec3 Target);
-        void SetOrbitAxis(glm::vec3 Axis);
-        void SetTargetOffset(glm::vec2 Offset);
-        void SetZoom(float Zoom);
-        void SetMode(EMode Mode);
+		glm::quat GetOrientation() const;
+		void      SetOrientation(glm::quat Orientation);
+		glm::vec3 GetVector(EVector Vector) const;
+		void      SetVector(EVector Vector, glm::vec3 NewVector);
+		float     GetZoom() const;
+		void      SetZoom(float Zoom);
+		EMode     GetMode() const;
+		void      SetMode(EMode Mode);
 
-        glm::quat GetOrientation() const;
-        glm::vec3 GetVector(EVector Vector) const;
-        glm::mat4x4 GetViewMatrix() const;
-        glm::mat4x4 GetProjectionMatrix(float WindowAspect, float Near) const;
-        float GetZoom() const;
-        EMode GetMode() const;
+		glm::mat4x4 GetViewMatrix() const;
+		glm::mat4x4 GetProjectionMatrix(float WindowAspect, float Near) const;
+		void SetOrbitTarget(glm::vec3 Target);
+		void SetOrbitAxis(glm::vec3 Axis);
+		void SetTargetOffset(glm::vec2 Offset);
 
     private:
         void ProcessAlign(double DeltaTime);

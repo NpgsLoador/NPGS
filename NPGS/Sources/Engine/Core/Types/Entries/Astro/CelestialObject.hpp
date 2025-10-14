@@ -9,8 +9,13 @@ namespace Npgs::Astro
     class IAstroObject : public INpgsObject
     {
     public:
-        IAstroObject()          = default;
-        virtual ~IAstroObject() = default;
+        IAstroObject()                    = default;
+		IAstroObject(const IAstroObject&) = default;
+		IAstroObject(IAstroObject&&)      = default;
+        virtual ~IAstroObject()           = default;
+
+		IAstroObject& operator=(const IAstroObject&) = default;
+		IAstroObject& operator=(IAstroObject&&)      = default;
     };
 
     class FCelestialBody : public IAstroObject
@@ -42,32 +47,26 @@ namespace Npgs::Astro
         FCelestialBody& operator=(const FCelestialBody&)     = default;
         FCelestialBody& operator=(FCelestialBody&&) noexcept = default;
 
-        FCelestialBody& SetBasicProperties(const FBasicProperties& Properties);
         const FBasicProperties& GetBasicProperties() const;
+        FCelestialBody&         SetBasicProperties(const FBasicProperties& Properties);
 
-        // Setters
-        // Setters for BasicProperties
-        // ---------------------------
-        FCelestialBody& SetName(const std::string& Name);
-        FCelestialBody& SetNormal(glm::vec2 Normal);
-        FCelestialBody& SetAge(double Age);
-        FCelestialBody& SetRadius(float Radius);
-        FCelestialBody& SetSpin(float Spin);
-        FCelestialBody& SetOblateness(float Oblateness);
-        FCelestialBody& SetEscapeVelocity(float EscapeVelocity);
-        FCelestialBody& SetMagneticField(float MagneticField);
-
-        // Getters
-        // Getters for BasicProperties
-        // ---------------------------
         const std::string& GetName() const;
-        glm::vec2 GetNormal() const;
-        double GetAge() const;
-        float  GetRadius() const;
-        float  GetSpin() const;
-        float  GetOblateness() const;
-        float  GetEscapeVelocity() const;
-        float  GetMagneticField() const;
+        FCelestialBody&    SetName(std::string Name);
+        glm::vec2          GetNormal() const;
+        FCelestialBody&    SetNormal(glm::vec2 Normal);
+        double             GetAge() const;
+        FCelestialBody&    SetAge(double Age);
+        float              GetRadius() const;
+        FCelestialBody&    SetRadius(float Radius);
+        float              GetSpin() const;
+        FCelestialBody&    SetSpin(float Spin);
+        float              GetOblateness() const;
+        FCelestialBody&    SetOblateness(float Oblateness);
+        float              GetEscapeVelocity() const;
+        FCelestialBody&    SetEscapeVelocity(float EscapeVelocity);
+        float              GetMagneticField() const;
+        FCelestialBody&    SetMagneticField(float MagneticField);
+
 
     private:
         FBasicProperties Properties_{};
