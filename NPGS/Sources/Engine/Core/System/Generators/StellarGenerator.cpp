@@ -46,6 +46,17 @@ namespace Npgs
             return std::unexpected(DeathStar);
         }
 
+        float CalculateWNxhMassThreshold(float FeH)
+        {
+            float BaseMass =  60.0f;
+            float Exponent = -0.31f;
+
+            float FeHRatio  = std::pow(10.0f, FeH);
+			float Threshold = BaseMass * std::pow(FeHRatio, Exponent);
+
+            return std::clamp(Threshold, 45.0f, 300.0f);
+        }
+
         float DefaultAgePdf(glm::vec3, float Age, float UniverseAge)
         {
             float Probability = 0.0f;
@@ -1446,19 +1457,20 @@ namespace Npgs
 
     void FStellarGenerator::CalculateSpectralType(float FeH, Astro::AStar& StarData)
     {
-        float Teff = StarData.GetTeff();
-        auto EvolutionPhase = StarData.GetEvolutionPhase();
+        float Teff           = StarData.GetTeff();
+        auto  EvolutionPhase = StarData.GetEvolutionPhase();
 
         Astro::FStellarClass::EStellarType StellarType = StarData.GetStellarClass().GetStellarType();
         Astro::FStellarClass::FSpectralType SpectralType;
         SpectralType.bIsAmStar = false;
 
         std::vector<std::pair<int, int>> SpectralSubclassMap;
-        float InitialMassSol = StarData.GetInitialMass() / kSolarMass;
-        float Subclass       = 0.0f;
-        float SurfaceH1      = StarData.GetSurfaceH1();
-        float SurfaceZ       = StarData.GetSurfaceZ();
-        float MinSurfaceH1   = Astro::AStar::kFeHSurfaceH1Map_.at(FeH) - 0.01f;
+        float InitialMassSol    = StarData.GetInitialMass() / kSolarMass;
+        float Subclass          = 0.0f;
+        float SurfaceH1         = StarData.GetSurfaceH1();
+        float SurfaceZ          = StarData.GetSurfaceZ();
+        float MinSurfaceH1      = Astro::AStar::kFeHSurfaceH1Map_.at(FeH) - 0.01f;
+		float WNxhMassThreshold = CalculateWNxhMassThreshold(FeH);
 
         std::function<void(Astro::AStar::EEvolutionPhase)> CalculateSpectralSubclass =
         [&](Astro::AStar::EEvolutionPhase BasePhase) -> void
@@ -1469,9 +1481,9 @@ namespace Npgs
             {
                 if (BasePhase == Astro::AStar::EEvolutionPhase::kMainSequence)
                 {
-                    // 如果表面氢质量分数低于 0.5 且还是主序星阶段，或初始质量超过太阳的 120 倍，转为 WR 星
+                    // 如果表面氢质量分数低于 0.4 且还是主序星阶段，或初始质量 WHxh 门槛，转为 WR 星
                     // 该情况只有 O 型星会出现
-                    if (SurfaceH1 < 0.5f || InitialMassSol > 120)
+                    if (SurfaceH1 < 0.4f || InitialMassSol > WNxhMassThreshold)
                     {
                         EvolutionPhase = Astro::AStar::EEvolutionPhase::kWolfRayet;
                         StarData.SetEvolutionPhase(EvolutionPhase);
@@ -1591,7 +1603,7 @@ namespace Npgs
                 else
                 {
                     // 前主序恒星温度达不到 O2 上限
-                    if (InitialMassSol <= 120)
+                    if (InitialMassSol <= WNxhMassThreshold)
                     {
                         if (SurfaceH1 > MinSurfaceH1)
                         {
