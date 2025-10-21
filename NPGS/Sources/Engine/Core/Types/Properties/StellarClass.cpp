@@ -232,7 +232,7 @@ namespace Npgs::Astro
                 if ((State = ParseSpecialMark(Char, NextChar, SpecialMark, Index)) == EParseState::kSpectralClass)
                 {
                     bParsingAmStar = true;
-                    bIsAmStar = true;
+                    bIsAmStar      = true;
                 }
 
                 break;
@@ -270,7 +270,7 @@ namespace Npgs::Astro
             StellarType = FStellarClass::EStellarType::kNeutronStar;
             return EParseState::kEnd;
         case 'D':
-            StellarType = FStellarClass::EStellarType::kWhiteDwarf;
+            StellarType    = FStellarClass::EStellarType::kWhiteDwarf;
             HSpectralClass = FStellarClass::ESpectralClass::kSpectral_D;
             ++Index;
             return EParseState::kWhiteDwarf;
@@ -652,29 +652,29 @@ namespace Npgs::Astro
         switch (LuminosityClass)
         {
         case FStellarClass::ELuminosityClass::kLuminosity_0:
-            return std::string("0");
+            return "0";
         case FStellarClass::ELuminosityClass::kLuminosity_IaPlus:
-            return std::string("Ia+");
+            return "Ia+";
         case FStellarClass::ELuminosityClass::kLuminosity_Ia:
-            return std::string("Ia");
+            return "Ia";
         case FStellarClass::ELuminosityClass::kLuminosity_Ib:
-            return std::string("Ib");
+            return "Ib";
         case FStellarClass::ELuminosityClass::kLuminosity_Iab:
-            return std::string("Iab");
+            return "Iab";
         case FStellarClass::ELuminosityClass::kLuminosity_I:
-            return std::string("I");
+            return "I";
         case FStellarClass::ELuminosityClass::kLuminosity_II:
-            return std::string("II");
+            return "II";
         case FStellarClass::ELuminosityClass::kLuminosity_III:
-            return std::string("III");
+            return "III";
         case FStellarClass::ELuminosityClass::kLuminosity_IV:
-            return std::string("IV");
+            return "IV";
         case FStellarClass::ELuminosityClass::kLuminosity_V:
-            return std::string("V");
+            return "V";
         case FStellarClass::ELuminosityClass::kLuminosity_VI:
-            return std::string("VI");
+            return "VI";
         default:
-            return std::string("");
+            return "";
         }
     }
 
@@ -683,15 +683,15 @@ namespace Npgs::Astro
         switch (SpecialMark)
         {
         case FStellarClass::ESpecialMark::kCode_Null:
-            return std::string("");
+            return "";
         case FStellarClass::ESpecialMark::kCode_f:
-            return std::string("f");
+            return "f";
         case FStellarClass::ESpecialMark::kCode_h:
-            return std::string("h");
+            return "h";
         case FStellarClass::ESpecialMark::kCode_p:
-            return std::string("p");
+            return "p";
         default:
-            return std::string("");
+            return "";
         }
     }
 } // namespace Npgs::Astro
