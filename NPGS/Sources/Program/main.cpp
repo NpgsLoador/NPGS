@@ -5,7 +5,7 @@
 using namespace Npgs;
 using namespace Npgs::Util;
 
-int main()
+int main1()
 {
     FLogger::Initialize();
     FEngineServices::GetInstance()->InitializeCoreServices();
@@ -22,7 +22,7 @@ int main()
 #define NPGS_ENABLE_CONSOLE_LOGGER
 #include "Universe.hpp"
 
-int main1() {
+int main() {
     using namespace Npgs;
     using namespace Npgs::Astro;
     using namespace Npgs::Util;

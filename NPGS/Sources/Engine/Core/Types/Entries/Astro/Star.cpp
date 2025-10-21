@@ -168,7 +168,6 @@ namespace Npgs::Astro
 
     const std::vector<std::pair<int, int>> AStar::kSpectralSubclassMap_WO_
     {
-        { 220000, 1 },
         { 200000, 2 },
         { 180000, 3 },
         { 150000, 4 }
