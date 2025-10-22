@@ -589,61 +589,61 @@ namespace Npgs::Astro
         switch (SpectralClass)
         {
         case FStellarClass::ESpectralClass::kSpectral_O:
-            return std::string("O") + Stream.str();
+            return "O" + Stream.str();
         case FStellarClass::ESpectralClass::kSpectral_B:
-            return std::string("B") + Stream.str();
+            return "B" + Stream.str();
         case FStellarClass::ESpectralClass::kSpectral_A:
-            return std::string("A") + Stream.str();
+            return "A" + Stream.str();
         case FStellarClass::ESpectralClass::kSpectral_F:
-            return std::string("F") + Stream.str();
+            return "F" + Stream.str();
         case FStellarClass::ESpectralClass::kSpectral_G:
-            return std::string("G") + Stream.str();
+            return "G" + Stream.str();
         case FStellarClass::ESpectralClass::kSpectral_K:
-            return std::string("K") + Stream.str();
+            return "K" + Stream.str();
         case FStellarClass::ESpectralClass::kSpectral_M:
-            return std::string("M") + Stream.str();
+            return "M" + Stream.str();
         case FStellarClass::ESpectralClass::kSpectral_R:
-            return std::string("R") + Stream.str();
+            return "R" + Stream.str();
         case FStellarClass::ESpectralClass::kSpectral_N:
-            return std::string("N") + Stream.str();
+            return "N" + Stream.str();
         case FStellarClass::ESpectralClass::kSpectral_C:
-            return std::string("C") + Stream.str();
+            return "C" + Stream.str();
         case FStellarClass::ESpectralClass::kSpectral_S:
-            return std::string("S") + Stream.str();
+            return "S" + Stream.str();
         case FStellarClass::ESpectralClass::kSpectral_WO:
-            return std::string("WO") + Stream.str();
+            return "WO" + Stream.str();
         case FStellarClass::ESpectralClass::kSpectral_WN:
-            return std::string("WN") + Stream.str();
+            return "WN" + Stream.str();
         case FStellarClass::ESpectralClass::kSpectral_WC:
-            return std::string("WC") + Stream.str();
+            return "WC" + Stream.str();
         case FStellarClass::ESpectralClass::kSpectral_L:
-            return std::string("L") + Stream.str();
+            return "L" + Stream.str();
         case FStellarClass::ESpectralClass::kSpectral_T:
-            return std::string("T") + Stream.str();
+            return "T" + Stream.str();
         case FStellarClass::ESpectralClass::kSpectral_Y:
-            return std::string("Y") + Stream.str();
+            return "Y" + Stream.str();
         case FStellarClass::ESpectralClass::kSpectral_D:
-            return std::string("D") + Stream.str();
+            return "D" + Stream.str();
         case FStellarClass::ESpectralClass::kSpectral_DA:
-            return std::string("DA") + Stream.str();
+            return "DA" + Stream.str();
         case FStellarClass::ESpectralClass::kSpectral_DB:
-            return std::string("DB") + Stream.str();
+            return "DB" + Stream.str();
         case FStellarClass::ESpectralClass::kSpectral_DC:
-            return std::string("DC") + Stream.str();
+            return "DC" + Stream.str();
         case FStellarClass::ESpectralClass::kSpectral_DO:
-            return std::string("DO") + Stream.str();
+            return "DO" + Stream.str();
         case FStellarClass::ESpectralClass::kSpectral_DQ:
-            return std::string("DQ") + Stream.str();
+            return "DQ" + Stream.str();
         case FStellarClass::ESpectralClass::kSpectral_DX:
-            return std::string("DX") + Stream.str();
+            return "DX" + Stream.str();
         case FStellarClass::ESpectralClass::kSpectral_DZ:
-            return std::string("DZ") + Stream.str();
+            return "DZ" + Stream.str();
         case FStellarClass::ESpectralClass::kSpectral_Q:
-            return std::string("Q");
+            return "Q";
         case FStellarClass::ESpectralClass::kSpectral_X:
-            return std::string("X");
+            return "X";
         default:
-            return std::string("Unknown");
+            return "Unknown";
         }
     }
 
