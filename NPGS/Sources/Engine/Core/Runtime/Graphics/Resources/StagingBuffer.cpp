@@ -174,6 +174,17 @@ namespace Npgs
         return *this;
     }
 
+	void* FStagingBuffer::MapMemory(vk::DeviceSize Size)
+	{
+		Expand(Size);
+
+		void* Target = nullptr;
+		BufferMemory_->MapMemoryForSubmit(0, Size, Target);
+		MemoryUsage_ = Size;
+		
+        return Target;
+	}
+
     FVulkanImage* FStagingBuffer::CreateAliasedImage(vk::Format OriginFormat, const vk::ImageCreateInfo& ImageCreateInfo)
     {
         if (!IsFormatAliasingCompatible(PhysicalDevice_, OriginFormat, ImageCreateInfo.format))

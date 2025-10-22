@@ -11,13 +11,13 @@
 #ifdef _WIN64
 #   ifdef _MSVC_LANG
 #       ifdef RELEASE_FORCE_INLINE
-#           define NPGS_INLINE __forceinline
-#       else
 #           ifdef MSVC_ATTRIBUTE_FORCE_INLINE
 #               define NPGS_INLINE [[msvc::forceinline]] inline
 #           else
-#               define NPGS_INLINE inline
+#               define NPGS_INLINE __forceinline
 #           endif // MSVC_ATTRIBUTE_FORCE_INLINE
+#       else
+#               define NPGS_INLINE inline
 #       endif // RELEASE_FORCE_INLINE
 #   else
 #       error NPGS can only build on Visual Studio with MSVC

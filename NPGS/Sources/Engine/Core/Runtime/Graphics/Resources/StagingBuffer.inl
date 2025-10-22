@@ -22,15 +22,6 @@ namespace Npgs
         return BufferMemory_->GetMemory();
     }
 
-    inline void* FStagingBuffer::MapMemory(vk::DeviceSize Size)
-    {
-        Expand(Size);
-        void* Target = nullptr;
-        BufferMemory_->MapMemoryForSubmit(0, Size, Target);
-        MemoryUsage_ = Size;
-        return Target;
-    }
-
     inline void FStagingBuffer::UnmapMemory()
     {
         BufferMemory_->UnmapMemory(0, MemoryUsage_);
