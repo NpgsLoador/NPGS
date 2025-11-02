@@ -10,7 +10,7 @@
 
 namespace Npgs::Util
 {
-    template <std::size_t N>
+    template <std::size_t Nx>
     struct TFieldSize
     {
     };
@@ -3889,17 +3889,13 @@ namespace Npgs::Util
 #pragma endregion // Generation end
 
     template <typename Ty, std::size_t... Indices>
-    constexpr auto IsAggregateInitializableImpl(std::index_sequence<Indices...>, int)
-        -> decltype(static_cast<void>(Ty{ (static_cast<void>(Indices), FAny{})... }), std::true_type{});
-
-    template <typename Ty, std::size_t... Indices>
-    constexpr std::false_type IsAggregateInitializableImpl(std::index_sequence<Indices...>, ...);
-
-    template <typename Ty, std::size_t... Indices>
-    constexpr bool IsAggregateInitializable(std::index_sequence<Indices...> Sequence)
+    constexpr bool IsAggregateInitializableHelper(std::index_sequence<Indices...>)
     {
-        return decltype(IsAggregateInitializableImpl<Ty>(Sequence, 0))::value;
+        return requires { Ty{ (static_cast<void>(Indices), FAny{})... }; };
     }
+
+    template <typename Ty, std::size_t Nx>
+    concept CIsAggregateInitializable = IsAggregateInitializableHelper<Ty>(std::make_index_sequence<Nx>{});
 
     template <typename Ty, std::size_t Size = 104>
     constexpr std::size_t AggregateSize() noexcept
@@ -3910,8 +3906,7 @@ namespace Npgs::Util
         }
         else
         {
-            using FIndices = std::make_index_sequence<Size>;
-            if constexpr (IsAggregateInitializable<Ty>(FIndices{}))
+            if constexpr (CIsAggregateInitializable<Ty, Size>)
             {
                 return Size;
             }
