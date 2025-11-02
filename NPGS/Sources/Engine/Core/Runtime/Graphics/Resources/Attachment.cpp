@@ -35,8 +35,8 @@ namespace Npgs
 	}
 
     FColorAttachment::FColorAttachment(FVulkanContext* VulkanContext, VmaAllocator Allocator,
-                                       const VmaAllocationCreateInfo& AllocationCreateInfo, vk::Format Format,
-                                       vk::Extent2D Extent, std::uint32_t LayerCount,
+                                       const VmaAllocationCreateInfo& AllocationCreateInfo,
+                                       vk::Format Format, vk::Extent2D Extent, std::uint32_t LayerCount,
                                        vk::SampleCountFlagBits SampleCount, vk::ImageUsageFlags ExtraUsage)
         : Base(VulkanContext, Allocator)
     {

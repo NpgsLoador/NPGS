@@ -30,7 +30,8 @@ namespace Npgs
 
     public:
         TCommaSeparatedValues(std::string Filename, std::vector<std::string> ColNames)
-            : Filename_(std::move(Filename)), ColNames_(std::move(ColNames))
+            : Filename_(std::move(Filename))
+            , ColNames_(std::move(ColNames))
         {
             InitializeHeaderMap();
             ReadData(io::ignore_extra_column);
@@ -73,7 +74,7 @@ namespace Npgs
             std::size_t DataIndex = GetHeaderIndex(DataHeader);
 
             std::function<bool(const BaseType&, const BaseType&)> Comparator = Pred;
-            if constexpr (std::is_same_v<Func, std::less<>> && std::is_same_v<BaseType, std::string>)
+            if constexpr (std::same_as<Func, std::less<>> && std::same_as<BaseType, std::string>)
             {
                 Comparator = &TCommaSeparatedValues::StrLessThan;
             }
@@ -86,10 +87,9 @@ namespace Npgs
                 });
             }
 
-            auto it = std::lower_bound(Data_.begin(), Data_.end(), TargetValue,
-            [&](const FRowArray& Row, const BaseType& Value) -> bool
+            auto it = std::ranges::lower_bound(Data_, TargetValue, Comparator, [&](const FRowArray& Row) -> const BaseType&
             {
-                return Comparator(Row[DataIndex], Value);
+                return Row[DataIndex];
             });
 
             if (it == Data_.end())

@@ -487,7 +487,7 @@ namespace Npgs
             return;
         }
 
-        bool bMergedStage = false;
+        bool  bMergedStage          = false;
         auto& ExistedLayoutBindings = it->second;
         for (auto& ExistedLayoutBinding : ExistedLayoutBindings)
         {

@@ -66,8 +66,8 @@ namespace Npgs
         using Base::Base;
 
         FDepthStencilAttachment(FVulkanContext* VulkanContext, VmaAllocator Allocator,
-                                const VmaAllocationCreateInfo& AllocationCreateInfo, vk::Format Format,
-                                vk::Extent2D Extent, std::uint32_t LayerCount = 1,
+                                const VmaAllocationCreateInfo& AllocationCreateInfo,
+                                vk::Format Format, vk::Extent2D Extent, std::uint32_t LayerCount = 1,
                                 vk::SampleCountFlagBits SampleCount = vk::SampleCountFlagBits::e1,
                                 vk::ImageUsageFlags ExtraUsage = static_cast<vk::ImageUsageFlagBits>(0),
                                 bool bStencilOnly = false);

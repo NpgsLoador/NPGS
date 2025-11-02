@@ -106,8 +106,10 @@ namespace Npgs
         using Base = FTexture;
         using Base::Base;
 
-        FTexture2D(FVulkanContext* VulkanContext, VmaAllocator Allocator, const VmaAllocationCreateInfo& AllocationCreateInfo, std::string_view Filename,
-                   vk::Format InitialFormat, vk::Format FinalFormat, vk::ImageCreateFlags Flags = {}, bool bGenerateMipmaps = true);
+        FTexture2D(FVulkanContext* VulkanContext, VmaAllocator Allocator,
+                   const VmaAllocationCreateInfo& AllocationCreateInfo,
+                   std::string_view Filename, vk::Format InitialFormat, vk::Format FinalFormat,
+                   vk::ImageCreateFlags Flags = {}, bool bGenerateMipmaps = true);
 
         FTexture2D(const FTexture2D&) = delete;
         FTexture2D(FTexture2D&& Other) noexcept;
@@ -137,8 +139,10 @@ namespace Npgs
         using Base = FTexture;
         using Base::Base;
 
-        FTextureCube(FVulkanContext* VulkanContext, VmaAllocator Allocator, const VmaAllocationCreateInfo& AllocationCreateInfo, std::string_view Filename,
-                     vk::Format InitialFormat, vk::Format FinalFormat, vk::ImageCreateFlags Flags = {}, bool bGenerateMipmaps = true);
+        FTextureCube(FVulkanContext* VulkanContext, VmaAllocator Allocator,
+                     const VmaAllocationCreateInfo& AllocationCreateInfo,
+                     std::string_view Filename, vk::Format InitialFormat, vk::Format FinalFormat,
+                     vk::ImageCreateFlags Flags = {}, bool bGenerateMipmaps = true);
 
         FTextureCube(const FTextureCube&) = delete;
         FTextureCube(FTextureCube&& Other) noexcept;

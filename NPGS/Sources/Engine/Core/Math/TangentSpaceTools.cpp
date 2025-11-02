@@ -45,7 +45,7 @@ namespace Npgs::Math
             glm::vec2 DeltaUv1 = Vertex1.TexCoord - Vertex0.TexCoord;
             glm::vec2 DeltaUv2 = Vertex2.TexCoord - Vertex0.TexCoord;
 
-            float Factor = 1.0f / (DeltaUv1.x * DeltaUv2.y - DeltaUv2.x * DeltaUv1.y);
+            float     Factor    = 1.0f / (DeltaUv1.x * DeltaUv2.y - DeltaUv2.x * DeltaUv1.y);
             glm::vec3 Tangent   = glm::normalize(Factor * ( DeltaUv2.y * Edge1 - DeltaUv1.y * Edge2));
             glm::vec3 Bitangent = glm::normalize(Factor * (-DeltaUv2.x * Edge1 + DeltaUv1.x * Edge2));
 
