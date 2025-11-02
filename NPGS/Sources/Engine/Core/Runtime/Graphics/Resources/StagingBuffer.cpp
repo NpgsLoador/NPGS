@@ -11,11 +11,11 @@ namespace Npgs
         // 格式描述，用于统一管理格式属性
         struct FFormatDescription
         {
-            std::uint32_t Family;        // 格式所属族
-            std::uint32_t BitDepth;      // 位深度
-            bool          bIsSrgb;       // 是否为 sRGB 格式
-            bool          bIsCompressed; // 是否为压缩格式
-            bool          bIsDepth;      // 是否为深度格式
+            std::uint32_t Family{};      // 格式所属族
+            std::uint32_t BitDepth{};    // 位深度
+            bool bIsSrgb{ false };       // 是否为 sRGB 格式
+            bool bIsCompressed{ false }; // 是否为压缩格式
+            bool bIsDepth{ false };      // 是否为深度格式
         };
 
         // 格式族枚举
@@ -23,20 +23,20 @@ namespace Npgs
         {
             kUnknown = 0,
             kR8,             // R8 系列
-            kRG8,            // RG8 系列
-            kRGBA8,          // RGBA8 系列
-            kBGRA8,          // BGRA8 系列
-            kDepth16,        // 16位深度格式
-            kDepth24,        // 24位深度格式
-            kDepth32,        // 32位深度格式
-            kBC1,            // BC1压缩格式
-            kBC2,            // BC2压缩格式
-            kBC3,            // BC3压缩格式
-            kBC4,            // BC4压缩格式
-            kBC5,            // BC5压缩格式
-            kBC6H,           // BC6H压缩格式
-            kBC7,            // BC7压缩格式
-            // 可以继续添加更多格式族...
+            kRg8,            // RG8 系列
+            kRgba8,          // RGBA8 系列
+            kBgba8,          // BGRA8 系列
+            kDepth16,        // 16 位深度格式
+            kDepth24,        // 24 位深度格式
+            kDepth32,        // 32 位深度格式
+            kBc1,            // BC1 压缩格式
+            kBc2,            // BC2 压缩格式
+            kBc3,            // BC3 压缩格式
+            kBc4,            // BC4 压缩格式
+            kBc5,            // BC5 压缩格式
+            kBc6H,           // BC6H 压缩格式
+            kBC7,            // BC7 压缩格式
+            // 可以继续添加更多格式族
         };
 
         // 获取格式描述符
@@ -46,44 +46,72 @@ namespace Npgs
             {
                 // R8 格式族
             case vk::Format::eR8Unorm:
-                return { static_cast<uint32_t>(EFormatFamily::kR8), 8, false, false, false };
+                return { static_cast<std::uint32_t>(EFormatFamily::kR8), 8, false, false, false };
             case vk::Format::eR8Srgb:
-                return { static_cast<uint32_t>(EFormatFamily::kR8), 8, true, false, false };
+                return { static_cast<std::uint32_t>(EFormatFamily::kR8), 8, true, false, false };
 
                 // RG8 格式族
             case vk::Format::eR8G8Unorm:
-                return { static_cast<uint32_t>(EFormatFamily::kRG8), 16, false, false, false };
+                return { static_cast<std::uint32_t>(EFormatFamily::kRg8), 16, false, false, false };
             case vk::Format::eR8G8Srgb:
-                return { static_cast<uint32_t>(EFormatFamily::kRG8), 16, true, false, false };
+                return { static_cast<std::uint32_t>(EFormatFamily::kRg8), 16, true, false, false };
 
                 // RGBA8 格式族
             case vk::Format::eR8G8B8A8Unorm:
-                return { static_cast<uint32_t>(EFormatFamily::kRGBA8), 32, false, false, false };
+                return { static_cast<std::uint32_t>(EFormatFamily::kRgba8), 32, false, false, false };
             case vk::Format::eR8G8B8A8Srgb:
-                return { static_cast<uint32_t>(EFormatFamily::kRGBA8), 32, true, false, false };
+                return { static_cast<std::uint32_t>(EFormatFamily::kRgba8), 32, true, false, false };
 
                 // BGRA8 格式族
             case vk::Format::eB8G8R8A8Unorm:
-                return { static_cast<uint32_t>(EFormatFamily::kBGRA8), 32, false, false, false };
+                return { static_cast<std::uint32_t>(EFormatFamily::kBgba8), 32, false, false, false };
             case vk::Format::eB8G8R8A8Srgb:
-                return { static_cast<uint32_t>(EFormatFamily::kBGRA8), 32, true, false, false };
+                return { static_cast<std::uint32_t>(EFormatFamily::kBgba8), 32, true, false, false };
 
                 // 深度格式
             case vk::Format::eD16Unorm:
-                return { static_cast<uint32_t>(EFormatFamily::kDepth16), 16, false, false, true };
+                return { static_cast<std::uint32_t>(EFormatFamily::kDepth16), 16, false, false, true };
             case vk::Format::eD24UnormS8Uint:
-                return { static_cast<uint32_t>(EFormatFamily::kDepth24), 32, false, false, true };
+                return { static_cast<std::uint32_t>(EFormatFamily::kDepth24), 32, false, false, true };
             case vk::Format::eD32Sfloat:
-                return { static_cast<uint32_t>(EFormatFamily::kDepth32), 32, false, false, true };
+                return { static_cast<std::uint32_t>(EFormatFamily::kDepth32), 32, false, false, true };
 
                 // 压缩格式
+            case vk::Format::eBc1RgbUnormBlock:
+                return { static_cast<std::uint32_t>(EFormatFamily::kBc1), 64, false, true, false };
+            case vk::Format::eBc1RgbSrgbBlock:
+                return { static_cast<std::uint32_t>(EFormatFamily::kBc1), 64, true, true, false };
             case vk::Format::eBc1RgbaUnormBlock:
-                return { static_cast<uint32_t>(EFormatFamily::kBC1), 64, false, true, false };
+                return { static_cast<std::uint32_t>(EFormatFamily::kBc1), 64, false, true, false };
             case vk::Format::eBc1RgbaSrgbBlock:
-                return { static_cast<uint32_t>(EFormatFamily::kBC1), 64, true, true, false };
+                return { static_cast<std::uint32_t>(EFormatFamily::kBc1), 64, true, true, false };
+            case vk::Format::eBc2UnormBlock:
+                return { static_cast<std::uint32_t>(EFormatFamily::kBc2), 128, false, true, false };
+            case vk::Format::eBc2SrgbBlock:
+                return { static_cast<std::uint32_t>(EFormatFamily::kBc2), 128, true, true, false };
+            case vk::Format::eBc3UnormBlock:
+                return { static_cast<std::uint32_t>(EFormatFamily::kBc3), 128, false, true, false };
+            case vk::Format::eBc3SrgbBlock:
+                return { static_cast<std::uint32_t>(EFormatFamily::kBc3), 128, true, true, false };
+            case vk::Format::eBc4UnormBlock:
+                return { static_cast<std::uint32_t>(EFormatFamily::kBc4), 64, false, true, false };
+            case vk::Format::eBc4SnormBlock:
+                return { static_cast<std::uint32_t>(EFormatFamily::kBc4), 64, false, true, false };
+            case vk::Format::eBc5UnormBlock:
+                return { static_cast<std::uint32_t>(EFormatFamily::kBc5), 128, false, true, false };
+            case vk::Format::eBc5SnormBlock:
+                return { static_cast<std::uint32_t>(EFormatFamily::kBc5), 128, false, true, false };
+            case vk::Format::eBc6HUfloatBlock:
+                return { static_cast<std::uint32_t>(EFormatFamily::kBc6H), 128, false, true, false };
+            case vk::Format::eBc6HSfloatBlock:
+                return { static_cast<std::uint32_t>(EFormatFamily::kBc6H), 128, false, true, false };
+            case vk::Format::eBc7UnormBlock:
+                return { static_cast<std::uint32_t>(EFormatFamily::kBC7), 128, false, true, false };
+            case vk::Format::eBc7SrgbBlock:
+                return { static_cast<std::uint32_t>(EFormatFamily::kBC7), 128, true, true, false };
 
             default:
-                return { static_cast<uint32_t>(EFormatFamily::kUnknown), 0, false, false, false };
+                return { static_cast<std::uint32_t>(EFormatFamily::kUnknown), 0, false, false, false };
             }
         }
 
@@ -92,8 +120,8 @@ namespace Npgs
             FFormatDescription SrcDesc = GetFormatDescription(SrcFormat);
             FFormatDescription DstDesc = GetFormatDescription(DstFormat);
 
-            if (SrcDesc.Family == static_cast<uint32_t>(EFormatFamily::kUnknown) ||
-                DstDesc.Family == static_cast<uint32_t>(EFormatFamily::kUnknown) ||
+            if (SrcDesc.Family == static_cast<std::uint32_t>(EFormatFamily::kUnknown) ||
+                DstDesc.Family == static_cast<std::uint32_t>(EFormatFamily::kUnknown) ||
                 SrcDesc.Family        != DstDesc.Family        || // 必须是同一格式族
                 SrcDesc.BitDepth      != DstDesc.BitDepth      || // 位深度必须相同
                 SrcDesc.bIsCompressed != DstDesc.bIsCompressed || // 压缩状态必须相同
