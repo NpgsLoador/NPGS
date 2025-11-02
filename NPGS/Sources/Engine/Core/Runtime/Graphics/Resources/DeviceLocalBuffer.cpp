@@ -49,11 +49,10 @@ namespace Npgs
         auto StagingBuffer = VulkanContext_->AcquireStagingBuffer(Size);
         StagingBuffer->SubmitBufferData(MapOffset, TargetOffset, Size, Data);
 
-        auto  PoolGuard   = VulkanContext_->AcquireCommandPool(FVulkanContext::EQueueType::kTransfer);
-        auto& CommandPool = *PoolGuard;
+        auto CommandPool = VulkanContext_->AcquireCommandPool(FVulkanContext::EQueueType::kTransfer);
 
         FVulkanCommandBuffer TransferCommandBuffer;
-        CommandPool.AllocateBuffer(vk::CommandBufferLevel::ePrimary, TransferCommandBuffer);
+        CommandPool->AllocateBuffer(vk::CommandBufferLevel::ePrimary, TransferCommandBuffer);
 
         TransferCommandBuffer.Begin(vk::CommandBufferUsageFlagBits::eOneTimeSubmit);
         vk::BufferCopy Region(0, TargetOffset, Size);
@@ -61,7 +60,7 @@ namespace Npgs
         TransferCommandBuffer.End();
 
         VulkanContext_->ExecuteCommands(FVulkanContext::EQueueType::kTransfer, TransferCommandBuffer);
-        CommandPool.FreeBuffer(TransferCommandBuffer);
+        CommandPool->FreeBuffer(TransferCommandBuffer);
     }
 
     void FDeviceLocalBuffer::CopyData(vk::DeviceSize ElementIndex, vk::DeviceSize ElementCount, vk::DeviceSize ElementSize,
@@ -92,11 +91,10 @@ namespace Npgs
         auto StagingBuffer = VulkanContext_->AcquireStagingBuffer(DstStride * ElementSize);
         StagingBuffer->SubmitBufferData(MapOffset, SrcStride * ElementIndex, SrcStride * ElementSize, Data);
 
-        auto  PoolGuard   = VulkanContext_->AcquireCommandPool(FVulkanContext::EQueueType::kTransfer);
-        auto& CommandPool = *PoolGuard;
+        auto CommandPool = VulkanContext_->AcquireCommandPool(FVulkanContext::EQueueType::kTransfer);
 
         FVulkanCommandBuffer TransferCommandBuffer;
-        CommandPool.AllocateBuffer(vk::CommandBufferLevel::ePrimary, TransferCommandBuffer);
+        CommandPool->AllocateBuffer(vk::CommandBufferLevel::ePrimary, TransferCommandBuffer);
 
         TransferCommandBuffer.Begin(vk::CommandBufferUsageFlagBits::eOneTimeSubmit);
 
@@ -110,7 +108,7 @@ namespace Npgs
         TransferCommandBuffer.End();
         
         VulkanContext_->ExecuteCommands(FVulkanContext::EQueueType::kTransfer, TransferCommandBuffer);
-        CommandPool.FreeBuffer(TransferCommandBuffer);
+        CommandPool->FreeBuffer(TransferCommandBuffer);
     }
 
     vk::Result FDeviceLocalBuffer::CreateBuffer(const VmaAllocationCreateInfo& AllocationCreateInfo,
