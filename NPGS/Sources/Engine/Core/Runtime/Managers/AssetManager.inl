@@ -36,7 +36,7 @@ namespace Npgs
 
     template <typename AssetType>
     requires CAssetCompatible<AssetType>
-    AssetType* FAssetManager::GetAsset(const std::string& Name)
+    AssetType* FAssetManager::GetAsset(std::string_view Name)
     {
         if (auto it = Assets_.find(Name); it != Assets_.end())
         {
@@ -62,7 +62,7 @@ namespace Npgs
         return Result;
     }
 
-    NPGS_INLINE void FAssetManager::RemoveAsset(const std::string& Name)
+    NPGS_INLINE void FAssetManager::RemoveAsset(std::string_view Name)
     {
         Assets_.erase(Name);
     }

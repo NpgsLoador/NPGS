@@ -5,10 +5,12 @@
 #include <functional>
 #include <memory>
 #include <string>
+#include <string_view>
 #include <unordered_map>
 #include <vector>
 
 #include "Engine/Core/Runtime/Graphics/Vulkan/Context.hpp"
+#include "Engine/Utils/Hash.hpp"
 
 namespace Npgs
 {
@@ -35,7 +37,6 @@ namespace Npgs
 
     private:
         std::function<void(void*)> Deleter_;
-        // void (*Deleter_)(void*);
     };
 
     template <typename AssetType>
@@ -62,20 +63,21 @@ namespace Npgs
 
         template <typename AssetType>
         requires CAssetCompatible<AssetType>
-        AssetType* GetAsset(const std::string& Name);
+        AssetType* GetAsset(std::string_view Name);
 
         template <typename AssetType>
         requires CAssetCompatible<AssetType>
         std::vector<AssetType*> GetAssets();
 
-        void RemoveAsset(const std::string& Name);
+        void RemoveAsset(std::string_view Name);
         void ClearAssets();
 
     private:
         using FManagedAsset = std::unique_ptr<void, FTypeErasedDeleter>;
+        using FAssetMap     = std::unordered_map<std::string, FManagedAsset, Utils::FStringViewHeteroHash, Utils::FStringViewHeteroEqual>;
 
-        std::unordered_map<std::string, FManagedAsset> Assets_;
-        FVulkanContext*                                VulkanContext_;
+        FAssetMap       Assets_;
+        FVulkanContext* VulkanContext_;
     };
 
 } // namespace Npgs
