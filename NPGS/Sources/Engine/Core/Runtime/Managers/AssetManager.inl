@@ -1,3 +1,6 @@
+#include <tuple>
+#include <utility>
+
 #include "Engine/Core/Base/Base.hpp"
 
 namespace Npgs
@@ -16,22 +19,40 @@ namespace Npgs
 
     template <typename AssetType>
     requires CAssetCompatible<AssetType>
-    void FAssetManager::AddAsset(const std::string& Name, AssetType&& Asset)
+    void FAssetManager::AddAsset(std::string_view Name, AssetType&& Asset)
     {
-        Assets_.emplace(Name, FManagedAsset(
-            static_cast<void*>(new AssetType(std::move(Asset))),
-            FTypeErasedDeleter(static_cast<AssetType*>(nullptr))
-        ));
+        if (Assets_.contains(Name))
+        {
+            return;
+        }
+
+        Assets_.emplace(
+            std::piecewise_construct,
+            std::forward_as_tuple(Name),
+            std::forward_as_tuple(
+                static_cast<void*>(new AssetType(std::move(Asset))),
+                FTypeErasedDeleter(static_cast<AssetType*>(nullptr))
+            )
+        );
     }
 
     template <typename AssetType, typename... Types>
     requires CAssetCompatible<AssetType>
-    void FAssetManager::AddAsset(const std::string& Name, Types&&... Args)
+    void FAssetManager::AddAsset(std::string_view Name, Types&&... Args)
     {
-        Assets_.emplace(Name, FManagedAsset(
-            static_cast<void*>(new AssetType(VulkanContext_, std::forward<Types>(Args)...)),
-            FTypeErasedDeleter(static_cast<AssetType*>(nullptr))
-        ));
+        if (Assets_.contains(Name))
+        {
+            return;
+        }
+
+        Assets_.emplace(
+            std::piecewise_construct,
+            std::forward_as_tuple(Name),
+            std::forward_as_tuple(
+                static_cast<void*>(new AssetType(VulkanContext_, std::forward<Types>(Args)...)),
+                FTypeErasedDeleter(static_cast<AssetType*>(nullptr))
+            )
+        );
     }
 
     template <typename AssetType>
