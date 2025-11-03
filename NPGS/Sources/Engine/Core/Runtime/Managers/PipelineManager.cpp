@@ -14,7 +14,7 @@ namespace Npgs
     {
     }
 
-    void FPipelineManager::CreateGraphicsPipeline(const std::string& PipelineName, const std::string& ShaderName,
+    void FPipelineManager::CreateGraphicsPipeline(std::string_view PipelineName, std::string_view ShaderName,
                                                   FGraphicsPipelineCreateInfoPack& GraphicsPipelineCreateInfoPack)
     {
         auto* Shader = AssetManager_->GetAsset<FShader>(ShaderName);
@@ -60,7 +60,7 @@ namespace Npgs
         RegisterCallback(PipelineName, EPipelineType::kGraphics);
     }
 
-    void FPipelineManager::CreateComputePipeline(const std::string& PipelineName, const std::string& ShaderName,
+    void FPipelineManager::CreateComputePipeline(std::string_view PipelineName, std::string_view ShaderName,
                                                  vk::ComputePipelineCreateInfo* ComputePipelineCreateInfo)
     {
         auto* Shader = AssetManager_->GetAsset<FShader>(ShaderName);
@@ -103,12 +103,7 @@ namespace Npgs
         RegisterCallback(PipelineName, EPipelineType::kCompute);
     }
 
-    void FPipelineManager::RemovePipeline(const std::string& Name)
-    {
-        Pipelines_.erase(Name);
-    }
-
-    void FPipelineManager::RegisterCallback(const std::string& Name, EPipelineType Type)
+    void FPipelineManager::RegisterCallback(std::string_view Name, EPipelineType Type)
     {
         std::function<void()> CreatePipeline;
         std::function<void()> DestroyPipeline;
@@ -159,7 +154,7 @@ namespace Npgs
             DestroyPipeline = []() -> void {};
         }
 
-        VulkanContext_->RegisterAutoRemovedCallbacks(FVulkanContext::ECallbackType::kCreateSwapchain,  Name, CreatePipeline);
-        VulkanContext_->RegisterAutoRemovedCallbacks(FVulkanContext::ECallbackType::kDestroySwapchain, Name, DestroyPipeline);
+        VulkanContext_->RegisterAutoRemovedCallbacks(FVulkanContext::ECallbackType::kCreateSwapchain,  std::string(Name), CreatePipeline);
+        VulkanContext_->RegisterAutoRemovedCallbacks(FVulkanContext::ECallbackType::kDestroySwapchain, std::string(Name), DestroyPipeline);
     }
 } // namespace Npgs

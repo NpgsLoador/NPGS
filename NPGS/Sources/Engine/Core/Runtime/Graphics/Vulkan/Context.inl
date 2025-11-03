@@ -2,42 +2,42 @@
 
 namespace Npgs
 {
-    NPGS_INLINE void FVulkanContext::AddCreateDeviceCallback(const std::string& Name, const std::function<void()>& Callback)
+    NPGS_INLINE void FVulkanContext::AddCreateDeviceCallback(std::string_view Name, const std::function<void()>& Callback)
     {
         VulkanCore_->AddCreateDeviceCallback(Name, Callback);
     }
 
-    NPGS_INLINE void FVulkanContext::AddDestroyDeviceCallback(const std::string& Name, const std::function<void()>& Callback)
+    NPGS_INLINE void FVulkanContext::AddDestroyDeviceCallback(std::string_view Name, const std::function<void()>& Callback)
     {
         VulkanCore_->AddDestroyDeviceCallback(Name, Callback);
     }
 
-    NPGS_INLINE void FVulkanContext::AddCreateSwapchainCallback(const std::string& Name, const std::function<void()>& Callback)
+    NPGS_INLINE void FVulkanContext::AddCreateSwapchainCallback(std::string_view Name, const std::function<void()>& Callback)
     {
         VulkanCore_->AddCreateSwapchainCallback(Name, Callback);
     }
 
-    NPGS_INLINE void FVulkanContext::AddDestroySwapchainCallback(const std::string& Name, const std::function<void()>& Callback)
+    NPGS_INLINE void FVulkanContext::AddDestroySwapchainCallback(std::string_view Name, const std::function<void()>& Callback)
     {
         VulkanCore_->AddDestroySwapchainCallback(Name, Callback);
     }
 
-    NPGS_INLINE void FVulkanContext::RemoveCreateDeviceCallback(const std::string& Name)
+    NPGS_INLINE void FVulkanContext::RemoveCreateDeviceCallback(std::string_view Name)
     {
         VulkanCore_->RemoveCreateDeviceCallback(Name);
     }
 
-    NPGS_INLINE void FVulkanContext::RemoveDestroyDeviceCallback(const std::string& Name)
+    NPGS_INLINE void FVulkanContext::RemoveDestroyDeviceCallback(std::string_view Name)
     {
         VulkanCore_->RemoveDestroyDeviceCallback(Name);
     }
 
-    NPGS_INLINE void FVulkanContext::RemoveCreateSwapchainCallback(const std::string& Name)
+    NPGS_INLINE void FVulkanContext::RemoveCreateSwapchainCallback(std::string_view Name)
     {
         VulkanCore_->RemoveCreateSwapchainCallback(Name);
     }
 
-    NPGS_INLINE void FVulkanContext::RemoveDestroySwapchainCallback(const std::string& Name)
+    NPGS_INLINE void FVulkanContext::RemoveDestroySwapchainCallback(std::string_view Name)
     {
         VulkanCore_->RemoveDestroySwapchainCallback(Name);
     }

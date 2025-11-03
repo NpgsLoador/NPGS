@@ -317,6 +317,9 @@
     <ClInclude Include="Sources\Engine\Utils\Logger.hpp">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="Sources\Engine\Utils\Hash.hpp">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="Sources\Engine\Utils\Logger.inl">

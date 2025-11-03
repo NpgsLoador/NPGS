@@ -5,6 +5,7 @@
 #include <functional>
 #include <memory>
 #include <string>
+#include <string_view>
 #include <unordered_map>
 #include <utility>
 
@@ -41,15 +42,15 @@ namespace Npgs
         FVulkanContext& operator=(const FVulkanContext&) = delete;
         FVulkanContext& operator=(FVulkanContext&&)      = delete;
 
-        void AddCreateDeviceCallback(const std::string& Name, const std::function<void()>& Callback);
-        void AddDestroyDeviceCallback(const std::string& Name, const std::function<void()>& Callback);
-        void AddCreateSwapchainCallback(const std::string& Name, const std::function<void()>& Callback);
-        void AddDestroySwapchainCallback(const std::string& Name, const std::function<void()>& Callback);
-        void RemoveCreateDeviceCallback(const std::string& Name);
-        void RemoveDestroyDeviceCallback(const std::string& Name);
-        void RemoveCreateSwapchainCallback(const std::string& Name);
-        void RemoveDestroySwapchainCallback(const std::string& Name);
-        void RegisterAutoRemovedCallbacks(ECallbackType Type, const std::string& Name, const std::function<void()>& Callback);
+        void AddCreateDeviceCallback(std::string_view Name, const std::function<void()>& Callback);
+        void AddDestroyDeviceCallback(std::string_view Name, const std::function<void()>& Callback);
+        void AddCreateSwapchainCallback(std::string_view Name, const std::function<void()>& Callback);
+        void AddDestroySwapchainCallback(std::string_view Name, const std::function<void()>& Callback);
+        void RemoveCreateDeviceCallback(std::string_view Name);
+        void RemoveDestroyDeviceCallback(std::string_view Name);
+        void RemoveCreateSwapchainCallback(std::string_view Name);
+        void RemoveDestroySwapchainCallback(std::string_view Name);
+        void RegisterAutoRemovedCallbacks(ECallbackType Type, std::string_view Name, const std::function<void()>& Callback);
         void RemoveRegisteredCallbacks();
 
         void AddInstanceLayer(const char* Layer);

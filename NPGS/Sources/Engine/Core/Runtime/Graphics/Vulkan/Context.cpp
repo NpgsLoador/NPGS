@@ -56,7 +56,7 @@ namespace Npgs
         RemoveRegisteredCallbacks();
     }
 
-    void FVulkanContext::RegisterAutoRemovedCallbacks(ECallbackType Type, const std::string& Name, const std::function<void()>& Callback)
+    void FVulkanContext::RegisterAutoRemovedCallbacks(ECallbackType Type, std::string_view Name, const std::function<void()>& Callback)
     {
         switch (Type)
         {

@@ -265,6 +265,7 @@
     <ClInclude Include="Sources\Engine\Core\Types\Properties\Intelli\Civilization.hpp" />
     <ClInclude Include="Sources\Engine\Core\Types\Properties\StellarClass.hpp" />
     <ClInclude Include="Sources\Engine\Utils\FieldReflection.hpp" />
+    <ClInclude Include="Sources\Engine\Utils\Hash.hpp" />
     <ClInclude Include="Sources\Engine\Utils\Logger.hpp" />
     <ClInclude Include="Sources\Engine\Utils\Random.hpp" />
     <ClInclude Include="Sources\Engine\Utils\Utils.hpp" />

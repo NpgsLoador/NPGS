@@ -1,45 +1,45 @@
 #include "Engine/Core/Base/Base.hpp"
 
-#define CompareCallback [&Name](const auto& Callback) -> bool { return Name == Callback.first; }
+#define CompareCallback [Name](const auto& Callback) -> bool { return Name == Callback.first; }
 
 namespace Npgs
 {
-    NPGS_INLINE void FVulkanCore::AddCreateDeviceCallback(const std::string& Name, const std::function<void()>& Callback)
+    NPGS_INLINE void FVulkanCore::AddCreateDeviceCallback(std::string_view Name, const std::function<void()>& Callback)
     {
         CreateDeviceCallbacks_.emplace_back(Name, Callback);
     }
 
-    NPGS_INLINE void FVulkanCore::AddDestroyDeviceCallback(const std::string& Name, const std::function<void()>& Callback)
+    NPGS_INLINE void FVulkanCore::AddDestroyDeviceCallback(std::string_view Name, const std::function<void()>& Callback)
     {
         DestroyDeviceCallbacks_.emplace_back(Name, Callback);
     }
 
-    NPGS_INLINE void FVulkanCore::AddCreateSwapchainCallback(const std::string& Name, const std::function<void()>& Callback)
+    NPGS_INLINE void FVulkanCore::AddCreateSwapchainCallback(std::string_view Name, const std::function<void()>& Callback)
     {
         CreateSwapchainCallbacks_.emplace_back(Name, Callback);
     }
 
-    NPGS_INLINE void FVulkanCore::AddDestroySwapchainCallback(const std::string& Name, const std::function<void()>& Callback)
+    NPGS_INLINE void FVulkanCore::AddDestroySwapchainCallback(std::string_view Name, const std::function<void()>& Callback)
     {
         DestroySwapchainCallbacks_.emplace_back(Name, Callback);
     }
 
-    NPGS_INLINE void FVulkanCore::RemoveCreateDeviceCallback(const std::string& Name)
+    NPGS_INLINE void FVulkanCore::RemoveCreateDeviceCallback(std::string_view Name)
     {
         std::erase_if(CreateDeviceCallbacks_, CompareCallback);
     }
 
-    NPGS_INLINE void FVulkanCore::RemoveDestroyDeviceCallback(const std::string& Name)
+    NPGS_INLINE void FVulkanCore::RemoveDestroyDeviceCallback(std::string_view Name)
     {
         std::erase_if(DestroyDeviceCallbacks_, CompareCallback);
     }
 
-    NPGS_INLINE void FVulkanCore::RemoveCreateSwapchainCallback(const std::string& Name)
+    NPGS_INLINE void FVulkanCore::RemoveCreateSwapchainCallback(std::string_view Name)
     {
         std::erase_if(CreateSwapchainCallbacks_, CompareCallback);
     }
 
-    NPGS_INLINE void FVulkanCore::RemoveDestroySwapchainCallback(const std::string& Name)
+    NPGS_INLINE void FVulkanCore::RemoveDestroySwapchainCallback(std::string_view Name)
     {
         std::erase_if(DestroySwapchainCallbacks_, CompareCallback);
     }
