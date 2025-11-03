@@ -48,7 +48,7 @@ namespace Npgs
 
     FEngineServices* FEngineServices::GetInstance()
     {
-        static FEngineServices kInstance;
-        return &kInstance;
+        static FEngineServices Instance;
+        return &Instance;
     }
 } // namespace Npgs
