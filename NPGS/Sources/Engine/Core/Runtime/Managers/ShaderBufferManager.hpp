@@ -4,6 +4,7 @@
 #include <cstdint>
 #include <map>
 #include <string>
+#include <string_view>
 #include <type_traits>
 #include <unordered_map>
 #include <utility>
@@ -15,6 +16,7 @@
 #include "Engine/Core/Runtime/Graphics/Resources/DeviceLocalBuffer.hpp"
 #include "Engine/Core/Runtime/Graphics/Vulkan/Context.hpp"
 #include "Engine/Core/Runtime/Graphics/Vulkan/Wrappers.hpp"
+#include "Engine/Utils/Hash.hpp"
 
 namespace Npgs
 {
@@ -80,8 +82,12 @@ namespace Npgs
 
         struct FDataBufferInfo
         {
-            std::unordered_map<std::string, FDataBufferFieldInfo> Fields;
-            std::unordered_map<std::string, vk::DeviceSize> BoundShaders; // [ShaderName, Range]
+            std::unordered_map<std::string, FDataBufferFieldInfo,
+                               Utils::FStringViewHeteroHash, Utils::FStringViewHeteroEqual> Fields;
+
+            std::unordered_map<std::string, vk::DeviceSize,
+                               Utils::FStringViewHeteroHash, Utils::FStringViewHeteroEqual> BoundShaders; // [ShaderName, Range]
+
             std::vector<FDeviceLocalBuffer> Buffers;
             FDataBufferCreateInfo           CreateInfo;
             vk::DeviceSize                  Size{};
@@ -114,34 +120,34 @@ namespace Npgs
                                const VmaAllocationCreateInfo& AllocationCreateInfo,
                                std::uint32_t BufferCount = 0);
 
-        void RemoveDataBuffer(const std::string& Name);
+        void RemoveDataBuffer(std::string_view Name);
 
         template <typename StructType>
         requires std::is_class_v<StructType>
-        void UpdateDataBuffers(const std::string& Name, const StructType& Data);
+        void UpdateDataBuffers(std::string_view Name, const StructType& Data);
 
         template <typename StructType>
         requires std::is_class_v<StructType>
-        void UpdateDataBuffer(std::uint32_t FrameIndex, const std::string& Name, const StructType& Data);
+        void UpdateDataBuffer(std::uint32_t FrameIndex, std::string_view Name, const StructType& Data);
 
         template <typename FieldType>
-        std::vector<TUpdater<FieldType>> GetFieldUpdaters(const std::string& BufferName, const std::string& FieldName) const;
+        std::vector<TUpdater<FieldType>> GetFieldUpdaters(std::string_view BufferName, std::string_view FieldName) const;
 
         template <typename FieldType>
-        TUpdater<FieldType> GetFieldUpdater(std::uint32_t FrameIndex, const std::string& BufferName, const std::string& FieldName) const;
+        TUpdater<FieldType> GetFieldUpdater(std::uint32_t FrameIndex, std::string_view BufferName, std::string_view FieldName) const;
 
-        const FDeviceLocalBuffer& GetDataBuffer(std::uint32_t FrameIndex, const std::string& BufferName);
+        const FDeviceLocalBuffer& GetDataBuffer(std::uint32_t FrameIndex, std::string_view BufferName) const;
 
         void CreateDescriptorBuffer(const FDescriptorBufferCreateInfo& DescriptorBufferCreateInfo,
                                     const VmaAllocationCreateInfo& AllocationCreateInfo);
 
-        void RemoveDescriptorBuffer(const std::string& Name);
-        vk::DeviceSize GetDescriptorBindingOffset(const std::string& BufferName, std::uint32_t Set, std::uint32_t Binding) const;
+        void RemoveDescriptorBuffer(std::string_view Name);
+        vk::DeviceSize GetDescriptorBindingOffset(std::string_view BufferName, std::uint32_t Set, std::uint32_t Binding) const;
 
         template <typename... Args>
-        std::vector<vk::DeviceSize> GetDescriptorBindingOffsets(const std::string& BufferName, Args... Sets);
+        std::vector<vk::DeviceSize> GetDescriptorBindingOffsets(std::string_view BufferName, Args... Sets) const;
 
-        const FDeviceLocalBuffer& GetDescriptorBuffer(std::uint32_t FrameIndex, const std::string& BufferName);
+        const FDeviceLocalBuffer& GetDescriptorBuffer(std::uint32_t FrameIndex, std::string_view BufferName) const;
 
     private:
         vk::DeviceSize CalculateDescriptorBufferSize(const FDescriptorBufferCreateInfo& DescriptorBufferCreateInfo);
@@ -152,10 +158,10 @@ namespace Npgs
 
         vk::PhysicalDeviceDescriptorBufferPropertiesEXT DescriptorBufferProperties_;
         // [Name, Buffer]
-        std::unordered_map<std::string, FDataBufferInfo>       DataBuffers_;
-        std::unordered_map<std::string, FDescriptorBufferInfo> DescriptorBuffers_;
+        std::unordered_map<std::string, FDataBufferInfo, Utils::FStringViewHeteroHash, Utils::FStringViewHeteroEqual> DataBuffers_;
+        std::unordered_map<std::string, FDescriptorBufferInfo, Utils::FStringViewHeteroHash, Utils::FStringViewHeteroEqual> DescriptorBuffers_;
         // [Name, [[Set, Binding], Offset]]
-        std::unordered_map<std::string, std::unordered_map<std::pair<std::uint32_t, std::uint32_t>, vk::DeviceSize, FSetBindingHash>> OffsetsMap_;
+        std::unordered_map<std::string, std::unordered_map<std::pair<std::uint32_t, std::uint32_t>, vk::DeviceSize, FSetBindingHash>, Utils::FStringViewHeteroHash, Utils::FStringViewHeteroEqual> OffsetsMap_;
 
         VmaAllocator Allocator_;
     };
