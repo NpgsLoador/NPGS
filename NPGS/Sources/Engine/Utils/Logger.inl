@@ -4,11 +4,11 @@ namespace Npgs::Util
 {
     NPGS_INLINE std::shared_ptr<spdlog::logger>& FLogger::GetCoreLogger()
     {
-        return kCoreLogger_;
+        return CoreLogger_;
     }
 
     NPGS_INLINE std::shared_ptr<spdlog::logger>& FLogger::GetClientLogger()
     {
-        return kClientLogger_;
+        return ClientLogger_;
     }
 } // namespace Npgs::Util

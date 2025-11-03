@@ -9,6 +9,7 @@
 #include <memory>
 #include <random>
 #include <shared_mutex>
+#include <span>
 #include <type_traits>
 #include <unordered_map>
 #include <utility>
@@ -128,7 +129,7 @@ namespace Npgs
     private:
         template <typename CsvType>
         requires std::is_class_v<CsvType>
-        CsvType* LoadCsvAsset(const std::string& Filename, const std::vector<std::string>& Headers);
+        CsvType* LoadCsvAsset(const std::string& Filename, std::span<const std::string> Headers);
 
         void InitializeMistData();
         void InitializePdfs();
@@ -168,25 +169,25 @@ namespace Npgs
         void ExpandMistData(double TargetMassSol, FDataArray& StarData);
 
     public:
-        static const int kStarAgeIndex_;
-        static const int kStarMassIndex_;
-        static const int kStarMdotIndex_;
-        static const int kLogTeffIndex_;
-        static const int kLogRIndex_;
-        static const int kLogSurfZIndex_;
-        static const int kSurfaceH1Index_;
-        static const int kSurfaceHe3Index_;
-        static const int kLogCenterTIndex_;
-        static const int kLogCenterRhoIndex_;
-        static const int kPhaseIndex_;
-        static const int kXIndex_;
-        static const int kLifetimeIndex_;
+        static constexpr int kStarAgeIndex_        = 0;
+        static constexpr int kStarMassIndex_       = 1;
+        static constexpr int kStarMdotIndex_       = 2;
+        static constexpr int kLogTeffIndex_        = 3;
+        static constexpr int kLogRIndex_           = 4;
+        static constexpr int kLogSurfZIndex_       = 5;
+        static constexpr int kSurfaceH1Index_      = 6;
+        static constexpr int kSurfaceHe3Index_     = 7;
+        static constexpr int kLogCenterTIndex_     = 8;
+        static constexpr int kLogCenterRhoIndex_   = 9;
+        static constexpr int kPhaseIndex_          = 10;
+        static constexpr int kXIndex_              = 11;
+        static constexpr int kLifetimeIndex_       = 12;
 
-        static const int kWdStarAgeIndex_;
-        static const int kWdLogRIndex_;
-        static const int kWdLogTeffIndex_;
-        static const int kWdLogCenterTIndex_;
-        static const int kWdLogCenterRhoIndex_;
+        static constexpr int kWdStarAgeIndex_      = 0;
+        static constexpr int kWdLogRIndex_         = 1;
+        static constexpr int kWdLogTeffIndex_      = 2;
+        static constexpr int kWdLogCenterTIndex_   = 3;
+        static constexpr int kWdLogCenterRhoIndex_ = 4;
 
     private:
         std::mt19937                                          RandomEngine_;
@@ -218,13 +219,40 @@ namespace Npgs
         EStellarTypeGenerationOption  StellarTypeOption_;
         EMultiplicityGenerationOption MultiplicityOption_;
 
-        static const std::vector<std::string>                                kMistHeaders_;
-        static const std::vector<std::string>                                kWdMistHeaders_;
-        static const std::vector<std::string>                                kHrDiagramHeaders_;
-        static std::unordered_map<std::string, std::vector<float>>           kMassFilesCache_;
-        static std::unordered_map<const FMistData*, std::vector<FDataArray>> kPhaseChangesCache_;
-        static std::shared_mutex                                             kCacheMutex_;
-        static bool                                                          kbMistDataInitiated_;
+        static const inline std::array<std::string, 12> kMistHeaders_
+        {
+            "star_age",
+            "star_mass",
+            "star_mdot",
+            "log_Teff",
+            "log_R",
+            "log_surf_z",
+            "surface_h1",
+            "surface_he3",
+            "log_center_T",
+            "log_center_Rho",
+            "phase",
+            "x"
+        };
+
+        static const inline std::array<std::string, 5> kWdMistHeaders_
+        {
+            "star_age",
+            "log_R",
+            "log_Teff",
+            "log_center_T",
+            "log_center_Rho"
+        };
+
+        static const inline std::array<std::string, 7> kHrDiagramHeaders_
+        {
+            "B-V", "Ia", "Ib", "II", "III", "IV", "V"
+        };
+
+        static std::unordered_map<std::string, std::vector<float>>           MassFilesCache_;
+        static std::unordered_map<const FMistData*, std::vector<FDataArray>> PhaseChangesCache_;
+        static std::shared_mutex                                             CacheMutex_;
+        static bool                                                          bMistDataInitiated_;
     };
 } // namespace Npgs
 

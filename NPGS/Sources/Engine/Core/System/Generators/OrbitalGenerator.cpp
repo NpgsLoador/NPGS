@@ -6,6 +6,7 @@
 #include <cstdint>
 #include <algorithm>
 #include <limits>
+#include <numeric>
 #include <print>
 #include <ranges>
 #include <utility>
@@ -1069,11 +1070,11 @@ namespace Npgs
         std::vector<float> DiskBoundariesAu(PlanetCount + 1);
         DiskBoundariesAu[0] = PlanetaryDisk.InnerRadiusAu;
 
-        float CoreMassSum = 0.0f;
-        for (float Num : CoreMassesSol)
+        float CoreMassSum = std::accumulate(CoreMassesSol.begin(), CoreMassesSol.end(), 0.0f,
+        [](float Sum, float Value) -> float
         {
-            CoreMassSum += std::pow(Num, 0.1f);
-        }
+            return Sum + std::pow(Value, 0.1f);
+        });
 
         std::vector<float> PartCoreMassSums(PlanetCount + 1, 0.0f);
         for (std::size_t i = 1; i <= PlanetCount; ++i)

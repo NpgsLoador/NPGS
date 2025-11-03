@@ -6,8 +6,10 @@
 #include <concepts>
 #include <functional>
 #include <filesystem>
+#include <span>
 #include <stdexcept>
 #include <string>
+#include <string_view>
 #include <tuple>
 #include <type_traits>
 #include <unordered_map>
@@ -29,9 +31,9 @@ namespace Npgs
         using FRowArray = std::vector<BaseType>;
 
     public:
-        TCommaSeparatedValues(std::string Filename, std::vector<std::string> ColNames)
-            : Filename_(std::move(Filename))
-            , ColNames_(std::move(ColNames))
+        TCommaSeparatedValues(std::string_view Filename, std::span<const std::string> ColNames)
+            : Filename_(Filename)
+            , ColNames_(ColNames.begin(), ColNames.end())
         {
             InitializeHeaderMap();
             ReadData(io::ignore_extra_column);

@@ -17,33 +17,33 @@ namespace Npgs::Util
         spdlog::set_pattern("[%T][%^%l%$] %n: %v");
 
 #if defined(NPGS_ENABLE_CONSOLE_LOGGER)
-        kCoreLogger_   = spdlog::stdout_color_mt("NPGS");
-        kClientLogger_ = spdlog::stdout_color_mt("App");
+        CoreLogger_   = spdlog::stdout_color_mt("NPGS");
+        ClientLogger_ = spdlog::stdout_color_mt("App");
 
-        auto ConsoleSink = dynamic_cast<spdlog::sinks::stdout_color_sink_mt*>(kCoreLogger_->sinks()[0].get());
+        auto ConsoleSink = dynamic_cast<spdlog::sinks::stdout_color_sink_mt*>(CoreLogger_->sinks()[0].get());
         if (ConsoleSink)
         {
             ConsoleSink->set_color(spdlog::level::trace, FOREGROUND_BLUE | FOREGROUND_INTENSITY);
         }
 
-        ConsoleSink = dynamic_cast<spdlog::sinks::stdout_color_sink_mt*>(kClientLogger_->sinks()[0].get());
+        ConsoleSink = dynamic_cast<spdlog::sinks::stdout_color_sink_mt*>(ClientLogger_->sinks()[0].get());
         if (ConsoleSink)
         {
             ConsoleSink->set_color(spdlog::level::trace, FOREGROUND_BLUE | FOREGROUND_INTENSITY);
         }
 #elif defined(NPGS_ENABLE_FILE_LOGGER)
-        kCoreLogger_   = spdlog::basic_logger_mt("NPGS", "NpgsCore.log", true);
-        kClientLogger_ = spdlog::basic_logger_mt("App",  "Npgs.log",     true);
+        CoreLogger_   = spdlog::basic_logger_mt("NPGS", "NpgsCore.log", true);
+        ClientLogger_ = spdlog::basic_logger_mt("App",  "Npgs.log",     true);
 
-        kCoreLogger_->flush_on(spdlog::level::trace);
-        kClientLogger_->flush_on(spdlog::level::trace);
+        CoreLogger_->flush_on(spdlog::level::trace);
+        ClientLogger_->flush_on(spdlog::level::trace);
 #endif
 
-        kCoreLogger_->set_level(spdlog::level::trace);
-        kClientLogger_->set_level(spdlog::level::trace);
+        CoreLogger_->set_level(spdlog::level::trace);
+        ClientLogger_->set_level(spdlog::level::trace);
     }
 
 
-    std::shared_ptr<spdlog::logger> FLogger::kCoreLogger_   = nullptr;
-    std::shared_ptr<spdlog::logger> FLogger::kClientLogger_ = nullptr;
+    std::shared_ptr<spdlog::logger> FLogger::CoreLogger_   = nullptr;
+    std::shared_ptr<spdlog::logger> FLogger::ClientLogger_ = nullptr;
 } // namespace Npgs::Util

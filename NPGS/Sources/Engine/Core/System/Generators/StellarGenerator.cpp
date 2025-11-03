@@ -683,11 +683,11 @@ namespace Npgs
 
     template <typename CsvType>
     requires std::is_class_v<CsvType>
-    CsvType* FStellarGenerator::LoadCsvAsset(const std::string& Filename, const std::vector<std::string>& Headers)
+    CsvType* FStellarGenerator::LoadCsvAsset(const std::string& Filename, std::span<const std::string> Headers)
     {
         auto* AssetManager = EngineCoreServices->GetAssetManager();
         {
-            std::shared_lock Lock(kCacheMutex_);
+            std::shared_lock Lock(CacheMutex_);
             auto* Asset = AssetManager->GetAsset<CsvType>(Filename);
             if (Asset != nullptr)
             {
@@ -695,7 +695,7 @@ namespace Npgs
             }
         }
 
-        std::unique_lock Lock(kCacheMutex_);
+        std::unique_lock Lock(CacheMutex_);
         AssetManager->AddAsset<CsvType>(Filename, CsvType(Filename, Headers));
 
         return AssetManager->GetAsset<CsvType>(Filename);
@@ -703,7 +703,7 @@ namespace Npgs
 
     void FStellarGenerator::InitializeMistData()
     {
-        if (kbMistDataInitiated_)
+        if (bMistDataInitiated_)
         {
             return;
         }
@@ -745,11 +745,11 @@ namespace Npgs
                 }
             }
 
-            kMassFilesCache_.emplace(PrefixDirectory, Masses);
+            MassFilesCache_.emplace(PrefixDirectory, Masses);
             Masses.clear();
         }
 
-        kbMistDataInitiated_ = true;
+        bMistDataInitiated_ = true;
     }
 
     void FStellarGenerator::InitializePdfs()
@@ -855,8 +855,8 @@ namespace Npgs
 
         std::vector<float> Masses;
         {
-            std::shared_lock Lock(kCacheMutex_);
-            Masses = kMassFilesCache_[PrefixDirectory];
+            std::shared_lock Lock(CacheMutex_);
+            Masses = MassFilesCache_[PrefixDirectory];
         }
 
         auto it = std::ranges::lower_bound(Masses, TargetMassSol);
@@ -1047,11 +1047,11 @@ namespace Npgs
     {
         std::vector<FDataArray> Result;
         {
-            std::shared_lock Lock(kCacheMutex_);
-            auto it = kPhaseChangesCache_.find(DataSheet);
-            if (it != kPhaseChangesCache_.end())
+            std::shared_lock Lock(CacheMutex_);
+            auto it = PhaseChangesCache_.find(DataSheet);
+            if (it != PhaseChangesCache_.end())
             {
-                return kPhaseChangesCache_[DataSheet];
+                return PhaseChangesCache_[DataSheet];
             }
         }
 
@@ -1067,14 +1067,14 @@ namespace Npgs
         }
 
         {
-            std::unique_lock Lock(kCacheMutex_);
-            if (!kPhaseChangesCache_.contains(DataSheet))
+            std::unique_lock Lock(CacheMutex_);
+            if (!PhaseChangesCache_.contains(DataSheet))
             {
-                kPhaseChangesCache_.emplace(DataSheet, Result);
+                PhaseChangesCache_.emplace(DataSheet, Result);
             }
             else
             {
-                Result = kPhaseChangesCache_[DataSheet];
+                Result = PhaseChangesCache_[DataSheet];
             }
         }
 
@@ -1472,8 +1472,7 @@ namespace Npgs
         float MinSurfaceH1      = Astro::AStar::kFeHSurfaceH1Map_.at(FeH) - 0.01f;
 		float WNxhMassThreshold = CalculateWNxhMassThreshold(FeH);
 
-        std::function<void(Astro::AStar::EEvolutionPhase)> CalculateSpectralSubclass =
-        [&](Astro::AStar::EEvolutionPhase BasePhase) -> void
+        auto CalculateSpectralSubclass = [&](this auto& Self, Astro::AStar::EEvolutionPhase BasePhase) -> void
         {
             std::uint32_t SpectralClass = BasePhase == Astro::AStar::EEvolutionPhase::kWolfRayet ? 11 : 0;
 
@@ -1481,13 +1480,13 @@ namespace Npgs
             {
                 if (BasePhase == Astro::AStar::EEvolutionPhase::kMainSequence)
                 {
-                    // 如果表面氢质量分数低于 0.4 且还是主序星阶段，或初始质量 WHxh 门槛，转为 WR 星
+                    // 如果表面氢质量分数低于 0.4 且还是主序星阶段，或初始质量超过 WNxh 门槛，转为 WR 星
                     // 该情况只有 O 型星会出现
                     if (SurfaceH1 < 0.4f || InitialMassSol > WNxhMassThreshold)
                     {
                         EvolutionPhase = Astro::AStar::EEvolutionPhase::kWolfRayet;
                         StarData.SetEvolutionPhase(EvolutionPhase);
-                        CalculateSpectralSubclass(EvolutionPhase);
+                        Self(EvolutionPhase);
                         return;
                     }
                 }
@@ -2415,40 +2414,8 @@ namespace Npgs
         LogR    = std::log10(RadiusSol);
     }
 
-    const int FStellarGenerator::kStarAgeIndex_        = 0;
-    const int FStellarGenerator::kStarMassIndex_       = 1;
-    const int FStellarGenerator::kStarMdotIndex_       = 2;
-    const int FStellarGenerator::kLogTeffIndex_        = 3;
-    const int FStellarGenerator::kLogRIndex_           = 4;
-    const int FStellarGenerator::kLogSurfZIndex_       = 5;
-    const int FStellarGenerator::kSurfaceH1Index_      = 6;
-    const int FStellarGenerator::kSurfaceHe3Index_     = 7;
-    const int FStellarGenerator::kLogCenterTIndex_     = 8;
-    const int FStellarGenerator::kLogCenterRhoIndex_   = 9;
-    const int FStellarGenerator::kPhaseIndex_          = 10;
-    const int FStellarGenerator::kXIndex_              = 11;
-    const int FStellarGenerator::kLifetimeIndex_       = 12;
-
-    const int FStellarGenerator::kWdStarAgeIndex_      = 0;
-    const int FStellarGenerator::kWdLogRIndex_         = 1;
-    const int FStellarGenerator::kWdLogTeffIndex_      = 2;
-    const int FStellarGenerator::kWdLogCenterTIndex_   = 3;
-    const int FStellarGenerator::kWdLogCenterRhoIndex_ = 4;
-
-    const std::vector<std::string> FStellarGenerator::kMistHeaders_
-    {
-        "star_age", "star_mass", "star_mdot", "log_Teff", "log_R", "log_surf_z",
-        "surface_h1", "surface_he3", "log_center_T", "log_center_Rho", "phase", "x"
-    };
-
-    const std::vector<std::string> FStellarGenerator::kWdMistHeaders_
-    {
-        "star_age", "log_R", "log_Teff", "log_center_T", "log_center_Rho"
-    };
-
-    const std::vector<std::string> FStellarGenerator::kHrDiagramHeaders_{ "B-V", "Ia", "Ib", "II", "III", "IV", "V" };
-    std::unordered_map<std::string, std::vector<float>> FStellarGenerator::kMassFilesCache_;
-    std::unordered_map<const FStellarGenerator::FMistData*, std::vector<FStellarGenerator::FDataArray>> FStellarGenerator::kPhaseChangesCache_;
-    std::shared_mutex FStellarGenerator::kCacheMutex_;
-    bool FStellarGenerator::kbMistDataInitiated_ = false;
+    std::unordered_map<std::string, std::vector<float>> FStellarGenerator::MassFilesCache_;
+    std::unordered_map<const FStellarGenerator::FMistData*, std::vector<FStellarGenerator::FDataArray>> FStellarGenerator::PhaseChangesCache_;
+    std::shared_mutex FStellarGenerator::CacheMutex_;
+    bool FStellarGenerator::bMistDataInitiated_ = false;
 } // namespace Npgs
