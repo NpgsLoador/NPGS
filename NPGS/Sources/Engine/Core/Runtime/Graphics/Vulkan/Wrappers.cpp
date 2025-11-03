@@ -988,12 +988,10 @@ namespace Npgs
 
     // Wrapper for vk::Image
     // ---------------------
-
     FVulkanImage::FVulkanImage(vk::Device Device, VmaAllocator Allocator,
                                const VmaAllocationCreateInfo& AllocationCreateInfo,
                                const vk::ImageCreateInfo& CreateInfo)
         : Base(Device)
-        // , PhysicalDeviceMemoryProperties_{}
         , Allocator_(Allocator)
     {
         ReleaseInfo_ = "Image destroyed successfully.";
