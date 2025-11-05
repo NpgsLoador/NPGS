@@ -8,7 +8,7 @@
 #include <type_traits>
 #include <utility>
 
-namespace Npgs::Util
+namespace Npgs::Utils
 {
     template <std::size_t Nx>
     struct TFieldSize
@@ -3945,4 +3945,4 @@ namespace Npgs::Util
         auto Tuple = AsTuple(Value);
         ForEachFieldTuple(Tuple, std::forward<Func>(Pred));
     }
-} // namespace Npgs::Util
+} // namespace Npgs::Utils

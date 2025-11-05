@@ -13,6 +13,7 @@
     "glm",
     "ktx",
     "magic-enum",
+    "nlohmann-json",
     "openexr",
     "spdlog",
     "stb"

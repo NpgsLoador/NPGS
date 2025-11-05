@@ -85,9 +85,6 @@ namespace Npgs
             std::unordered_map<std::string, FDataBufferFieldInfo,
                                Utils::FStringViewHeteroHash, Utils::FStringViewHeteroEqual> Fields;
 
-            std::unordered_map<std::string, vk::DeviceSize,
-                               Utils::FStringViewHeteroHash, Utils::FStringViewHeteroEqual> BoundShaders; // [ShaderName, Range]
-
             std::vector<FDeviceLocalBuffer> Buffers;
             FDataBufferCreateInfo           CreateInfo;
             vk::DeviceSize                  Size{};
@@ -124,11 +121,11 @@ namespace Npgs
 
         template <typename StructType>
         requires std::is_class_v<StructType>
-        void UpdateDataBuffers(std::string_view Name, const StructType& Data);
+        void UpdateDataBuffers(std::string_view Name, const StructType& Data) const;
 
         template <typename StructType>
         requires std::is_class_v<StructType>
-        void UpdateDataBuffer(std::uint32_t FrameIndex, std::string_view Name, const StructType& Data);
+        void UpdateDataBuffer(std::uint32_t FrameIndex, std::string_view Name, const StructType& Data) const;
 
         template <typename FieldType>
         std::vector<TUpdater<FieldType>> GetFieldUpdaters(std::string_view BufferName, std::string_view FieldName) const;
@@ -142,14 +139,33 @@ namespace Npgs
                                     const VmaAllocationCreateInfo& AllocationCreateInfo);
 
         void RemoveDescriptorBuffer(std::string_view Name);
-        vk::DeviceSize GetDescriptorBindingOffset(std::string_view BufferName, std::uint32_t Set, std::uint32_t Binding) const;
+
+        template <typename Type>
+        void UpdateResourceDescriptors(std::string_view BufferName, std::uint32_t Set, std::uint32_t Binding,
+                                       vk::DescriptorType ConfirmedUsage, const Type& DescriptorInfo);
+
+        template <typename Type>
+        void UpdateResourceDescriptor(std::uint32_t FrameIndex, std::string_view BufferName, std::uint32_t Set,
+                                      std::uint32_t Binding, vk::DescriptorType ConfirmedUsage, const Type& DescriptorInfo);
 
         template <typename... Args>
         std::vector<vk::DeviceSize> GetDescriptorBindingOffsets(std::string_view BufferName, Args... Sets) const;
 
+        vk::DeviceSize GetDescriptorBindingOffset(std::string_view BufferName, std::uint32_t Set, std::uint32_t Binding) const;
         const FDeviceLocalBuffer& GetDescriptorBuffer(std::uint32_t FrameIndex, std::string_view BufferName) const;
 
     private:
+        const FDataBufferInfo& GetDataBufferInfo(std::string_view BufferName) const;
+
+        std::pair<vk::DeviceSize, vk::DeviceSize> 
+        GetDataBufferFieldOffsetAndSize(const FDataBufferInfo& BufferInfo, std::string_view FieldName) const;
+
+        const FDescriptorBufferInfo& GetDescriptorBufferInfo(std::string_view BufferName) const;
+
+        std::pair<vk::DeviceSize, vk::DescriptorType>
+        GetDescriptorBindingOffsetAndType(std::string_view BufferName, std::uint32_t Set, std::uint32_t Binding) const;
+        
+        vk::DeviceSize GetDescriptorSize(vk::DescriptorType Usage) const;
         vk::DeviceSize CalculateDescriptorBufferSize(const FDescriptorBufferCreateInfo& DescriptorBufferCreateInfo);
         void BindResourceToDescriptorBuffersInternal(const FDescriptorBufferCreateInfo& DescriptorBufferCreateInfo);
 
@@ -157,11 +173,13 @@ namespace Npgs
         FVulkanContext* VulkanContext_;
 
         vk::PhysicalDeviceDescriptorBufferPropertiesEXT DescriptorBufferProperties_;
-        // [Name, Buffer]
+        // [DataBufferName, DataBuffer]
         std::unordered_map<std::string, FDataBufferInfo, Utils::FStringViewHeteroHash, Utils::FStringViewHeteroEqual> DataBuffers_;
+        // [DescriptorBufferName, DescriptorBuffer]
         std::unordered_map<std::string, FDescriptorBufferInfo, Utils::FStringViewHeteroHash, Utils::FStringViewHeteroEqual> DescriptorBuffers_;
-        // [Name, [[Set, Binding], Offset]]
-        std::unordered_map<std::string, std::unordered_map<std::pair<std::uint32_t, std::uint32_t>, vk::DeviceSize, FSetBindingHash>, Utils::FStringViewHeteroHash, Utils::FStringViewHeteroEqual> OffsetsMap_;
+        // [DescriptorBufferName, [[Set, Binding], [Offset, Type]]]
+        using FSubMap = std::unordered_map<std::pair<std::uint32_t, std::uint32_t>, std::pair<vk::DeviceSize, vk::DescriptorType>, FSetBindingHash>;
+        std::unordered_map<std::string, FSubMap, Utils::FStringViewHeteroHash, Utils::FStringViewHeteroEqual> OffsetsMap_;
 
         VmaAllocator Allocator_;
     };

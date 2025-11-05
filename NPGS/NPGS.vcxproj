@@ -170,6 +170,7 @@
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Sources\Engine\Core\Base\Config\ConfigWatcher.cpp" />
     <ClCompile Include="Sources\Engine\Core\Math\TangentSpaceTools.cpp" />
     <ClCompile Include="Sources\Engine\Core\Runtime\Managers\AssetManager.cpp" />
     <ClCompile Include="Sources\Engine\Core\Runtime\AssetLoaders\Shader.cpp" />
@@ -219,6 +220,7 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Sources\Engine\Core\Base\Config\ConfigWatcher.hpp" />
     <ClInclude Include="Sources\Engine\Core\Runtime\Pools\MemoryPool.hpp" />
     <ClInclude Include="Sources\Engine\Core\System\Events\Event.hpp" />
     <ClInclude Include="Sources\Engine\Core\Base\Config\EngineConfig.hpp" />

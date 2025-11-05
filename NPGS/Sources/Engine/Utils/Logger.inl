@@ -1,6 +1,6 @@
 #include "Engine/Core/Base/Base.hpp"
 
-namespace Npgs::Util
+namespace Npgs::Utils
 {
     NPGS_INLINE std::shared_ptr<spdlog::logger>& FLogger::GetCoreLogger()
     {
@@ -11,4 +11,4 @@ namespace Npgs::Util
     {
         return ClientLogger_;
     }
-} // namespace Npgs::Util
+} // namespace Npgs::Utils

@@ -57,7 +57,7 @@ namespace Npgs
 #endif // NPGS_ENABLE_ENUM_BIT_OPERATOR
 } // namespace Npgs
 
-namespace Npgs::Util
+namespace Npgs::Utils
 {
     NPGS_INLINE bool Equal(const char* Lhs, const char* Rhs)
     {
@@ -73,4 +73,4 @@ namespace Npgs::Util
     {
         return std::abs(Lhs - Rhs) <= std::numeric_limits<double>::epsilon();
     }
-} // namespace Npgs::Util
+} // namespace Npgs::Utils

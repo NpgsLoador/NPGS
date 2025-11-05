@@ -107,7 +107,7 @@ namespace Npgs
         Astro::AStar GenerateStar();
         Astro::AStar GenerateStar(FBasicProperties& Properties);
 
-        FStellarGenerator& SetLogMassSuggestDistribution(std::unique_ptr<Util::TDistribution<>>&& Distribution);
+        FStellarGenerator& SetLogMassSuggestDistribution(std::unique_ptr<Utils::TDistribution<>>&& Distribution);
         FStellarGenerator& SetUniverseAge(float Age);
         FStellarGenerator& SetAgeLowerLimit(float Limit);
         FStellarGenerator& SetAgeUpperLimit(float Limit);
@@ -190,13 +190,13 @@ namespace Npgs
         static constexpr int kWdLogCenterRhoIndex_ = 4;
 
     private:
-        std::mt19937                                          RandomEngine_;
-        std::array<Util::TUniformRealDistribution<>,       8> MagneticGenerators_;
-        std::array<std::unique_ptr<Util::TDistribution<>>, 4> FeHGenerators_;
-        std::array<Util::TUniformRealDistribution<>,       2> SpinGenerators_;
-        Util::TUniformRealDistribution<>                      AgeGenerator_;
-        Util::TUniformRealDistribution<>                      CommonGenerator_;
-        std::unique_ptr<Util::TDistribution<>>                LogMassGenerator_;
+        std::mt19937                                           RandomEngine_;
+        std::array<Utils::TUniformRealDistribution<>,       8> MagneticGenerators_;
+        std::array<std::unique_ptr<Utils::TDistribution<>>, 4> FeHGenerators_;
+        std::array<Utils::TUniformRealDistribution<>,       2> SpinGenerators_;
+        Utils::TUniformRealDistribution<>                      AgeGenerator_;
+        Utils::TUniformRealDistribution<>                      CommonGenerator_;
+        std::unique_ptr<Utils::TDistribution<>>                LogMassGenerator_;
 
         std::array<std::function<float(float)>, 2>    MassPdfs_;
         std::array<glm::vec2, 2>                      MassMaxPdfs_;

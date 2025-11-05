@@ -919,7 +919,7 @@ namespace Npgs
             }
         }
 
-        Util::TUniformRealDistribution Offset(-LeafRadius, LeafRadius - MinDistance); // 用于随机生成恒星位置相对于叶子节点中心点的偏移量
+        Utils::TUniformRealDistribution Offset(-LeafRadius, LeafRadius - MinDistance); // 用于随机生成恒星位置相对于叶子节点中心点的偏移量
         // 遍历八叉树，为每个有效的叶子节点生成一个恒星
         Octree_->Traverse([&Offset, LeafRadius, MinDistance, this](FNodeType& Node) -> void
         {
@@ -1019,7 +1019,7 @@ namespace Npgs
             SelectedGenerator.SetMassLowerLimit(MassLowerLimit);
             SelectedGenerator.SetMassUpperLimit(MassUpperLimit);
             SelectedGenerator.SetLogMassSuggestDistribution(
-                std::make_unique<Util::TNormalDistribution<>>(std::log10(FirstStarInitialMassSol), 0.25f));
+                std::make_unique<Utils::TNormalDistribution<>>(std::log10(FirstStarInitialMassSol), 0.25f));
 
             double Age = Star->GetAge();
             float  FeH = Star->GetFeH();

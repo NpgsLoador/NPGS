@@ -3,7 +3,7 @@
 #include "Application.hpp"
 
 using namespace Npgs;
-using namespace Npgs::Util;
+using namespace Npgs::Utils;
 
 int main()
 {
@@ -25,7 +25,7 @@ int main()
 int main1() {
     using namespace Npgs;
     using namespace Npgs::Astro;
-    using namespace Npgs::Util;
+    using namespace Npgs::Utils;
 
     FLogger::Initialize();
     FEngineServices::GetInstance()->InitializeCoreServices();

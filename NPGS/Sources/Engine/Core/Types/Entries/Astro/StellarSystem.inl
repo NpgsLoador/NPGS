@@ -7,9 +7,9 @@ namespace Npgs::Astro
     requires std::is_class_v<ObjectType>
     FOrbit::FOrbitalObject& FOrbit::FOrbitalObject::SetObject(ObjectType* Object)
     {
-        static_assert(std::is_same_v<ObjectType, FBaryCenter> ||
-                      std::is_same_v<ObjectType, AStar> ||
-                      std::is_same_v<ObjectType, APlanet> ||
+        static_assert(std::is_same_v<ObjectType, FBaryCenter>      ||
+                      std::is_same_v<ObjectType, AStar>            ||
+                      std::is_same_v<ObjectType, APlanet>          ||
                       std::is_same_v<ObjectType, AAsteroidCluster> ||
                       std::is_same_v<ObjectType, Intelli::AArtifact>,
                       "Invalid object type for SetObject");
@@ -39,9 +39,9 @@ namespace Npgs::Astro
     requires std::is_class_v<ObjectType>
     ObjectType* FOrbit::FOrbitalObject::GetObject() const
     {
-        static_assert(std::is_same_v<ObjectType, FBaryCenter> ||
-                      std::is_same_v<ObjectType, AStar> ||
-                      std::is_same_v<ObjectType, APlanet> ||
+        static_assert(std::is_same_v<ObjectType, FBaryCenter>      ||
+                      std::is_same_v<ObjectType, AStar>            ||
+                      std::is_same_v<ObjectType, APlanet>          ||
                       std::is_same_v<ObjectType, AAsteroidCluster> ||
                       std::is_same_v<ObjectType, Intelli::AArtifact>,
                       "Invalid object type for SetObject");

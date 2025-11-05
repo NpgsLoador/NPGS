@@ -26,11 +26,11 @@ namespace Npgs
 #endif // NPGS_ENABLE_ENUM_BIT_OPERATOR
 } // namespace Npgs
 
-namespace Npgs::Util
+namespace Npgs::Utils
 {
     bool Equal(const char* Lhs, const char* Rhs);
     bool Equal(float Lhs, float Rhs);
     bool Equal(double Lhs, double Rhs);
-} // namespace Npgs::Util
+} // namespace Npgs::Utils
 
 #include "Utils.inl"

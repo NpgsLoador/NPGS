@@ -644,7 +644,7 @@ namespace Npgs
     {
         auto it = std::find_if(Vector.begin(), Vector.end(), [&Element](const char* ElementInVector)
         {
-            return Util::Equal(Element, ElementInVector);
+            return Utils::Equal(Element, ElementInVector);
         });
 
         if (it == Vector.end())
@@ -677,7 +677,7 @@ namespace Npgs
             bool bLayerFound = false;
             for (const auto& AvailableLayer : AvailableLayers)
             {
-                if (Util::Equal(RequestedLayer, AvailableLayer.layerName))
+                if (Utils::Equal(RequestedLayer, AvailableLayer.layerName))
                 {
                     bLayerFound = true;
                     break;
@@ -741,7 +741,7 @@ namespace Npgs
             bool bExtensionFound = false;
             for (const auto& AvailableExtension : AvailableExtensions)
             {
-                if (Util::Equal(RequestedExtension, AvailableExtension.extensionName))
+                if (Utils::Equal(RequestedExtension, AvailableExtension.extensionName))
                 {
                     bExtensionFound = true;
                     break;
@@ -785,7 +785,7 @@ namespace Npgs
             bool bExtensionFound = false;
             for (const auto& AvailableExtension : AvailableExtensions)
             {
-                if (Util::Equal(RequestedExtension, AvailableExtension.extensionName))
+                if (Utils::Equal(RequestedExtension, AvailableExtension.extensionName))
                 {
                     bExtensionFound = true;
                     break;

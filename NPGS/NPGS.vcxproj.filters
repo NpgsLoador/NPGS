@@ -147,6 +147,9 @@
     <ClCompile Include="Sources\Program\Universe.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="Sources\Engine\Core\Base\Config\ConfigWatcher.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Sources\stdafx.h">
@@ -318,6 +321,9 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="Sources\Engine\Utils\Hash.hpp">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="Sources\Engine\Core\Base\Config\ConfigWatcher.hpp">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>

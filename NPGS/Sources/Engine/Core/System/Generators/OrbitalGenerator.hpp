@@ -131,21 +131,21 @@ namespace Npgs
         void CalculateOrbitalPeriods(std::vector<std::unique_ptr<Astro::FOrbit>>& Orbits);
 
     private:
-        std::mt19937                                  RandomEngine_;
-        std::array<Util::TBernoulliDistribution<>, 2> RingsProbabilities_;
-        Util::TNormalDistribution<>                   BinaryPeriodDistribution_;
-        Util::TUniformRealDistribution<>              CommonGenerator_;
-        Util::TBernoulliDistribution<>                AsteroidBeltProbability_;
-        Util::TBernoulliDistribution<>                MigrationProbability_;
-        Util::TBernoulliDistribution<>                ScatteringProbability_;
-        Util::TBernoulliDistribution<>                WalkInProbability_;
+        std::mt19937                                   RandomEngine_;
+        std::array<Utils::TBernoulliDistribution<>, 2> RingsProbabilities_;
+        Utils::TNormalDistribution<>                   BinaryPeriodDistribution_;
+        Utils::TUniformRealDistribution<>              CommonGenerator_;
+        Utils::TBernoulliDistribution<>                AsteroidBeltProbability_;
+        Utils::TBernoulliDistribution<>                MigrationProbability_;
+        Utils::TBernoulliDistribution<>                ScatteringProbability_;
+        Utils::TBernoulliDistribution<>                WalkInProbability_;
 
-        std::unique_ptr<FCivilizationGenerator>       CivilizationGenerator_;
+        std::unique_ptr<FCivilizationGenerator>        CivilizationGenerator_;
 
-        float                                         AsteroidUpperLimit_;
-        float                                         CoilTemperatureLimit_;
-        float                                         RingsParentLowerLimit_;
-        float                                         UniverseAge_;
-        bool                                          bContainUltravioletHabitableZone_;
+        float                                          AsteroidUpperLimit_;
+        float                                          CoilTemperatureLimit_;
+        float                                          RingsParentLowerLimit_;
+        float                                          UniverseAge_;
+        bool                                           bContainUltravioletHabitableZone_;
     };
 } // namespace Npgs

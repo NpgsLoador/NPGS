@@ -62,7 +62,7 @@ namespace Npgs
             ProcessAlign(DeltaTime);
         }
 
-        if (Util::Equal(TargetOffset_.x, 0.0f) && Util::Equal(TargetOffset_.y, 0.0f))
+        if (Utils::Equal(TargetOffset_.x, 0.0f) && Utils::Equal(TargetOffset_.y, 0.0f))
         {
             return;
         }

@@ -14,7 +14,7 @@ namespace Npgs
     }
 
     NPGS_INLINE FStellarGenerator&
-    FStellarGenerator::SetLogMassSuggestDistribution(std::unique_ptr<Util::TDistribution<>>&& Distribution)
+    FStellarGenerator::SetLogMassSuggestDistribution(std::unique_ptr<Utils::TDistribution<>>&& Distribution)
     {
         LogMassGenerator_ = std::move(Distribution);
         return *this;

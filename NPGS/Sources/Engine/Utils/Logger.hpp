@@ -3,7 +3,7 @@
 #include <memory>
 #include <spdlog/spdlog.h>
 
-namespace Npgs::Util
+namespace Npgs::Utils
 {
     class FLogger
     {
@@ -19,42 +19,42 @@ namespace Npgs::Util
         static std::shared_ptr<spdlog::logger> CoreLogger_;
         static std::shared_ptr<spdlog::logger> ClientLogger_;
     };
-} // namespace Npgs::Util
+} // namespace Npgs::Utils
 
 #include "Logger.inl"
 
 #if defined(NPGS_ENABLE_CONSOLE_LOGGER)
 // Core logger
 // -----------
-#define NpgsCoreCritical(...) ::Npgs::Util::FLogger::GetCoreLogger()->critical(__VA_ARGS__)
-#define NpgsCoreError(...)    ::Npgs::Util::FLogger::GetCoreLogger()->error(__VA_ARGS__)
-#define NpgsCoreInfo(...)     ::Npgs::Util::FLogger::GetCoreLogger()->info(__VA_ARGS__)
-#define NpgsCoreTrace(...)    ::Npgs::Util::FLogger::GetCoreLogger()->trace(__VA_ARGS__)
-#define NpgsCoreWarn(...)     ::Npgs::Util::FLogger::GetCoreLogger()->warn(__VA_ARGS__)
+#define NpgsCoreCritical(...) ::Npgs::Utils::FLogger::GetCoreLogger()->critical(__VA_ARGS__)
+#define NpgsCoreError(...)    ::Npgs::Utils::FLogger::GetCoreLogger()->error(__VA_ARGS__)
+#define NpgsCoreInfo(...)     ::Npgs::Utils::FLogger::GetCoreLogger()->info(__VA_ARGS__)
+#define NpgsCoreTrace(...)    ::Npgs::Utils::FLogger::GetCoreLogger()->trace(__VA_ARGS__)
+#define NpgsCoreWarn(...)     ::Npgs::Utils::FLogger::GetCoreLogger()->warn(__VA_ARGS__)
 
 // Client logger
 // -------------
-#define NpgsCritical(...)     ::Npgs::Util::FLogger::GetClientLogger()->critical(__VA_ARGS__)
-#define NpgsError(...)        ::Npgs::Util::FLogger::GetClientLogger()->error(__VA_ARGS__)
-#define NpgsInfo(...)         ::Npgs::Util::FLogger::GetClientLogger()->info(__VA_ARGS__)
-#define NpgsTrace(...)        ::Npgs::Util::FLogger::GetClientLogger()->trace(__VA_ARGS__)
-#define NpgsWarn(...)         ::Npgs::Util::FLogger::GetClientLogger()->warn(__VA_ARGS__)
+#define NpgsCritical(...)     ::Npgs::Utils::FLogger::GetClientLogger()->critical(__VA_ARGS__)
+#define NpgsError(...)        ::Npgs::Utils::FLogger::GetClientLogger()->error(__VA_ARGS__)
+#define NpgsInfo(...)         ::Npgs::Utils::FLogger::GetClientLogger()->info(__VA_ARGS__)
+#define NpgsTrace(...)        ::Npgs::Utils::FLogger::GetClientLogger()->trace(__VA_ARGS__)
+#define NpgsWarn(...)         ::Npgs::Utils::FLogger::GetClientLogger()->warn(__VA_ARGS__)
 
 #elif defined(NPGS_ENABLE_FILE_LOGGER)
 
-#define NpgsCoreCritical(...) ::Npgs::Util::FLogger::GetCoreLogger()->critical(__VA_ARGS__)
-#define NpgsCoreError(...)    ::Npgs::Util::FLogger::GetCoreLogger()->error(__VA_ARGS__)
-#define NpgsCoreInfo(...)     ::Npgs::Util::FLogger::GetCoreLogger()->info(__VA_ARGS__)
+#define NpgsCoreCritical(...) ::Npgs::Utils::FLogger::GetCoreLogger()->critical(__VA_ARGS__)
+#define NpgsCoreError(...)    ::Npgs::Utils::FLogger::GetCoreLogger()->error(__VA_ARGS__)
+#define NpgsCoreInfo(...)     ::Npgs::Utils::FLogger::GetCoreLogger()->info(__VA_ARGS__)
 #define NpgsCoreTrace(...)    static_cast<void>(0)
-#define NpgsCoreWarn(...)     ::Npgs::Util::FLogger::GetCoreLogger()->warn(__VA_ARGS__)
+#define NpgsCoreWarn(...)     ::Npgs::Utils::FLogger::GetCoreLogger()->warn(__VA_ARGS__)
 
 // Client logger
 // -------------
-#define NpgsCritical(...)     ::Npgs::Util::FLogger::GetClientLogger()->critical(__VA_ARGS__)
-#define NpgsError(...)        ::Npgs::Util::FLogger::GetClientLogger()->error(__VA_ARGS__)
-#define NpgsInfo(...)         ::Npgs::Util::FLogger::GetClientLogger()->info(__VA_ARGS__)
+#define NpgsCritical(...)     ::Npgs::Utils::FLogger::GetClientLogger()->critical(__VA_ARGS__)
+#define NpgsError(...)        ::Npgs::Utils::FLogger::GetClientLogger()->error(__VA_ARGS__)
+#define NpgsInfo(...)         ::Npgs::Utils::FLogger::GetClientLogger()->info(__VA_ARGS__)
 #define NpgsTrace(...)        static_cast<void>(0)
-#define NpgsWarn(...)         ::Npgs::Util::FLogger::GetClientLogger()->warn(__VA_ARGS__)
+#define NpgsWarn(...)         ::Npgs::Utils::FLogger::GetClientLogger()->warn(__VA_ARGS__)
 
 #else
 

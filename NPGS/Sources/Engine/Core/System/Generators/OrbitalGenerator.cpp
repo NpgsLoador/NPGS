@@ -75,7 +75,7 @@ namespace Npgs
     // --------------------------------
     FOrbitalGenerator::FOrbitalGenerator(const FGenerationInfo& GenerationInfo)
         : RandomEngine_(*GenerationInfo.SeedSequence)
-        , RingsProbabilities_{ Util::TBernoulliDistribution<>(0.5), Util::TBernoulliDistribution<>(0.2) }
+        , RingsProbabilities_{ Utils::TBernoulliDistribution<>(0.5), Utils::TBernoulliDistribution<>(0.2) }
         , BinaryPeriodDistribution_(GenerationInfo.BinaryPeriodMean, GenerationInfo.BinaryPeriodSigma)
         , CommonGenerator_(0.0f, 1.0f)
         , AsteroidBeltProbability_(0.4)
@@ -1118,7 +1118,7 @@ namespace Npgs
         }
         else
         {
-            Util::TBernoulliDistribution ConstructFailedProbability(0.5f);
+            Utils::TBernoulliDistribution ConstructFailedProbability(0.5f);
             for (std::size_t i = 0; i != PlanetCount; ++i)
             {
                 if (CoreMassesSol[i] * kSolarMassToEarth < 0.5f)
@@ -1967,7 +1967,7 @@ namespace Npgs
 
             Emissivity = 0.98f;
         }
-        else if (!Util::Equal(Planet->GetAtmosphereMassDigital<float>(), 0.0f))
+        else if (!Utils::Equal(Planet->GetAtmosphereMassDigital<float>(), 0.0f))
         {
             float AtmospherePressureAtm = (kGravityConstant * PlanetMass * Planet->GetAtmosphereMassDigital<float>()) /
                                           (4 * Math::kPi * std::pow(Planet->GetRadius(), 4.0f)) / kPascalToAtm;
@@ -1975,7 +1975,7 @@ namespace Npgs
             float TidalLockCoefficient  = 0.0f;
             if (ParentType == Astro::FOrbit::EObjectType::kStar)
             {
-                TidalLockCoefficient = Util::Equal(Spin, -1.0f) ? 2.0f : 1.0f;
+                TidalLockCoefficient = Utils::Equal(Spin, -1.0f) ? 2.0f : 1.0f;
             }
             else
             {
@@ -1998,7 +1998,7 @@ namespace Npgs
                 Emissivity = std::max(0.1f, 0.98f - 0.35f * std::pow(AtmospherePressureAtm, 0.25f));
             }
         }
-        else if (Util::Equal(Planet->GetAtmosphereMassDigital<float>(), 0.0f))
+        else if (Utils::Equal(Planet->GetAtmosphereMassDigital<float>(), 0.0f))
         {
             if (PlanetType == Astro::APlanet::EPlanetType::kRocky || PlanetType == Astro::APlanet::EPlanetType::kChthonian)
             {
@@ -2052,7 +2052,7 @@ namespace Npgs
                 if (Planet->GetMassDigital<float>() > 100 * AsteroidUpperLimit_ &&
                     HillSphereRadius / 3 - 2 * LiquidRocheRadius > 3e8f)
                 {
-                    Util::TBernoulliDistribution MoonProbability(
+                    Utils::TBernoulliDistribution MoonProbability(
                         std::min(0.5f, 0.1f * (HillSphereRadius / 3 - 2 * LiquidRocheRadius) / 3e8f));
                     if (MoonProbability(RandomEngine_))
                     {
@@ -2308,7 +2308,7 @@ namespace Npgs
         float LiquidRocheRadius = 2.02373e7f * std::pow(PlanetMassEarth, 1.0f / 3.0f);
         float HillSphereRadius  = Orbits[PlanetIndex]->GetSemiMajorAxis() * std::pow(3.0f * PlanetMass / static_cast<float>(Star->GetMass()), 1.0f / 3.0f);
 
-        Util::TDistribution<double>* RingsProbability = nullptr;
+        Utils::TDistribution<double>* RingsProbability = nullptr;
         if (LiquidRocheRadius < HillSphereRadius / 3.0f && LiquidRocheRadius > Planet->GetRadius())
         {
             if (PlanetType == Astro::APlanet::EPlanetType::kGasGiant ||

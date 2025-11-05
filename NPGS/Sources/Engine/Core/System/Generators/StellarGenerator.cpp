@@ -112,36 +112,36 @@ namespace Npgs
         RandomEngine_(*GenerationInfo.SeedSequence),
         MagneticGenerators_
         {
-            Util::TUniformRealDistribution<>(std::log10(500.0f), std::log10(3000.0f)),
-            Util::TUniformRealDistribution<>(1.0f, 3.0f),
-            Util::TUniformRealDistribution<>(0.0f, 1.0f),
-            Util::TUniformRealDistribution<>(3.0f, 4.0f),
-            Util::TUniformRealDistribution<>(-1.0f, 0.0f),
-            Util::TUniformRealDistribution<>(2.0f, 3.0f),
-            Util::TUniformRealDistribution<>(0.5f, 4.5f),
-            Util::TUniformRealDistribution<>(1e9f, 1e11f)
+            Utils::TUniformRealDistribution<>(std::log10(500.0f), std::log10(3000.0f)),
+            Utils::TUniformRealDistribution<>(1.0f, 3.0f),
+            Utils::TUniformRealDistribution<>(0.0f, 1.0f),
+            Utils::TUniformRealDistribution<>(3.0f, 4.0f),
+            Utils::TUniformRealDistribution<>(-1.0f, 0.0f),
+            Utils::TUniformRealDistribution<>(2.0f, 3.0f),
+            Utils::TUniformRealDistribution<>(0.5f, 4.5f),
+            Utils::TUniformRealDistribution<>(1e9f, 1e11f)
         },
 
         FeHGenerators_
         {
-            std::make_unique<Util::TLogNormalDistribution<>>(-0.3f, 0.5f),
-            std::make_unique<Util::TNormalDistribution<>>(-0.3f, 0.15f),
-            std::make_unique<Util::TNormalDistribution<>>(-0.08f, 0.12f),
-            std::make_unique<Util::TNormalDistribution<>>(0.05f, 0.16f)
+            std::make_unique<Utils::TLogNormalDistribution<>>(-0.3f, 0.5f),
+            std::make_unique<Utils::TNormalDistribution<>>(-0.3f, 0.15f),
+            std::make_unique<Utils::TNormalDistribution<>>(-0.08f, 0.12f),
+            std::make_unique<Utils::TNormalDistribution<>>(0.05f, 0.16f)
         },
 
         SpinGenerators_
         {
-            Util::TUniformRealDistribution<>(3.0f, 5.0f),
-            Util::TUniformRealDistribution<>(0.001f, 0.998f)
+            Utils::TUniformRealDistribution<>(3.0f, 5.0f),
+            Utils::TUniformRealDistribution<>(0.001f, 0.998f)
         },
 
         AgeGenerator_(GenerationInfo.AgeLowerLimit, GenerationInfo.AgeUpperLimit),
         CommonGenerator_(0.0f, 1.0f),
 
         LogMassGenerator_(GenerationInfo.StellarTypeOption == FStellarGenerator::EStellarTypeGenerationOption::kMergeStar
-                          ? std::make_unique<Util::TUniformRealDistribution<>>(0.0f, 1.0f)
-                          : std::make_unique<Util::TUniformRealDistribution<>>(std::log10(GenerationInfo.MassLowerLimit), std::log10(GenerationInfo.MassUpperLimit))),
+                          ? std::make_unique<Utils::TUniformRealDistribution<>>(0.0f, 1.0f)
+                          : std::make_unique<Utils::TUniformRealDistribution<>>(std::log10(GenerationInfo.MassLowerLimit), std::log10(GenerationInfo.MassUpperLimit))),
 
         MassPdfs_(GenerationInfo.MassPdfs),
         MassMaxPdfs_(GenerationInfo.MassMaxPdfs),
@@ -194,32 +194,32 @@ namespace Npgs
     {
         if (Other.LogMassGenerator_ != nullptr)
         {
-            LogMassGenerator_ = std::make_unique<Util::TUniformRealDistribution<>>(
+            LogMassGenerator_ = std::make_unique<Utils::TUniformRealDistribution<>>(
                 std::log10(Other.MassLowerLimit_), std::log10(Other.MassUpperLimit_));
         }
 
         if (Other.FeHGenerators_[0] != nullptr)
         {
-            auto* LogNormal = dynamic_cast<Util::TLogNormalDistribution<>*>(Other.FeHGenerators_[0].get());
-            FeHGenerators_[0] = std::make_unique<Util::TLogNormalDistribution<>>(*LogNormal);
+            auto* LogNormal = dynamic_cast<Utils::TLogNormalDistribution<>*>(Other.FeHGenerators_[0].get());
+            FeHGenerators_[0] = std::make_unique<Utils::TLogNormalDistribution<>>(*LogNormal);
         }
 
         if (Other.FeHGenerators_[1] != nullptr)
         {
-            auto* Normal = dynamic_cast<Util::TNormalDistribution<>*>(Other.FeHGenerators_[1].get());
-            FeHGenerators_[1] = std::make_unique<Util::TNormalDistribution<>>(*Normal);
+            auto* Normal = dynamic_cast<Utils::TNormalDistribution<>*>(Other.FeHGenerators_[1].get());
+            FeHGenerators_[1] = std::make_unique<Utils::TNormalDistribution<>>(*Normal);
         }
 
         if (Other.FeHGenerators_[2] != nullptr)
         {
-            auto* Normal = dynamic_cast<Util::TNormalDistribution<>*>(Other.FeHGenerators_[2].get());
-            FeHGenerators_[2] = std::make_unique<Util::TNormalDistribution<>>(*Normal);
+            auto* Normal = dynamic_cast<Utils::TNormalDistribution<>*>(Other.FeHGenerators_[2].get());
+            FeHGenerators_[2] = std::make_unique<Utils::TNormalDistribution<>>(*Normal);
         }
 
         if (Other.FeHGenerators_[3] != nullptr)
         {
-            auto* Normal = dynamic_cast<Util::TNormalDistribution<>*>(Other.FeHGenerators_[3].get());
-            FeHGenerators_[3] = std::make_unique<Util::TNormalDistribution<>>(*Normal);
+            auto* Normal = dynamic_cast<Utils::TNormalDistribution<>*>(Other.FeHGenerators_[3].get());
+            FeHGenerators_[3] = std::make_unique<Utils::TNormalDistribution<>>(*Normal);
         }
     }
 
@@ -280,31 +280,31 @@ namespace Npgs
             StellarTypeOption_    = Other.StellarTypeOption_;
             MultiplicityOption_   = Other.MultiplicityOption_;
             LogMassGenerator_     = Other.LogMassGenerator_
-                                  ? std::make_unique<Util::TUniformRealDistribution<>>(std::log10(Other.MassLowerLimit_), std::log10(Other.MassUpperLimit_))
+                                  ? std::make_unique<Utils::TUniformRealDistribution<>>(std::log10(Other.MassLowerLimit_), std::log10(Other.MassUpperLimit_))
                                   : nullptr;
 
             if (Other.FeHGenerators_[0] != nullptr)
             {
-                auto* LogNormal = dynamic_cast<Util::TLogNormalDistribution<>*>(Other.FeHGenerators_[0].get());
-                FeHGenerators_[0] = std::make_unique<Util::TLogNormalDistribution<>>(*LogNormal);
+                auto* LogNormal = dynamic_cast<Utils::TLogNormalDistribution<>*>(Other.FeHGenerators_[0].get());
+                FeHGenerators_[0] = std::make_unique<Utils::TLogNormalDistribution<>>(*LogNormal);
             }
 
             if (Other.FeHGenerators_[1] != nullptr)
             {
-                auto* Normal = dynamic_cast<Util::TNormalDistribution<>*>(Other.FeHGenerators_[1].get());
-                FeHGenerators_[1] = std::make_unique<Util::TNormalDistribution<>>(*Normal);
+                auto* Normal = dynamic_cast<Utils::TNormalDistribution<>*>(Other.FeHGenerators_[1].get());
+                FeHGenerators_[1] = std::make_unique<Utils::TNormalDistribution<>>(*Normal);
             }
 
             if (Other.FeHGenerators_[2] != nullptr)
             {
-                auto* Normal = dynamic_cast<Util::TNormalDistribution<>*>(Other.FeHGenerators_[2].get());
-                FeHGenerators_[2] = std::make_unique<Util::TNormalDistribution<>>(*Normal);
+                auto* Normal = dynamic_cast<Utils::TNormalDistribution<>*>(Other.FeHGenerators_[2].get());
+                FeHGenerators_[2] = std::make_unique<Utils::TNormalDistribution<>>(*Normal);
             }
 
             if (Other.FeHGenerators_[3] != nullptr)
             {
-                auto* Normal = dynamic_cast<Util::TNormalDistribution<>*>(Other.FeHGenerators_[3].get());
-                FeHGenerators_[3] = std::make_unique<Util::TNormalDistribution<>>(*Normal);
+                auto* Normal = dynamic_cast<Utils::TNormalDistribution<>*>(Other.FeHGenerators_[3].get());
+                FeHGenerators_[3] = std::make_unique<Utils::TNormalDistribution<>>(*Normal);
             }
         }
 
@@ -397,7 +397,7 @@ namespace Npgs
 
         if (std::isnan(FeH)) // 非有效数值，使用分布生成随机值
         {
-            Util::TDistribution<>* FeHGenerator = nullptr;
+            Utils::TDistribution<>* FeHGenerator = nullptr;
 
             float FeHLowerLimit = FeHLowerLimit_;
             float FeHUpperLimit = FeHUpperLimit_;
@@ -436,7 +436,7 @@ namespace Npgs
 
         if (MultiplicityOption_ != EMultiplicityGenerationOption::kBinarySecondStar)
         {
-            Util::TBernoulliDistribution<> BinaryProbability(0.45 - 0.07 * std::pow(10, FeH));
+            Utils::TBernoulliDistribution<> BinaryProbability(0.45 - 0.07 * std::pow(10, FeH));
             if (BinaryProbability(RandomEngine_))
             {
                 Properties.MultiplicityOption = EMultiplicityGenerationOption::kBinaryFirstStar;
@@ -518,7 +518,7 @@ namespace Npgs
 
     Astro::AStar FStellarGenerator::GenerateStar(FBasicProperties& Properties)
     {
-        if (Util::Equal(Properties.InitialMassSol, -1.0f))
+        if (Utils::Equal(Properties.InitialMassSol, -1.0f))
         {
             Properties = GenerateBasicProperties(Properties.Age, Properties.FeH);
         }
@@ -2049,16 +2049,16 @@ namespace Npgs
         {
             float MergeStarProbability = 0.1f * static_cast<int>(DeathStar.IsSingleStar());
             MergeStarProbability *= static_cast<int>(DeathStarTypeOption != EStellarTypeGenerationOption::kDeathStar);
-            Util::TBernoulliDistribution MergeProbability(MergeStarProbability);
+            Utils::TBernoulliDistribution MergeProbability(MergeStarProbability);
             if (DeathStarTypeOption == EStellarTypeGenerationOption::kMergeStar || MergeProbability(RandomEngine_))
             {
                 DeathStar.SetSingleton(true);
                 DeathStarFrom = Astro::AStar::EStarFrom::kWhiteDwarfMerge;
-                Util::TBernoulliDistribution BlackHoleProbability(0.114514);
+                Utils::TBernoulliDistribution BlackHoleProbability(0.114514);
                 float MassSol = 0.0f;
                 if (BlackHoleProbability(RandomEngine_))
                 {
-                    Util::TUniformRealDistribution<> MassDistribution(2.6f, 2.76f);
+                    Utils::TUniformRealDistribution<> MassDistribution(2.6f, 2.76f);
                     MassSol        = MassDistribution(RandomEngine_);
                     EvolutionPhase = Astro::AStar::EEvolutionPhase::kStellarBlackHole;
                     DeathStarType  = Astro::FStellarClass::EStellarType::kBlackHole;
@@ -2075,7 +2075,7 @@ namespace Npgs
                 }
                 else
                 {
-                    Util::TUniformRealDistribution<> MassDistribution(1.38f, 2.18072f);
+                    Utils::TUniformRealDistribution<> MassDistribution(1.38f, 2.18072f);
                     MassSol        = MassDistribution(RandomEngine_);
                     EvolutionPhase = Astro::AStar::EEvolutionPhase::kNeutronStar;
                     DeathStarType  = Astro::FStellarClass::EStellarType::kNeutronStar;
@@ -2230,7 +2230,7 @@ namespace Npgs
 
     void FStellarGenerator::GenerateMagnetic(Astro::AStar& StarData)
     {
-        Util::TDistribution<>* MagneticGenerator = nullptr;
+        Utils::TDistribution<>* MagneticGenerator = nullptr;
 
         Astro::FStellarClass::EStellarType StellarType = StarData.GetStellarClass().GetStellarType();
         float MassSol = static_cast<float>(StarData.GetMass() / kSolarMass);
@@ -2261,7 +2261,7 @@ namespace Npgs
                     (SpectralType.HSpectralClass == Astro::FStellarClass::ESpectralClass::kSpectral_A ||
                      SpectralType.HSpectralClass == Astro::FStellarClass::ESpectralClass::kSpectral_B))
                 {
-                    Util::TBernoulliDistribution ProbabilityGenerator(0.15); //  p 星的概率
+                    Utils::TBernoulliDistribution ProbabilityGenerator(0.15); //  p 星的概率
                     if (ProbabilityGenerator(RandomEngine_))
                     {
                         MagneticGenerator = &MagneticGenerators_[3];
@@ -2324,7 +2324,7 @@ namespace Npgs
         float RadiusSol = StarData.GetRadius() / kSolarRadius;
         float Spin      = 0.0f;
 
-        Util::TDistribution<float>* SpinGenerator = nullptr;
+        Utils::TDistribution<float>* SpinGenerator = nullptr;
 
         switch (StellarType)
         {

@@ -43,28 +43,31 @@ namespace Npgs
         FDataBufferInfo BufferInfo;
         BufferInfo.CreateInfo = DataBufferCreateInfo;
 
-        vk::DeviceSize MinUniformAlignment = VulkanContext_->GetPhysicalDeviceProperties().limits.minUniformBufferOffsetAlignment;
-        vk::DeviceSize MinStorageAlignment = VulkanContext_->GetPhysicalDeviceProperties().limits.minStorageBufferOffsetAlignment;
         StructType BufferStruct{};
-        Util::ForEachField(BufferStruct, [&](const auto& Field, std::size_t Index)
+        Utils::ForEachField(BufferStruct, [&, this](const auto& Field, std::size_t Index) -> void
         {
             FDataBufferFieldInfo FieldInfo;
             FieldInfo.Size = sizeof(decltype(Field));
 
             if (DataBufferCreateInfo.Usage == vk::DescriptorType::eUniformBufferDynamic)
             {
+                vk::DeviceSize MinUniformAlignment =
+                    VulkanContext_->GetPhysicalDeviceProperties().limits.minUniformBufferOffsetAlignment;
                 FieldInfo.Alignment = (FieldInfo.Size + MinUniformAlignment - 1) & ~(MinUniformAlignment - 1);
                 FieldInfo.Offset    = BufferInfo.Size;
             }
             else if (DataBufferCreateInfo.Usage == vk::DescriptorType::eStorageBufferDynamic)
             {
+                vk::DeviceSize MinStorageAlignment =
+                    VulkanContext_->GetPhysicalDeviceProperties().limits.minStorageBufferOffsetAlignment;
                 FieldInfo.Alignment = (FieldInfo.Size + MinStorageAlignment - 1) & ~(MinStorageAlignment - 1);
                 FieldInfo.Offset    = BufferInfo.Size;
             }
             else
             {
                 FieldInfo.Alignment = FieldInfo.Size;
-                FieldInfo.Offset    = reinterpret_cast<const std::byte*>(&Field) - reinterpret_cast<const std::byte*>(&BufferStruct);
+                FieldInfo.Offset    = reinterpret_cast<const std::byte*>(&Field)
+                                    - reinterpret_cast<const std::byte*>(&BufferStruct);
             }
 
             BufferInfo.Size += FieldInfo.Alignment;
@@ -77,32 +80,29 @@ namespace Npgs
         vk::BufferUsageFlags BufferUsage = DataBufferCreateInfo.Usage == vk::DescriptorType::eUniformBuffer
                                          ? vk::BufferUsageFlagBits::eUniformBuffer
                                          : vk::BufferUsageFlagBits::eStorageBuffer;
-        BufferUsage |= vk::BufferUsageFlagBits::eShaderDeviceAddress;
+
+        BufferUsage |= vk::BufferUsageFlagBits::eShaderDeviceAddress | vk::BufferUsageFlagBits::eTransferDst;
 
         for (std::uint32_t i = 0; i != BufferCount; ++i)
         {
-            vk::BufferCreateInfo BufferCreateInfo({}, BufferInfo.Size, BufferUsage | vk::BufferUsageFlagBits::eTransferDst);
+            vk::BufferCreateInfo BufferCreateInfo({}, BufferInfo.Size, BufferUsage);
             BufferInfo.Buffers.emplace_back(VulkanContext_, Allocator_, AllocationCreateInfo, BufferCreateInfo);
-
-            StructType EmptyData{};
             BufferInfo.Buffers[i].SetPersistentMapping(true);
-            BufferInfo.Buffers[i].CopyData(0, 0, BufferInfo.Size, &EmptyData);
         }
 
         DataBuffers_.emplace(DataBufferCreateInfo.Name, std::move(BufferInfo));
     }
 
+    NPGS_INLINE void FShaderBufferManager::RemoveDataBuffer(std::string_view Name)
+    {
+        DataBuffers_.erase(Name);
+    }
+
     template <typename StructType>
     requires std::is_class_v<StructType>
-    void FShaderBufferManager::UpdateDataBuffers(std::string_view Name, const StructType& Data)
+    void FShaderBufferManager::UpdateDataBuffers(std::string_view Name, const StructType& Data) const
     {
-        auto it = DataBuffers_.find(Name);
-        if (it == DataBuffers_.end())
-        {
-            throw std::out_of_range(std::format(R"(Data buffer "{}" not found.)", Name));
-        }
-
-        auto& BufferInfo = it->second;
+        const auto& BufferInfo = GetDataBufferInfo(Name);
         for (std::uint32_t i = 0; i != Config::Graphics::kMaxFrameInFlight; ++i)
         {
             BufferInfo.Buffers[i].CopyData(0, 0, BufferInfo.Size, &Data);
@@ -111,15 +111,9 @@ namespace Npgs
 
     template <typename StructType>
     requires std::is_class_v<StructType>
-    void FShaderBufferManager::UpdateDataBuffer(std::uint32_t FrameIndex, std::string_view Name, const StructType& Data)
+    inline void FShaderBufferManager::UpdateDataBuffer(std::uint32_t FrameIndex, std::string_view Name, const StructType& Data) const
     {
-        auto it = DataBuffers_.find(Name);
-        if (it == DataBuffers_.end())
-        {
-            throw std::out_of_range(std::format(R"(Data buffer "{}" not found.)", Name));
-        }
-
-        auto& BufferInfo = it->second;
+        const auto& BufferInfo = GetDataBufferInfo(Name);
         BufferInfo.Buffers[FrameIndex].CopyData(0, 0, BufferInfo.Size, &Data);
     }
 
@@ -127,25 +121,16 @@ namespace Npgs
     std::vector<FShaderBufferManager::TUpdater<FieldType>>
     FShaderBufferManager::GetFieldUpdaters(std::string_view BufferName, std::string_view FieldName) const
     {
-        auto BufferInfoIt = DataBuffers_.find(BufferName);
-        if (BufferInfoIt == DataBuffers_.end())
-        {
-            throw std::out_of_range(std::format(R"(Data buffer "{}" not found.)", BufferName));
-        }
-
-        auto& BufferInfo = BufferInfoIt->second;
+        const auto& BufferInfo = GetDataBufferInfo(BufferName);
 
         std::vector<TUpdater<FieldType>> Updaters;
         for (std::uint32_t i = 0; i != Config::Graphics::kMaxFrameInFlight; ++i)
         {
-            auto FieldIt = BufferInfo.Fields.find(FieldName);
-            if (FieldIt == BufferInfo.Fields.end())
-            {
-                throw std::out_of_range(std::format(R"(Buffer field "{}" not found.)", FieldName));
-            }
+            auto FieldOffsetAndSize = GetDataBufferFieldOffsetAndSize(BufferInfo, FieldName);
 
-            vk::DeviceSize FieldOffset = FieldIt->second.Offset;
-            vk::DeviceSize FieldSize   = FieldIt->second.Size;
+            vk::DeviceSize FieldOffset = FieldOffsetAndSize.first;
+            vk::DeviceSize FieldSize   = FieldOffsetAndSize.second;
+
             Updaters.emplace_back(BufferInfo.Buffers[i], FieldOffset, FieldSize);
         }
 
@@ -156,42 +141,76 @@ namespace Npgs
     FShaderBufferManager::TUpdater<FieldType>
     FShaderBufferManager::GetFieldUpdater(std::uint32_t FrameIndex, std::string_view BufferName, std::string_view FieldName) const
     {
-        auto BufferInfoIt = DataBuffers_.find(BufferName);
-        if (BufferInfoIt == DataBuffers_.end())
-        {
-            throw std::out_of_range(std::format(R"(Data buffer "{}" not found.)", BufferName));
-        }
+        const auto& BufferInfo  = GetDataBufferInfo(BufferName);
+        auto FieldOffsetAndSize = GetDataBufferFieldOffsetAndSize(BufferInfo, FieldName);
 
-        auto& BufferInfo = BufferInfoIt->second;
-
-        auto FieldIt = BufferInfo.Fields.find(FieldName);
-        if (FieldIt == BufferInfo.Fields.end())
-        {
-            throw std::out_of_range(std::format(R"(Buffer field "{}" not found.)", FieldName));
-        }
-
-        vk::DeviceSize FieldOffset = FieldIt->second.Offset;
-        vk::DeviceSize FieldSize   = FieldIt->second.Size;
+        vk::DeviceSize FieldOffset = FieldOffsetAndSize.first;
+        vk::DeviceSize FieldSize   = FieldOffsetAndSize.second;
 
         return TUpdater<FieldType>(BufferInfo.Buffers[FrameIndex], FieldOffset, FieldSize);
     }
 
-    inline const FDeviceLocalBuffer&
-    FShaderBufferManager::GetDataBuffer(std::uint32_t FrameIndex, std::string_view BufferName) const
+    template <typename Type>
+    void FShaderBufferManager::UpdateResourceDescriptors(std::string_view BufferName, std::uint32_t Set, std::uint32_t Binding,
+                                                         vk::DescriptorType ConfirmedUsage, const Type& DescriptorInfo)
     {
-        auto it = DataBuffers_.find(BufferName);
-        if (it == DataBuffers_.end())
+        auto& BufferInfo    = GetDescriptorBufferInfo(BufferName);
+        auto& OffsetAndType = GetDescriptorBindingOffsetAndType(BufferName, Set, Binding);
+
+        vk::DeviceSize     Offset       = OffsetAndType.first;
+        vk::DescriptorType CurrentUsage = OffsetAndType.second;
+
+        if (CurrentUsage != ConfirmedUsage)
         {
-            throw std::out_of_range(std::format(R"(Data buffer "{}" not found.)", BufferName));
+            throw std::invalid_argument(std::format(R"(Descriptor type mismatch for buffer "{}", set {}, binding {}.)",
+                                                    BufferName, Set, Binding));
+        }
+        if (ConfirmedUsage == vk::DescriptorType::eUniformBuffer || CurrentUsage == vk::DescriptorType::eStorageBuffer)
+        {
+            throw std::invalid_argument("Update buffer descriptor please use UpdateUniformDescriptors");
         }
 
-        auto& BufferInfo = it->second;
-        return BufferInfo.Buffers[FrameIndex];
+        vk::DescriptorGetInfoEXT DescriptorGetInfo(ConfirmedUsage, &DescriptorInfo);
+        vk::DeviceSize DescriptorSize = GetDescriptorSize(CurrentUsage);
+
+        for (std::uint32_t i = 0; i != Config::Graphics::kMaxFrameInFlight; ++i)
+        {
+            auto& BufferMemory = BufferInfo.Buffers[i].GetMemory();
+            void* Target       = BufferMemory.GetMappedTargetMemory();
+            vk::Device Device  = VulkanContext_->GetDevice();
+            Device.getDescriptorEXT(DescriptorGetInfo, DescriptorSize, reinterpret_cast<std::byte*>(Target) + Offset);
+        }
     }
 
-    NPGS_INLINE void FShaderBufferManager::RemoveDescriptorBuffer(std::string_view Name)
+    template <typename Type>
+    void FShaderBufferManager::UpdateResourceDescriptor(std::uint32_t FrameIndex, std::string_view BufferName, std::uint32_t Set,
+                                                        std::uint32_t Binding, vk::DescriptorType ConfirmedUsage, const Type& DescriptorInfo)
     {
-        DescriptorBuffers_.erase(Name);
+        auto& BufferInfo = GetDescriptorBufferInfo(BufferName);
+        auto& Buffer     = BufferInfo.Buffers[FrameIndex];
+
+        auto& OffsetAndType = GetDescriptorBindingOffsetAndType(BufferName, Set, Binding);
+
+        vk::DeviceSize     Offset       = OffsetAndType.first;
+        vk::DescriptorType CurrentUsage = OffsetAndType.second;
+
+        if (CurrentUsage != ConfirmedUsage)
+        {
+            throw std::invalid_argument(std::format(R"(Descriptor type mismatch for buffer "{}", set {}, binding {}.)",
+                                                    BufferName, Set, Binding));
+        }
+        if (ConfirmedUsage == vk::DescriptorType::eUniformBuffer || CurrentUsage == vk::DescriptorType::eStorageBuffer)
+        {
+            throw std::invalid_argument("Update buffer descriptor please use UpdateUniformDescriptor");
+        }
+
+        vk::DescriptorGetInfoEXT DescriptorGetInfo(ConfirmedUsage, &DescriptorInfo);
+        vk::DeviceSize DescriptorSize = GetDescriptorSize(CurrentUsage);
+
+        auto& BufferMemory = Buffer.GetMemory();
+        void* Target       = BufferMemory.GetMappedTargetMemory();
+        vk::Device Device  = VulkanContext_->GetDevice();
+        Device.getDescriptorEXT(DescriptorGetInfo, DescriptorSize, reinterpret_cast<std::byte*>(Target) + Offset);
     }
 
     template <typename... Args>
@@ -205,31 +224,5 @@ namespace Npgs
         }
 
         return Offsets;
-    }
-
-    inline vk::DeviceSize
-    FShaderBufferManager::GetDescriptorBindingOffset(std::string_view BufferName, std::uint32_t Set, std::uint32_t Binding) const
-    {
-        auto Pair = std::make_pair(Set, Binding);
-        auto it = OffsetsMap_.find(BufferName);
-        if (it == OffsetsMap_.end())
-        {
-            throw std::out_of_range(std::format(R"(Buffer offset "{}" not found.)", BufferName));
-        }
-
-        return it->second.at(Pair);
-    }
-
-    inline const FDeviceLocalBuffer&
-    FShaderBufferManager::GetDescriptorBuffer(std::uint32_t FrameIndex, std::string_view BufferName) const
-    {
-        auto it = DescriptorBuffers_.find(BufferName);
-        if (it == DescriptorBuffers_.end())
-        {
-            throw std::out_of_range(std::format(R"(Descriptor buffer "{}" not found.)", BufferName));
-        }
-
-        auto& BufferInfo = it->second;
-        return BufferInfo.Buffers[FrameIndex];
     }
 } // namespace Npgs

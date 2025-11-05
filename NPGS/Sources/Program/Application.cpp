@@ -1271,8 +1271,8 @@ namespace Npgs
             SceneGBufferDescriptorBufferCreateInfo.SetSizes = std::move(PbrSceneGBufferShader->GetDescriptorSetSizes());
 
             vk::SamplerCreateInfo SamplerCreateInfo = FTexture::CreateDefaultSamplerCreateInfo(VulkanContext_);
-            static FVulkanSampler kSampler(VulkanContext_->GetDevice(), SamplerCreateInfo);
-            SceneGBufferDescriptorBufferCreateInfo.SamplerInfos.emplace_back(0u, 0u, *kSampler);
+            static FVulkanSampler Sampler(VulkanContext_->GetDevice(), SamplerCreateInfo);
+            SceneGBufferDescriptorBufferCreateInfo.SamplerInfos.emplace_back(0u, 0u, *Sampler);
 
             auto PbrDiffuseImageInfo = PbrDiffuse->CreateDescriptorImageInfo(nullptr);
             SceneGBufferDescriptorBufferCreateInfo.SampledImageInfos.emplace_back(1u, 0u, PbrDiffuseImageInfo);
@@ -1296,8 +1296,8 @@ namespace Npgs
                 .setAddressModeV(vk::SamplerAddressMode::eClampToEdge)
                 .setAddressModeW(vk::SamplerAddressMode::eClampToEdge);
 
-            static FVulkanSampler kSkyboxSampler(VulkanContext_->GetDevice(), SamplerCreateInfo);
-            auto SkyboxImageInfo = Skybox->CreateDescriptorImageInfo(kSkyboxSampler);
+            static FVulkanSampler SkyboxSampler(VulkanContext_->GetDevice(), SamplerCreateInfo);
+            auto SkyboxImageInfo = Skybox->CreateDescriptorImageInfo(SkyboxSampler);
             SkyboxDescriptorBufferCreateInfo.CombinedImageSamplerInfos.emplace_back(0u, 0u, SkyboxImageInfo);
 
             FShaderBufferManager::FDescriptorBufferCreateInfo SceneMergeDescriptorBufferCreateInfo;
@@ -1324,22 +1324,22 @@ namespace Npgs
                 .setMaxLod(0.0f)
                 .setBorderColor(vk::BorderColor::eFloatCustomEXT);
 
-            static FVulkanSampler kFramebufferSampler(VulkanContext_->GetDevice(), SamplerCreateInfo);
+            static FVulkanSampler FramebufferSampler(VulkanContext_->GetDevice(), SamplerCreateInfo);
 
             vk::DescriptorImageInfo ColorStorageImageInfo(
-                *kFramebufferSampler, *ColorAttachment_->GetImageView(), vk::ImageLayout::eGeneral);
+                *FramebufferSampler, *ColorAttachment_->GetImageView(), vk::ImageLayout::eGeneral);
             vk::DescriptorImageInfo ColorImageInfo(
-                *kFramebufferSampler, *ColorAttachment_->GetImageView(), vk::ImageLayout::eShaderReadOnlyOptimal);
+                *FramebufferSampler, *ColorAttachment_->GetImageView(), vk::ImageLayout::eShaderReadOnlyOptimal);
             vk::DescriptorImageInfo DepthMapImageInfo(
-                *kFramebufferSampler, *DepthMapAttachment_->GetImageView(), vk::ImageLayout::eShaderReadOnlyOptimal);
+                *FramebufferSampler, *DepthMapAttachment_->GetImageView(), vk::ImageLayout::eShaderReadOnlyOptimal);
             vk::DescriptorImageInfo PositionAoImageInfo(
-                *kFramebufferSampler, *PositionAoAttachment_->GetImageView(), vk::ImageLayout::eShaderReadOnlyOptimal);
+                *FramebufferSampler, *PositionAoAttachment_->GetImageView(), vk::ImageLayout::eShaderReadOnlyOptimal);
             vk::DescriptorImageInfo NormalRoughImageInfo(
-                *kFramebufferSampler, *NormalRoughAttachment_->GetImageView(), vk::ImageLayout::eShaderReadOnlyOptimal);
+                *FramebufferSampler, *NormalRoughAttachment_->GetImageView(), vk::ImageLayout::eShaderReadOnlyOptimal);
             vk::DescriptorImageInfo AlbedoMetalImageInfo(
-                *kFramebufferSampler, *AlbedoMetalAttachment_->GetImageView(), vk::ImageLayout::eShaderReadOnlyOptimal);
+                *FramebufferSampler, *AlbedoMetalAttachment_->GetImageView(), vk::ImageLayout::eShaderReadOnlyOptimal);
             vk::DescriptorImageInfo ShadowImageInfo(
-                *kFramebufferSampler, *ShadowAttachment_->GetImageView(), vk::ImageLayout::eShaderReadOnlyOptimal);
+                *FramebufferSampler, *ShadowAttachment_->GetImageView(), vk::ImageLayout::eShaderReadOnlyOptimal);
 
             SceneGBufferDescriptorBufferCreateInfo.CombinedImageSamplerInfos.emplace_back(2u, 0u, DepthMapImageInfo);
             SceneMergeDescriptorBufferCreateInfo.SampledImageInfos.emplace_back(0u, 0u, PositionAoImageInfo);

@@ -4,7 +4,7 @@
 #include <spdlog/sinks/basic_file_sink.h>
 #include <spdlog/sinks/stdout_color_sinks.h>
 
-namespace Npgs::Util
+namespace Npgs::Utils
 {
     void FLogger::Initialize()
     {
@@ -46,4 +46,4 @@ namespace Npgs::Util
 
     std::shared_ptr<spdlog::logger> FLogger::CoreLogger_   = nullptr;
     std::shared_ptr<spdlog::logger> FLogger::ClientLogger_ = nullptr;
-} // namespace Npgs::Util
+} // namespace Npgs::Utils

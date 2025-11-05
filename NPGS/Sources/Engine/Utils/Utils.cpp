@@ -5,6 +5,6 @@ namespace Npgs
 {
 } // namespace Npgs
 
-namespace Npgs::Util
+namespace Npgs::Utils
 {
-} // namespace Npgs::Util
+} // namespace Npgs::Utils

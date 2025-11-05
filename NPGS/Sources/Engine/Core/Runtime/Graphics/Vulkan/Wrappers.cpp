@@ -157,13 +157,13 @@ namespace Npgs
         else
         {
             const char* NumericFormat = vk::componentNumericFormat(Format, 0);
-            if (Util::Equal(NumericFormat, "SINT")    || Util::Equal(NumericFormat, "UINT")  ||
-                Util::Equal(NumericFormat, "SNORM")   || Util::Equal(NumericFormat, "UNORM") ||
-                Util::Equal(NumericFormat, "SSCALED") || Util::Equal(NumericFormat, "USCALED"))
+            if (Utils::Equal(NumericFormat, "SINT")    || Utils::Equal(NumericFormat, "UINT")  ||
+                Utils::Equal(NumericFormat, "SNORM")   || Utils::Equal(NumericFormat, "UNORM") ||
+                Utils::Equal(NumericFormat, "SSCALED") || Utils::Equal(NumericFormat, "USCALED"))
             {
                 RawDataType = ERawDataType::kInteger;
             }
-            else if (Util::Equal(NumericFormat, "SFLOAT") || Util::Equal(NumericFormat, "UFLOAT"))
+            else if (Utils::Equal(NumericFormat, "SFLOAT") || Utils::Equal(NumericFormat, "UFLOAT"))
             {
                 RawDataType = ERawDataType::kFloatingPoint;
             }

@@ -47,8 +47,8 @@ namespace Npgs
     private:
         std::mt19937                                    RandomEngine_;
         std::vector<Astro::FStellarSystem>              StellarSystems_;
-        Util::TUniformIntDistribution<std::uint32_t>    SeedGenerator_;
-        Util::TUniformRealDistribution<>                CommonGenerator_;
+        Utils::TUniformIntDistribution<std::uint32_t>   SeedGenerator_;
+        Utils::TUniformRealDistribution<>               CommonGenerator_;
         std::unique_ptr<TOctree<Astro::FStellarSystem>> Octree_;
         FThreadPool*                                    ThreadPool_;
 

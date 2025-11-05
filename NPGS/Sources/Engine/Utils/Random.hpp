@@ -3,7 +3,7 @@
 #include <random>
 #include <type_traits>
 
-namespace Npgs::Util
+namespace Npgs::Utils
 {
     template <typename BaseType = float, typename RandomEngine = std::mt19937>
     requires std::is_class_v<RandomEngine>
@@ -139,4 +139,4 @@ namespace Npgs::Util
     private:
         std::bernoulli_distribution Distribution_;
     };
-} // namespace Npgs::Util
+} // namespace Npgs::Utils

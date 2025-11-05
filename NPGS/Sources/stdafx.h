@@ -19,6 +19,7 @@
 #include <Imath/ImathBox.h>
 
 #include <ktx.h>
+#include <nlohmann/json.hpp>
 #include <OpenEXR/ImfInputFile.h>
 #include <OpenEXR/ImfRgba.h>
 #include <OpenEXR/ImfRgbaFile.h>
