@@ -1,3 +1,5 @@
+#include <format>
+#include <stdexcept>
 #include <tuple>
 #include <utility>
 
@@ -59,12 +61,13 @@ namespace Npgs
     requires CAssetCompatible<AssetType>
     AssetType* FAssetManager::GetAsset(std::string_view Name)
     {
-        if (auto it = Assets_.find(Name); it != Assets_.end())
+        auto it = Assets_.find(Name);
+        if (it == Assets_.end())
         {
-            return static_cast<AssetType*>(it->second.get());
+            throw std::out_of_range(std::format(R"(Required asset "{}" not found.)", Name));
         }
 
-        return nullptr;
+        return static_cast<AssetType*>(it->second.get());
     }
 
     template <typename AssetType>

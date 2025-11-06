@@ -167,51 +167,28 @@ namespace Npgs
             DeviceQueueCreateInfos.emplace_back(vk::DeviceQueueCreateFlags(), QueueFamilyIndices_.at(EQueueType::kTransfer), QueuePriorities);
         }
 
-        vk::PhysicalDeviceFeatures2 Features2;
         vk::PhysicalDeviceVulkan11Features Features11;
         vk::PhysicalDeviceVulkan12Features Features12;
         vk::PhysicalDeviceVulkan13Features Features13;
         vk::PhysicalDeviceVulkan14Features Features14;
+        vk::PhysicalDeviceFeatures2 Features2;
 
-        vk::PhysicalDeviceCustomBorderColorFeaturesEXT   CustomBorderColorFeatures(vk::True, vk::True);
-        vk::PhysicalDeviceDescriptorBufferFeaturesEXT    DescriptorBufferFeatures(vk::True, vk::True, vk::True, vk::True);
-        vk::PhysicalDeviceUnifiedImageLayoutsFeaturesKHR UnifiedImageLayoutsFeatures(vk::True, vk::True);
-
-        Features2.setPNext(&Features11);
-        Features11.setPNext(&Features12);
-        Features12.setPNext(&Features13);
-        Features13.setPNext(&Features14);
-        Features14.setPNext(&CustomBorderColorFeatures);
-        CustomBorderColorFeatures.setPNext(&DescriptorBufferFeatures);
-        DescriptorBufferFeatures.setPNext(&UnifiedImageLayoutsFeatures);
+        Features2.setPNext(&Features14);
+        Features14.setPNext(&Features13);
+        Features13.setPNext(&Features12);
+        Features12.setPNext(&Features11);
 
         PhysicalDevice_.getFeatures2(&Features2);
 
-        void* pNext = &CustomBorderColorFeatures;
-        vk::PhysicalDeviceFeatures PhysicalDeviceFeatures = Features2.features;
+        vk::PhysicalDeviceCustomBorderColorFeaturesEXT CustomBorderColorFeatures(vk::True, vk::True);
 
-        if (ApiVersion_ >= vk::ApiVersion11)
-        {
-            Features11.setPNext(pNext);
-            pNext = &Features11;
-        }
-        if (ApiVersion_ >= vk::ApiVersion12)
-        {
-            Features12.setPNext(pNext);
-            pNext = &Features12;
-        }
-        if (ApiVersion_ >= vk::ApiVersion13)
-        {
-            Features13.setPNext(pNext);
-            pNext = &Features13;
-        }
-        if (ApiVersion_ >= vk::ApiVersion14)
-        {
-            Features14.setPNext(pNext);
-            pNext = &Features14;
-        }
+        vk::PhysicalDeviceDescriptorBufferFeaturesEXT DescriptorBufferFeatures(
+            vk::True, vk::True, vk::True, vk::True, &CustomBorderColorFeatures);
 
-        vk::DeviceCreateInfo DeviceCreateInfo(Flags, DeviceQueueCreateInfos, {}, DeviceExtensions_, &PhysicalDeviceFeatures, pNext);
+        vk::PhysicalDeviceUnifiedImageLayoutsFeaturesKHR UnifiedImageLayoutsFeatures(vk::True, vk::True, &DescriptorBufferFeatures);
+
+        Features11.setPNext(&UnifiedImageLayoutsFeatures);
+        vk::DeviceCreateInfo DeviceCreateInfo(Flags, DeviceQueueCreateInfos, {}, DeviceExtensions_, &Features2.features, &Features14);
 
         try
         {

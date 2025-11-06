@@ -121,16 +121,15 @@ namespace Npgs
     std::vector<FShaderBufferManager::TUpdater<FieldType>>
     FShaderBufferManager::GetFieldUpdaters(std::string_view BufferName, std::string_view FieldName) const
     {
-        const auto& BufferInfo = GetDataBufferInfo(BufferName);
+        const auto& BufferInfo  = GetDataBufferInfo(BufferName);
+        auto FieldOffsetAndSize = GetDataBufferFieldOffsetAndSize(BufferInfo, FieldName);
+
+        vk::DeviceSize FieldOffset = FieldOffsetAndSize.first;
+        vk::DeviceSize FieldSize   = FieldOffsetAndSize.second;
 
         std::vector<TUpdater<FieldType>> Updaters;
         for (std::uint32_t i = 0; i != Config::Graphics::kMaxFrameInFlight; ++i)
         {
-            auto FieldOffsetAndSize = GetDataBufferFieldOffsetAndSize(BufferInfo, FieldName);
-
-            vk::DeviceSize FieldOffset = FieldOffsetAndSize.first;
-            vk::DeviceSize FieldSize   = FieldOffsetAndSize.second;
-
             Updaters.emplace_back(BufferInfo.Buffers[i], FieldOffset, FieldSize);
         }
 
@@ -167,7 +166,7 @@ namespace Npgs
         }
         if (ConfirmedUsage == vk::DescriptorType::eUniformBuffer || CurrentUsage == vk::DescriptorType::eStorageBuffer)
         {
-            throw std::invalid_argument("Update buffer descriptor please use UpdateUniformDescriptors");
+            throw std::invalid_argument("Update buffer descriptor please use UpdateBufferDescriptors");
         }
 
         vk::DescriptorGetInfoEXT DescriptorGetInfo(ConfirmedUsage, &DescriptorInfo);
@@ -201,7 +200,7 @@ namespace Npgs
         }
         if (ConfirmedUsage == vk::DescriptorType::eUniformBuffer || CurrentUsage == vk::DescriptorType::eStorageBuffer)
         {
-            throw std::invalid_argument("Update buffer descriptor please use UpdateUniformDescriptor");
+            throw std::invalid_argument("Update buffer descriptor please use UpdateBufferDescriptor");
         }
 
         vk::DescriptorGetInfoEXT DescriptorGetInfo(ConfirmedUsage, &DescriptorInfo);

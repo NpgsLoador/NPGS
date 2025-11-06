@@ -1252,7 +1252,7 @@ namespace Npgs
         auto* PbrDiffuse      = AssetManager->GetAsset<FTexture2D>("PbrDiffuse");
         auto* PbrNormal       = AssetManager->GetAsset<FTexture2D>("PbrNormal");
         auto* PbrArm          = AssetManager->GetAsset<FTexture2D>("PbrArm");
-        auto* IceLand         = AssetManager->GetAsset<FTexture2D>("IceLand");
+        // auto* IceLand         = AssetManager->GetAsset<FTexture2D>("IceLand");
         auto* Skybox          = AssetManager->GetAsset<FTextureCube>("Skybox");
 
         auto* ShaderBufferManager = EngineResourceServices->GetShaderBufferManager();
