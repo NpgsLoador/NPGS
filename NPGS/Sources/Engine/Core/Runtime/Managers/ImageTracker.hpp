@@ -49,13 +49,8 @@ namespace Npgs
         void CollapseImageStates(vk::Image Image, const FImageMemoryMaskPack& ImageMemoryMaskPack);
         FImageState GetImageState(vk::Image Image) const;
         FImageState GetImageState(vk::Image Image, const vk::ImageSubresourceRange& Range);
-
-        vk::ImageMemoryBarrier2
-        CreateBarrier(vk::Image Image, const vk::ImageSubresourceRange& Range, const FImageState& DstState);
-
-        vk::ImageMemoryBarrier2
-        CreateBarrier(vk::Image Image, const vk::ImageSubresourceRange& Range, const FImageMemoryMaskPack& ImageMemoryMaskPack);
-        
+        vk::ImageMemoryBarrier2 MakeBarrier(vk::Image Image, const vk::ImageSubresourceRange& Range, const FImageState& DstState);
+        vk::ImageMemoryBarrier2 MakeBarrier(vk::Image Image, const vk::ImageSubresourceRange& Range, const FImageMemoryMaskPack& ImageMemoryMaskPack);
         void Remove(vk::Image Image);
         void Reset(vk::Image Image);
         void Clear();

@@ -128,7 +128,7 @@ namespace Npgs
     }
 
     vk::ImageMemoryBarrier2
-    FImageTracker::CreateBarrier(vk::Image Image, const vk::ImageSubresourceRange& Range, const FImageState& DstState)
+    FImageTracker::MakeBarrier(vk::Image Image, const vk::ImageSubresourceRange& Range, const FImageState& DstState)
     {
         FImageState SrcState = GetImageState(Image, Range);
 
@@ -170,8 +170,8 @@ namespace Npgs
         return Barrier;
     }
 
-    vk::ImageMemoryBarrier2 FImageTracker::CreateBarrier(vk::Image Image, const vk::ImageSubresourceRange& Range,
-                                                         const FImageMemoryMaskPack& ImageMemoryMaskPack)
+    vk::ImageMemoryBarrier2 FImageTracker::MakeBarrier(vk::Image Image, const vk::ImageSubresourceRange& Range,
+                                                       const FImageMemoryMaskPack& ImageMemoryMaskPack)
     {
         FImageState DstState =
         {
@@ -180,6 +180,6 @@ namespace Npgs
             .ImageLayout = ImageMemoryMaskPack.kImageLayout
         };
 
-        return CreateBarrier(Image, Range, DstState);
+        return MakeBarrier(Image, Range, DstState);
     }
 } // namespace Npgs

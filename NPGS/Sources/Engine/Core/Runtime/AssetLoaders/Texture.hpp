@@ -61,35 +61,32 @@ namespace Npgs
 
         void CopyBlitGenerateTexture(const FVulkanCommandPool& CommandPool, vk::Buffer SrcBuffer, vk::Extent3D Extent,
                                      std::uint32_t MipLevels, std::uint32_t ArrayLayers, vk::Filter Filter,
-                                     vk::Image DstImageSrcBlit, vk::Image DstImageDstBlit,
-                                     const FVulkanSemaphore* SignalSemaphore, const FVulkanFence* Fence);
+                                     vk::Image DstImageSrcBlit, vk::Image DstImageDstBlit, const FVulkanFence* Fence);
 
         void CopyBlitApplyTexture(const FVulkanCommandPool& CommandPool, vk::Buffer SrcBuffer, vk::Extent3D Extent,
                                   std::uint32_t MipLevels, const std::vector<std::size_t>& LevelOffsets,
                                   std::uint32_t ArrayLayers, vk::Filter Filter,
-                                  vk::Image DstImageSrcBlit, vk::Image DstImageDstBlit,
-                                  const FVulkanSemaphore* SignalSemaphore, const FVulkanFence* Fence);
+                                  vk::Image DstImageSrcBlit, vk::Image DstImageDstBlit, const FVulkanFence* Fence);
 
         void CopyApplyTexture(const FVulkanCommandPool& CommandPool, vk::Buffer SrcBuffer, vk::Extent3D Extent,
                               std::uint32_t MipLevels, const std::vector<std::size_t>& LevelOffsets,
-                              std::uint32_t ArrayLayers, vk::Filter Filter, vk::Image DstImage,
-                              const FVulkanSemaphore* SignalSemaphore, const FVulkanFence* Fence);
+                              std::uint32_t ArrayLayers, vk::Filter Filter, vk::Image DstImage, const FVulkanFence* Fence);
 
-        void BlitGenerateTexture(const FVulkanCommandPool& CommandPool, vk::Extent3D Extent, std::uint32_t MipLevels,
-                                 std::uint32_t ArrayLayers, vk::Filter Filter, vk::Image SrcImage, vk::Image DstImage,
-                                 const FVulkanSemaphore* WaitSemaphore, const FVulkanFence* Fence);
+        void BlitGenerateTexture(const FVulkanCommandPool& CommandPool, vk::Extent3D Extent,
+                                 std::uint32_t MipLevels, std::uint32_t ArrayLayers, vk::Filter Filter,
+                                 vk::Image SrcImage, vk::Image DstImage, const FVulkanFence* Fence);
 
-        void BlitApplyTexture(const FVulkanCommandPool& CommandPool, vk::Extent3D Extent, std::uint32_t MipLevels,
-                              std::uint32_t ArrayLayers, vk::Filter Filter, vk::Image SrcImage, vk::Image DstImage,
-                              const FVulkanSemaphore* WaitSemaphore, const FVulkanFence* Fence);
+        void BlitApplyTexture(const FVulkanCommandPool& CommandPool, vk::Extent3D Extent,
+                              std::uint32_t MipLevels, std::uint32_t ArrayLayers, vk::Filter Filter,
+                              vk::Image SrcImage, vk::Image DstImage, const FVulkanFence* Fence);
 
         void CopyBufferToImage(const FVulkanCommandBuffer& CommandBuffer, vk::Buffer SrcBuffer, vk::Image DstImage,
-                               const FImageMemoryMaskPack& PostTransferState, const vk::ArrayProxy<vk::BufferImageCopy>& Regions);
+                               const FImageMemoryMaskPack& PostTransferState, const vk::ArrayProxy<const vk::BufferImageCopy2>& Regions);
 
         void BlitImage(const FVulkanCommandBuffer& CommandBuffer,
                        vk::Image SrcImage, const FImageMemoryMaskPack& SrcPostTransferState,
                        vk::Image DstImage, const FImageMemoryMaskPack& DstPostTransferState,
-                       const vk::ArrayProxy<vk::ImageBlit>& Regions, vk::Filter Filter);
+                       const vk::ArrayProxy<const vk::ImageBlit2>& Regions, vk::Filter Filter);
 
         void GenerateMipmaps(const FVulkanCommandBuffer& CommandBuffer, vk::Image Image, const FImageMemoryMaskPack& FinalState,
                              vk::Extent3D Extent, std::uint32_t MipLevels, std::uint32_t ArrayLayers, vk::Filter Filter);
