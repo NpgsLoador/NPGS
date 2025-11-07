@@ -40,7 +40,7 @@ float InversePqEotf(float Vx)
 
     Vx = pow(Vx, kMx1);
 
-    return pow((kCx1 + kCx2 * Vx) / (1 + kCx3 * Vx), 1.0 / kMx2);
+    return pow((kCx1 + kCx2 * Vx) / (1 + kCx3 * Vx), kMx2);
 }
 
 vec3 InversePqEotf(vec3 Color)
