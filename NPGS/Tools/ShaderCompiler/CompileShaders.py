@@ -174,9 +174,9 @@ def main() -> tuple:
             continue
 
         rel_path = source_file.relative_to(SOURCE_DIR)
-        default_target_name = source_file.name.replace(source_file.suffix, f"{source_file.suffix}.spv", 1)
-        target_file = TARGET_DIR / rel_path.with_name(default_target_name)
-        
+        # 只替换最后一个后缀为 .spv，保留中间类型（例如 PbrSceneMerge.comp.glsl -> PbrSceneMerge.comp.spv）
+        target_file = TARGET_DIR / rel_path.with_suffix('.spv')
+
         task_key = (source_file, frozenset())
         compile_tasks[task_key] = target_file
 
