@@ -68,18 +68,6 @@ namespace Npgs
                                   std::uint32_t ArrayLayers, vk::Filter Filter,
                                   vk::Image DstImageSrcBlit, vk::Image DstImageDstBlit, const FVulkanFence* Fence);
 
-        void CopyApplyTexture(const FVulkanCommandPool& CommandPool, vk::Buffer SrcBuffer, vk::Extent3D Extent,
-                              std::uint32_t MipLevels, const std::vector<std::size_t>& LevelOffsets,
-                              std::uint32_t ArrayLayers, vk::Filter Filter, vk::Image DstImage, const FVulkanFence* Fence);
-
-        void BlitGenerateTexture(const FVulkanCommandPool& CommandPool, vk::Extent3D Extent,
-                                 std::uint32_t MipLevels, std::uint32_t ArrayLayers, vk::Filter Filter,
-                                 vk::Image SrcImage, vk::Image DstImage, const FVulkanFence* Fence);
-
-        void BlitApplyTexture(const FVulkanCommandPool& CommandPool, vk::Extent3D Extent,
-                              std::uint32_t MipLevels, std::uint32_t ArrayLayers, vk::Filter Filter,
-                              vk::Image SrcImage, vk::Image DstImage, const FVulkanFence* Fence);
-
         void CopyBufferToImage(const FVulkanCommandBuffer& CommandBuffer, vk::Buffer SrcBuffer, vk::Image DstImage,
                                const FImageMemoryMaskPack& PostTransferState, const vk::ArrayProxy<const vk::BufferImageCopy2>& Regions);
 

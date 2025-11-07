@@ -29,7 +29,7 @@ namespace Npgs
         {
             FImageMemoryMaskPack(
                 vk::PipelineStageFlagBits2::eFragmentShader,
-                vk::AccessFlagBits2::eShaderRead,
+                vk::AccessFlagBits2::eShaderSampledRead,
                 vk::ImageLayout::eShaderReadOnlyOptimal
             ),
 
@@ -517,12 +517,12 @@ namespace Npgs
             if (!bImageMipmapped)
             {
                 CopyBlitGenerateTexture(*CommandPool, *StagingBuffer->GetBuffer(), Extent, MipLevels, ArrayLayers,
-                                        vk::Filter::eLinear, *ImageMemory_->GetResource(), *ImageMemory_->GetResource(), &Fence);
+                                        vk::Filter::eLinear, *ImageMemory_->GetResource(), {}, &Fence);
             }
             else
             {
-                CopyApplyTexture(*CommandPool, *StagingBuffer->GetBuffer(), Extent, MipLevels, ImageData.LevelOffsets,
-                                 ArrayLayers, vk::Filter::eLinear, *ImageMemory_->GetResource(), &Fence);
+                CopyBlitApplyTexture(*CommandPool, *StagingBuffer->GetBuffer(), Extent, MipLevels, ImageData.LevelOffsets,
+                                     ArrayLayers, vk::Filter::eLinear, *ImageMemory_->GetResource(), {}, &Fence);
             }
         }
         else
@@ -548,13 +548,13 @@ namespace Npgs
             {
                 if (!bImageMipmapped)
                 {
-                    BlitGenerateTexture(*CommandPool, Extent, MipLevels, ArrayLayers, vk::Filter::eLinear,
-                                        **ConvertedImage, *ImageMemory_->GetResource(), &Fence);
+                    CopyBlitGenerateTexture(*CommandPool, {}, Extent, MipLevels, ArrayLayers, vk::Filter::eLinear,
+                                            **ConvertedImage, *ImageMemory_->GetResource(), &Fence);
                 }
                 else
                 {
-                    BlitApplyTexture(*CommandPool, Extent, MipLevels, ArrayLayers, vk::Filter::eLinear,
-                                     **ConvertedImage, *ImageMemory_->GetResource(), &Fence);
+                    CopyBlitApplyTexture(*CommandPool, {}, Extent, MipLevels, {}, ArrayLayers, vk::Filter::eLinear,
+                                         **ConvertedImage, *ImageMemory_->GetResource(), &Fence);
                 }
             }
             else
@@ -621,7 +621,8 @@ namespace Npgs
                                            vk::Image DstImageSrcBlit, vk::Image DstImageDstBlit, const FVulkanFence* Fence)
     {
         bool bGenerateMipmaps = MipLevels > 1;
-        bool bNeedBlit        = DstImageSrcBlit != DstImageDstBlit;
+        bool bNeedBlit        = (DstImageSrcBlit != DstImageDstBlit) && DstImageDstBlit;
+        bool bNeedCopy        = static_cast<bool>(SrcBuffer);
 
         FVulkanCommandBuffer CommandBuffer;
         CommandPool.AllocateBuffer(vk::CommandBufferLevel::ePrimary, CommandBuffer);
@@ -629,12 +630,15 @@ namespace Npgs
 
         vk::ImageSubresourceLayers Subresource(vk::ImageAspectFlagBits::eColor, 0, 0, ArrayLayers);
 
-        vk::BufferImageCopy2 CopyRegion = vk::BufferImageCopy2()
-            .setImageSubresource(Subresource)
-            .setImageExtent(Extent);
+        if (bNeedCopy)
+        {
+            vk::BufferImageCopy2 CopyRegion = vk::BufferImageCopy2()
+                .setImageSubresource(Subresource)
+                .setImageExtent(Extent);
 
-        CopyBufferToImage(CommandBuffer, SrcBuffer, DstImageSrcBlit,
-                          kPostTransferStates[bGenerateMipmaps || bNeedBlit], CopyRegion);
+            CopyBufferToImage(CommandBuffer, SrcBuffer, DstImageSrcBlit,
+                              kPostTransferStates[bGenerateMipmaps || bNeedBlit], CopyRegion);
+        }
 
         if (bNeedBlit)
         {
@@ -645,7 +649,8 @@ namespace Npgs
 
         if (bGenerateMipmaps)
         {
-            GenerateMipmaps(CommandBuffer, DstImageDstBlit, kPostTransferStates[0], Extent, MipLevels, ArrayLayers, Filter);
+            vk::Image TargetImage = bNeedBlit ? DstImageDstBlit : DstImageSrcBlit;
+            GenerateMipmaps(CommandBuffer, TargetImage, kPostTransferStates[0], Extent, MipLevels, ArrayLayers, Filter);
         }
 
         CommandBuffer.End();
@@ -657,85 +662,29 @@ namespace Npgs
                                         std::uint32_t ArrayLayers, vk::Filter Filter,
                                         vk::Image DstImageSrcBlit, vk::Image DstImageDstBlit, const FVulkanFence* Fence)
     {
-        bool bNeedBlit = DstImageSrcBlit != DstImageDstBlit;
+        bool bNeedBlit = (DstImageSrcBlit != DstImageDstBlit) && DstImageDstBlit;
+        bool bNeedCopy = static_cast<bool>(SrcBuffer) && !LevelOffsets.empty();
+
+        if (bNeedCopy && LevelOffsets.empty())
+        {
+            throw std::invalid_argument("Level offsets are required for applying buffer to image with multiple mip levels.");
+        }
 
         FVulkanCommandBuffer CommandBuffer;
         CommandPool.AllocateBuffer(vk::CommandBufferLevel::ePrimary, CommandBuffer);
         CommandBuffer.Begin(vk::CommandBufferUsageFlagBits::eOneTimeSubmit);
 
-        auto CopyRegions = MakeCopyRegions(Extent, MipLevels, LevelOffsets, ArrayLayers);
-        CopyBufferToImage(CommandBuffer, SrcBuffer, DstImageSrcBlit, kPostTransferStates[bNeedBlit], CopyRegions);
+        if (bNeedCopy)
+        {
+            auto CopyRegions = MakeCopyRegions(Extent, MipLevels, LevelOffsets, ArrayLayers);
+            CopyBufferToImage(CommandBuffer, SrcBuffer, DstImageSrcBlit, kPostTransferStates[bNeedBlit], CopyRegions);
+        }
 
         if (bNeedBlit)
         {
             auto BlitRegions = MakeBlitRegions(Extent, MipLevels, ArrayLayers);
             BlitImage(CommandBuffer, DstImageSrcBlit, {}, DstImageDstBlit, kPostTransferStates[0], BlitRegions, Filter);
         }
-
-        CommandBuffer.End();
-        VulkanContext_->SubmitCommandBuffer(FVulkanContext::EQueueType::kGeneral, CommandBuffer, Fence, false);
-    }
-
-    void FTexture::CopyApplyTexture(const FVulkanCommandPool& CommandPool, vk::Buffer SrcBuffer, vk::Extent3D Extent,
-                                    std::uint32_t MipLevels, const std::vector<std::size_t>& LevelOffsets,
-                                    std::uint32_t ArrayLayers, vk::Filter Filter, vk::Image DstImage, const FVulkanFence* Fence)
-    {
-        FVulkanCommandBuffer CommandBuffer;
-        CommandPool.AllocateBuffer(vk::CommandBufferLevel::ePrimary, CommandBuffer);
-        CommandBuffer.Begin(vk::CommandBufferUsageFlagBits::eOneTimeSubmit);
-
-        auto CopyRegions = MakeCopyRegions(Extent, MipLevels, LevelOffsets, ArrayLayers);
-        CopyBufferToImage(CommandBuffer, SrcBuffer, DstImage, kPostTransferStates[0], CopyRegions);
-
-        CommandBuffer.End();
-        VulkanContext_->SubmitCommandBuffer(FVulkanContext::EQueueType::kGeneral, CommandBuffer, Fence, false);
-    }
-
-    void FTexture::BlitGenerateTexture(const FVulkanCommandPool& CommandPool, vk::Extent3D Extent,
-                                       std::uint32_t MipLevels, std::uint32_t ArrayLayers, vk::Filter Filter,
-                                       vk::Image SrcImage, vk::Image DstImage, const FVulkanFence* Fence)
-    {
-        bool bGenerateMipmaps = MipLevels > 1;
-        bool bNeedBlit        = SrcImage != DstImage;
-
-        FVulkanCommandBuffer CommandBuffer;
-        CommandPool.AllocateBuffer(vk::CommandBufferLevel::ePrimary, CommandBuffer);
-        CommandBuffer.Begin(vk::CommandBufferUsageFlagBits::eOneTimeSubmit);
-
-        if (bNeedBlit)
-        {
-            vk::ImageSubresourceLayers Subresource(vk::ImageAspectFlagBits::eColor, 0, 0, ArrayLayers);
-            vk::ImageBlit2 BlitRegion = MakeSingleBlitRegion(Extent, Subresource);
-
-            BlitImage(CommandBuffer, SrcImage, kPostTransferStates[bGenerateMipmaps],
-                      DstImage, kPostTransferStates[bGenerateMipmaps], BlitRegion, Filter);
-        }
-
-        if (bGenerateMipmaps)
-        {
-            GenerateMipmaps(CommandBuffer, DstImage, kPostTransferStates[0], Extent, MipLevels, ArrayLayers, Filter);
-        }
-
-        CommandBuffer.End();
-        VulkanContext_->SubmitCommandBuffer(FVulkanContext::EQueueType::kGeneral, CommandBuffer, Fence, false);
-    }
-
-    void FTexture::BlitApplyTexture(const FVulkanCommandPool& CommandPool, vk::Extent3D Extent,
-                                    std::uint32_t MipLevels, std::uint32_t ArrayLayers, vk::Filter Filter,
-                                    vk::Image SrcImage, vk::Image DstImage, const FVulkanFence* Fence)
-    {
-        FVulkanCommandBuffer CommandBuffer;
-        CommandPool.AllocateBuffer(vk::CommandBufferLevel::ePrimary, CommandBuffer);
-        CommandBuffer.Begin(vk::CommandBufferUsageFlagBits::eOneTimeSubmit);
-
-        FImageMemoryMaskPack PostTransferState(
-            vk::PipelineStageFlagBits2::eFragmentShader,
-            vk::AccessFlagBits2::eShaderRead,
-            vk::ImageLayout::eShaderReadOnlyOptimal
-        );
-
-        auto BlitRegions = MakeBlitRegions(Extent, MipLevels, ArrayLayers);
-        BlitImage(CommandBuffer, SrcImage, PostTransferState, DstImage, PostTransferState, BlitRegions, Filter);
 
         CommandBuffer.End();
         VulkanContext_->SubmitCommandBuffer(FVulkanContext::EQueueType::kGeneral, CommandBuffer, Fence, false);
