@@ -1,3 +1,4 @@
+#include <algorithm>
 #include "Engine/Core/Base/Base.hpp"
 
 namespace Npgs
@@ -171,6 +172,22 @@ namespace Npgs
     NPGS_INLINE vk::Result FVulkanContext::WaitIdle() const
     {
         return VulkanCore_->WaitIdle();
+    }
+
+    template <typename... Types>
+    inline bool FVulkanContext::CheckDeviceExtensionsSupported(Types&&... Extensions)
+    {
+        std::array  ExtensionArray{ Extensions... };
+        const auto& EnabledDeviceExtensions = VulkanCore_->GetDeviceExtensions();
+        for (const auto& Extension : ExtensionArray)
+        {
+            if (std::ranges::find(EnabledDeviceExtensions, Extension) == EnabledDeviceExtensions.end())
+            {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     NPGS_INLINE vk::Instance FVulkanContext::GetInstance() const

@@ -2,11 +2,11 @@
 
 #include <cstddef>
 #include <unordered_map>
-#include <unordered_set>
 #include <utility>
 #include <variant>
 
 #include <vulkan/vulkan.hpp>
+#include "Engine/Core/Runtime/Graphics/Vulkan/Context.hpp"
 #include "Engine/Core/Runtime/Graphics/Vulkan/Wrappers.hpp"
 
 namespace Npgs
@@ -33,7 +33,7 @@ namespace Npgs
         };
 
     public:
-        FImageTracker()                     = default;
+        FImageTracker(FVulkanContext* VulkanContext);
         FImageTracker(const FImageTracker&) = delete;
         FImageTracker(FImageTracker&&)      = delete;
         ~FImageTracker()                    = default;
@@ -45,18 +45,24 @@ namespace Npgs
         void TrackImage(vk::Image Image, const FImageMemoryMaskPack& ImageMemoryMaskPack);
         void TrackImage(vk::Image Image, const vk::ImageSubresourceRange& Range, const FImageState& ImageState);
         void TrackImage(vk::Image Image, const vk::ImageSubresourceRange& Range, const FImageMemoryMaskPack& ImageMemoryMaskPack);
-        void FlushImageAllStates(vk::Image Image, const FImageState& ImageState);
-        void FlushImageAllStates(vk::Image Image, const FImageMemoryMaskPack& ImageMemoryMaskPack);
-        bool IsExisting(vk::Image Image);
+        void CollapseImageStates(vk::Image Image, const FImageState& ImageState);
+        void CollapseImageStates(vk::Image Image, const FImageMemoryMaskPack& ImageMemoryMaskPack);
         FImageState GetImageState(vk::Image Image) const;
         FImageState GetImageState(vk::Image Image, const vk::ImageSubresourceRange& Range);
-        vk::ImageMemoryBarrier2 CreateBarrier(vk::Image Image, const vk::ImageSubresourceRange& Range, FImageState DstState);
+
+        vk::ImageMemoryBarrier2
+        CreateBarrier(vk::Image Image, const vk::ImageSubresourceRange& Range, const FImageState& DstState);
+
+        vk::ImageMemoryBarrier2
+        CreateBarrier(vk::Image Image, const vk::ImageSubresourceRange& Range, const FImageMemoryMaskPack& ImageMemoryMaskPack);
+        
+        void Remove(vk::Image Image);
         void Reset(vk::Image Image);
-        void ResetAll();
+        void Clear();
 
     private:
         std::unordered_map<FImageKey, FImageState, FImageHash> ImageStateMap_;
-        std::unordered_set<vk::Image, FImageHash>              ImageSet_;
+        bool                                                   bUnifiedImageLayouts_;
     };
 } // namespace Npgs
 

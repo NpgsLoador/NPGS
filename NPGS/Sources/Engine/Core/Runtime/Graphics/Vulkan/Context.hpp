@@ -94,6 +94,9 @@ namespace Npgs
         vk::Result PresentImage(const FVulkanSemaphore& Semaphore);
         vk::Result WaitIdle() const;
 
+        template <typename... Types>
+        bool CheckDeviceExtensionsSupported(Types&&... Extensions);
+
         vk::Instance GetInstance() const;
         vk::SurfaceKHR GetSurface() const;
         vk::PhysicalDevice GetPhysicalDevice() const;

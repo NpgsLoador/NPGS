@@ -1,6 +1,8 @@
 #include "stdafx.h"
 #include "ImageTracker.hpp"
 
+#include <algorithm>
+
 namespace Npgs
 {
     bool FImageTracker::FImageState::operator==(const FImageState& Other) const
@@ -30,6 +32,25 @@ namespace Npgs
         }
     }
 
+    FImageTracker::FImageTracker(FVulkanContext* VulkanContext)
+        : bUnifiedImageLayouts_(VulkanContext->CheckDeviceExtensionsSupported(vk::KHRUnifiedImageLayoutsExtensionName))
+    {
+        // Temp
+        bUnifiedImageLayouts_ = false;
+    }
+
+    void FImageTracker::TrackImage(vk::Image Image, const FImageMemoryMaskPack& ImageMemoryMaskPack)
+    {
+        FImageState ImageState
+        {
+            .StageMask   = ImageMemoryMaskPack.kStageMask,
+            .AccessMask  = ImageMemoryMaskPack.kAccessMask,
+            .ImageLayout = ImageMemoryMaskPack.kImageLayout
+        };
+
+        TrackImage(Image, ImageState);
+    }
+
     void FImageTracker::TrackImage(vk::Image Image, const vk::ImageSubresourceRange& Range, const FImageState& ImageState)
     {
         FImageKey ImageKey = std::make_pair(Image, Range);
@@ -44,28 +65,45 @@ namespace Npgs
         }
 
         it->second = ImageState;
-        ImageSet_.insert(Image);
     }
 
-    void FImageTracker::FlushImageAllStates(vk::Image Image, const FImageState& ImageState)
+    void FImageTracker::TrackImage(vk::Image Image, const vk::ImageSubresourceRange& Range,
+                                   const FImageMemoryMaskPack& ImageMemoryMaskPack)
     {
-        for (auto& [Key, State] : ImageStateMap_)
+        FImageState ImageState
         {
-            if (std::holds_alternative<vk::Image>(Key))
-            {
-                State = ImageState;
-                continue;
-            }
+            .StageMask   = ImageMemoryMaskPack.kStageMask,
+            .AccessMask  = ImageMemoryMaskPack.kAccessMask,
+            .ImageLayout = ImageMemoryMaskPack.kImageLayout
+        };
 
-            if (std::holds_alternative<std::pair<vk::Image, vk::ImageSubresourceRange>>(Key))
+        TrackImage(Image, Range, ImageState);
+    }
+
+    void FImageTracker::CollapseImageStates(vk::Image Image, const FImageState& ImageState)
+    {
+        std::erase_if(ImageStateMap_, [Image](const auto& ImageKey) -> bool
+        {
+            if (std::holds_alternative<std::pair<vk::Image, vk::ImageSubresourceRange>>(ImageKey.first))
             {
-                auto& [KeyImage, KeyRange] = std::get<std::pair<vk::Image, vk::ImageSubresourceRange>>(Key);
-                if (KeyImage == Image)
-                {
-                    State = ImageState;
-                }
+                return std::get<std::pair<vk::Image, vk::ImageSubresourceRange>>(ImageKey.first).first == Image;
             }
-        }
+            return false;
+        });
+
+        ImageStateMap_[Image] = ImageState;
+    }
+
+    void FImageTracker::CollapseImageStates(vk::Image Image, const FImageMemoryMaskPack& ImageMemoryMaskPack)
+    {
+        FImageState ImageState
+        {
+            .StageMask   = ImageMemoryMaskPack.kStageMask,
+            .AccessMask  = ImageMemoryMaskPack.kAccessMask,
+            .ImageLayout = ImageMemoryMaskPack.kImageLayout
+        };
+
+        CollapseImageStates(Image, ImageState);
     }
 
     FImageTracker::FImageState FImageTracker::GetImageState(vk::Image Image, const vk::ImageSubresourceRange& Range)
@@ -89,37 +127,59 @@ namespace Npgs
         return {};
     }
 
-    vk::ImageMemoryBarrier2 FImageTracker::CreateBarrier(vk::Image Image, const vk::ImageSubresourceRange& Range, FImageState DstState)
+    vk::ImageMemoryBarrier2
+    FImageTracker::CreateBarrier(vk::Image Image, const vk::ImageSubresourceRange& Range, const FImageState& DstState)
     {
-        auto SubresourceKey = std::make_pair(Image, Range);
-        auto it = ImageStateMap_.find(SubresourceKey);
-        if (it == ImageStateMap_.end())
+        FImageState SrcState = GetImageState(Image, Range);
+
+        vk::ImageLayout SrcLayout = SrcState.ImageLayout;
+        vk::ImageLayout DstLayout = DstState.ImageLayout;
+
+        if (bUnifiedImageLayouts_)
         {
-            it = ImageStateMap_.find(Image);
+            constexpr auto IsSpecialLayout = [](vk::ImageLayout Layout)
+            {
+                return Layout == vk::ImageLayout::eUndefined      ||
+                       Layout == vk::ImageLayout::ePreinitialized ||
+                       Layout == vk::ImageLayout::ePresentSrcKHR  ||
+                       Layout == vk::ImageLayout::eSharedPresentKHR;
+            };
+
+            if (!IsSpecialLayout(SrcLayout))
+            {
+                SrcLayout = vk::ImageLayout::eGeneral;
+            }
+            if (!IsSpecialLayout(DstLayout))
+            {
+                DstLayout = vk::ImageLayout::eGeneral;
+            }
         }
 
-        vk::ImageMemoryBarrier2 Barrier;
-        if (it != ImageStateMap_.end())
-        {
-            Barrier.setSrcStageMask(it->second.StageMask)
-                   .setSrcAccessMask(it->second.AccessMask)
-                   .setOldLayout(it->second.ImageLayout);
-        }
-        else
-        {
-            Barrier.setSrcStageMask(vk::PipelineStageFlagBits2::eTopOfPipe)
-                   .setSrcAccessMask(vk::AccessFlagBits2::eNone)
-                   .setOldLayout(vk::ImageLayout::eUndefined);
-        }
+        vk::ImageMemoryBarrier2 Barrier(SrcState.StageMask, SrcState.AccessMask, DstState.StageMask, DstState.AccessMask,
+                                        SrcLayout, DstLayout, vk::QueueFamilyIgnored, vk::QueueFamilyIgnored, Image, Range);
 
-        Barrier.setDstStageMask(DstState.StageMask)
-               .setDstAccessMask(DstState.AccessMask)
-               .setNewLayout(DstState.ImageLayout)
-               .setSrcQueueFamilyIndex(vk::QueueFamilyIgnored)
-               .setDstQueueFamilyIndex(vk::QueueFamilyIgnored)
-               .setImage(Image)
-               .setSubresourceRange(Range);
+        FImageState NewInternalState =
+        {
+            .StageMask   = DstState.StageMask,
+            .AccessMask  = DstState.AccessMask,
+            .ImageLayout = DstState.ImageLayout
+        };
+
+        TrackImage(Image, Range, NewInternalState);
 
         return Barrier;
+    }
+
+    vk::ImageMemoryBarrier2 FImageTracker::CreateBarrier(vk::Image Image, const vk::ImageSubresourceRange& Range,
+                                                         const FImageMemoryMaskPack& ImageMemoryMaskPack)
+    {
+        FImageState DstState =
+        {
+            .StageMask   = ImageMemoryMaskPack.kStageMask,
+            .AccessMask  = ImageMemoryMaskPack.kAccessMask,
+            .ImageLayout = ImageMemoryMaskPack.kImageLayout
+        };
+
+        return CreateBarrier(Image, Range, DstState);
     }
 } // namespace Npgs

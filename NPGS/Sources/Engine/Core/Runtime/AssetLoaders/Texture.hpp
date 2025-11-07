@@ -53,10 +53,6 @@ namespace Npgs
                            std::uint32_t ArrayLayers, bool bGenerateMipmaps);
 
     private:
-        void CreateTextureInternal(const FImageData& ImageData, vk::ImageCreateFlags Flags, vk::ImageType ImageType,
-                                   vk::ImageViewType ImageViewType, vk::Format InitialFormat, vk::Format FinalFormat,
-                                   std::uint32_t ArrayLayers, bool bGenerateMipmaps);
-
         void CreateImageMemory(vk::ImageCreateFlags Flags, vk::ImageType ImageType, vk::Format Format,
                                vk::Extent3D Extent, std::uint32_t MipLevels, std::uint32_t ArrayLayers);
 
@@ -70,8 +66,14 @@ namespace Npgs
 
         void CopyBlitApplyTexture(const FVulkanCommandPool& CommandPool, vk::Buffer SrcBuffer, vk::Extent3D Extent,
                                   std::uint32_t MipLevels, const std::vector<std::size_t>& LevelOffsets,
-                                  std::uint32_t ArrayLayers, vk::Filter Filter, vk::Image DstImage,
+                                  std::uint32_t ArrayLayers, vk::Filter Filter,
+                                  vk::Image DstImageSrcBlit, vk::Image DstImageDstBlit,
                                   const FVulkanSemaphore* SignalSemaphore, const FVulkanFence* Fence);
+
+        void CopyApplyTexture(const FVulkanCommandPool& CommandPool, vk::Buffer SrcBuffer, vk::Extent3D Extent,
+                              std::uint32_t MipLevels, const std::vector<std::size_t>& LevelOffsets,
+                              std::uint32_t ArrayLayers, vk::Filter Filter, vk::Image DstImage,
+                              const FVulkanSemaphore* SignalSemaphore, const FVulkanFence* Fence);
 
         void BlitGenerateTexture(const FVulkanCommandPool& CommandPool, vk::Extent3D Extent, std::uint32_t MipLevels,
                                  std::uint32_t ArrayLayers, vk::Filter Filter, vk::Image SrcImage, vk::Image DstImage,
