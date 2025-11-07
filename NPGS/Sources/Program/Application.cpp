@@ -129,7 +129,7 @@ namespace Npgs
         auto* PbrSceneShader        = AssetManager->GetAsset<FShader>("PbrSceneShader");
         auto* LampShader            = AssetManager->GetAsset<FShader>("LampShader");
         auto* DepthMapShader        = AssetManager->GetAsset<FShader>("DepthMapShader");
-        auto* TerrainShader         = AssetManager->GetAsset<FShader>("TerrainShader");
+        // auto* TerrainShader         = AssetManager->GetAsset<FShader>("TerrainShader");
         auto* SkyboxShader          = AssetManager->GetAsset<FShader>("SkyboxShader");
         auto* PostShader            = AssetManager->GetAsset<FShader>("PostShader");
 
@@ -149,7 +149,7 @@ namespace Npgs
             PbrScenePipeline        = PipelineManager->GetPipeline("PbrScenePipeline");
             LampPipeline            = PipelineManager->GetPipeline("LampPipeline");
             DepthMapPipeline        = PipelineManager->GetPipeline("DepthMapPipeline");
-            TerrainPipeline         = PipelineManager->GetPipeline("TerrainPipeline");
+            // TerrainPipeline         = PipelineManager->GetPipeline("TerrainPipeline");
             PostPipeline            = PipelineManager->GetPipeline("PostPipeline");
             SkyboxPipeline          = PipelineManager->GetPipeline("SkyboxPipeline");
         };
@@ -164,7 +164,7 @@ namespace Npgs
         auto PbrScenePipelineLayout        = PipelineManager->GetPipelineLayout("PbrScenePipeline");
         auto LampPipelineLayout            = PipelineManager->GetPipelineLayout("LampPipeline");
         auto DepthMapPipelineLayout        = PipelineManager->GetPipelineLayout("DepthMapPipeline");
-        auto TerrainPipelineLayout         = PipelineManager->GetPipelineLayout("TerrainPipeline");
+        // auto TerrainPipelineLayout         = PipelineManager->GetPipelineLayout("TerrainPipeline");
         auto PostPipelineLayout            = PipelineManager->GetPipelineLayout("PostPipeline");
         auto SkyboxPipelineLayout          = PipelineManager->GetPipelineLayout("SkyboxPipeline");
 
@@ -1083,7 +1083,7 @@ namespace Npgs
         std::vector<std::string> PbrSceneShaderFiles({ "PbrScene.vert.spv", "PbrScene.frag.spv" });
         std::vector<std::string> LampShaderFiles({ "PbrScene.vert.spv", "PbrScene_Lamp.frag.spv" });
         std::vector<std::string> DepthMapShaderFiles({ "DepthMap.vert.spv" });
-        std::vector<std::string> TerrainShaderFiles({ "Terrain.vert.spv", "Terrain.tesc.spv", "Terrain.tese.spv", "Terrain.frag.spv" });
+        // std::vector<std::string> TerrainShaderFiles({ "Terrain.vert.spv", "Terrain.tesc.spv", "Terrain.tese.spv", "Terrain.frag.spv" });
         std::vector<std::string> SkyboxShaderFiles({ "Skybox.vert.spv", "Skybox.frag.spv" });
         std::vector<std::string> PostShaderFiles({ "PostProcess.vert.spv", "PostProcess.frag.spv" });
 
@@ -1093,7 +1093,7 @@ namespace Npgs
         AssetManager->AddAsset<FShader>("PbrSceneShader", PbrSceneShaderFiles, PbrSceneResourceInfo);
         AssetManager->AddAsset<FShader>("LampShader", LampShaderFiles, PbrSceneResourceInfo);
         AssetManager->AddAsset<FShader>("DepthMapShader", DepthMapShaderFiles, DepthMapResourceInfo);
-        AssetManager->AddAsset<FShader>("TerrainShader", TerrainShaderFiles, TerrainResourceInfo);
+        // AssetManager->AddAsset<FShader>("TerrainShader", TerrainShaderFiles, TerrainResourceInfo);
         AssetManager->AddAsset<FShader>("SkyboxShader", SkyboxShaderFiles, SkyboxResourceInfo);
         AssetManager->AddAsset<FShader>("PostShader", PostShaderFiles, PostResourceInfo);
 
@@ -1244,7 +1244,7 @@ namespace Npgs
         auto* PbrSceneShader        = AssetManager->GetAsset<FShader>("PbrSceneShader");
         auto* LampShader            = AssetManager->GetAsset<FShader>("LampShader");
         auto* DepthMapShader        = AssetManager->GetAsset<FShader>("DepthMapShader");
-        auto* TerrainShader         = AssetManager->GetAsset<FShader>("TerrainShader");
+        // auto* TerrainShader         = AssetManager->GetAsset<FShader>("TerrainShader");
         auto* SkyboxShader          = AssetManager->GetAsset<FShader>("SkyboxShader");
         auto* PostShader            = AssetManager->GetAsset<FShader>("PostShader");
 
@@ -1627,20 +1627,20 @@ namespace Npgs
 
         PipelineManager->CreateGraphicsPipeline("PbrSceneGBufferPipeline", "PbrSceneGBufferShader", SceneGBufferPipelineCreateInfoPack);
 
-        FGraphicsPipelineCreateInfoPack TerrainPipelineCreateInfoPack = ScenePipelineCreateInfoPack;
-        TerrainPipelineCreateInfoPack.InputAssemblyStateCreateInfo.setTopology(vk::PrimitiveTopology::ePatchList);
+        // FGraphicsPipelineCreateInfoPack TerrainPipelineCreateInfoPack = ScenePipelineCreateInfoPack;
+        // TerrainPipelineCreateInfoPack.InputAssemblyStateCreateInfo.setTopology(vk::PrimitiveTopology::ePatchList);
 
-        vk::PipelineTessellationDomainOriginStateCreateInfo TessellationDomainOriginStateCreateInfo(vk::TessellationDomainOrigin::eUpperLeft);
-        TerrainPipelineCreateInfoPack.TessellationStateCreateInfo
-            .setPNext(&TessellationDomainOriginStateCreateInfo)
-            .setPatchControlPoints(4);
+        // vk::PipelineTessellationDomainOriginStateCreateInfo TessellationDomainOriginStateCreateInfo(vk::TessellationDomainOrigin::eUpperLeft);
+        // TerrainPipelineCreateInfoPack.TessellationStateCreateInfo
+        //     .setPNext(&TessellationDomainOriginStateCreateInfo)
+        //     .setPatchControlPoints(4);
 
-        TerrainPipelineCreateInfoPack.RasterizationStateCreateInfo
-            .setCullMode(vk::CullModeFlagBits::eBack)
-            .setFrontFace(vk::FrontFace::eCounterClockwise)
-            .setPolygonMode(vk::PolygonMode::eLine);
+        // TerrainPipelineCreateInfoPack.RasterizationStateCreateInfo
+        //     .setCullMode(vk::CullModeFlagBits::eBack)
+        //     .setFrontFace(vk::FrontFace::eCounterClockwise)
+        //     .setPolygonMode(vk::PolygonMode::eLine);
 
-        PipelineManager->CreateGraphicsPipeline("TerrainPipeline", "TerrainShader", TerrainPipelineCreateInfoPack);
+        // PipelineManager->CreateGraphicsPipeline("TerrainPipeline", "TerrainShader", TerrainPipelineCreateInfoPack);
 
         FGraphicsPipelineCreateInfoPack SkyboxPipelineCreateInfoPack = ScenePipelineCreateInfoPack;
         SkyboxPipelineCreateInfoPack.InputAssemblyStateCreateInfo.setTopology(vk::PrimitiveTopology::eTriangleList);
