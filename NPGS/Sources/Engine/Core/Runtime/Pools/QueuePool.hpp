@@ -16,13 +16,14 @@ namespace Npgs
 {
     class FQueuePool
     {
-    public:
+    private:
         struct FQueueInfo
         {
             vk::Queue      Queue;
             vk::QueueFlags QueueFlags;
         };
 
+    public:
         class FQueueGuard
         {
         public:

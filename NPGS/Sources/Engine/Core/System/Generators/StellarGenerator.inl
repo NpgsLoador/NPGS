@@ -2,7 +2,7 @@
 
 namespace Npgs
 {
-    NPGS_INLINE FStellarGenerator::FBasicProperties::operator Astro::AStar() const
+    NPGS_INLINE FStellarBasicProperties::operator Astro::AStar() const
     {
         Astro::AStar Star;
         Star.SetAge(Age);

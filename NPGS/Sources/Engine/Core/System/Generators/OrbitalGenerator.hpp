@@ -14,23 +14,22 @@
 
 namespace Npgs
 {
+    struct FOrbitalGenerationInfo
+    {
+        const std::seed_seq* SeedSequence{ nullptr };
+        float UniverseAge{ 1.38e10f };
+        float BinaryPeriodMean{ 5.03f };
+        float BinaryPeriodSigma{ 2.28f };
+        float CoilTemperatureLimit{ 1514.114f };
+        float AsteroidUpperLimit{ 1e21f };
+        float RingsParentLowerLimit{ 1e23f };
+        float LifeOccurrenceProbability{ 0.0114514f };
+        bool  bContainUltravioletHabitableZone{ false };
+        bool  bEnableAsiFilter{ true };
+    };
+
     class FOrbitalGenerator
     {
-    public:
-        struct FGenerationInfo
-        {
-            const std::seed_seq* SeedSequence{ nullptr };
-            float UniverseAge{ 1.38e10f };
-            float BinaryPeriodMean{ 5.03f };
-            float BinaryPeriodSigma{ 2.28f };
-            float CoilTemperatureLimit{ 1514.114f };
-            float AsteroidUpperLimit{ 1e21f };
-            float RingsParentLowerLimit{ 1e23f };
-            float LifeOccurrenceProbability{ 0.0114514f };
-            bool  bContainUltravioletHabitableZone{ false };
-            bool  bEnableAsiFilter{ true };
-        };
-
     private:
         struct FPlanetaryDisk
         {
@@ -41,7 +40,7 @@ namespace Npgs
         };
 
     public:
-        FOrbitalGenerator(const FGenerationInfo& GenerationInfo);
+        FOrbitalGenerator(const FOrbitalGenerationInfo& GenerationInfo);
         FOrbitalGenerator(const FOrbitalGenerator& Other);
         FOrbitalGenerator(FOrbitalGenerator&& Other) noexcept;
         ~FOrbitalGenerator() = default;

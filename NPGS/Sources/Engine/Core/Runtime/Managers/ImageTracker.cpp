@@ -2,6 +2,7 @@
 #include "ImageTracker.hpp"
 
 #include <algorithm>
+#include "Engine/Utils/Utils.hpp"
 
 namespace Npgs
 {
@@ -137,19 +138,11 @@ namespace Npgs
 
         if (bUnifiedImageLayouts_)
         {
-            constexpr auto IsSpecialLayout = [](vk::ImageLayout Layout)
-            {
-                return Layout == vk::ImageLayout::eUndefined      ||
-                       Layout == vk::ImageLayout::ePreinitialized ||
-                       Layout == vk::ImageLayout::ePresentSrcKHR  ||
-                       Layout == vk::ImageLayout::eSharedPresentKHR;
-            };
-
-            if (!IsSpecialLayout(SrcLayout))
+            if (!Utils::IsSpecialLayout(SrcLayout))
             {
                 SrcLayout = vk::ImageLayout::eGeneral;
             }
-            if (!IsSpecialLayout(DstLayout))
+            if (!Utils::IsSpecialLayout(DstLayout))
             {
                 DstLayout = vk::ImageLayout::eGeneral;
             }

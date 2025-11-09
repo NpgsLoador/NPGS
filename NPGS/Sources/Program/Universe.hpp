@@ -35,7 +35,7 @@ namespace Npgs
         void FillStellarSystem(int MaxThread);
 
         std::vector<Astro::AStar> InterpolateStars(int MaxThread, std::vector<FStellarGenerator>& Generators,
-                                                   std::vector<FStellarGenerator::FBasicProperties>& BasicProperties);
+                                                   std::vector<FStellarBasicProperties>& BasicProperties);
 
         void GenerateSlots(float MinDistance, std::size_t SampleCount, float Density);
         void OctreeLinkToStellarSystems(std::vector<Astro::AStar>& Stars, std::vector<glm::vec3>& Slots);

@@ -73,7 +73,7 @@ namespace Npgs
 
     // OrbitalGenerator implementations
     // --------------------------------
-    FOrbitalGenerator::FOrbitalGenerator(const FGenerationInfo& GenerationInfo)
+    FOrbitalGenerator::FOrbitalGenerator(const FOrbitalGenerationInfo& GenerationInfo)
         : RandomEngine_(*GenerationInfo.SeedSequence)
         , RingsProbabilities_{ Utils::TBernoulliDistribution<>(0.5), Utils::TBernoulliDistribution<>(0.2) }
         , BinaryPeriodDistribution_(GenerationInfo.BinaryPeriodMean, GenerationInfo.BinaryPeriodSigma)
@@ -94,7 +94,7 @@ namespace Npgs
         std::ranges::shuffle(Seeds, RandomEngine_);
         std::seed_seq ShuffledSeeds(Seeds.begin(), Seeds.end());
 
-        FCivilizationGenerator::FGenerationInfo CivilizationGenerationInfo
+        FCivilizationGenerationInfo CivilizationGenerationInfo
         {
             .SeedSequence              = &ShuffledSeeds,
             .LifeOccurrenceProbability = GenerationInfo.LifeOccurrenceProbability,

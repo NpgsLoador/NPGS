@@ -107,7 +107,7 @@ namespace Npgs
 
     // FStellarGenerator implementations
     // ---------------------------------
-    FStellarGenerator::FStellarGenerator(const FGenerationInfo& GenerationInfo)
+    FStellarGenerator::FStellarGenerator(const FStellarGenerationInfo& GenerationInfo)
         :
         RandomEngine_(*GenerationInfo.SeedSequence),
         MagneticGenerators_
@@ -345,9 +345,9 @@ namespace Npgs
         return *this;
     }
 
-    FStellarGenerator::FBasicProperties FStellarGenerator::GenerateBasicProperties(float Age, float FeH)
+    FStellarBasicProperties FStellarGenerator::GenerateBasicProperties(float Age, float FeH)
     {
-        FBasicProperties Properties{};
+        FStellarBasicProperties Properties{};
         Properties.StellarTypeOption = StellarTypeOption_;
 
         // 生成 3 个基本参数
@@ -516,7 +516,7 @@ namespace Npgs
         return GenerateStar(Properties);
     }
 
-    Astro::AStar FStellarGenerator::GenerateStar(FBasicProperties& Properties)
+    Astro::AStar FStellarGenerator::GenerateStar(FStellarBasicProperties& Properties)
     {
         if (Utils::Equal(Properties.InitialMassSol, -1.0f))
         {
@@ -807,7 +807,7 @@ namespace Npgs
     }
 
     std::expected<FStellarGenerator::FDataArray, Astro::AStar>
-    FStellarGenerator::GetFullMistData(const FBasicProperties& Properties, bool bIsWhiteDwarf, bool bIsSingleWhiteDwarf)
+    FStellarGenerator::GetFullMistData(const FStellarBasicProperties& Properties, bool bIsWhiteDwarf, bool bIsSingleWhiteDwarf)
     {
         float TargetAge     = Properties.Age;
         float TargetFeH     = Properties.FeH;
@@ -1836,11 +1836,13 @@ namespace Npgs
 
         auto CalculateBlackHoleMass = [&, this]() -> float
         {
-            FBasicProperties Properties{};
-            Properties.Age               = static_cast<float>(DeathStar.GetLifetime() - 100);
-            Properties.FeH               = InputFeH;
-            Properties.InitialMassSol    = InputMassSol;
-            Properties.StellarTypeOption = EStellarTypeGenerationOption::kRandom;
+            FStellarBasicProperties Properties
+            {
+                .StellarTypeOption = EStellarTypeGenerationOption::kRandom,
+                .Age               = static_cast<float>(DeathStar.GetLifetime() - 100),
+                .FeH               = InputFeH,
+                .InitialMassSol    = InputMassSol
+            };
 
             auto GiantStar = GenerateStar(Properties);
 
@@ -2108,7 +2110,7 @@ namespace Npgs
         {
         case Astro::FStellarClass::EStellarType::kWhiteDwarf:
         {
-            FBasicProperties WhiteDwarfBasicProperties =
+            FStellarBasicProperties WhiteDwarfBasicProperties =
             {
                 .Age            = static_cast<float>(DeathStarAge),
                 .FeH            = 0.0f,

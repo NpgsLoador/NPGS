@@ -585,7 +585,7 @@ namespace Npgs
     {
         NpgsCoreInfo("Initializating and generating basic properties...");
         std::vector<FStellarGenerator> Generators;
-        std::vector<FStellarGenerator::FBasicProperties> BasicProperties;
+        std::vector<FStellarBasicProperties> BasicProperties;
 
         auto CreateGenerators =
         [&, this](FStellarGenerator::EStellarTypeGenerationOption StellarTypeOption = FStellarGenerator::EStellarTypeGenerationOption::kRandom,
@@ -607,7 +607,7 @@ namespace Npgs
                 std::ranges::shuffle(Seeds, RandomEngine_);
                 std::seed_seq SeedSequence(Seeds.begin(), Seeds.end());
 
-                FStellarGenerator::FGenerationInfo GenerationInfo
+                FStellarGenerationInfo GenerationInfo
                 {
                     .SeedSequence       = &SeedSequence,
                     .StellarTypeOption  = StellarTypeOption,
@@ -800,7 +800,7 @@ namespace Npgs
             std::ranges::shuffle(Seeds, RandomEngine_);
             std::seed_seq SeedSequence(Seeds.begin(), Seeds.end());
 
-            FOrbitalGenerator::FGenerationInfo GenerationInfo;
+            FOrbitalGenerationInfo GenerationInfo;
             GenerationInfo.SeedSequence = &SeedSequence;
             Generators.emplace_back(GenerationInfo);
         }
@@ -808,9 +808,9 @@ namespace Npgs
 
     std::vector<Astro::AStar>
     FUniverse::InterpolateStars(int MaxThread, std::vector<FStellarGenerator>& Generators,
-                                std::vector<FStellarGenerator::FBasicProperties>& BasicProperties)
+                                std::vector<FStellarBasicProperties>& BasicProperties)
     {
-        std::vector<std::vector<FStellarGenerator::FBasicProperties>> PropertyLists(MaxThread);
+        std::vector<std::vector<FStellarBasicProperties>> PropertyLists(MaxThread);
         std::vector<std::promise<std::vector<Astro::AStar>>> Promises(MaxThread);
         std::vector<std::future<std::vector<Astro::AStar>>> ChunkFutures;
 
@@ -985,7 +985,7 @@ namespace Npgs
             std::ranges::shuffle(Seeds, RandomEngine_);
             std::seed_seq SeedSequence(Seeds.begin(), Seeds.end());
 
-            FStellarGenerator::FGenerationInfo GenerationInfo
+            FStellarGenerationInfo GenerationInfo
             {
                 .SeedSequence       = &SeedSequence,
                 .StellarTypeOption  = FStellarGenerator::EStellarTypeGenerationOption::kRandom,
@@ -1005,7 +1005,7 @@ namespace Npgs
             }
         }
 
-        std::vector<FStellarGenerator::FBasicProperties> BasicProperties;
+        std::vector<FStellarBasicProperties> BasicProperties;
         for (std::size_t i = 0; i != BinarySystems.size(); ++i)
         {
             std::size_t ThreadId    = i % MaxThread;

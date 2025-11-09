@@ -25,6 +25,8 @@
 
 namespace Npgs
 {
+    struct FStellarBasicProperties;
+    struct FStellarGenerationInfo;
     class FStellarGenerator
     {
     public:
@@ -55,45 +57,8 @@ namespace Npgs
             kBinarySecondStar
         };
 
-        struct FBasicProperties
-        {
-            // 用于保存生成选项，类的生成选项仅影响该属性。生成的恒星完整信息也将根据该属性决定。该选项用于防止多线程生成恒星时属性和生成器胡乱匹配
-            EStellarTypeGenerationOption  StellarTypeOption{ EStellarTypeGenerationOption::kRandom };
-            EMultiplicityGenerationOption MultiplicityOption{ EMultiplicityGenerationOption::kSingleStar };
-
-            float Age{};
-            float FeH{};
-            float InitialMassSol{};
-            bool  bIsSingleStar{ true };
-
-            explicit operator Astro::AStar() const;
-        };
-
-        struct FGenerationInfo
-        {
-            const std::seed_seq* SeedSequence{ nullptr };
-            EStellarTypeGenerationOption  StellarTypeOption{ EStellarTypeGenerationOption::kRandom };
-            EMultiplicityGenerationOption MultiplicityOption{ EMultiplicityGenerationOption::kSingleStar };
-            float UniverseAge{ 1.38e10f };
-            float MassLowerLimit{ 0.1f };
-            float MassUpperLimit{ 300.0f };
-            EGenerationDistribution MassDistribution{ EGenerationDistribution::kFromPdf };
-            float AgeLowerLimit{ 0.0f };
-            float AgeUpperLimit{ 1.26e10f };
-            EGenerationDistribution AgeDistribution{ EGenerationDistribution::kFromPdf };
-            float FeHLowerLimit{ -4.0f };
-            float FeHUpperLimit{ 0.5f };
-            EGenerationDistribution FeHDistribution{ EGenerationDistribution::kFromPdf };
-            float CoilTemperatureLimit{ 1514.114f };
-            float dEpdM{ 2e6f };
-            const std::function<float(glm::vec3, float, float)>& AgePdf{ nullptr };
-            glm::vec2 AgeMaxPdf{ glm::vec2() };
-            const std::array<std::function<float(float)>, 2>& MassPdfs{ nullptr, nullptr };
-            std::array<glm::vec2, 2> MassMaxPdfs{ glm::vec2(), glm::vec2() };
-        };
-
     public:
-        FStellarGenerator(const FGenerationInfo& GenerationInfo);
+        FStellarGenerator(const FStellarGenerationInfo& GenerationInfo);
         FStellarGenerator(const FStellarGenerator& Other);
         FStellarGenerator(FStellarGenerator&& Other) noexcept;
         ~FStellarGenerator() = default;
@@ -101,11 +66,11 @@ namespace Npgs
         FStellarGenerator& operator=(const FStellarGenerator& Other);
         FStellarGenerator& operator=(FStellarGenerator&& Other) noexcept;
 
-        FBasicProperties GenerateBasicProperties(float Age = std::numeric_limits<float>::quiet_NaN(),
-                                                 float FeH = std::numeric_limits<float>::quiet_NaN());
+        FStellarBasicProperties GenerateBasicProperties(float Age = std::numeric_limits<float>::quiet_NaN(),
+                                                        float FeH = std::numeric_limits<float>::quiet_NaN());
 
         Astro::AStar GenerateStar();
-        Astro::AStar GenerateStar(FBasicProperties& Properties);
+        Astro::AStar GenerateStar(FStellarBasicProperties& Properties);
 
         FStellarGenerator& SetLogMassSuggestDistribution(std::unique_ptr<Utils::TDistribution<>>&& Distribution);
         FStellarGenerator& SetUniverseAge(float Age);
@@ -137,7 +102,7 @@ namespace Npgs
         float GenerateMass(float MaxPdf, auto& LogMassPdf);
         
         std::expected<FDataArray, Astro::AStar>
-        GetFullMistData(const FBasicProperties& Properties, bool bIsWhiteDwarf, bool bIsSingleWhiteDwarf);
+        GetFullMistData(const FStellarBasicProperties& Properties, bool bIsWhiteDwarf, bool bIsSingleWhiteDwarf);
         
         std::expected<FDataArray, Astro::AStar>
         InterpolateMistData(const std::pair<std::string, std::string>& Files, double TargetAge, double TargetMassSol, double MassCoefficient);
@@ -253,6 +218,43 @@ namespace Npgs
         static std::unordered_map<const FMistData*, std::vector<FDataArray>> PhaseChangesCache_;
         static std::shared_mutex                                             CacheMutex_;
         static bool                                                          bMistDataInitiated_;
+    };
+
+    struct FStellarBasicProperties
+    {
+        // 用于保存生成选项，类的生成选项仅影响该属性。生成的恒星完整信息也将根据该属性决定。该选项用于防止多线程生成恒星时属性和生成器胡乱匹配
+        FStellarGenerator::EStellarTypeGenerationOption  StellarTypeOption{ FStellarGenerator::EStellarTypeGenerationOption::kRandom };
+        FStellarGenerator::EMultiplicityGenerationOption MultiplicityOption{ FStellarGenerator::EMultiplicityGenerationOption::kSingleStar };
+
+        float Age{};
+        float FeH{};
+        float InitialMassSol{};
+        bool  bIsSingleStar{ true };
+
+        explicit operator Astro::AStar() const;
+    };
+
+    struct FStellarGenerationInfo
+    {
+        const std::seed_seq* SeedSequence{ nullptr };
+        FStellarGenerator::EStellarTypeGenerationOption  StellarTypeOption{ FStellarGenerator::EStellarTypeGenerationOption::kRandom };
+        FStellarGenerator::EMultiplicityGenerationOption MultiplicityOption{ FStellarGenerator::EMultiplicityGenerationOption::kSingleStar };
+        float UniverseAge{ 1.38e10f };
+        float MassLowerLimit{ 0.1f };
+        float MassUpperLimit{ 300.0f };
+        FStellarGenerator::EGenerationDistribution MassDistribution{ FStellarGenerator::EGenerationDistribution::kFromPdf };
+        float AgeLowerLimit{ 0.0f };
+        float AgeUpperLimit{ 1.26e10f };
+        FStellarGenerator::EGenerationDistribution AgeDistribution{ FStellarGenerator::EGenerationDistribution::kFromPdf };
+        float FeHLowerLimit{ -4.0f };
+        float FeHUpperLimit{ 0.5f };
+        FStellarGenerator::EGenerationDistribution FeHDistribution{ FStellarGenerator::EGenerationDistribution::kFromPdf };
+        float CoilTemperatureLimit{ 1514.114f };
+        float dEpdM{ 2e6f };
+        const std::function<float(glm::vec3, float, float)>& AgePdf{ nullptr };
+        glm::vec2 AgeMaxPdf{ glm::vec2() };
+        const std::array<std::function<float(float)>, 2>& MassPdfs{ nullptr, nullptr };
+        std::array<glm::vec2, 2> MassMaxPdfs{ glm::vec2(), glm::vec2() };
     };
 } // namespace Npgs
 

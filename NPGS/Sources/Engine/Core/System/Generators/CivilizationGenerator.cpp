@@ -13,7 +13,7 @@
 
 namespace Npgs
 {
-    FCivilizationGenerator::FCivilizationGenerator(const FGenerationInfo& GenerationInfo)
+    FCivilizationGenerator::FCivilizationGenerator(const FCivilizationGenerationInfo& GenerationInfo)
         : RandomEngine_(*GenerationInfo.SeedSequence)
         , CommonGenerator_(0.0f, 1.0f)
         , AsiFiltedProbability_(static_cast<double>(GenerationInfo.bEnableAsiFilter) * 0.2)

@@ -10,19 +10,18 @@
 
 namespace Npgs
 {
+    struct FCivilizationGenerationInfo
+    {
+        const std::seed_seq* SeedSequence{ nullptr };
+        float                LifeOccurrenceProbability{ 0.0f };
+        bool                 bEnableAsiFilter{ false };
+        float                DestroyedByDisasterProbability{ 0.001f };
+    };
+
     class FCivilizationGenerator
     {
     public:
-        struct FGenerationInfo
-        {
-            const std::seed_seq* SeedSequence{ nullptr };
-            float                LifeOccurrenceProbability{ 0.0f };
-            bool                 bEnableAsiFilter{ false };
-            float                DestroyedByDisasterProbability{ 0.001f };
-        };
-
-    public:
-        FCivilizationGenerator(const FGenerationInfo& GenerationInfo);
+        FCivilizationGenerator(const FCivilizationGenerationInfo& GenerationInfo);
         FCivilizationGenerator(const FCivilizationGenerator& Other);
         FCivilizationGenerator(FCivilizationGenerator&& Other) noexcept;
         ~FCivilizationGenerator() = default;
