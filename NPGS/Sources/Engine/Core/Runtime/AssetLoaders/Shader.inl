@@ -22,8 +22,13 @@ namespace Npgs
         return ReflectionInfo_.VertexInputAttributes;
     }
 
-    NPGS_INLINE const FShader::FDescriptorSetInfo& FShader::GetDescriptorSetInfo(std::uint32_t Set) const
+    NPGS_INLINE const FDescriptorSetInfo& FShader::GetDescriptorSetInfo(std::uint32_t Set) const
     {
         return DescriptorSetInfos_.at(Set);
+    }
+
+    NPGS_INLINE const std::unordered_map<std::uint32_t, FDescriptorSetInfo>& FShader::GetDescriptorSetInfos() const
+    {
+        return DescriptorSetInfos_;
     }
 } // namespace Npgs

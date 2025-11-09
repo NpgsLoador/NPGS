@@ -216,11 +216,16 @@ namespace Npgs
     std::vector<vk::DeviceSize>
     FShaderBufferManager::GetDescriptorBindingOffsets(std::string_view BufferName, Args... Sets) const
     {
-        std::vector<vk::DeviceSize> Offsets;
-        for (auto Set : { Sets... })
+        auto it = SetBaseOffsetsMap_.find(BufferName);
+        if (it == SetBaseOffsetsMap_.end())
         {
-            Offsets.emplace_back(GetDescriptorBindingOffset(BufferName, Set, 0));
+            throw std::out_of_range(std::format(R"(Descriptor buffer set offsets for "{}" not found.)", BufferName));
         }
+
+        const auto& SetOffsets = it->second;
+        std::vector<vk::DeviceSize> Offsets;
+
+        (Offsets.push_back(SetOffsets.at(Sets)), ...);
 
         return Offsets;
     }

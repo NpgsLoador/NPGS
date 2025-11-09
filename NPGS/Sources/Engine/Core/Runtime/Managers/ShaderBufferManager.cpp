@@ -189,9 +189,9 @@ namespace Npgs
         }
 
         vk::DeviceSize TotalSize = 0;
-        for (auto [Set, Size] : DescriptorBufferCreateInfo.SetSizes)
+        for (auto& [Set, Info] : DescriptorBufferCreateInfo.SetInfos)
         {
-            TotalSize += Size;
+            TotalSize += Info.Size;
         }
 
         return TotalSize;
@@ -209,17 +209,13 @@ namespace Npgs
             OffsetsMap_[DescriptorBufferCreateInfo.Name].try_emplace(std::make_pair(Set, Binding), std::make_pair(Offset, Type));
         };
 
-        std::map<std::uint32_t, vk::DeviceSize> SetOffsets;
-        for (auto [Set, Size] : DescriptorBufferCreateInfo.SetSizes)
+        auto& SetOffsets = SetBaseOffsetsMap_[DescriptorBufferCreateInfo.Name];
+        SetOffsets.clear();
+        vk::DeviceSize CurrentSetOffset = 0;
+        for (auto& [Set, Info] : DescriptorBufferCreateInfo.SetInfos)
         {
-            if (Set > DescriptorBufferCreateInfo.SetSizes.begin()->first)
-            {
-                SetOffsets[Set] = SetOffsets[Set - 1] + DescriptorBufferCreateInfo.SetSizes.at(Set - 1);
-            }
-            else
-            {
-                SetOffsets[Set] = 0;
-            }
+            SetOffsets[Set] = CurrentSetOffset;
+            CurrentSetOffset += Info.Size;
         }
 
         for (std::uint32_t i = 0; i != Config::Graphics::kMaxFrameInFlight; ++i)
@@ -228,129 +224,104 @@ namespace Npgs
             auto& BufferMemory = DescriptorBufferInfo.Buffers[i].GetMemory();
             BufferMemory.MapMemoryForSubmit(0, DescriptorBufferInfo.Size, Target);
 
-            vk::DeviceSize Offset  = 0;
-            std::uint32_t  PrevSet = 0;
+            const auto& SetInfos = DescriptorBufferCreateInfo.SetInfos;
 
             for (std::size_t j = 0; j != DescriptorBufferCreateInfo.UniformBufferNames.size(); ++j)
             {
-                const auto&   BufferInfo = DataBuffers_.at(DescriptorBufferCreateInfo.UniformBufferNames[j]);
-                std::uint32_t CurrentSet = BufferInfo.CreateInfo.Set;
-
-                if (CurrentSet != PrevSet && CurrentSet < DescriptorBufferCreateInfo.SetSizes.size())
-                {
-                    Offset  = SetOffsets[CurrentSet];
-                    PrevSet = CurrentSet;
-                }
+                const auto&    BufferInfo     = DataBuffers_.at(DescriptorBufferCreateInfo.UniformBufferNames[j]);
+                std::uint32_t  CurrentSet     = BufferInfo.CreateInfo.Set;
+                std::uint32_t  CurrentBinding = BufferInfo.CreateInfo.Binding;
+                vk::DeviceSize SetOffset      = SetOffsets.at(CurrentSet);
+                vk::DeviceSize BindingOffset  = SetOffset + SetInfos.at(CurrentSet).Bindings.at(CurrentBinding).Offset;
 
                 vk::DescriptorType Usage = BufferInfo.CreateInfo.Usage;
                 vk::DescriptorAddressInfoEXT AddressInfo(BufferInfo.Buffers[i].GetBuffer().GetDeviceAddress(), BufferInfo.Size);
                 vk::DescriptorGetInfoEXT DescriptorGetInfo(Usage, &AddressInfo);
                 vk::DeviceSize DescriptorSize = DescriptorBufferProperties_.uniformBufferDescriptorSize;
-                Device.getDescriptorEXT(DescriptorGetInfo, DescriptorSize, static_cast<std::byte*>(Target) + Offset);
+                Device.getDescriptorEXT(DescriptorGetInfo, DescriptorSize, static_cast<std::byte*>(Target) + BindingOffset);
 
-                InsertOffsetMap(BufferInfo.CreateInfo, Offset, Usage);
-                Offset += DescriptorSize;
+                InsertOffsetMap(BufferInfo.CreateInfo, BindingOffset, Usage);
             }
 
             for (std::size_t j = 0; j != DescriptorBufferCreateInfo.StorageBufferNames.size(); ++j)
             {
-                const auto&   BufferInfo = DataBuffers_.at(DescriptorBufferCreateInfo.StorageBufferNames[j]);
-                std::uint32_t CurrentSet = BufferInfo.CreateInfo.Set;
-
-                if (CurrentSet != PrevSet && CurrentSet < DescriptorBufferCreateInfo.SetSizes.size())
-                {
-                    Offset  = SetOffsets[CurrentSet];
-                    PrevSet = CurrentSet;
-                }
+                const auto&    BufferInfo     = DataBuffers_.at(DescriptorBufferCreateInfo.StorageBufferNames[j]);
+                std::uint32_t  CurrentSet     = BufferInfo.CreateInfo.Set;
+                std::uint32_t  CurrentBinding = BufferInfo.CreateInfo.Binding;
+                vk::DeviceSize SetOffset      = SetOffsets.at(CurrentSet);
+                vk::DeviceSize BindingOffset  = SetOffset + SetInfos.at(CurrentSet).Bindings.at(CurrentBinding).Offset;
 
                 vk::DescriptorType Usage = BufferInfo.CreateInfo.Usage;
                 vk::DescriptorAddressInfoEXT AddressInfo(BufferInfo.Buffers[i].GetBuffer().GetDeviceAddress(), BufferInfo.Size);
                 vk::DescriptorGetInfoEXT DescriptorGetInfo(Usage, &AddressInfo);
                 vk::DeviceSize DescriptorSize = DescriptorBufferProperties_.storageBufferDescriptorSize;
-                Device.getDescriptorEXT(DescriptorGetInfo, DescriptorSize, static_cast<std::byte*>(Target) + Offset);
+                Device.getDescriptorEXT(DescriptorGetInfo, DescriptorSize, static_cast<std::byte*>(Target) + BindingOffset);
 
-                InsertOffsetMap(BufferInfo.CreateInfo, Offset, Usage);
-                Offset += DescriptorSize;
+                InsertOffsetMap(BufferInfo.CreateInfo, BindingOffset, Usage);
             }
 
             for (std::size_t j = 0; j != DescriptorBufferCreateInfo.SamplerInfos.size(); ++j)
             {
-                const auto&  SamplerInfo = DescriptorBufferCreateInfo.SamplerInfos[j];
-                std::uint32_t CurrentSet = SamplerInfo.Set;
-
-                if (CurrentSet != PrevSet && CurrentSet < DescriptorBufferCreateInfo.SetSizes.size())
-                {
-                    Offset  = SetOffsets[CurrentSet];
-                    PrevSet = CurrentSet;
-                }
+                const auto&    SamplerInfo    = DescriptorBufferCreateInfo.SamplerInfos[j];
+                std::uint32_t  CurrentSet     = SamplerInfo.Set;
+                std::uint32_t  CurrentBinding = SamplerInfo.Binding;
+                vk::DeviceSize SetOffset      = SetOffsets.at(CurrentSet);
+                vk::DeviceSize BindingOffset  = SetOffset + SetInfos.at(CurrentSet).Bindings.at(CurrentBinding).Offset;
 
                 vk::DescriptorType Usage = vk::DescriptorType::eSampler;
                 vk::DescriptorGetInfoEXT DescriptorGetInfo(Usage, &SamplerInfo.Sampler);
                 vk::DeviceSize DescriptorSize = DescriptorBufferProperties_.samplerDescriptorSize;
-                Device.getDescriptorEXT(DescriptorGetInfo, DescriptorSize, static_cast<std::byte*>(Target) + Offset);
+                Device.getDescriptorEXT(DescriptorGetInfo, DescriptorSize, static_cast<std::byte*>(Target) + BindingOffset);
 
-                InsertOffsetMap(SamplerInfo, Offset, Usage);
-                Offset += DescriptorSize;
+                InsertOffsetMap(SamplerInfo, BindingOffset, Usage);
             }
 
             for (std::size_t j = 0; j != DescriptorBufferCreateInfo.SampledImageInfos.size(); ++j)
             {
-                const auto&   ImageInfo  = DescriptorBufferCreateInfo.SampledImageInfos[j];
-                std::uint32_t CurrentSet = ImageInfo.Set;
-
-                if (CurrentSet != PrevSet && CurrentSet < DescriptorBufferCreateInfo.SetSizes.size())
-                {
-                    Offset  = SetOffsets[CurrentSet];
-                    PrevSet = CurrentSet;
-                }
+                const auto&    ImageInfo      = DescriptorBufferCreateInfo.SampledImageInfos[j];
+                std::uint32_t  CurrentSet     = ImageInfo.Set;
+                std::uint32_t  CurrentBinding = ImageInfo.Binding;
+                vk::DeviceSize SetOffset      = SetOffsets.at(CurrentSet);
+                vk::DeviceSize BindingOffset  = SetOffset + SetInfos.at(CurrentSet).Bindings.at(CurrentBinding).Offset;
 
                 vk::DescriptorType Usage = vk::DescriptorType::eSampledImage;
                 vk::DescriptorGetInfoEXT DescriptorGetInfo(Usage, &ImageInfo.Info);
                 vk::DeviceSize DescriptorSize = DescriptorBufferProperties_.sampledImageDescriptorSize;
-                Device.getDescriptorEXT(DescriptorGetInfo, DescriptorSize, static_cast<std::byte*>(Target) + Offset);
+                Device.getDescriptorEXT(DescriptorGetInfo, DescriptorSize, static_cast<std::byte*>(Target) + BindingOffset);
 
-                InsertOffsetMap(ImageInfo, Offset, Usage);
-                Offset += DescriptorSize;
+                InsertOffsetMap(ImageInfo, BindingOffset, Usage);
             }
 
             for (std::size_t j = 0; j != DescriptorBufferCreateInfo.StorageImageInfos.size(); ++j)
             {
-                const auto&   ImageInfo  = DescriptorBufferCreateInfo.StorageImageInfos[j];
-                std::uint32_t CurrentSet = ImageInfo.Set;
-
-                if (CurrentSet != PrevSet && CurrentSet < DescriptorBufferCreateInfo.SetSizes.size())
-                {
-                    Offset  = SetOffsets[CurrentSet];
-                    PrevSet = CurrentSet;
-                }
+                const auto&    ImageInfo      = DescriptorBufferCreateInfo.StorageImageInfos[j];
+                std::uint32_t  CurrentSet     = ImageInfo.Set;
+                std::uint32_t  CurrentBinding = ImageInfo.Binding;
+                vk::DeviceSize SetOffset      = SetOffsets.at(CurrentSet);
+                vk::DeviceSize BindingOffset  = SetOffset + SetInfos.at(CurrentSet).Bindings.at(CurrentBinding).Offset;
 
                 vk::DescriptorType Usage = vk::DescriptorType::eStorageImage;
                 vk::DescriptorGetInfoEXT DescriptorGetInfo(Usage, &ImageInfo.Info);
                 vk::DeviceSize DescriptorSize = DescriptorBufferProperties_.storageImageDescriptorSize;
-                Device.getDescriptorEXT(DescriptorGetInfo, DescriptorSize, static_cast<std::byte*>(Target) + Offset);
+                Device.getDescriptorEXT(DescriptorGetInfo, DescriptorSize, static_cast<std::byte*>(Target) + BindingOffset);
 
-                InsertOffsetMap(ImageInfo, Offset, Usage);
-                Offset += DescriptorSize;
+                InsertOffsetMap(ImageInfo, BindingOffset, Usage);
             }
 
             for (std::size_t j = 0; j != DescriptorBufferCreateInfo.CombinedImageSamplerInfos.size(); ++j)
             {
-                const auto&   ImageInfo  = DescriptorBufferCreateInfo.CombinedImageSamplerInfos[j];
-                std::uint32_t CurrentSet = ImageInfo.Set;
-
-                if (CurrentSet != PrevSet && CurrentSet < DescriptorBufferCreateInfo.SetSizes.size())
-                {
-                    Offset  = SetOffsets[CurrentSet];
-                    PrevSet = CurrentSet;
-                }
+                const auto&    ImageInfo      = DescriptorBufferCreateInfo.CombinedImageSamplerInfos[j];
+                std::uint32_t  CurrentSet     = ImageInfo.Set;
+                std::uint32_t  CurrentBinding = ImageInfo.Binding;
+                vk::DeviceSize SetOffset      = SetOffsets.at(CurrentSet);
+                vk::DeviceSize BindingOffset  = SetOffset + SetInfos.at(CurrentSet).Bindings.at(CurrentBinding).Offset;
 
                 vk::DescriptorType Usage = vk::DescriptorType::eCombinedImageSampler;
                 vk::DescriptorGetInfoEXT DescriptorGetInfo(Usage, &ImageInfo.Info);
                 vk::DeviceSize DescriptorSize = DescriptorBufferProperties_.combinedImageSamplerDescriptorSize;
-                Device.getDescriptorEXT(DescriptorGetInfo, DescriptorSize, static_cast<std::byte*>(Target) + Offset);
+                Device.getDescriptorEXT(DescriptorGetInfo, DescriptorSize, static_cast<std::byte*>(Target) + BindingOffset);
 
-                InsertOffsetMap(ImageInfo, Offset, Usage);
-                Offset += DescriptorSize;
+                InsertOffsetMap(ImageInfo, BindingOffset, Usage);
             }
         }
     }

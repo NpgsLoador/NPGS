@@ -133,8 +133,8 @@ namespace Npgs
         , ReflectionInfo_(std::exchange(Other.ReflectionInfo_, {}))
         , ShaderModules_(std::move(Other.ShaderModules_))
         , PushConstantOffsetsMap_(std::move(Other.PushConstantOffsetsMap_))
-        , DescriptorSetLayoutsMap_(std::move(Other.DescriptorSetLayoutsMap_))
         , DescriptorSetInfos_(std::move(Other.DescriptorSetInfos_))
+        , DescriptorSetLayoutsMap_(std::move(Other.DescriptorSetLayoutsMap_))
     {
     }
 
@@ -146,8 +146,8 @@ namespace Npgs
             ReflectionInfo_          = std::exchange(Other.ReflectionInfo_, {});
             ShaderModules_           = std::move(Other.ShaderModules_);
             PushConstantOffsetsMap_  = std::move(Other.PushConstantOffsetsMap_);
-            DescriptorSetLayoutsMap_ = std::move(Other.DescriptorSetLayoutsMap_);
             DescriptorSetInfos_      = std::move(Other.DescriptorSetInfos_);
+            DescriptorSetLayoutsMap_ = std::move(Other.DescriptorSetLayoutsMap_);
         }
 
         return *this;
@@ -167,24 +167,19 @@ namespace Npgs
 
     std::vector<vk::DescriptorSetLayout> FShader::GetDescriptorSetLayouts() const
     {
-        std::vector<vk::DescriptorSetLayout> NativeTypeLayouts;
+        if (DescriptorSetLayoutsMap_.empty())
+        {
+            return {};
+        }
+
+        std::uint32_t MaxSet = DescriptorSetLayoutsMap_.rbegin()->first;
+        std::vector<vk::DescriptorSetLayout> NativeTypeLayouts(MaxSet + 1);
         for (const auto& [Set, Layout] : DescriptorSetLayoutsMap_)
         {
-            NativeTypeLayouts.push_back(*Layout);
+            NativeTypeLayouts[Set] = *Layout;
         }
 
         return NativeTypeLayouts;
-    }
-
-    std::map<std::uint32_t, vk::DeviceSize> FShader::GetDescriptorSetSizes() const
-    {
-        std::map<std::uint32_t, vk::DeviceSize> SetSizes;
-        for (const auto& [Set, Info] : DescriptorSetInfos_)
-        {
-            SetSizes.emplace(Set, Info.Size);
-        }
-
-        return SetSizes;
     }
 
     void FShader::InitializeShaders(const std::vector<std::string>& ShaderFiles, const FResourceInfo& ResourceInfo)
@@ -565,9 +560,10 @@ namespace Npgs
                     .Type    = Binding.descriptorType,
                     .Count   = Binding.descriptorCount,
                     .Stage   = Binding.stageFlags,
+                    .Offset  = Device.getDescriptorSetLayoutBindingOffsetEXT(*Layout, Binding.binding)
                 };
 
-                SetInfo.Bindings.push_back(std::move(BindingInfo));
+                SetInfo.Bindings[Binding.binding] = std::move(BindingInfo);
             }
 
             DescriptorSetInfos_[Set] = std::move(SetInfo);

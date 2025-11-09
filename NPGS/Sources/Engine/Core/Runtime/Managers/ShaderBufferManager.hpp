@@ -2,7 +2,6 @@
 
 #include <cstddef>
 #include <cstdint>
-#include <map>
 #include <string>
 #include <string_view>
 #include <type_traits>
@@ -13,6 +12,7 @@
 #include <vma/vk_mem_alloc.h>
 #include <vulkan/vulkan.hpp>
 
+#include "Engine/Core/Runtime/AssetLoaders/Shader.hpp"
 #include "Engine/Core/Runtime/Graphics/Resources/DeviceLocalBuffer.hpp"
 #include "Engine/Core/Runtime/Graphics/Vulkan/Context.hpp"
 #include "Engine/Core/Runtime/Graphics/Vulkan/Wrappers.hpp"
@@ -20,6 +20,41 @@
 
 namespace Npgs
 {
+    struct FDataBufferCreateInfo
+    {
+        std::string              Name;
+        std::vector<std::string> Fields;
+        std::uint32_t            Set{};
+        std::uint32_t            Binding{};
+        vk::DescriptorType       Usage{};
+    };
+
+    struct FDescriptorSampler
+    {
+        std::uint32_t Set{};
+        std::uint32_t Binding{};
+        vk::Sampler   Sampler{};
+    };
+
+    struct FDescriptorImageInfo
+    {
+        std::uint32_t           Set{};
+        std::uint32_t           Binding{};
+        vk::DescriptorImageInfo Info;
+    };
+
+    struct FDescriptorBufferCreateInfo
+    {
+        std::string                                           Name;
+        std::vector<std::string>                              UniformBufferNames;
+        std::vector<std::string>                              StorageBufferNames;
+        std::vector<FDescriptorSampler>                       SamplerInfos;
+        std::vector<FDescriptorImageInfo>                     SampledImageInfos;
+        std::vector<FDescriptorImageInfo>                     StorageImageInfos;
+        std::vector<FDescriptorImageInfo>                     CombinedImageSamplerInfos;
+        std::unordered_map<std::uint32_t, FDescriptorSetInfo> SetInfos;
+    };
+
     class FShaderBufferManager
     {
     public:
@@ -35,41 +70,6 @@ namespace Npgs
             const FDeviceLocalBuffer* Buffer_;
             vk::DeviceSize            Offset_;
             vk::DeviceSize            Size_;
-        };
-
-        struct FDataBufferCreateInfo
-        {
-            std::string              Name;
-            std::vector<std::string> Fields;
-            std::uint32_t            Set{};
-            std::uint32_t            Binding{};
-            vk::DescriptorType       Usage{};
-        };
-
-        struct FDescriptorSampler
-        {
-            std::uint32_t Set{};
-            std::uint32_t Binding{};
-            vk::Sampler   Sampler{};
-        };
-
-        struct FDescriptorImageInfo
-        {
-            std::uint32_t Set{};
-            std::uint32_t Binding{};
-            vk::DescriptorImageInfo Info;
-        };
-
-        struct FDescriptorBufferCreateInfo
-        {
-            std::string                             Name;
-            std::vector<std::string>                UniformBufferNames;
-            std::vector<std::string>                StorageBufferNames;
-            std::vector<FDescriptorSampler>         SamplerInfos;
-            std::vector<FDescriptorImageInfo>       SampledImageInfos;
-            std::vector<FDescriptorImageInfo>       StorageImageInfos;
-            std::vector<FDescriptorImageInfo>       CombinedImageSamplerInfos;
-            std::map<std::uint32_t, vk::DeviceSize> SetSizes;
         };
 
     private:
@@ -140,6 +140,9 @@ namespace Npgs
 
         void RemoveDescriptorBuffer(std::string_view Name);
 
+        // TODO
+        // UpdateBufferDescriptor(s)
+        // Complete UpdateResourceDescriptor(s) implementations
         template <typename Type>
         void UpdateResourceDescriptors(std::string_view BufferName, std::uint32_t Set, std::uint32_t Binding,
                                        vk::DescriptorType ConfirmedUsage, const Type& DescriptorInfo);
@@ -180,6 +183,9 @@ namespace Npgs
         // [DescriptorBufferName, [[Set, Binding], [Offset, Type]]]
         using FSubMap = std::unordered_map<std::pair<std::uint32_t, std::uint32_t>, std::pair<vk::DeviceSize, vk::DescriptorType>, FSetBindingHash>;
         std::unordered_map<std::string, FSubMap, Utils::FStringViewHeteroHash, Utils::FStringViewHeteroEqual> OffsetsMap_;
+        // [DescriptorBuffername, [Set, BaseOffset]]
+        std::unordered_map<std::string, std::unordered_map<std::uint32_t, vk::DeviceSize>,
+                           Utils::FStringViewHeteroHash, Utils::FStringViewHeteroEqual> SetBaseOffsetsMap_;
 
         VmaAllocator Allocator_;
     };
