@@ -470,8 +470,11 @@ namespace Npgs
 
     FTexture::FTexture(FTexture&& Other) noexcept
         : VulkanContext_(std::exchange(Other.VulkanContext_, nullptr))
+        , ImageMemory_(std::move(Other.ImageMemory_))
+        , ImageView_(std::move(Other.ImageView_))
         , Allocator_(std::exchange(Other.Allocator_, nullptr))
         , AllocationCreateInfo_(std::exchange(Other.AllocationCreateInfo_, {}))
+        , TextureName_(std::move(Other.TextureName_))
     {
     }
 
@@ -480,8 +483,11 @@ namespace Npgs
         if (this != &Other)
         {
             VulkanContext_        = std::exchange(Other.VulkanContext_, nullptr);
+            ImageMemory_          = std::move(Other.ImageMemory_);
+            ImageView_            = std::move(Other.ImageView_);
             Allocator_            = std::exchange(Other.Allocator_, nullptr);
             AllocationCreateInfo_ = std::exchange(Other.AllocationCreateInfo_, {});
+            TextureName_          = std::move(Other.TextureName_);
         }
 
         return *this;
@@ -510,7 +516,7 @@ namespace Npgs
         CreateImageView({}, ImageViewType, InitialFormat, MipLevels, ArrayLayers);
 
         auto CommandPool = VulkanContext_->AcquireCommandPool(FVulkanContext::EQueueType::kGeneral);
-        FVulkanFence Fence(VulkanContext_->GetDevice());
+        FVulkanFence Fence(VulkanContext_->GetDevice(), "CreateTexture_Fence");
 
         if (InitialFormat == FinalFormat)
         {
@@ -603,17 +609,29 @@ namespace Npgs
 
             .setInitialLayout(vk::ImageLayout::eUndefined);
 
+        std::string ImageName  = TextureName_ + "_Image";
+        std::string MemoryName = TextureName_ + "_Memory";
+
         ImageMemory_ = std::make_unique<FVulkanImageMemory>(
-            VulkanContext_->GetDevice(), Allocator_, AllocationCreateInfo_, ImageCreateInfo);
+            VulkanContext_->GetDevice(), ImageName, MemoryName, Allocator_, AllocationCreateInfo_, ImageCreateInfo);
     }
 
     void FTexture::CreateImageView(vk::ImageViewCreateFlags Flags, vk::ImageViewType ImageViewType,
                                    vk::Format Format, std::uint32_t MipLevels, std::uint32_t ArrayLayers)
     {
+        std::string ImageViewName = TextureName_ + "_ImageView";
         vk::ImageSubresourceRange ImageSubresourceRange(vk::ImageAspectFlagBits::eColor, 0, MipLevels, 0, ArrayLayers);
 
-        ImageView_ = std::make_unique<FVulkanImageView>(VulkanContext_->GetDevice(), ImageMemory_->GetResource(), ImageViewType,
-                                                        Format, vk::ComponentMapping(), ImageSubresourceRange, Flags);
+        ImageView_ = std::make_unique<FVulkanImageView>(
+            VulkanContext_->GetDevice(),
+            ImageViewName,
+            ImageMemory_->GetResource(),
+            ImageViewType,
+            Format,
+            vk::ComponentMapping(),
+            ImageSubresourceRange,
+            Flags
+        );
     }
 
     void FTexture::CopyBlitGenerateTexture(const FVulkanCommandPool& CommandPool, vk::Buffer SrcBuffer, vk::Extent3D Extent,
@@ -625,7 +643,7 @@ namespace Npgs
         bool bNeedCopy        = static_cast<bool>(SrcBuffer);
 
         FVulkanCommandBuffer CommandBuffer;
-        CommandPool.AllocateBuffer(vk::CommandBufferLevel::ePrimary, CommandBuffer);
+        CommandPool.AllocateBuffer(vk::CommandBufferLevel::ePrimary, "CopyBlitGenerateTexture_CommandBuffer", CommandBuffer);
         CommandBuffer.Begin(vk::CommandBufferUsageFlagBits::eOneTimeSubmit);
 
         vk::ImageSubresourceLayers Subresource(vk::ImageAspectFlagBits::eColor, 0, 0, ArrayLayers);
@@ -671,7 +689,7 @@ namespace Npgs
         }
 
         FVulkanCommandBuffer CommandBuffer;
-        CommandPool.AllocateBuffer(vk::CommandBufferLevel::ePrimary, CommandBuffer);
+        CommandPool.AllocateBuffer(vk::CommandBufferLevel::ePrimary, "CopyBlitApplyTexture_CommandBuffer", CommandBuffer);
         CommandBuffer.Begin(vk::CommandBufferUsageFlagBits::eOneTimeSubmit);
 
         if (bNeedCopy)
@@ -876,6 +894,8 @@ namespace Npgs
                            vk::ImageCreateFlags Flags, bool bGenerateMipmaps)
         : Base(VulkanContext, Allocator, AllocationCreateInfo)
     {
+        TextureName_ = Filename;
+
         CreateTexture(GetAssetFullPath(EAssetType::kTexture, Filename.data()),
                       InitialFormat, FinalFormat, Flags, bGenerateMipmaps);
     }
@@ -918,6 +938,7 @@ namespace Npgs
                                vk::ImageCreateFlags Flags, bool bGenerateMipmaps)
         : Base(VulkanContext, Allocator, AllocationCreateInfo)
     {
+        TextureName_ = Filename;
         std::string FullPath = GetAssetFullPath(EAssetType::kTexture, Filename.data());
         if (std::filesystem::is_directory(FullPath))
         {

@@ -10,19 +10,21 @@
 
 namespace Npgs
 {
-    FDeviceLocalBuffer::FDeviceLocalBuffer(FVulkanContext* VulkanContext, VmaAllocator Allocator,
+    FDeviceLocalBuffer::FDeviceLocalBuffer(FVulkanContext* VulkanContext, std::string_view Name, VmaAllocator Allocator,
                                            const VmaAllocationCreateInfo& AllocationCreateInfo,
                                            const vk::BufferCreateInfo& BufferCreateInfo)
         : VulkanContext_(VulkanContext)
         , Allocator_(Allocator)
+        , Name_(Name)
     {
         CreateBuffer(AllocationCreateInfo, BufferCreateInfo);
     }
 
     FDeviceLocalBuffer::FDeviceLocalBuffer(FDeviceLocalBuffer&& Other) noexcept
         : VulkanContext_(std::exchange(Other.VulkanContext_, nullptr))
-        , BufferMemory_(std::move(Other.BufferMemory_))
         , Allocator_(std::exchange(Other.Allocator_, nullptr))
+        , BufferMemory_(std::move(Other.BufferMemory_))
+        , Name_(std::move(Other.Name_))
     {
     }
 
@@ -31,8 +33,9 @@ namespace Npgs
         if (this != &Other)
         {
             VulkanContext_ = std::exchange(Other.VulkanContext_, nullptr);
-            BufferMemory_  = std::move(Other.BufferMemory_);
             Allocator_     = std::exchange(Other.Allocator_, nullptr);
+            BufferMemory_  = std::move(Other.BufferMemory_);
+            Name_          = std::move(Other.Name_);
         }
 
         return *this;
@@ -52,7 +55,7 @@ namespace Npgs
         auto CommandPool = VulkanContext_->AcquireCommandPool(FVulkanContext::EQueueType::kTransfer);
 
         FVulkanCommandBuffer TransferCommandBuffer;
-        CommandPool->AllocateBuffer(vk::CommandBufferLevel::ePrimary, TransferCommandBuffer);
+        CommandPool->AllocateBuffer(vk::CommandBufferLevel::ePrimary, "TransferCommandBuffer", TransferCommandBuffer);
 
         TransferCommandBuffer.Begin(vk::CommandBufferUsageFlagBits::eOneTimeSubmit);
         vk::BufferCopy Region(0, TargetOffset, Size);
@@ -94,7 +97,7 @@ namespace Npgs
         auto CommandPool = VulkanContext_->AcquireCommandPool(FVulkanContext::EQueueType::kTransfer);
 
         FVulkanCommandBuffer TransferCommandBuffer;
-        CommandPool->AllocateBuffer(vk::CommandBufferLevel::ePrimary, TransferCommandBuffer);
+        CommandPool->AllocateBuffer(vk::CommandBufferLevel::ePrimary, "TransferCommandBuffer", TransferCommandBuffer);
 
         TransferCommandBuffer.Begin(vk::CommandBufferUsageFlagBits::eOneTimeSubmit);
 
@@ -114,7 +117,12 @@ namespace Npgs
     vk::Result FDeviceLocalBuffer::CreateBuffer(const VmaAllocationCreateInfo& AllocationCreateInfo,
                                                 const vk::BufferCreateInfo& BufferCreateInfo)
     {
-        BufferMemory_ = std::make_unique<FVulkanBufferMemory>(VulkanContext_->GetDevice(), Allocator_, AllocationCreateInfo, BufferCreateInfo);
+        std::string BufferName = Name_ + "_Buffer";
+        std::string MemoryName = Name_ + "_Memory";
+
+        BufferMemory_ = std::make_unique<FVulkanBufferMemory>(
+            VulkanContext_->GetDevice(), BufferName, MemoryName, Allocator_, AllocationCreateInfo, BufferCreateInfo);
+
         if (!BufferMemory_->IsValid())
         {
             return vk::Result::eErrorInitializationFailed;

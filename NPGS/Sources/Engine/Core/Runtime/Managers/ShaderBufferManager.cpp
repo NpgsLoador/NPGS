@@ -3,6 +3,7 @@
 
 #include <format>
 #include <stdexcept>
+#include <Volk/volk.h>
 
 #include "Engine/Core/Base/Config/EngineConfig.hpp"
 #include "Engine/Utils/Logger.hpp"
@@ -12,12 +13,19 @@ namespace Npgs
     FShaderBufferManager::FShaderBufferManager(FVulkanContext* VulkanContext)
         : VulkanContext_(VulkanContext)
     {
+        VmaVulkanFunctions VulkanFunctions
+        {
+            .vkGetInstanceProcAddr = vkGetInstanceProcAddr,
+            .vkGetDeviceProcAddr   = vkGetDeviceProcAddr
+        };
+
         VmaAllocatorCreateInfo AllocatorCreateInfo
         {
-            .flags          = VMA_ALLOCATOR_CREATE_BUFFER_DEVICE_ADDRESS_BIT,
-            .physicalDevice = VulkanContext_->GetPhysicalDevice(),
-            .device         = VulkanContext_->GetDevice(),
-            .instance       = VulkanContext_->GetInstance()
+            .flags            = VMA_ALLOCATOR_CREATE_BUFFER_DEVICE_ADDRESS_BIT,
+            .physicalDevice   = VulkanContext_->GetPhysicalDevice(),
+            .device           = VulkanContext_->GetDevice(),
+            .pVulkanFunctions = &VulkanFunctions,
+            .instance         = VulkanContext_->GetInstance()
         };
 
         vmaCreateAllocator(&AllocatorCreateInfo, &Allocator_);
@@ -59,9 +67,10 @@ namespace Npgs
 
         for (std::uint32_t i = 0; i != Config::Graphics::kMaxFrameInFlight; ++i)
         {
+            std::string BufferName = std::format("{}_DescriptorBuffer_Frame{}", DescriptorBufferCreateInfo.Name, i);
             auto BufferUsage = vk::BufferUsageFlagBits::eResourceDescriptorBufferEXT | vk::BufferUsageFlagBits::eShaderDeviceAddress;
             vk::BufferCreateInfo BufferCreateInfo({}, BufferSize, BufferUsage);
-            BufferInfo.Buffers.emplace_back(VulkanContext_, Allocator_, AllocationCreateInfo, BufferCreateInfo);
+            BufferInfo.Buffers.emplace_back(VulkanContext_, BufferName, Allocator_, AllocationCreateInfo, BufferCreateInfo);
             BufferInfo.Buffers[i].SetPersistentMapping(true);
         }
 

@@ -8,18 +8,18 @@ layout(location = 0) out vec4 FragColor;
 
 layout(location = 0) in _FragInput
 {
-	mat3x3 TbnMatrix;
-	vec2   TexCoord;
-	vec3   FragPos;
-	vec4   LightSpaceFragPos;
+	mat3 TbnMatrix;
+	vec2 TexCoord;
+	vec3 FragPos;
+	vec4 LightSpaceFragPos;
 } FragInput;
 
-layout(push_constant) uniform DeviceAddress
+layout(push_constant) uniform _DeviceAddress
 {
 	layout(offset = 8) uint64_t LightArgsAddress;
-} iDeviceAddress;
+} DeviceAddress;
 
-layout(buffer_reference, scalar) readonly buffer LightArgs
+layout(buffer_reference, scalar) readonly buffer _LightArgs
 {
 	vec3 LightPos;
 	vec3 LightColor;
@@ -27,12 +27,12 @@ layout(buffer_reference, scalar) readonly buffer LightArgs
 };
 
 layout(set = 0, binding = 0) uniform sampler   iSampler;
-layout(set = 1, binding = 1) uniform texture2D iDiffuseTex;
+layout(set = 1, binding = 1) uniform texture2D iAlbedoTex;
 layout(set = 1, binding = 2) uniform texture2D iNormalTex;
 layout(set = 1, binding = 3) uniform texture2D iArmTex;
 layout(set = 2, binding = 0) uniform sampler2D iDepthMap;
 
-float TrowbridgeReitzGGX(vec3 Normal, vec3 HalfDir, float Roughness)
+float TrowbridgeReitzGGX(in vec3 Normal, vec3 HalfDir, float Roughness)
 {
 	float Alpha2 = pow(Roughness, 4);
 	float NdotH  = max(dot(Normal, HalfDir), 0.0);
@@ -95,15 +95,15 @@ float CalcShadow(vec4 FragPosLightSpace, float Bias)
 
 void main()
 {
-	LightArgs iLightArgs = LightArgs(iDeviceAddress.LightArgsAddress);
-#ifdef LAMP_BOX
+	_LightArgs LightArgs = _LightArgs(DeviceAddress.LightArgsAddress);
+#if defined(LAMP_BOX)
 	FragColor = vec4(iLightArgs.LightColor, 1.0);
 #else
-	vec3  TexAlbedo    = texture(sampler2D(iDiffuseTex, iSampler), FragInput.TexCoord).rgb;
-	vec3  TexNormal    = texture(sampler2D(iNormalTex,  iSampler), FragInput.TexCoord).rgb;
-	float TexAo        = texture(sampler2D(iArmTex,     iSampler), FragInput.TexCoord).r;
-	float TexRoughness = texture(sampler2D(iArmTex,     iSampler), FragInput.TexCoord).g;
-	float TexMetallic  = texture(sampler2D(iArmTex,     iSampler), FragInput.TexCoord).b;
+	vec3  TexAlbedo    = texture(sampler2D(iAlbedoTex, iSampler), FragInput.TexCoord).rgb;
+	vec3  TexNormal    = texture(sampler2D(iNormalTex, iSampler), FragInput.TexCoord).rgb;
+	float TexAo        = texture(sampler2D(iArmTex,    iSampler), FragInput.TexCoord).r;
+	float TexRoughness = texture(sampler2D(iArmTex,    iSampler), FragInput.TexCoord).g;
+	float TexMetallic  = texture(sampler2D(iArmTex,    iSampler), FragInput.TexCoord).b;
 
 	vec3 Normal = normalize(TexNormal * 2.0 - 1.0);
 	vec3 Fx     = vec3(0.04);
@@ -111,17 +111,17 @@ void main()
 
 	vec3 RadianceSum = vec3(0.0);
 
-	vec3 LightDir = normalize(FragInput.TbnMatrix * (iLightArgs.LightPos  - FragInput.FragPos));
-	vec3 ViewDir  = normalize(FragInput.TbnMatrix * (iLightArgs.CameraPos - FragInput.FragPos));
+	vec3 LightDir = normalize(FragInput.TbnMatrix * (LightArgs.LightPos  - FragInput.FragPos));
+	vec3 ViewDir  = normalize(FragInput.TbnMatrix * (LightArgs.CameraPos - FragInput.FragPos));
 	vec3 HalfDir  = normalize(LightDir + ViewDir);
 
 	float ViewAngle         = dot(ViewDir, Normal);
 	float RoughnessTarget   = mix(0.3, 0.1, TexMetallic);
 	float AdjustedRoughness = mix(TexRoughness, max(TexRoughness, RoughnessTarget), 1.0 - smoothstep(0.0, 0.2, ViewAngle));
 
-	float Distance    = length(iLightArgs.LightPos - FragInput.FragPos);
+	float Distance    = length(LightArgs.LightPos - FragInput.FragPos);
 	float Attenuation = 1.0 / pow(Distance, 2);
-	vec3  Radiance    = iLightArgs.LightColor * Attenuation;
+	vec3  Radiance    = LightArgs.LightColor * Attenuation;
 
 	float NormalDistFunc  = TrowbridgeReitzGGX(Normal, HalfDir, AdjustedRoughness);
 	float GeometryFunc    = GeometrySmith(Normal, ViewDir, LightDir, AdjustedRoughness);

@@ -3,6 +3,7 @@
 #include <cstdint>
 #include <memory>
 #include <mutex>
+#include <string_view>
 #include <type_traits>
 #include <vector>
 
@@ -46,7 +47,7 @@ namespace Npgs
         using Base = FAttachment;
         using Base::Base;
 
-        FColorAttachment(FVulkanContext* VulkanContext, VmaAllocator Allocator,
+        FColorAttachment(FVulkanContext* VulkanContext, std::string_view Name, VmaAllocator Allocator,
                          const VmaAllocationCreateInfo& AllocationCreateInfo,
                          vk::Format Format, vk::Extent2D Extent, std::uint32_t LayerCount = 1,
                          vk::SampleCountFlagBits SampleCount = vk::SampleCountFlagBits::e1,
@@ -55,8 +56,9 @@ namespace Npgs
         static bool CheckFormatAvailability(vk::PhysicalDevice PhysicalDevice, vk::Format Format, bool bSupportBlend = true);
 
     private:
-        vk::Result CreateAttachment(const VmaAllocationCreateInfo& AllocationCreateInfo, vk::Format Format, vk::Extent2D Extent,
-                                    std::uint32_t LayerCount, vk::SampleCountFlagBits SampleCount, vk::ImageUsageFlags ExtraUsage);
+        vk::Result CreateAttachment(std::string_view Name, const VmaAllocationCreateInfo& AllocationCreateInfo,
+                                    vk::Format Format, vk::Extent2D Extent, std::uint32_t LayerCount,
+                                    vk::SampleCountFlagBits SampleCount, vk::ImageUsageFlags ExtraUsage);
     };
 
     class FDepthStencilAttachment : public FAttachment
@@ -65,7 +67,7 @@ namespace Npgs
         using Base = FAttachment;
         using Base::Base;
 
-        FDepthStencilAttachment(FVulkanContext* VulkanContext, VmaAllocator Allocator,
+        FDepthStencilAttachment(FVulkanContext* VulkanContext, std::string_view Name, VmaAllocator Allocator,
                                 const VmaAllocationCreateInfo& AllocationCreateInfo,
                                 vk::Format Format, vk::Extent2D Extent, std::uint32_t LayerCount = 1,
                                 vk::SampleCountFlagBits SampleCount = vk::SampleCountFlagBits::e1,
@@ -75,9 +77,9 @@ namespace Npgs
         static bool CheckFormatAvailability(vk::PhysicalDevice PhysicalDevice, vk::Format Format);
 
     private:
-        vk::Result CreateAttachment(const VmaAllocationCreateInfo& AllocationCreateInfo, vk::Format Format,
-                                    vk::Extent2D Extent, std::uint32_t LayerCount, vk::SampleCountFlagBits SampleCount,
-                                    vk::ImageUsageFlags ExtraUsage, bool bStencilOnly);
+        vk::Result CreateAttachment(std::string_view Name, const VmaAllocationCreateInfo& AllocationCreateInfo,
+                                    vk::Format Format, vk::Extent2D Extent, std::uint32_t LayerCount,
+                                    vk::SampleCountFlagBits SampleCount, vk::ImageUsageFlags ExtraUsage, bool bStencilOnly);
     };
 } // namespace Npgs
 

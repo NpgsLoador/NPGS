@@ -126,7 +126,7 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>dxgi.lib;WindowsApp.lib;spirv-cross-cored.lib;spirv-cross-cppd.lib;spirv-cross-glsld.lib;spirv-cross-reflectd.lib;vulkan-1.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>dxgi.lib;WindowsApp.lib;spirv-cross-cored.lib;spirv-cross-cppd.lib;spirv-cross-glsld.lib;spirv-cross-reflectd.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PreBuildEvent>
       <Command>
@@ -158,7 +158,7 @@
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <Profile>true</Profile>
-      <AdditionalDependencies>dxgi.lib;WindowsApp.lib;spirv-cross-core.lib;spirv-cross-cpp.lib;spirv-cross-glsl.lib;spirv-cross-reflect.lib;vulkan-1.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>dxgi.lib;WindowsApp.lib;spirv-cross-core.lib;spirv-cross-cpp.lib;spirv-cross-glsl.lib;spirv-cross-reflect.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PreBuildEvent>
       <Command>
@@ -170,6 +170,16 @@
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Sources\Engine\Core\Runtime\Graphics\Renderer\Renderer.cpp" />
+    <ClCompile Include="Sources\Engine\Core\Runtime\Graphics\Renderer\Material.cpp" />
+    <ClCompile Include="Sources\Engine\Core\Runtime\Graphics\Renderer\RenderPass.cpp" />
+    <ClCompile Include="Sources\Engine\Core\Runtime\Managers\MaterialManager.cpp" />
+    <ClCompile Include="Sources\ExternalImpl\volk_impl.cpp" />
+    <ClCompile Include="Sources\Program\Rendering\RenderPasses\GbufferScene.cpp" />
+    <ClCompile Include="Sources\Program\Rendering\PbrCube.cpp" />
+    <ClCompile Include="Sources\Engine\Core\Runtime\Managers\RenderTargetManager.cpp" />
+    <ClInclude Include="Sources\Engine\Core\Runtime\Graphics\Renderer\Renderer.hpp" />
+    <ClInclude Include="Sources\Engine\Core\Runtime\Graphics\Renderer\RenderPass.hpp" />
     <ClCompile Include="Sources\Engine\Core\Base\Config\ConfigWatcher.cpp" />
     <ClCompile Include="Sources\Engine\Core\Math\TangentSpaceTools.cpp" />
     <ClCompile Include="Sources\Engine\Core\Runtime\Managers\AssetManager.cpp" />
@@ -182,7 +192,6 @@
     <ClCompile Include="Sources\Engine\Core\Runtime\Graphics\Resources\StagingBuffer.cpp" />
     <ClCompile Include="Sources\Engine\Core\Runtime\Graphics\Vulkan\Context.cpp" />
     <ClCompile Include="Sources\Engine\Core\Runtime\Graphics\Vulkan\Core.cpp" />
-    <ClCompile Include="Sources\Engine\Core\Runtime\Graphics\Vulkan\ExtFunctionsImpl.cpp" />
     <ClCompile Include="Sources\Engine\Core\Runtime\Managers\ImageTracker.cpp" />
     <ClCompile Include="Sources\Engine\Core\Runtime\Managers\PipelineManager.cpp" />
     <ClCompile Include="Sources\Engine\Core\Runtime\Managers\ShaderBufferManager.cpp" />
@@ -218,8 +227,17 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
     </ClCompile>
+    <ClCompile Include="Sources\Program\Rendering\Materials\StandardPbrMaterial.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Sources\Engine\Core\Runtime\Graphics\Renderer\Material.hpp" />
+    <ClInclude Include="Sources\Engine\Core\Runtime\Managers\MaterialManager.hpp" />
+    <ClInclude Include="Sources\Program\Rendering\NameLookup.hpp" />
+    <ClInclude Include="Sources\Program\Rendering\RenderPasses\GbufferScene.hpp" />
+    <ClInclude Include="Sources\Program\Rendering\PbrCube.hpp" />
+    <ClInclude Include="Sources\Engine\Core\Runtime\Managers\RenderTargetManager.hpp" />
+    <ClInclude Include="Sources\Engine\Core\Runtime\Graphics\Renderer\Renderable.hpp" />
+    <ClInclude Include="Sources\Engine\Core\Runtime\Graphics\Renderer\Scene.hpp" />
     <ClInclude Include="Sources\Engine\Core\Base\Config\ConfigWatcher.hpp" />
     <ClInclude Include="Sources\Engine\Core\Runtime\Pools\MemoryPool.hpp" />
     <ClInclude Include="Sources\Engine\Core\System\Events\Event.hpp" />
@@ -241,7 +259,6 @@
     <ClInclude Include="Sources\Engine\Core\Runtime\Graphics\Resources\StagingBuffer.hpp" />
     <ClInclude Include="Sources\Engine\Core\Runtime\Graphics\Vulkan\Context.hpp" />
     <ClInclude Include="Sources\Engine\Core\Runtime\Graphics\Vulkan\Core.hpp" />
-    <ClInclude Include="Sources\Engine\Core\Runtime\Graphics\Vulkan\ExtFunctionsImpl.hpp" />
     <ClInclude Include="Sources\Engine\Core\Runtime\Managers\ImageTracker.hpp" />
     <ClInclude Include="Sources\Engine\Core\Runtime\Managers\PipelineManager.hpp" />
     <ClInclude Include="Sources\Engine\Core\Runtime\Managers\ShaderBufferManager.hpp" />
@@ -278,6 +295,7 @@
     <ClInclude Include="Sources\Program\Universe.hpp" />
     <ClInclude Include="Sources\stdafx.h" />
     <ClInclude Include="Sources\xstdafx.h" />
+    <ClInclude Include="Sources\Program\Rendering\Materials\StandardPbrMaterial.hpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Sources\Engine\Core\Runtime\Managers\AssetManager.inl" />

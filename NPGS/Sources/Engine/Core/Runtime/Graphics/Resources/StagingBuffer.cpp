@@ -165,12 +165,15 @@ namespace Npgs
         }
     }
 
-    FStagingBuffer::FStagingBuffer(vk::PhysicalDevice PhysicalDevice, vk::Device Device, VmaAllocator Allocator,
-                                   const VmaAllocationCreateInfo& AllocationCreateInfo, const vk::BufferCreateInfo& BufferCreateInfo)
+    FStagingBuffer::FStagingBuffer(std::string_view Name, vk::PhysicalDevice PhysicalDevice,
+                                   vk::Device Device, VmaAllocator Allocator,
+                                   const VmaAllocationCreateInfo& AllocationCreateInfo,
+                                   const vk::BufferCreateInfo& BufferCreateInfo)
         : PhysicalDevice_(PhysicalDevice)
         , Device_(Device)
         , Allocator_(Allocator)
         , AllocationCreateInfo_(AllocationCreateInfo)
+        , Name_(Name)
     {
         Expand(BufferCreateInfo.size);
     }
@@ -183,6 +186,7 @@ namespace Npgs
         , MemoryUsage_(std::exchange(Other.MemoryUsage_, 0))
         , Allocator_(std::exchange(Other.Allocator_, nullptr))
         , AllocationCreateInfo_(std::exchange(Other.AllocationCreateInfo_, {}))
+        , Name_(std::move(Other.Name_))
     {
     }
 
@@ -197,6 +201,7 @@ namespace Npgs
             MemoryUsage_          = std::exchange(Other.MemoryUsage_, 0);
             Allocator_            = std::exchange(Other.Allocator_, nullptr);
             AllocationCreateInfo_ = std::exchange(Other.AllocationCreateInfo_, {});
+            Name_                 = std::move(Other.Name_);
         }
 
         return *this;
@@ -246,7 +251,8 @@ namespace Npgs
             return nullptr;
         }
 
-        AliasedImage_ = std::make_unique<FVulkanImage>(Device_, Allocator_, AllocationCreateInfo_, ImageCreateInfo);
+        std::string ImageName = Name_ + "_AlizsedImage";
+        AliasedImage_ = std::make_unique<FVulkanImage>(Device_, Name_, Allocator_, AllocationCreateInfo_, ImageCreateInfo);
 
         vk::ImageSubresource ImageSubresource(vk::ImageAspectFlagBits::eColor, ImageCreateInfo.mipLevels, ImageCreateInfo.arrayLayers);
         vk::SubresourceLayout SubresourceLayout = Device_.getImageSubresourceLayout(**AliasedImage_, ImageSubresource);
@@ -269,7 +275,11 @@ namespace Npgs
 
         Release();
 
+        std::string BufferName = Name_ + "_Buffer";
+        std::string MemoryName = Name_ + "_Memory";
         vk::BufferCreateInfo BufferCreateInfo({}, Size, vk::BufferUsageFlagBits::eTransferSrc | vk::BufferUsageFlagBits::eTransferDst);
-        BufferMemory_ = std::make_unique<FVulkanBufferMemory>(Device_, Allocator_, AllocationCreateInfo_, BufferCreateInfo);
+
+        BufferMemory_ = std::make_unique<FVulkanBufferMemory>(
+            Device_, BufferName, MemoryName, Allocator_, AllocationCreateInfo_, BufferCreateInfo);
     }
 } // namespace Npgs

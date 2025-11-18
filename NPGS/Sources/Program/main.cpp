@@ -84,12 +84,12 @@ int main1() {
     std::random_device rd;
     unsigned seed = rd();//1892189794;//702828540//1601382610;
     std::println("Seed: {}", seed);
-    FStellarGenerator::FGenerationInfo Info;
+    FStellarGenerationInfo Info;
     std::seed_seq SeedSeq = { seed };
     Info.SeedSequence = &SeedSeq;
     FStellarGenerator sg(Info);
-    FStellarGenerator::FBasicProperties b1{ FStellarGenerator::EStellarTypeGenerationOption::kRandom, FStellarGenerator::EMultiplicityGenerationOption::kBinaryFirstStar, 5e9f, 0.0f, 1.0f };
-    FStellarGenerator::FBasicProperties b2{ FStellarGenerator::EStellarTypeGenerationOption::kRandom, FStellarGenerator::EMultiplicityGenerationOption::kBinaryFirstStar, 5e9f, 0.0f, 0.3f };
+    FStellarBasicProperties b1{ FStellarGenerator::EStellarTypeGenerationOption::kRandom, FStellarGenerator::EMultiplicityGenerationOption::kBinaryFirstStar, 5e9f, 0.0f, 1.0f };
+    FStellarBasicProperties b2{ FStellarGenerator::EStellarTypeGenerationOption::kRandom, FStellarGenerator::EMultiplicityGenerationOption::kBinaryFirstStar, 5e9f, 0.0f, 0.3f };
     auto s1 = sg.GenerateStar(b1);
     auto s2 = sg.GenerateStar(b2);
 
@@ -111,7 +111,7 @@ int main1() {
     //    NpgsCoreError(std::string(e.what()) + " seed: " + std::to_string(seed));
     //}
 
-    FOrbitalGenerator::FGenerationInfo OInfo;
+    FOrbitalGenerationInfo OInfo;
     OInfo.SeedSequence = &SeedSeq;
     FOrbitalGenerator og(OInfo);
 

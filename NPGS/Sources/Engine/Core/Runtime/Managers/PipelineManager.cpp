@@ -25,10 +25,12 @@ namespace Npgs
         if (ShaderName == "")
         {
             GraphicsPipelineCreateInfoPack.Update();
-            FVulkanPipelineLayout PipelineLayout(Device, GraphicsPipelineCreateInfoPack.GraphicsPipelineCreateInfo.layout, "Pipeline layout");
+            FVulkanPipelineLayout PipelineLayout(
+                Device, GraphicsPipelineCreateInfoPack.GraphicsPipelineCreateInfo.layout, std::string(PipelineName) + "Layout");
+
             PipelineLayouts_.emplace(PipelineName, std::move(PipelineLayout));
 
-            FVulkanPipeline Pipeline(Device, GraphicsPipelineCreateInfoPack);
+            FVulkanPipeline Pipeline(Device, PipelineName, GraphicsPipelineCreateInfoPack);
             Pipelines_.emplace(PipelineName, std::move(Pipeline));
 
             RegisterCallback(PipelineName, EPipelineType::kGraphics);
@@ -42,7 +44,7 @@ namespace Npgs
         auto PushConstantRanges = Shader->GetPushConstantRanges();
         PipelineLayoutCreateInfo.setPushConstantRanges(PushConstantRanges);
 
-        FVulkanPipelineLayout PipelineLayout(Device, PipelineLayoutCreateInfo);
+        FVulkanPipelineLayout PipelineLayout(Device, std::string(PipelineName) + "Layout", PipelineLayoutCreateInfo);
         GraphicsPipelineCreateInfoPack.GraphicsPipelineCreateInfo.setLayout(*PipelineLayout);
         GraphicsPipelineCreateInfoPack.ShaderStages = Shader->CreateShaderStageCreateInfo();
         PipelineLayouts_.emplace(PipelineName, std::move(PipelineLayout));
@@ -54,7 +56,7 @@ namespace Npgs
         GraphicsPipelineCreateInfoPack.Update();
         GraphicsPipelineCreateInfoPacks_.emplace(PipelineName, GraphicsPipelineCreateInfoPack);
 
-        FVulkanPipeline Pipeline(Device, GraphicsPipelineCreateInfoPack);
+        FVulkanPipeline Pipeline(Device, PipelineName, GraphicsPipelineCreateInfoPack);
         Pipelines_.emplace(PipelineName, std::move(Pipeline));
 
         RegisterCallback(PipelineName, EPipelineType::kGraphics);
@@ -70,10 +72,10 @@ namespace Npgs
 
         if (ShaderName == "" && ComputePipelineCreateInfo != nullptr)
         {
-            FVulkanPipelineLayout PipelineLayout(Device, ComputePipelineCreateInfo->layout, "Pipeline layout");
+            FVulkanPipelineLayout PipelineLayout(Device, ComputePipelineCreateInfo->layout, std::string(PipelineName) + "Layout");
             PipelineLayouts_.emplace(PipelineName, std::move(PipelineLayout));
 
-            FVulkanPipeline Pipeline(Device, *ComputePipelineCreateInfo);
+            FVulkanPipeline Pipeline(Device, PipelineName, *ComputePipelineCreateInfo);
             Pipelines_.emplace(PipelineName, std::move(Pipeline));
 
             RegisterCallback(PipelineName, EPipelineType::kCompute);
@@ -90,14 +92,14 @@ namespace Npgs
         auto PushConstantRanges = Shader->GetPushConstantRanges();
         PipelineLayoutCreateInfo.setPushConstantRanges(PushConstantRanges);
 
-        FVulkanPipelineLayout PipelineLayout(Device, PipelineLayoutCreateInfo);
+        FVulkanPipelineLayout PipelineLayout(Device, std::string(PipelineName) + "Layout", PipelineLayoutCreateInfo);
         ComputePipelineCreateInfo->setLayout(*PipelineLayout);
         ComputePipelineCreateInfo->setStage(Shader->CreateShaderStageCreateInfo().front());
         PipelineLayouts_.emplace(PipelineName, std::move(PipelineLayout));
 
         ComputePipelineCreateInfos_.emplace(PipelineName, *ComputePipelineCreateInfo);
 
-        FVulkanPipeline Pipeline(Device, *ComputePipelineCreateInfo);
+        FVulkanPipeline Pipeline(Device, PipelineName, *ComputePipelineCreateInfo);
         Pipelines_.emplace(PipelineName, std::move(Pipeline));
 
         RegisterCallback(PipelineName, EPipelineType::kCompute);

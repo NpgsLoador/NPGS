@@ -85,8 +85,9 @@ namespace Npgs
 
         for (std::uint32_t i = 0; i != BufferCount; ++i)
         {
+            std::string BufferName = std::format("{}_DataBuffer_Frame{}", DataBufferCreateInfo.Name, i);
             vk::BufferCreateInfo BufferCreateInfo({}, BufferInfo.Size, BufferUsage);
-            BufferInfo.Buffers.emplace_back(VulkanContext_, Allocator_, AllocationCreateInfo, BufferCreateInfo);
+            BufferInfo.Buffers.emplace_back(VulkanContext_, BufferName, Allocator_, AllocationCreateInfo, BufferCreateInfo);
             BufferInfo.Buffers[i].SetPersistentMapping(true);
         }
 

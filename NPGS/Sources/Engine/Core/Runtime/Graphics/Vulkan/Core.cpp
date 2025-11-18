@@ -4,10 +4,14 @@
 #include <cstdlib>
 #include <algorithm>
 #include <ranges>
+#include <stdexcept>
 
-#include "Engine/Core/Runtime/Graphics/Vulkan/ExtFunctionsImpl.hpp"
+#include <Volk/volk.h>
+
 #include "Engine/Utils/VulkanCheck.hpp"
 #include "Engine/Utils/Utils.hpp"
+
+VULKAN_HPP_DEFAULT_DISPATCH_LOADER_DYNAMIC_STORAGE
 
 namespace Npgs
 {
@@ -20,6 +24,16 @@ namespace Npgs
 
     FVulkanCore::FVulkanCore()
     {
+        VkResult Result = volkInitialize();
+        if (Result != VK_SUCCESS)
+        {
+            NpgsCoreError("Failed to initialize Volk. Check if Vulkan Loader (vulkan-1.dll) is available.");
+            throw std::runtime_error("Failed to initialize Volk");
+        }
+
+        VULKAN_HPP_DEFAULT_DISPATCHER.init(vkGetInstanceProcAddr);
+        NpgsCoreInfo("Volk initialized successfully.");
+
         UseLatestApiVersion();
     }
 
@@ -119,7 +133,8 @@ namespace Npgs
             return static_cast<vk::Result>(e.code().value());
         }
 
-        VulkanHppCheck(GetInstanceExtFunctionProcAddress());
+        volkLoadInstance(Instance_);
+        VULKAN_HPP_DEFAULT_DISPATCHER.init(Instance_);
 
 #ifdef _DEBUG
         VulkanHppCheck(CreateDebugMessenger());
@@ -200,6 +215,9 @@ namespace Npgs
             return static_cast<vk::Result>(e.code().value());
         }
 
+        volkLoadDevice(Device_);
+        VULKAN_HPP_DEFAULT_DISPATCHER.init(Device_);
+
         QueuePool_.emplace(Device_);
         for (const auto& DeviceQueueCreateInfo : DeviceQueueCreateInfos)
         {
@@ -224,7 +242,6 @@ namespace Npgs
         NpgsCoreInfo("Logical device created successfully.");
         NpgsCoreInfo("Renderer: {}", PhysicalDeviceProperties_.deviceName.data());
 
-        VulkanHppCheck(GetDeviceExtFunctionProcAddress());
         VulkanHppCheck(InitializeVmaAllocator());
 
         for (auto& Callback : CreateDeviceCallbacks_)
@@ -410,12 +427,6 @@ namespace Npgs
             SurfaceFormats.emplace_back(vk::Format::eA2B10G10R10UnormPack32, vk::ColorSpaceKHR::eHdr10St2084EXT);
             SurfaceFormats.emplace_back(vk::Format::eA2R10G10B10UnormPack32, vk::ColorSpaceKHR::eHdr10St2084EXT);
             SurfaceFormats.emplace_back(vk::Format::eR16G16B16A16Sfloat, vk::ColorSpaceKHR::eExtendedSrgbLinearEXT);
-            
-            if (kVkSetHdrMetadataExt == nullptr)
-            {
-                SurfaceFormats.clear();
-                HdrMetadata_ = vk::HdrMetadataEXT();
-            }
         }
 
         SurfaceFormats.emplace_back(vk::Format::eB8G8R8A8Srgb, vk::ColorSpaceKHR::eSrgbNonlinear);
@@ -806,87 +817,6 @@ namespace Npgs
 		return vk::Result::eSuccess;
 	}
 
-    vk::Result FVulkanCore::GetInstanceExtFunctionProcAddress()
-    {
-#ifdef _DEBUG
-        kVkCreateDebugUtilsMessengerExt =
-            reinterpret_cast<PFN_vkCreateDebugUtilsMessengerEXT>(Instance_.getProcAddr("vkCreateDebugUtilsMessengerEXT"));
-        if (kVkCreateDebugUtilsMessengerExt == nullptr)
-        {
-            NpgsCoreError("Failed to get vkCreateDebugUtilsMessengerEXT function pointer.");
-            return vk::Result::eErrorExtensionNotPresent;
-        }
-
-        kVkDestroyDebugUtilsMessengerExt =
-            reinterpret_cast<PFN_vkDestroyDebugUtilsMessengerEXT>(Instance_.getProcAddr("vkDestroyDebugUtilsMessengerEXT"));
-        if (vkDestroyDebugUtilsMessengerEXT == nullptr)
-        {
-            NpgsCoreError("Failed to get vkDestroyDebugUtilsMessengerEXT function pointer.");
-            return vk::Result::eErrorExtensionNotPresent;
-        }
-#endif // _DEBUG
-
-        kVkSetHdrMetadataExt = reinterpret_cast<PFN_vkSetHdrMetadataEXT>(Instance_.getProcAddr("vkSetHdrMetadataEXT"));
-        if (kVkSetHdrMetadataExt == nullptr)
-        {
-            NpgsCoreWarn("Failed to get vkSetHdrMetadataEXT function pointer.");
-        }
-
-        return vk::Result::eSuccess;
-    }
-
-    vk::Result FVulkanCore::GetDeviceExtFunctionProcAddress()
-    {
-        kVkCmdBindDescriptorBuffersExt =
-            reinterpret_cast<PFN_vkCmdBindDescriptorBuffersEXT>(Device_.getProcAddr("vkCmdBindDescriptorBuffersEXT"));
-        if (kVkCmdBindDescriptorBuffersExt == nullptr)
-        {
-            NpgsCoreError("Failed to get vkCmdBindDescriptorBuffersEXT function pointer.");
-            return vk::Result::eErrorExtensionNotPresent;
-        }
-
-        kVkCmdSetDescriptorBufferOffsetsExt =
-            reinterpret_cast<PFN_vkCmdSetDescriptorBufferOffsetsEXT>(Device_.getProcAddr("vkCmdSetDescriptorBufferOffsetsEXT"));
-        if (kVkCmdSetDescriptorBufferOffsetsExt == nullptr)
-        {
-            NpgsCoreError("Failed to get vkCmdSetDescriptorBufferOffsetsEXT function pointer.");
-            return vk::Result::eErrorExtensionNotPresent;
-        }
-
-        kVkCmdSetDescriptorBufferOffsets2Ext =
-            reinterpret_cast<PFN_vkCmdSetDescriptorBufferOffsets2EXT>(Device_.getProcAddr("vkCmdSetDescriptorBufferOffsets2EXT"));
-        if (kVkCmdSetDescriptorBufferOffsets2Ext == nullptr)
-        {
-            NpgsCoreError("Failed to get vkCmdSetDescriptorBufferOffsets2EXT function pointer.");
-            return vk::Result::eErrorExtensionNotPresent;
-        }
-
-        kVkGetDescriptorExt = reinterpret_cast<PFN_vkGetDescriptorEXT>(Device_.getProcAddr("vkGetDescriptorEXT"));
-        if (kVkGetDescriptorExt == nullptr)
-        {
-            NpgsCoreError("Failed to get vkGetDescriptorEXT function pointer.");
-            return vk::Result::eErrorExtensionNotPresent;
-        }
-
-        kVkGetDescriptorSetLayoutSizeExt =
-            reinterpret_cast<PFN_vkGetDescriptorSetLayoutSizeEXT>(Device_.getProcAddr("vkGetDescriptorSetLayoutSizeEXT"));
-        if (kVkGetDescriptorSetLayoutSizeExt == nullptr)
-        {
-            NpgsCoreError("Failed to get vkGetDescriptorSetLayoutSizeEXT function pointer.");
-            return vk::Result::eErrorExtensionNotPresent;
-        }
-
-        kVkGetDescriptorSetLayoutBindingOffsetExt =
-            reinterpret_cast<PFN_vkGetDescriptorSetLayoutBindingOffsetEXT>(Device_.getProcAddr("vkGetDescriptorSetLayoutBindingOffsetEXT"));
-        if (kVkGetDescriptorSetLayoutBindingOffsetExt == nullptr)
-        {
-            NpgsCoreError("Failed to get vkGetDescriptorSetLayoutBindingOffsetEXT function pointer.");
-            return vk::Result::eErrorExtensionNotPresent;
-        }
-
-        return vk::Result::eSuccess;
-    }
-
     vk::Result FVulkanCore::CreateDebugMessenger()
     {
         vk::PFN_DebugUtilsMessengerCallbackEXT DebugCallback =
@@ -1126,20 +1056,22 @@ namespace Npgs
 
     vk::Result FVulkanCore::InitializeVmaAllocator()
     {
-        VmaAllocatorCreateInfo AllocatorCreateInfo
+        VmaVulkanFunctions VulkanFunctions
         {
-            .flags          = VMA_ALLOCATOR_CREATE_KHR_MAINTENANCE5_BIT,
-            .physicalDevice = PhysicalDevice_,
-            .device         = Device_,
-            .instance       = Instance_,
+            .vkGetInstanceProcAddr = vkGetInstanceProcAddr,
+            .vkGetDeviceProcAddr   = vkGetDeviceProcAddr
         };
 
-        if (vk::Result Result = static_cast<vk::Result>(vmaCreateAllocator(&AllocatorCreateInfo, &VmaAllocator_));
-            Result != vk::Result::eSuccess)
+        VmaAllocatorCreateInfo AllocatorCreateInfo
         {
-            NpgsCoreError("Failed to create VMA allocator: {}", vk::to_string(Result));
-            return Result;
-        }
+            .flags            = VMA_ALLOCATOR_CREATE_KHR_MAINTENANCE5_BIT,
+            .physicalDevice   = PhysicalDevice_,
+            .device           = Device_,
+            .pVulkanFunctions = &VulkanFunctions,
+            .instance         = Instance_,
+        };
+
+        VulkanCheckWithMessage(vmaCreateAllocator(&AllocatorCreateInfo, &VmaAllocator_), "Failed to create VMA allocator");
 
         NpgsCoreInfo("VMA allocator created successfully.");
         return vk::Result::eSuccess;

@@ -85,6 +85,7 @@ namespace Npgs
         std::unique_ptr<FVulkanImageView>   ImageView_;
         VmaAllocator                        Allocator_;
         VmaAllocationCreateInfo             AllocationCreateInfo_;
+        std::string                         TextureName_;
     };
 
     class FTexture2D : public FTexture

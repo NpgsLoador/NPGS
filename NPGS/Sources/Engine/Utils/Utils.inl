@@ -73,4 +73,12 @@ namespace Npgs::Utils
     {
         return std::abs(Lhs - Rhs) <= std::numeric_limits<double>::epsilon();
     }
+
+    NPGS_INLINE constexpr bool IsSpecialLayout(vk::ImageLayout Layout)
+    {
+        return Layout == vk::ImageLayout::eUndefined      ||
+               Layout == vk::ImageLayout::ePreinitialized ||
+               Layout == vk::ImageLayout::ePresentSrcKHR  ||
+               Layout == vk::ImageLayout::eSharedPresentKHR;
+    }
 } // namespace Npgs::Utils

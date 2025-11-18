@@ -103,12 +103,15 @@ namespace Npgs
         }
     }
 
-    vk::Result FVulkanContext::ExecuteCommands(EQueueType QueueType, vk::CommandBuffer CommandBuffer) const
+    vk::Result FVulkanContext::ExecuteCommands(EQueueType QueueType, vk::CommandBuffer CommandBuffer, std::string_view FenceName) const
     {
-        FVulkanFence Fence(VulkanCore_->GetDevice());
+        std::string TempFenceName = FenceName.empty() ? "FVulkanContext::ExecuteCommands Auto Fence" : std::string(FenceName);
+        FVulkanFence Fence(VulkanCore_->GetDevice(), FenceName);
+
         auto Queue = VulkanCore_->GetQueuePool().AcquireQueue(VulkanCore_->GetQueueFamilyProperties(QueueType).queueFlags);
         vk::CommandBufferSubmitInfo CommandBufferSubmitInfo(CommandBuffer);
         vk::SubmitInfo2 SubmitInfo({}, {}, CommandBufferSubmitInfo, {});
+
         try
         {
             Queue->submit2(SubmitInfo, *Fence);

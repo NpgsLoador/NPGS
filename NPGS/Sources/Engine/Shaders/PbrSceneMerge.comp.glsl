@@ -7,12 +7,12 @@
 
 layout(local_size_x = 16, local_size_y = 16, local_size_z = 1) in;
 
-layout(push_constant) uniform DeviceAddress
+layout(push_constant) uniform _DeviceAddress
 {
 	uint64_t LightArgsAddress;
-} iDeviceAddress;
+} DeviceAddress;
 
-layout(buffer_reference, scalar) readonly buffer LightArgs
+layout(buffer_reference, scalar) readonly buffer _LightArgs
 {
 	vec3 LightPos;
 	vec3 LightColor;
@@ -78,19 +78,19 @@ void main()
 
 	vec3 RadianceSum = vec3(0.0);
 
-	LightArgs iLightArgs = LightArgs(iDeviceAddress.LightArgsAddress);
+	_LightArgs LightArgs = _LightArgs(DeviceAddress.LightArgsAddress);
 
-	vec3 LightDir = normalize(iLightArgs.LightPos  - TexFragPos);
-	vec3 ViewDir  = normalize(iLightArgs.CameraPos - TexFragPos);
+	vec3 LightDir = normalize(LightArgs.LightPos  - TexFragPos);
+	vec3 ViewDir  = normalize(LightArgs.CameraPos - TexFragPos);
 	vec3 HalfDir  = normalize(LightDir + ViewDir);
 
 	float ViewAngle         = dot(ViewDir, TexNormal);
 	float RoughnessTarget   = mix(0.3, 0.1, TexMetallic);
 	float AdjustedRoughness = mix(TexRoughness, max(TexRoughness, RoughnessTarget), 1.0 - smoothstep(0.0, 0.2, ViewAngle));
 
-	float Distance    = length(iLightArgs.LightPos - TexFragPos);
+	float Distance    = length(LightArgs.LightPos - TexFragPos);
 	float Attenuation = 1.0 / pow(Distance, 2);
-	vec3  Radiance    = iLightArgs.LightColor * Attenuation;
+	vec3  Radiance    = LightArgs.LightColor * Attenuation;
 
 	float NormalDistFunc  = TrowbridgeReitzGGX(TexNormal, HalfDir, AdjustedRoughness);
 	float GeometryFunc    = GeometrySmith(TexNormal, ViewDir, LightDir, AdjustedRoughness);

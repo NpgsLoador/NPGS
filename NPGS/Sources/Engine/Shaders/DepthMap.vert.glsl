@@ -4,14 +4,14 @@
 #include "Common/BindlessExtensions.glsl"
 
 layout(location = 0) in vec3 Position;
-layout(location = 1) in mat4x4 Model;
+layout(location = 1) in mat4 Model;
 
-layout(push_constant) uniform DeviceAddress
+layout(push_constant) uniform _DeviceAddress
 {
 	uint64_t MatricesAddress;
-} iDeviceAddress;
+} DeviceAddress;
 
-layout(buffer_reference, scalar) readonly buffer Matrices
+layout(buffer_reference, scalar) readonly buffer _Matrices
 {
 	layout(offset = 128) mat4x4 LightSpaceMatrix;
 };
@@ -23,6 +23,6 @@ out gl_PerVertex
 
 void main()
 {
-	Matrices iMatrices = Matrices(iDeviceAddress.MatricesAddress);
-	gl_Position = iMatrices.LightSpaceMatrix * Model * vec4(Position, 1.0);
+	_Matrices Matrices = _Matrices(DeviceAddress.MatricesAddress);
+	gl_Position = Matrices.LightSpaceMatrix * Model * vec4(Position, 1.0);
 }

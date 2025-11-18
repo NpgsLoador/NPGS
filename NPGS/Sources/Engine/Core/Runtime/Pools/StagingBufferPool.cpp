@@ -2,7 +2,9 @@
 #include "StagingBufferPool.hpp"
 
 #include <algorithm>
+#include <format>
 #include <functional>
+#include <string>
 #include <unordered_map>
 #include <utility>
 
@@ -48,8 +50,11 @@ namespace Npgs
         vk::DeviceSize AlignedSize = AlignSize(CreateInfo.Size);
         vk::BufferCreateInfo BufferCreateInfo({}, AlignedSize, vk::BufferUsageFlagBits::eTransferSrc | vk::BufferUsageFlagBits::eTransferDst);
         
+        std::uint64_t ResourceId = NextResourceId_.fetch_add(1);
+        std::string Name = std::format("StagingBuffer_PoolInst_{}_ID_{}", reinterpret_cast<std::uintptr_t>(this), ResourceId);
+
         BufferInfoPtr->Resource = std::make_unique<FStagingBuffer>(
-            PhysicalDevice_, Device_, Allocator_, AllocationCreateInfo_, BufferCreateInfo);
+            Name, PhysicalDevice_, Device_, Allocator_, AllocationCreateInfo_, BufferCreateInfo);
 
         BufferInfoPtr->Resource->GetMemory().SetPersistentMapping(true);
         BufferInfoPtr->Size              = AlignedSize;

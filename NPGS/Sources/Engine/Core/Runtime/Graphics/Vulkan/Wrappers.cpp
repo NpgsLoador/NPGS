@@ -2,6 +2,7 @@
 #include "Wrappers.hpp"
 
 #include <algorithm>
+#include <format>
 #include <limits>
 #include <utility>
 
@@ -15,6 +16,19 @@
 
 namespace Npgs
 {
+    namespace
+    {
+        template <typename Ty>
+        void SetDebugUtilsObjectName(vk::Device Device, vk::ObjectType ObjectType, Ty Handle, std::string_view Name)
+        {
+#ifdef _DEBUG
+            vk::DebugUtilsObjectNameInfoEXT NameInfo(
+                ObjectType, reinterpret_cast<std::uint64_t>(static_cast<typename Ty::NativeType>(Handle)), Name.data());
+            Device.setDebugUtilsObjectNameEXT(NameInfo);
+#endif
+        }
+    }
+
     FGraphicsPipelineCreateInfoPack::FGraphicsPipelineCreateInfoPack()
     {
         LinkToGraphicsPipelineCreateInfo();
@@ -208,7 +222,7 @@ namespace Npgs
         }
         catch (const vk::SystemError& e)
         {
-            NpgsCoreError("Failed to begin command buffer: {}", e.what());
+            NpgsCoreError("Failed to begin command buffer \"{}\": {}", HandleName_, e.what());
             return static_cast<vk::Result>(e.code().value());
         }
 
@@ -224,7 +238,7 @@ namespace Npgs
         }
         catch (const vk::SystemError& e)
         {
-            NpgsCoreError("Failed to begin command buffer: {}", e.what());
+            NpgsCoreError("Failed to begin command buffer \"{}\": {}", HandleName_, e.what());
             return static_cast<vk::Result>(e.code().value());
         }
 
@@ -239,7 +253,7 @@ namespace Npgs
         }
         catch (const vk::SystemError& e)
         {
-            NpgsCoreError("Failed to end command buffer: {}", e.what());
+            NpgsCoreError("Failed to end command buffer \"{}\": {}", HandleName_, e.what());
             return static_cast<vk::Result>(e.code().value());
         }
 
@@ -248,20 +262,21 @@ namespace Npgs
 
     // Wrapper for vk::CommandPool
     // ---------------------------
-    FVulkanCommandPool::FVulkanCommandPool(vk::Device Device, const vk::CommandPoolCreateInfo& CreateInfo)
-        : Base(Device)
+    FVulkanCommandPool::FVulkanCommandPool(vk::Device Device, std::string_view Name, const vk::CommandPoolCreateInfo& CreateInfo)
+        : Base(Device, Name)
     {
         CreateCommandPool(CreateInfo);
     }
 
-    FVulkanCommandPool::FVulkanCommandPool(vk::Device Device, std::uint32_t QueueFamilyIndex, vk::CommandPoolCreateFlags Flags)
-        : Base(Device)
+    FVulkanCommandPool::FVulkanCommandPool(vk::Device Device, std::string_view Name,
+                                           std::uint32_t QueueFamilyIndex, vk::CommandPoolCreateFlags Flags)
+        : Base(Device, Name)
     {
-        ReleaseInfo_ = "Command pool destroyed successfully.";
+        ReleaseInfo_ = std::format("Command pool \"{}\" destroyed successfully.", HandleName_);
         Status_      = CreateCommandPool(QueueFamilyIndex, Flags);
     }
 
-    vk::Result FVulkanCommandPool::AllocateBuffer(vk::CommandBufferLevel Level, vk::CommandBuffer& Buffer) const
+    vk::Result FVulkanCommandPool::AllocateBuffer(vk::CommandBufferLevel Level, std::string_view Name, vk::CommandBuffer& Buffer) const
     {
         vk::CommandBufferAllocateInfo CommandBufferAllocateInfo(Handle_, Level, 1);
         try
@@ -270,15 +285,17 @@ namespace Npgs
         }
         catch (const vk::SystemError& e)
         {
-            NpgsCoreError("Failed to allocate command buffer: {}", e.what());
+            NpgsCoreError("Failed to allocate command buffer \"{}\": {}", Name, e.what());
             return static_cast<vk::Result>(e.code().value());
         }
 
-        NpgsCoreTrace("Command buffer allocated successfully.");
+        SetDebugUtilsObjectName(Device_, vk::ObjectType::eCommandBuffer, Buffer, Name);
+
+        NpgsCoreTrace("Command buffer \"{}\" allocated successfully.", Name);
         return vk::Result::eSuccess;
     }
 
-    vk::Result FVulkanCommandPool::AllocateBuffer(vk::CommandBufferLevel Level, FVulkanCommandBuffer& Buffer) const
+    vk::Result FVulkanCommandPool::AllocateBuffer(vk::CommandBufferLevel Level, std::string_view Name, FVulkanCommandBuffer& Buffer) const
     {
         vk::CommandBufferAllocateInfo CommandBufferAllocateInfo(Handle_, Level, 1);
         try
@@ -287,15 +304,17 @@ namespace Npgs
         }
         catch (const vk::SystemError& e)
         {
-            NpgsCoreError("Failed to allocate command buffer: {}", e.what());
+            NpgsCoreError("Failed to allocate command buffer \"{}\": {}", Name, e.what());
             return static_cast<vk::Result>(e.code().value());
         }
 
-        NpgsCoreTrace("Command buffer allocated successfully.");
+        SetDebugUtilsObjectName(Device_, vk::ObjectType::eCommandBuffer, *Buffer, Name);
+
+        NpgsCoreTrace("Command buffer \"{}\" allocated successfully.", Name);
         return vk::Result::eSuccess;
     }
 
-    vk::Result FVulkanCommandPool::AllocateBuffers(vk::CommandBufferLevel Level, std::vector<vk::CommandBuffer>& Buffers) const
+    vk::Result FVulkanCommandPool::AllocateBuffers(vk::CommandBufferLevel Level, std::string_view Name, std::vector<vk::CommandBuffer>& Buffers) const
     {
         vk::CommandBufferAllocateInfo CommandBufferAllocateInfo(Handle_, Level, static_cast<std::uint32_t>(Buffers.size()));
         try
@@ -304,15 +323,21 @@ namespace Npgs
         }
         catch (const vk::SystemError& e)
         {
-            NpgsCoreError("Failed to allocate command buffers: {}", e.what());
+            NpgsCoreError("Failed to allocate command buffer array \"{}\": {}", Name, e.what());
             return static_cast<vk::Result>(e.code().value());
         }
 
-        NpgsCoreTrace("Command buffers allocated successfully.");
+        std::size_t Index = 0;
+        for (const auto& Buffer : Buffers)
+        {
+            SetDebugUtilsObjectName(Device_, vk::ObjectType::eCommandBuffer, Buffer, std::string(Name) + std::to_string(Index++));
+        }
+
+        NpgsCoreTrace("Command buffer array \"{}\" allocated successfully.", Name);
         return vk::Result::eSuccess;
     }
 
-    vk::Result FVulkanCommandPool::AllocateBuffers(vk::CommandBufferLevel Level, std::vector<FVulkanCommandBuffer>& Buffers) const
+    vk::Result FVulkanCommandPool::AllocateBuffers(vk::CommandBufferLevel Level, std::string_view Name, std::vector<FVulkanCommandBuffer>& Buffers) const
     {
         vk::CommandBufferAllocateInfo CommandBufferAllocateInfo(Handle_, Level, static_cast<std::uint32_t>(Buffers.size()));
         std::vector<vk::CommandBuffer> CommandBuffers;
@@ -323,7 +348,7 @@ namespace Npgs
         }
         catch (const vk::SystemError& e)
         {
-            NpgsCoreError("Failed to allocate command buffers: {}", e.what());
+            NpgsCoreError("Failed to allocate command buffer array \"{}\": {}", Name, e.what());
             return static_cast<vk::Result>(e.code().value());
         }
 
@@ -331,9 +356,10 @@ namespace Npgs
         for (std::size_t i = 0; i != CommandBuffers.size(); ++i)
         {
             *Buffers[i] = CommandBuffers[i];
+            SetDebugUtilsObjectName(Device_, vk::ObjectType::eCommandBuffer, CommandBuffers[i], std::string(Name) + std::to_string(i));
         }
 
-        NpgsCoreTrace("Command buffers allocated successfully.");
+        NpgsCoreTrace("Command buffer array \"{}\" allocated successfully.", Name);
         return vk::Result::eSuccess;
     }
 
@@ -378,7 +404,7 @@ namespace Npgs
         }
         catch (const vk::SystemError& e)
         {
-            NpgsCoreError("Failed to reset command pool: {}", e.what());
+            NpgsCoreError("Failed to reset command pool \"{}\": {}", HandleName_, e.what());
             return static_cast<vk::Result>(e.code().value());
         }
 
@@ -393,11 +419,13 @@ namespace Npgs
         }
         catch (const vk::SystemError& e)
         {
-            NpgsCoreError("Failed to create command pool: {}", e.what());
+            NpgsCoreError("Failed to create command pool \"{}\": {}", HandleName_, e.what());
             return static_cast<vk::Result>(e.code().value());
         }
 
-        NpgsCoreTrace("Command pool created successfully.");
+        SetDebugUtilsObjectName(Device_, vk::ObjectType::eCommandPool, Handle_, HandleName_);
+
+        NpgsCoreTrace("Command pool \"{}\" created successfully.", HandleName_);
         return vk::Result::eSuccess;
     }
 
@@ -409,16 +437,19 @@ namespace Npgs
 
     // Wrapper for vk::DeviceMemory
     // ----------------------------
-    FVulkanDeviceMemory::FVulkanDeviceMemory(vk::Device Device, VmaAllocator Allocator, VmaAllocation Allocation,
+    FVulkanDeviceMemory::FVulkanDeviceMemory(vk::Device Device, std::string_view Name,
+                                             VmaAllocator Allocator, VmaAllocation Allocation,
                                              const VmaAllocationInfo& AllocationInfo, vk::DeviceMemory Handle)
-        : Base(Device)
+        : Base(Device, Name)
         , Allocator_(Allocator)
         , Allocation_(Allocation)
         , AllocationInfo_(AllocationInfo)
     {
-        ReleaseInfo_ = "Device memory freed successfully.";
+        ReleaseInfo_ = std::format("Device memory \"{}\" freed successfully.", Name);
         Handle_      = Handle;
         Status_      = vk::Result::eSuccess;
+
+        SetDebugUtilsObjectName(Device, vk::ObjectType::eDeviceMemory, Handle, Name);
 
         vmaGetMemoryTypeProperties(Allocator_, AllocationInfo_.memoryType,
                                    reinterpret_cast<VkMemoryPropertyFlags*>(&MemoryPropertyFlags_));
@@ -526,7 +557,8 @@ namespace Npgs
 
         if (!(MemoryPropertyFlags_ & vk::MemoryPropertyFlagBits::eHostCoherent))
         {
-            VulkanCheckWithMessage(vmaFlushAllocation(Allocator_, Allocation_, SubmitOffset, Size), "Failed to flush allocation");
+            VulkanCheckWithMessage(vmaFlushAllocation(Allocator_, Allocation_, SubmitOffset, Size),
+                                   "Failed to flush allocation");
         }
 
         if (!bPersistentlyMapped_)
@@ -558,7 +590,8 @@ namespace Npgs
 
         if (!(MemoryPropertyFlags_ & vk::MemoryPropertyFlagBits::eHostCoherent))
         {
-            VulkanCheckWithMessage(vmaInvalidateAllocation(Allocator_, Allocation_, FetchOffset, Size), "Failed to invalidate allocation");
+            VulkanCheckWithMessage(vmaInvalidateAllocation(Allocator_, Allocation_, FetchOffset, Size),
+                                   "Failed to invalidate allocation");
         }
 
         if (!bPersistentlyMapped_)
@@ -571,13 +604,12 @@ namespace Npgs
 
     // Wrapper for vk::Buffer
     // ----------------------
-    FVulkanBuffer::FVulkanBuffer(vk::Device Device, VmaAllocator Allocator,
-                                 const VmaAllocationCreateInfo& AllocationCreateInfo,
-                                 const vk::BufferCreateInfo& CreateInfo)
-        : Base(Device)
+    FVulkanBuffer::FVulkanBuffer(vk::Device Device, std::string_view Name, VmaAllocator Allocator,
+                                 const VmaAllocationCreateInfo& AllocationCreateInfo, const vk::BufferCreateInfo& CreateInfo)
+        : Base(Device, Name)
         , Allocator_(Allocator)
     {
-        ReleaseInfo_ = "Buffer destroyed successfully.";
+        ReleaseInfo_ = std::format("Buffer \"{}\" destroyed successfully.", Name);
         Status_      = CreateBuffer(AllocationCreateInfo, CreateInfo);
     }
 
@@ -621,11 +653,13 @@ namespace Npgs
         }
         catch (const vk::SystemError& e)
         {
-            NpgsCoreError("Failed to bind buffer memory: {}", e.what());
+            NpgsCoreError("Failed to bind buffer \"{}\" to memory \"{}\": {}", HandleName_, DeviceMemory.GetHandleName(), e.what());
             return static_cast<vk::Result>(e.code().value());
         }
     
-        NpgsCoreTrace("Buffer memory bound successfully.");
+        SetDebugUtilsObjectName(Device_, vk::ObjectType::eBuffer, Handle_, HandleName_);
+
+        NpgsCoreTrace("Buffer \"{}\" successfully bind to memory \"{}\".", HandleName_, DeviceMemory.GetHandleName());
         return vk::Result::eSuccess;
     }
 
@@ -636,24 +670,27 @@ namespace Npgs
                                                &AllocationCreateInfo, &Buffer, &Allocation_, &AllocationInfo_), "Failed to create buffer");
         Handle_ = Buffer;
 
-        NpgsCoreTrace("Buffer created successfully.");
+        SetDebugUtilsObjectName(Device_, vk::ObjectType::eBuffer, Handle_, HandleName_);
+
+        NpgsCoreTrace("Buffer \"{}\" created successfully.", HandleName_);
         return vk::Result::eSuccess;
     }
 
     // Wrapper for vk::BufferView
     // --------------------------
-    FVulkanBufferView::FVulkanBufferView(vk::Device Device, const vk::BufferViewCreateInfo& CreateInfo)
-        : Base(Device)
+    FVulkanBufferView::FVulkanBufferView(vk::Device Device, std::string_view Name, const vk::BufferViewCreateInfo& CreateInfo)
+        : Base(Device, Name)
     {
-        ReleaseInfo_ = "Buffer view destroyed successfully.";
+        ReleaseInfo_ = std::format("Buffer view {} destroyed successfully.", Name);
         Status_      = CreateBufferView(CreateInfo);
     }
 
-    FVulkanBufferView::FVulkanBufferView(vk::Device Device, const FVulkanBuffer& Buffer, vk::Format Format,
-                                         vk::DeviceSize Offset, vk::DeviceSize Range, vk::BufferViewCreateFlags Flags)
-        : Base(Device)
+    FVulkanBufferView::FVulkanBufferView(vk::Device Device, std::string_view Name, const FVulkanBuffer& Buffer,
+                                         vk::Format Format, vk::DeviceSize Offset,
+                                         vk::DeviceSize Range, vk::BufferViewCreateFlags Flags)
+        : Base(Device, Name)
     {
-        ReleaseInfo_ = "Buffer view destroyed successfully.";
+        ReleaseInfo_ = std::format("Buffer view \"{}\" destroyed successfully.", Name);
         Status_      = CreateBufferView(Buffer, Format, Offset, Range, Flags);
     }
 
@@ -665,11 +702,13 @@ namespace Npgs
         }
         catch (const vk::SystemError& e)
         {
-            NpgsCoreError("Failed to create buffer view: {}", e.what());
+            NpgsCoreError("Failed to create buffer view \"{}\": {}", HandleName_, e.what());
             return static_cast<vk::Result>(e.code().value());
         }
 
-        NpgsCoreTrace("Buffer view created successfully.");
+        SetDebugUtilsObjectName(Device_, vk::ObjectType::eBufferView, Handle_, HandleName_);
+
+        NpgsCoreTrace("Buffer view \"{}\" created successfully.", HandleName_);
         return vk::Result::eSuccess;
     }
 
@@ -680,37 +719,18 @@ namespace Npgs
         return CreateBufferView(CreateInfo);
     }
 
-    // Wrapper for vk::DescriptorSet
-    // -----------------------------
-    Npgs::FVulkanDescriptorSet::FVulkanDescriptorSet(vk::Device Device)
-        : Device_(Device)
-    {
-    }
-
-    void FVulkanDescriptorSet::Write(const vk::ArrayProxy<const FVulkanBufferView>& BufferViews,
-                                     vk::DescriptorType Type, std::uint32_t BindingPoint, std::uint32_t ArrayElement)
-    {
-        std::vector<vk::BufferView> NativeArray;
-        NativeArray.reserve(BufferViews.size());
-        for (const auto& BufferView : BufferViews)
-        {
-            NativeArray.push_back(*BufferView);
-        }
-
-        Write(NativeArray, Type, BindingPoint, ArrayElement);
-    }
-
     // Wrapper for vk::DescriptorSetLayout
     // -----------------------------------
-    FVulkanDescriptorSetLayout::FVulkanDescriptorSetLayout(vk::Device Device, const vk::DescriptorSetLayoutCreateInfo& CreateInfo)
-        : Base(Device)
+    FVulkanDescriptorSetLayout::FVulkanDescriptorSetLayout(vk::Device Device, std::string_view Name,
+                                                           const vk::DescriptorSetLayoutCreateInfo& CreateInfo)
+        : Base(Device, Name)
     {
-        ReleaseInfo_ = "Descriptor set layout destroyed successfully.";
+        ReleaseInfo_ = std::format("Descriptor set layout \"{}\" destroyed successfully.", Name);
         Status_      = CreateDescriptorSetLayout(CreateInfo);
     }
 
     std::vector<vk::DescriptorSetLayout>
-        FVulkanDescriptorSetLayout::GetNativeTypeArray(const vk::ArrayProxy<const FVulkanDescriptorSetLayout>& WrappedTypeArray)
+    FVulkanDescriptorSetLayout::GetNativeTypeArray(const vk::ArrayProxy<const FVulkanDescriptorSetLayout>& WrappedTypeArray)
     {
         std::vector<vk::DescriptorSetLayout> NativeArray(WrappedTypeArray.size());
         for (std::size_t i = 0; i != WrappedTypeArray.size(); ++i)
@@ -729,170 +749,29 @@ namespace Npgs
         }
         catch (const vk::SystemError& e)
         {
-            NpgsCoreError("Failed to create descriptor set layout: {}", e.what());
+            NpgsCoreError("Failed to create descriptor set layout \"{}\": {}", HandleName_, e.what());
             return static_cast<vk::Result>(e.code().value());
         }
 
-        NpgsCoreTrace("Descriptor set layout created successfully.");
+        SetDebugUtilsObjectName(Device_, vk::ObjectType::eDescriptorSetLayout, Handle_, HandleName_);
+
+        NpgsCoreTrace("Descriptor set layout \"{}\" created successfully.", HandleName_);
         return vk::Result::eSuccess;
-    }
-
-    // Wrapper for vk::DescriptorPool
-    // ------------------------------
-    FVulkanDescriptorPool::FVulkanDescriptorPool(vk::Device Device, const vk::DescriptorPoolCreateInfo& CreateInfo)
-        : Base(Device)
-    {
-        ReleaseInfo_ = "Descriptor pool destroyed successfully.";
-        Status_      = CreateDescriptorPool(CreateInfo);
-    }
-
-    FVulkanDescriptorPool::FVulkanDescriptorPool(vk::Device Device, std::uint32_t MaxSets,
-                                                 const vk::ArrayProxy<const vk::DescriptorPoolSize>& PoolSizes,
-                                                 vk::DescriptorPoolCreateFlags Flags)
-        : Base(Device)
-    {
-        ReleaseInfo_ = "Descriptor pool destroyed successfully.";
-        Status_      = CreateDescriptorPool(MaxSets, PoolSizes, Flags);
-    }
-
-    vk::Result FVulkanDescriptorPool::AllocateSets(const vk::ArrayProxy<const vk::DescriptorSetLayout>& Layouts,
-                                                   std::vector<vk::DescriptorSet>& Sets) const
-    {
-        if (Layouts.size() > Sets.size())
-        {
-            NpgsCoreError("Descriptor set layout count ({}) is larger than descriptor set count ({}).", Layouts.size(), Sets.size());
-            return vk::Result::eErrorInitializationFailed;
-        }
-
-        vk::DescriptorSetAllocateInfo DescriptorSetAllocateInfo(Handle_, Layouts);
-        try
-        {
-            Sets = Device_.allocateDescriptorSets(DescriptorSetAllocateInfo);
-        }
-        catch (const vk::SystemError& e)
-        {
-            NpgsCoreError("Failed to allocate descriptor sets: {}", e.what());
-            return static_cast<vk::Result>(e.code().value());
-        }
-
-        NpgsCoreTrace("Descriptor sets allocated successfully.");
-        return vk::Result::eSuccess;
-    }
-
-    vk::Result FVulkanDescriptorPool::AllocateSets(const vk::ArrayProxy<const vk::DescriptorSetLayout>& Layouts,
-                                                   std::vector<FVulkanDescriptorSet>& Sets) const
-    {
-        std::vector<vk::DescriptorSet> DescriptorSets(Layouts.size());
-        VulkanHppCheck(AllocateSets(Layouts, DescriptorSets));
-
-        Sets.resize(DescriptorSets.size());
-        for (std::size_t i = 0; i != DescriptorSets.size(); ++i)
-        {
-            *Sets[i] = DescriptorSets[i];
-        }
-
-        return vk::Result::eSuccess;
-    }
-
-    vk::Result FVulkanDescriptorPool::AllocateSets(const vk::ArrayProxy<const FVulkanDescriptorSetLayout>& Layouts,
-                                                   std::vector<vk::DescriptorSet>& Sets) const
-    {
-        std::vector<vk::DescriptorSetLayout> DescriptorSetLayouts;
-        DescriptorSetLayouts.reserve(Layouts.size());
-        for (auto& Layout : Layouts)
-        {
-            DescriptorSetLayouts.push_back(*Layout);
-        }
-
-        return AllocateSets(DescriptorSetLayouts, Sets);
-    }
-
-    vk::Result FVulkanDescriptorPool::AllocateSets(const vk::ArrayProxy<const FVulkanDescriptorSetLayout>& Layouts,
-                                                   std::vector<FVulkanDescriptorSet>& Sets) const
-    {
-        std::vector<vk::DescriptorSetLayout> DescriptorSetLayouts;
-        DescriptorSetLayouts.reserve(Layouts.size());
-        for (auto& Layout : Layouts)
-        {
-            DescriptorSetLayouts.push_back(*Layout);
-        }
-
-        std::vector<vk::DescriptorSet> DescriptorSets(Layouts.size());
-        VulkanHppCheck(AllocateSets(DescriptorSetLayouts, DescriptorSets));
-
-        Sets.resize(DescriptorSets.size());
-        for (std::size_t i = 0; i != DescriptorSets.size(); ++i)
-        {
-            *Sets[i] = DescriptorSets[i];
-        }
-
-        return vk::Result::eSuccess;
-    }
-
-    vk::Result FVulkanDescriptorPool::FreeSets(const vk::ArrayProxy<const vk::DescriptorSet>& Sets) const
-    {
-        if (!Sets.empty())
-        {
-            Device_.freeDescriptorSets(Handle_, Sets);
-        }
-
-        return vk::Result::eSuccess;
-    }
-
-    vk::Result FVulkanDescriptorPool::FreeSets(const vk::ArrayProxy<const FVulkanDescriptorSet>& Sets) const
-    {
-        if (!Sets.empty())
-        {
-            std::vector<vk::DescriptorSet> DescriptorSets;
-            DescriptorSets.reserve(Sets.size());
-            for (auto& Set : Sets)
-            {
-                DescriptorSets.push_back(*Set);
-            }
-
-            return FreeSets(DescriptorSets);
-        }
-
-        return vk::Result::eSuccess;
-    }
-
-    vk::Result FVulkanDescriptorPool::CreateDescriptorPool(const vk::DescriptorPoolCreateInfo& CreateInfo)
-    {
-        try
-        {
-            Handle_ = Device_.createDescriptorPool(CreateInfo);
-        }
-        catch (const vk::SystemError& e)
-        {
-            NpgsCoreError("Failed to create descriptor pool: {}", e.what());
-            return static_cast<vk::Result>(e.code().value());
-        }
-
-        NpgsCoreTrace("Descriptor pool created successfully.");
-        return vk::Result::eSuccess;
-    }
-
-    vk::Result FVulkanDescriptorPool::CreateDescriptorPool(std::uint32_t MaxSets,
-                                                           const vk::ArrayProxy<const vk::DescriptorPoolSize>& PoolSizes,
-                                                           vk::DescriptorPoolCreateFlags Flags)
-    {
-        vk::DescriptorPoolCreateInfo CreateInfo(Flags, MaxSets, PoolSizes);
-        return CreateDescriptorPool(CreateInfo);
     }
 
     // Wrapper for vk::Fence
     // ---------------------
-    FVulkanFence::FVulkanFence(vk::Device Device, const vk::FenceCreateInfo& CreateInfo)
-        : Base(Device)
+    FVulkanFence::FVulkanFence(vk::Device Device, std::string_view Name, const vk::FenceCreateInfo& CreateInfo)
+        : Base(Device, Name)
     {
-        // ReleaseInfo_ = "Fence destroyed successfully.";
+        ReleaseInfo_ = std::format("Fence \"{}\" destroyed successfully.", Name);
         Status_      = CreateFence(CreateInfo);
     }
 
-    FVulkanFence::FVulkanFence(vk::Device Device, vk::FenceCreateFlags Flags)
-        : Base(Device)
+    FVulkanFence::FVulkanFence(vk::Device Device, std::string_view Name, vk::FenceCreateFlags Flags)
+        : Base(Device, Name)
     {
-        // ReleaseInfo_ = "Fence destroyed successfully.";
+        ReleaseInfo_ = std::format("Fence \"{}\" destroyed successfully.", Name);
         Status_      = CreateFence(Flags);
     }
 
@@ -905,7 +784,7 @@ namespace Npgs
         }
         catch (const vk::SystemError& e)
         {
-            NpgsCoreError("Failed to wait for fence: {}", e.what());
+            NpgsCoreError("Failed to wait for fence \"{}\": {}", HandleName_, e.what());
             return static_cast<vk::Result>(e.code().value());
         }
 
@@ -920,7 +799,7 @@ namespace Npgs
         }
         catch (const vk::SystemError& e)
         {
-            NpgsCoreError("Failed to reset fence: {}", e.what());
+            NpgsCoreError("Failed to reset fence \"{}\": {}", HandleName_, e.what());
             return static_cast<vk::Result>(e.code().value());
         }
 
@@ -947,11 +826,13 @@ namespace Npgs
         }
         catch (const vk::SystemError& e)
         {
-            NpgsCoreError("Failed to create fence: {}", e.what());
+            NpgsCoreError("Failed to create fence \"{}\": {}", HandleName_, e.what());
             return static_cast<vk::Result>(e.code().value());
         }
 
-        // NpgsCoreTrace("Fence created successfully.");
+        SetDebugUtilsObjectName(Device_, vk::ObjectType::eFence, Handle_, HandleName_);
+
+        NpgsCoreTrace("Fence \"{}\" created successfully.", HandleName_);
         return vk::Result::eSuccess;
     }
 
@@ -961,40 +842,15 @@ namespace Npgs
         return CreateFence(FenceCreateInfo);
     }
 
-    // Wrapper for vk::Framebuffer
-    // ---------------------------
-    FVulkanFramebuffer::FVulkanFramebuffer(vk::Device Device, const vk::FramebufferCreateInfo& CreateInfo)
-        : Base(Device)
-    {
-        ReleaseInfo_ = "Framebuffer destroyed successfully.";
-        Status_      = CreateFramebuffer(CreateInfo);
-    }
-
-    vk::Result FVulkanFramebuffer::CreateFramebuffer(const vk::FramebufferCreateInfo& CreateInfo)
-    {
-        try
-        {
-            Handle_ = Device_.createFramebuffer(CreateInfo);
-        }
-        catch (const vk::SystemError& e)
-        {
-            NpgsCoreError("Failed to create framebuffer: {}.", e.what());
-            return static_cast<vk::Result>(e.code().value());
-        }
-
-        NpgsCoreTrace("Framebuffer created successfully.");
-        return vk::Result::eSuccess;
-    }
-
     // Wrapper for vk::Image
     // ---------------------
-    FVulkanImage::FVulkanImage(vk::Device Device, VmaAllocator Allocator,
+    FVulkanImage::FVulkanImage(vk::Device Device, std::string_view Name, VmaAllocator Allocator,
                                const VmaAllocationCreateInfo& AllocationCreateInfo,
                                const vk::ImageCreateInfo& CreateInfo)
-        : Base(Device)
+        : Base(Device, Name)
         , Allocator_(Allocator)
     {
-        ReleaseInfo_ = "Image destroyed successfully.";
+        ReleaseInfo_ = std::format("Image \"{}\" destroyed successfully.", Name);
         Status_      = CreateImage(AllocationCreateInfo, CreateInfo);
     }
 
@@ -1036,11 +892,13 @@ namespace Npgs
         }
         catch (const vk::SystemError& e)
         {
-            NpgsCoreError("Failed to bind image memory: {}", e.what());
+            NpgsCoreError("Failed to bind image \"{}\" to memory \"{}\": {}", HandleName_, DeviceMemory.GetHandleName(), e.what());
             return static_cast<vk::Result>(e.code().value());
         }
+
+        SetDebugUtilsObjectName(Device_, vk::ObjectType::eImage, Handle_, HandleName_);
     
-        NpgsCoreTrace("Image memory bound successfully.");
+        NpgsCoreTrace("Image \"{}\" successfully bind to memory \"{}\".", HandleName_, DeviceMemory.GetHandleName());
         return vk::Result::eSuccess;
     }
 
@@ -1051,25 +909,27 @@ namespace Npgs
                                               &AllocationCreateInfo, &Image, &Allocation_, &AllocationInfo_), "Failed to create image");
         Handle_ = Image;
 
-        NpgsCoreTrace("Image created successfully.");
+        SetDebugUtilsObjectName(Device_, vk::ObjectType::eImage, Handle_, HandleName_);
+
+        NpgsCoreTrace("Image \"{}\" created successfully.", HandleName_);
         return vk::Result::eSuccess;
     }
 
     // Wrapper for vk::ImageView
     // -------------------------
-    FVulkanImageView::FVulkanImageView(vk::Device Device, const vk::ImageViewCreateInfo& CreateInfo)
-        : Base(Device)
+    FVulkanImageView::FVulkanImageView(vk::Device Device, std::string_view Name, const vk::ImageViewCreateInfo& CreateInfo)
+        : Base(Device, Name)
     {
-        ReleaseInfo_ = "Image view destroyed successfully.";
+        ReleaseInfo_ = std::format("Image view \"{}\" destroyed successfully.", Name);
         Status_      = CreateImageView(CreateInfo);
     }
 
-    FVulkanImageView::FVulkanImageView(vk::Device Device, const FVulkanImage& Image, vk::ImageViewType ViewType,
+    FVulkanImageView::FVulkanImageView(vk::Device Device, std::string_view Name, const FVulkanImage& Image, vk::ImageViewType ViewType,
                                        vk::Format Format, vk::ComponentMapping Components,
                                        vk::ImageSubresourceRange SubresourceRange, vk::ImageViewCreateFlags Flags)
-        : Base(Device)
+        : Base(Device, Name)
     {
-        ReleaseInfo_ = "Image view destroyed successfully.";
+        ReleaseInfo_ = std::format("Image view \"{}\" destroyed successfully.", Name);
         Status_      = CreateImageView(Image, ViewType, Format, Components, SubresourceRange, Flags);
     }
 
@@ -1081,11 +941,13 @@ namespace Npgs
         }
         catch (const vk::SystemError& e)
         {
-            NpgsCoreError("Failed to create image view: {}", e.what());
+            NpgsCoreError("Failed to create image view \"{}\": {}", HandleName_, e.what());
             return static_cast<vk::Result>(e.code().value());
         }
 
-        NpgsCoreTrace("Image view created successfully.");
+        SetDebugUtilsObjectName(Device_, vk::ObjectType::eImageView, Handle_, HandleName_);
+
+        NpgsCoreTrace("Image view \"{}\" created successfully.", HandleName_);
         return vk::Result::eSuccess;
     }
 
@@ -1099,25 +961,25 @@ namespace Npgs
 
     // Wrapper for vk::PipelineCache
     // -----------------------------
-    FVulkanPipelineCache::FVulkanPipelineCache(vk::Device Device, vk::PipelineCacheCreateFlags Flags)
-        : Base(Device)
+    FVulkanPipelineCache::FVulkanPipelineCache(vk::Device Device, std::string_view Name, vk::PipelineCacheCreateFlags Flags)
+        : Base(Device, Name)
     {
-        ReleaseInfo_ = "Pipeline cache destroyed successfully.";
+        ReleaseInfo_ = std::format("Pipeline cache \"{}\" destroyed successfully.", Name);
         Status_      = CreatePipelineCache(Flags);
     }
 
-    FVulkanPipelineCache::FVulkanPipelineCache(vk::Device Device, vk::PipelineCacheCreateFlags Flags,
+    FVulkanPipelineCache::FVulkanPipelineCache(vk::Device Device, std::string_view Name, vk::PipelineCacheCreateFlags Flags,
                                                const vk::ArrayProxyNoTemporaries<const std::byte>& InitialData)
-        : Base(Device)
+        : Base(Device, Name)
     {
-        ReleaseInfo_ = "Pipeline cache destroyed successfully.";
+        ReleaseInfo_ = std::format("Pipeline cache \"{}\" destroyed successfully.", Name);
         Status_      = CreatePipelineCache(Flags, InitialData);
     }
 
-    FVulkanPipelineCache::FVulkanPipelineCache(vk::Device Device, const vk::PipelineCacheCreateInfo& CreateInfo)
-        : Base(Device)
+    FVulkanPipelineCache::FVulkanPipelineCache(vk::Device Device, std::string_view Name, const vk::PipelineCacheCreateInfo& CreateInfo)
+        : Base(Device, Name)
     {
-        ReleaseInfo_ = "Pipeline cache destroyed successfully.";
+        ReleaseInfo_ = std::format("Pipeline cache \"{}\" destroyed successfully.", Name);
         Status_      = CreatePipelineCache(CreateInfo);
     }
 
@@ -1142,29 +1004,33 @@ namespace Npgs
         }
         catch (const vk::SystemError& e)
         {
-            NpgsCoreError("Failed to create pipeline cache: {}", e.what());
+            NpgsCoreError("Failed to create pipeline cache \"{}\": {}", HandleName_, e.what());
             return static_cast<vk::Result>(e.code().value());
         }
 
-        NpgsCoreTrace("Pipeline cache created successfully.");
+        SetDebugUtilsObjectName(Device_, vk::ObjectType::ePipelineCache, Handle_, HandleName_);
+
+        NpgsCoreTrace("Pipeline cache \"{}\" created successfully.", HandleName_);
         return vk::Result::eSuccess;
     }
 
     // Wrapper for vk::Pipeline
     // ------------------------
-    FVulkanPipeline::FVulkanPipeline(vk::Device Device, const vk::GraphicsPipelineCreateInfo& CreateInfo,
+    FVulkanPipeline::FVulkanPipeline(vk::Device Device, std::string_view Name,
+                                     const vk::GraphicsPipelineCreateInfo& CreateInfo,
                                      const FVulkanPipelineCache* Cache)
-        : Base(Device)
+        : Base(Device, Name)
     {
-        ReleaseInfo_ = "Graphics pipeline destroyed successfully.";
+        ReleaseInfo_ = std::format("Graphics pipeline \"{}\" destroyed successfully.", Name);
         Status_      = CreateGraphicsPipeline(CreateInfo, Cache);
     }
 
-    FVulkanPipeline::FVulkanPipeline(vk::Device Device, const vk::ComputePipelineCreateInfo& CreateInfo,
+    FVulkanPipeline::FVulkanPipeline(vk::Device Device, std::string_view Name,
+                                     const vk::ComputePipelineCreateInfo& CreateInfo,
                                      const FVulkanPipelineCache* Cache)
-        : Base(Device)
+        : Base(Device, Name)
     {
-        ReleaseInfo_ = "Compute pipeline destroyed successfully.";
+        ReleaseInfo_ = std::format("Compute pipeline \"{}\" destroyed successfully.", Name);
         Status_      = CreateComputePipeline(CreateInfo, Cache);
     }
 
@@ -1178,11 +1044,13 @@ namespace Npgs
         }
         catch (const vk::SystemError& e)
         {
-            NpgsCoreError("Failed to create graphics pipeline: {}", e.what());
+            NpgsCoreError("Failed to create graphics pipeline \"{}\": {}", HandleName_, e.what());
             return static_cast<vk::Result>(e.code().value());
         }
 
-        NpgsCoreTrace("Graphics pipeline created successfully");
+        SetDebugUtilsObjectName(Device_, vk::ObjectType::ePipeline, Handle_, HandleName_);
+
+        NpgsCoreTrace("Graphics pipeline \"{}\" created successfully.", HandleName_);
         return vk::Result::eSuccess;
     }
 
@@ -1196,20 +1064,23 @@ namespace Npgs
         }
         catch (const vk::SystemError& e)
         {
-            NpgsCoreError("Failed to create compute pipeline: {}", e.what());
+            NpgsCoreError("Failed to create compute pipeline \"{}\": {}", HandleName_, e.what());
             return static_cast<vk::Result>(e.code().value());
         }
 
-        NpgsCoreTrace("Compute pipeline created successfully");
+        SetDebugUtilsObjectName(Device_, vk::ObjectType::ePipeline, Handle_, HandleName_);
+
+        NpgsCoreTrace("Compute pipeline \"{}\" created successfully.", HandleName_);
         return vk::Result::eSuccess;
     }
 
     // Wrapper for vk::PipelineLayout
     // ------------------------------
-    FVulkanPipelineLayout::FVulkanPipelineLayout(vk::Device Device, const vk::PipelineLayoutCreateInfo& CreateInfo)
-        : Base(Device)
+    FVulkanPipelineLayout::FVulkanPipelineLayout(vk::Device Device, std::string_view Name,
+                                                 const vk::PipelineLayoutCreateInfo& CreateInfo)
+        : Base(Device, Name)
     {
-        ReleaseInfo_ = "Pipeline layout destroyed successfully.";
+        ReleaseInfo_ = std::format("Pipeline layout \"{}\" destroyed successfully.", Name);
         Status_      = CreatePipelineLayout(CreateInfo);
     }
 
@@ -1222,29 +1093,31 @@ namespace Npgs
         }
         catch (const vk::SystemError& e)
         {
-            NpgsCoreError("Failed to create pipeline layout: {}", e.what());
+            NpgsCoreError("Failed to create pipeline layout \"{}\": {}", HandleName_, e.what());
             return static_cast<vk::Result>(e.code().value());
         }
 
-        NpgsCoreTrace("Pipeline layout created successfully");
+        SetDebugUtilsObjectName(Device_, vk::ObjectType::ePipelineLayout, Handle_, HandleName_);
+
+        NpgsCoreTrace("Pipeline layout \"{}\" created successfully.", HandleName_);
         return vk::Result::eSuccess;
     }
 
     // Wrapper for vk::QueryPool
     // -------------------------
-    FVulkanQueryPool::FVulkanQueryPool(vk::Device Device, const vk::QueryPoolCreateInfo& CreateInfo)
-        : Base(Device)
+    FVulkanQueryPool::FVulkanQueryPool(vk::Device Device, std::string_view Name, const vk::QueryPoolCreateInfo& CreateInfo)
+        : Base(Device, Name)
     {
-        ReleaseInfo_ = "Query pool destroyed successfully.";
+        ReleaseInfo_ = std::format("Query pool \"{}\" destroyed successfully.", Name);
         Status_      = CreateQueryPool(CreateInfo);
     }
 
-    FVulkanQueryPool::FVulkanQueryPool(vk::Device Device, vk::QueryType QueryType, std::uint32_t QueryCount,
+    FVulkanQueryPool::FVulkanQueryPool(vk::Device Device, std::string_view Name, vk::QueryType QueryType, std::uint32_t QueryCount,
                                        vk::QueryPoolCreateFlags Flags, vk::QueryPipelineStatisticFlags PipelineStatisticsFlags)
-        : Base(Device)
+        : Base(Device, Name)
     {
         vk::QueryPoolCreateInfo CreateInfo(Flags, QueryType, QueryCount, PipelineStatisticsFlags);
-        ReleaseInfo_ = "Query pool destroyed successfully.";
+        ReleaseInfo_ = std::format("Query pool \"{}\" destroyed successfully.", Name);
         Status_      = CreateQueryPool(CreateInfo);
     }
 
@@ -1256,11 +1129,11 @@ namespace Npgs
         }
         catch (const vk::SystemError& e)
         {
-            NpgsCoreError("Failed to reset query pool: {}", e.what());
+            NpgsCoreError("Failed to reset query pool \"{}\": {}", HandleName_, e.what());
             return static_cast<vk::Result>(e.code().value());
         }
 
-        NpgsCoreTrace("Query pool reset successfully.");
+        NpgsCoreTrace("Query pool \"{}\" reset successfully.", HandleName_);
         return vk::Result::eSuccess;
     }
 
@@ -1272,53 +1145,22 @@ namespace Npgs
         }
         catch (const vk::SystemError& e)
         {
-            NpgsCoreError("Failed to create query pool: {}", e.what());
+            NpgsCoreError("Failed to create query pool \"{}\": {}", HandleName_, e.what());
             return static_cast<vk::Result>(e.code().value());
         }
 
-        NpgsCoreTrace("Query pool created successfully.");
-        return vk::Result::eSuccess;
-    }
+        SetDebugUtilsObjectName(Device_, vk::ObjectType::eQueryPool, Handle_, HandleName_);
 
-    // Wrapper for vk::RenderPass
-    // --------------------------
-    FVulkanRenderPass::FVulkanRenderPass(vk::Device Device, const vk::RenderPassCreateInfo& CreateInfo)
-        : Base(Device)
-    {
-        ReleaseInfo_ = "Render pass destroyed successfully.";
-        Status_      = CreateRenderPass(CreateInfo);
-    }
-
-    void FVulkanRenderPass::CommandBegin(const FVulkanCommandBuffer& CommandBuffer, const FVulkanFramebuffer& Framebuffer,
-                                         const vk::Rect2D& RenderArea, const vk::ArrayProxy<const vk::ClearValue>& ClearValues,
-                                         const vk::SubpassContents& SubpassContents) const
-    {
-        vk::RenderPassBeginInfo RenderPassBeginInfo(Handle_, *Framebuffer, RenderArea, ClearValues);
-        CommandBegin(CommandBuffer, RenderPassBeginInfo, SubpassContents);
-    }
-
-    vk::Result FVulkanRenderPass::CreateRenderPass(const vk::RenderPassCreateInfo& CreateInfo)
-    {
-        try
-        {
-            Handle_ = Device_.createRenderPass(CreateInfo);
-        }
-        catch (const vk::SystemError& e)
-        {
-            NpgsCoreError("Failed to create render pass: {}.", e.what());
-            return static_cast<vk::Result>(e.code().value());
-        }
-
-        NpgsCoreTrace("Render pass created successfully.");
+        NpgsCoreTrace("Query pool \"{}\" created successfully.", HandleName_);
         return vk::Result::eSuccess;
     }
 
     // Wrapper for vk::Sampler
     // -----------------------
-    FVulkanSampler::FVulkanSampler(vk::Device Device, const vk::SamplerCreateInfo& CreateInfo)
-        : Base(Device)
+    FVulkanSampler::FVulkanSampler(vk::Device Device, std::string_view Name, const vk::SamplerCreateInfo& CreateInfo)
+        : Base(Device, Name)
     {
-        ReleaseInfo_ = "Sampler destroyed successfully.";
+        ReleaseInfo_ = std::format("Sampler \"{}\" destroyed successfully.", Name);
         Status_      = CreateSampler(CreateInfo);
     }
 
@@ -1330,27 +1172,29 @@ namespace Npgs
         }
         catch (const vk::SystemError& e)
         {
-            NpgsCoreError("Failed to create sampler: {}", e.what());
+            NpgsCoreError("Failed to create sampler \"{}\": {}", HandleName_, e.what());
             return static_cast<vk::Result>(e.code().value());
         }
 
-        NpgsCoreTrace("Sampler created successfully.");
+        SetDebugUtilsObjectName(Device_, vk::ObjectType::eSampler, Handle_, HandleName_);
+
+        NpgsCoreTrace("Sampler \"{}\" created successfully.", HandleName_);
         return vk::Result::eSuccess;
     }
 
     // Wrapper for vk::Semaphore
     // -------------------------
-    FVulkanSemaphore::FVulkanSemaphore(vk::Device Device, const vk::SemaphoreCreateInfo& CreateInfo)
-        : Base(Device)
+    FVulkanSemaphore::FVulkanSemaphore(vk::Device Device, std::string_view Name, const vk::SemaphoreCreateInfo& CreateInfo)
+        : Base(Device, Name)
     {
-        ReleaseInfo_ = "Semaphore destroyed successfully.";
+        ReleaseInfo_ = std::format("Semaphore \"{}\" destroyed successfully.", Name);
         Status_      = CreateSemaphore(CreateInfo);
     }
 
-    FVulkanSemaphore::FVulkanSemaphore(vk::Device Device, vk::SemaphoreCreateFlags Flags)
-        : Base(Device)
+    FVulkanSemaphore::FVulkanSemaphore(vk::Device Device, std::string_view Name, vk::SemaphoreCreateFlags Flags)
+        : Base(Device, Name)
     {
-        ReleaseInfo_ = "Semaphore destroyed successfully.";
+        ReleaseInfo_ = std::format("Semaphore \"{}\" destroyed successfully.", Name);
         Status_      = CreateSemaphore(Flags);
     }
 
@@ -1362,11 +1206,13 @@ namespace Npgs
         }
         catch (const vk::SystemError& e)
         {
-            NpgsCoreError("Failed to create semaphore: {}", e.what());
+            NpgsCoreError("Failed to create semaphore \"{}\": {}", HandleName_, e.what());
             return static_cast<vk::Result>(e.code().value());
         }
 
-        NpgsCoreTrace("Semaphore created successfully.");
+        SetDebugUtilsObjectName(Device_, vk::ObjectType::eSemaphore, Handle_, HandleName_);
+
+        NpgsCoreTrace("Semaphore \"{}\" created successfully.", HandleName_);
         return vk::Result::eSuccess;
     }
 
@@ -1378,10 +1224,11 @@ namespace Npgs
 
     // Wrapper for vk::ShaderModule
     // ----------------------------
-    FVulkanShaderModule::FVulkanShaderModule(vk::Device Device, const vk::ShaderModuleCreateInfo& CreateInfo)
-        : Base(Device)
+    FVulkanShaderModule::FVulkanShaderModule(vk::Device Device, std::string_view Name,
+                                             const vk::ShaderModuleCreateInfo& CreateInfo)
+        : Base(Device, Name)
     {
-        ReleaseInfo_ = "Shader module destroyed successfully.";
+        ReleaseInfo_ = std::format("Shader module \"{}\" destroyed successfully.", Name);
         Status_      = CreateShaderModule(CreateInfo);
     }
 
@@ -1393,33 +1240,37 @@ namespace Npgs
         }
         catch (const vk::SystemError& e)
         {
-            NpgsCoreError("Failed to create shader module: {}", e.what());
+            NpgsCoreError("Failed to create shader module \"{}\": {}", HandleName_, e.what());
             return static_cast<vk::Result>(e.code().value());
         }
 
-        NpgsCoreTrace("Shader module created successfully.");
+        NpgsCoreTrace("Shader module \"{}\" created successfully.", HandleName_);
         return vk::Result::eSuccess;
     }
     // -------------------
     // Native wrappers end
 
-    FVulkanBufferMemory::FVulkanBufferMemory(vk::Device Device, VmaAllocator Allocator,
-                                             const VmaAllocationCreateInfo& AllocationCreateInfo,
+    FVulkanBufferMemory::FVulkanBufferMemory(vk::Device Device, std::string_view BufferName, std::string_view MemoryName,
+                                             VmaAllocator Allocator, const VmaAllocationCreateInfo& AllocationCreateInfo,
                                              const vk::BufferCreateInfo& BufferCreateInfo)
-        : Base(std::make_unique<FVulkanBuffer>(Device, Allocator, AllocationCreateInfo, BufferCreateInfo), nullptr)
+        : Base(std::make_unique<FVulkanBuffer>(Device, BufferName, Allocator, AllocationCreateInfo, BufferCreateInfo), nullptr)
     {
         auto  Allocation     = Resource_->GetAllocation();
         auto& AllocationInfo = Resource_->GetAllocationInfo();
-        Memory_ = std::make_unique<FVulkanDeviceMemory>(Device, Allocator, Allocation, AllocationInfo, AllocationInfo.deviceMemory);
+
+        Memory_ = std::make_unique<FVulkanDeviceMemory>(
+            Device, MemoryName, Allocator, Allocation, AllocationInfo, AllocationInfo.deviceMemory);
     }
 
-    FVulkanImageMemory::FVulkanImageMemory(vk::Device Device, VmaAllocator Allocator,
-                                           const VmaAllocationCreateInfo& AllocationCreateInfo,
+    FVulkanImageMemory::FVulkanImageMemory(vk::Device Device, std::string_view ImageName, std::string_view MemoryName,
+                                           VmaAllocator Allocator, const VmaAllocationCreateInfo& AllocationCreateInfo,
                                            const vk::ImageCreateInfo& ImageCreateInfo)
-        : Base(std::make_unique<FVulkanImage>(Device, Allocator, AllocationCreateInfo, ImageCreateInfo), nullptr)
+        : Base(std::make_unique<FVulkanImage>(Device, ImageName, Allocator, AllocationCreateInfo, ImageCreateInfo), nullptr)
     {
         auto  Allocation     = Resource_->GetAllocation();
         auto& AllocationInfo = Resource_->GetAllocationInfo();
-        Memory_ = std::make_unique<FVulkanDeviceMemory>(Device, Allocator, Allocation, AllocationInfo, AllocationInfo.deviceMemory);
+
+        Memory_ = std::make_unique<FVulkanDeviceMemory>(
+            Device, MemoryName, Allocator, Allocation, AllocationInfo, AllocationInfo.deviceMemory);
     }
 } // namespace Npgs

@@ -1,5 +1,6 @@
 #include <utility>
 #include "Engine/Core/Base/Base.hpp"
+#include "Wrappers.hpp"
 
 namespace Npgs
 {
@@ -7,8 +8,9 @@ namespace Npgs
     // ----------------------
     template <typename HandleType>
     requires std::is_class_v<HandleType>
-    TVulkanHandleNoDestroy<HandleType>::TVulkanHandleNoDestroy(HandleType Handle)
+    TVulkanHandleNoDestroy<HandleType>::TVulkanHandleNoDestroy(HandleType Handle, std::string_view HandleName)
         : Handle_(Handle)
+        , HandleName_(HandleName)
     {
     }
 
@@ -16,6 +18,7 @@ namespace Npgs
     requires std::is_class_v<HandleType>
     TVulkanHandleNoDestroy<HandleType>::TVulkanHandleNoDestroy(TVulkanHandleNoDestroy&& Other) noexcept
         : Handle_(std::move(Other.Handle_))
+        , HandleName_(std::move(Other.HandleName_))
     {
     }
 
@@ -26,18 +29,10 @@ namespace Npgs
     {
         if (this != &Other)
         {
-            Handle_ = std::move(Other.Handle_);
+            Handle_     = std::move(Other.Handle_);
+            HandleName_ = std::move(Other.HandleName_);
         }
 
-        return *this;
-    }
-
-    template <typename HandleType>
-    requires std::is_class_v<HandleType>
-    NPGS_INLINE TVulkanHandleNoDestroy<HandleType>&
-    TVulkanHandleNoDestroy<HandleType>::operator=(HandleType Handle)
-    {
-        Handle_ = Handle;
         return *this;
     }
 
@@ -78,6 +73,13 @@ namespace Npgs
 
     template <typename HandleType>
     requires std::is_class_v<HandleType>
+    NPGS_INLINE const std::string& TVulkanHandleNoDestroy<HandleType>::GetHandleName() const
+    {
+        return HandleName_;
+    }
+
+    template <typename HandleType>
+    requires std::is_class_v<HandleType>
     NPGS_INLINE bool TVulkanHandleNoDestroy<HandleType>::IsValid() const
     {
         return static_cast<bool>(Handle_);
@@ -97,8 +99,8 @@ namespace Npgs
     // -------------
     template <typename HandleType, bool bEnableReleaseInfoOutput, EVulkanHandleReleaseMethod ReleaseMethod>
     requires std::is_class_v<HandleType>
-    TVulkanHandle<HandleType, bEnableReleaseInfoOutput, ReleaseMethod>::TVulkanHandle(vk::Device Device, HandleType Handle, const std::string& HandleName)
-        : Base(Handle)
+    TVulkanHandle<HandleType, bEnableReleaseInfoOutput, ReleaseMethod>::TVulkanHandle(vk::Device Device, HandleType Handle, std::string_view HandleName)
+        : Base(Handle, HandleName)
         , ReleaseInfo_(std::string(HandleName) + " destroyed successfully.")
         , Device_(Device)
         , Status_(vk::Result::eSuccess)
@@ -107,10 +109,11 @@ namespace Npgs
 
     template <typename HandleType, bool bEnableReleaseInfoOutput, EVulkanHandleReleaseMethod ReleaseMethod>
     requires std::is_class_v<HandleType>
-    TVulkanHandle<HandleType, bEnableReleaseInfoOutput, ReleaseMethod>::TVulkanHandle(vk::Device Device)
+    TVulkanHandle<HandleType, bEnableReleaseInfoOutput, ReleaseMethod>::TVulkanHandle(vk::Device Device, std::string_view HandleName)
         : Device_(Device)
         , Status_(vk::Result::eSuccess)
     {
+        this->HandleName_ = HandleName;
     }
 
     template <typename HandleType, bool bEnableReleaseInfoOutput, EVulkanHandleReleaseMethod ReleaseMethod>
@@ -256,38 +259,6 @@ namespace Npgs
         return AllocationInfo_;
     }
 
-    // Wrapper for vk::DescriptorSet
-    // -----------------------------
-    NPGS_INLINE void
-    FVulkanDescriptorSet::Write(const vk::ArrayProxy<const vk::DescriptorImageInfo>& ImageInfos, vk::DescriptorType Type,
-                                std::uint32_t BindingPoint, std::uint32_t ArrayElement)
-    {
-        vk::WriteDescriptorSet WriteDescriptorSet(Handle_, BindingPoint, ArrayElement, Type, ImageInfos);
-        Update(WriteDescriptorSet);
-    }
-
-    NPGS_INLINE void
-    FVulkanDescriptorSet::Write(const vk::ArrayProxy<const vk::DescriptorBufferInfo>& BufferInfos, vk::DescriptorType Type,
-                                std::uint32_t BindingPoint, std::uint32_t ArrayElement)
-    {
-        vk::WriteDescriptorSet WriteDescriptorSet(Handle_, BindingPoint, ArrayElement, Type, {}, BufferInfos);
-        Update(WriteDescriptorSet);
-    }
-
-    NPGS_INLINE void
-    FVulkanDescriptorSet::Write(const vk::ArrayProxy<const vk::BufferView>& BufferViews, vk::DescriptorType Type,
-                                std::uint32_t BindingPoint, std::uint32_t ArrayElement)
-    {
-        vk::WriteDescriptorSet WriteDescriptorSet(Handle_, BindingPoint, ArrayElement, Type, {}, {}, BufferViews);
-        Update(WriteDescriptorSet);
-    }
-
-    NPGS_INLINE void FVulkanDescriptorSet::Update(const vk::ArrayProxy<const vk::WriteDescriptorSet>& Writes,
-                                                  const vk::ArrayProxy<const vk::CopyDescriptorSet>& Copies)
-    {
-        Device_.updateDescriptorSets(Writes, Copies);
-    }
-
     // Wrapper for vk::Image
     // ---------------------
     NPGS_INLINE VmaAllocator FVulkanImage::GetAllocator() const
@@ -321,26 +292,6 @@ namespace Npgs
             NpgsCoreError("Failed to get query pool results: {}", e.code().value());
             return {};
         }
-    }
-
-    // Wrapper for vk::RenderPass
-    // --------------------------
-    NPGS_INLINE void FVulkanRenderPass::CommandBegin(const FVulkanCommandBuffer& CommandBuffer,
-                                                     const vk::RenderPassBeginInfo& BeginInfo,
-                                                     const vk::SubpassContents& SubpassContents) const
-    {
-        CommandBuffer->beginRenderPass(BeginInfo, SubpassContents);
-    }
-
-    NPGS_INLINE void FVulkanRenderPass::CommandNext(const FVulkanCommandBuffer& CommandBuffer,
-                                                    const vk::SubpassContents& SubpassContents) const
-    {
-        CommandBuffer->nextSubpass(SubpassContents);
-    }
-
-    NPGS_INLINE void FVulkanRenderPass::CommandEnd(const FVulkanCommandBuffer& CommandBuffer) const
-    {
-        CommandBuffer->endRenderPass();
     }
     // -------------------
     // Native wrappers end

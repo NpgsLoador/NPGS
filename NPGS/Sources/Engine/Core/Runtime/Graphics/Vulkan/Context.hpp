@@ -69,7 +69,7 @@ namespace Npgs
         vk::Result CreateSwapchain(vk::Extent2D Extent, bool bLimitFps, bool bEnableHdr, vk::SwapchainCreateFlagsKHR Flags = {});
         vk::Result RecreateSwapchain();
 
-        vk::Result ExecuteCommands(EQueueType QueueType, vk::CommandBuffer CommandBuffer) const;
+        vk::Result ExecuteCommands(EQueueType QueueType, vk::CommandBuffer CommandBuffer, std::string_view FenceName = "") const;
         vk::Result ExecuteCommands(EQueueType QueueType, const FVulkanCommandBuffer& CommandBuffer) const;
 
         vk::Result SubmitCommandBuffer(EQueueType QueueType, const vk::SubmitInfo2& SubmitInfo, vk::Fence Fence, bool bUseFixedQueue) const;

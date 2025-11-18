@@ -12,6 +12,7 @@
 
 #define GLFW_INCLUDE_VULKAN
 #define NOMINMAX
+#define VK_NO_PROTOTYPES
 #define VK_USE_PLATFORM_WIN32_KHR
 #include <GLFW/glfw3.h>
 
@@ -29,6 +30,7 @@
 #include <spirv_cross/spirv_reflect.hpp>
 #include <stb_image.h>
 #include <vma/vk_mem_alloc.h>
+#include <Volk/volk.h>
 
 #define VULKAN_HPP_HANDLES_MOVE_EXCHANGE
 #include <vulkan/vulkan.hpp>

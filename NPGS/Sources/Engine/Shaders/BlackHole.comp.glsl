@@ -7,14 +7,14 @@
 
 layout(local_size_x = 16, local_size_y = 16, local_size_z = 1) in;
 
- layout(set = 0, binding = 0) uniform GameArgs
- {
+layout(set = 0, binding = 0) uniform GameArgs
+{
     vec2  iResolution;                  // 视口分辨率
     float iFovRadians;                  // 视场角（弧度）
     float iTime;                        // 时间
     float iTimeDelta;                   // 时间间隔
     float iTimeRate;                    // 时间速率
- };
+};
 
 layout(set = 0, binding = 1) uniform BlackHoleArgs
 {

@@ -193,7 +193,7 @@ namespace Npgs
             }
 
             vk::ShaderModuleCreateInfo ShaderModuleCreateInfo({}, ShaderInfo.Code);
-            FVulkanShaderModule ShaderModule(VulkanContext_->GetDevice(), ShaderModuleCreateInfo);
+            FVulkanShaderModule ShaderModule(VulkanContext_->GetDevice(), Filename, ShaderModuleCreateInfo);
             ShaderModules_.emplace_back(ShaderInfo.Stage, std::move(ShaderModule));
 
             ReflectShader(ShaderInfo, ResourceInfo);
@@ -529,8 +529,9 @@ namespace Npgs
                 Binding.stageFlags |= CombinedStages;
             }
 
+            std::string LayoutName = "DescriptorSetLayout_Set" + std::to_string(Set);
             vk::DescriptorSetLayoutCreateInfo LayoutCreateInfo(vk::DescriptorSetLayoutCreateFlagBits::eDescriptorBufferEXT, Bindings);
-            FVulkanDescriptorSetLayout Layout(VulkanContext_->GetDevice(), LayoutCreateInfo);
+            FVulkanDescriptorSetLayout Layout(VulkanContext_->GetDevice(), LayoutName, LayoutCreateInfo);
             DescriptorSetLayoutsMap_.emplace(Set, std::move(Layout));
 
             NpgsCoreTrace("Created descriptor set layout for set {} with {} bindings", Set, Bindings.size());

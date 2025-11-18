@@ -344,6 +344,7 @@ namespace Npgs
         std::uint32_t                                 ResourceReclaimThresholdMs_;
         std::uint32_t                                 MaintenanceIntervalMs_;
 
+        std::atomic<std::uint64_t>                    NextResourceId_{};
         std::atomic<bool>                             bStopMaintenance_{ false };
     };
 } // namespace Npgs

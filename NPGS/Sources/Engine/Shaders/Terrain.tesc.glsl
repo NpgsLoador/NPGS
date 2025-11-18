@@ -9,22 +9,22 @@ layout(location = 0) out _TescOutput
 	float HeightFactor;
 } TescOutput[];
 
-layout(std140, set = 0, binding = 0) uniform MvpMatrices
+layout(std140, set = 0, binding = 0) uniform _MvpMatrices
 {
-	mat4x4 Model;
-	mat4x4 View;
-	mat4x4 Projection;
-} iMvpMatrices;
+	mat4 Model;
+	mat4 View;
+	mat4 Projection;
+} MvpMatrices;
 
 layout(set = 1, binding = 0) uniform sampler2D iHeightMap;
 
-layout(push_constant) uniform TessArgs
+layout(push_constant) uniform _TessArgs
 {
 	float MinDistance;
 	float MaxDistance;
 	float MinTessLevel;
 	float MaxTessLevel;
-} iTessArgs;
+} TessArgs;
 
 float EstimateHeight(vec2 TexCoord)
 {
@@ -67,7 +67,7 @@ void main()
 			vec4 AdjustedVertex = gl_in[i].gl_Position;
 			AdjustedVertex.y += EstimatedHeight;
 
-			VertexViewSpace[i] = iMvpMatrices.View * iMvpMatrices.Model * AdjustedVertex;
+			VertexViewSpace[i] = MvpMatrices.View * MvpMatrices.Model * AdjustedVertex;
 
 			float NormalizedDistance = smoothstep(iTessArgs.MinDistance, iTessArgs.MaxDistance, abs(VertexViewSpace[i].z));
 			Distances[i] = NormalizedDistance;	

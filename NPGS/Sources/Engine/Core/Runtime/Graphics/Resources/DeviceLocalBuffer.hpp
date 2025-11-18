@@ -3,6 +3,8 @@
 #include <cstdint>
 #include <memory>
 #include <mutex>
+#include <string>
+#include <string_view>
 #include <type_traits>
 #include <vector>
 
@@ -17,7 +19,7 @@ namespace Npgs
     class FDeviceLocalBuffer
     {
     public:
-        FDeviceLocalBuffer(FVulkanContext* VulkanContext, VmaAllocator Allocator,
+        FDeviceLocalBuffer(FVulkanContext* VulkanContext, std::string_view Name, VmaAllocator Allocator,
                            const VmaAllocationCreateInfo& AllocationCreateInfo,
                            const vk::BufferCreateInfo& BufferCreateInfo);
 
@@ -62,8 +64,9 @@ namespace Npgs
 
     private:
         FVulkanContext*                      VulkanContext_;
-        std::unique_ptr<FVulkanBufferMemory> BufferMemory_;
         VmaAllocator                         Allocator_;
+        std::unique_ptr<FVulkanBufferMemory> BufferMemory_;
+        std::string                          Name_;
     };
 } // namespace Npgs
 

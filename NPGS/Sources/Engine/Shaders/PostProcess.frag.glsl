@@ -8,15 +8,15 @@ layout(location = 0) out vec4 FragColor;
 
 layout(set = 0, binding = 0) uniform sampler2D iTexture;
 
-layout(push_constant) uniform HdrArgs
+layout(push_constant) uniform _HdrArgs
 {
     bool bEnableHdr;
-} iHdrArgs;
+} HdrArgs;
 
 void main()
 {
     vec3 FrameColor = texture(iTexture, TexCoord).rgb;
-    if (iHdrArgs.bEnableHdr)
+    if (HdrArgs.bEnableHdr)
     {
         FrameColor = ScRgbToPqWithGamut(FrameColor);
     }

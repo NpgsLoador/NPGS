@@ -12,6 +12,11 @@ namespace Npgs
         return PipelineManager_.get();
     }
 
+    NPGS_INLINE FRenderTargetManager* FResourceServices::GetRenderTargetManager() const
+    {
+        return RenderTargetManager_.get();
+    }
+
     NPGS_INLINE FShaderBufferManager* FResourceServices::GetShaderBufferManager() const
     {
         return ShaderBufferManager_.get();

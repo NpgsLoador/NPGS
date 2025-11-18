@@ -4,6 +4,7 @@
 #include <cstdint>
 #include <memory>
 #include <string>
+#include <string_view>
 #include <type_traits>
 #include <unordered_map>
 #include <vector>
@@ -338,24 +339,26 @@ namespace Npgs
     {
     public:
         TVulkanHandleNoDestroy() = default;
-        explicit TVulkanHandleNoDestroy(HandleType Handle);
+        TVulkanHandleNoDestroy(HandleType Handle, std::string_view HandleName);
         TVulkanHandleNoDestroy(const TVulkanHandleNoDestroy&) = delete;
         TVulkanHandleNoDestroy(TVulkanHandleNoDestroy&& Other) noexcept;
         virtual ~TVulkanHandleNoDestroy() = default;
 
         TVulkanHandleNoDestroy& operator=(const TVulkanHandleNoDestroy&) = delete;
         TVulkanHandleNoDestroy& operator=(TVulkanHandleNoDestroy&& Other) noexcept;
-        TVulkanHandleNoDestroy& operator=(HandleType Handle);
 
         HandleType* operator->();
         const HandleType* operator->() const;
         HandleType& operator*();
         const HandleType& operator*() const;
         explicit operator bool() const;
+
+        const std::string& GetHandleName() const;
         bool IsValid() const;
 
     protected:
-        HandleType Handle_;
+        HandleType  Handle_;
+        std::string HandleName_;
     };
 
     template <typename HandleType, bool bEnableReleaseInfoOutput = true,
@@ -367,8 +370,8 @@ namespace Npgs
         using Base = TVulkanHandleNoDestroy<HandleType>;
         using Base::Base;
 
-        TVulkanHandle(vk::Device Device, HandleType Handle, const std::string& HandleName);
-        explicit TVulkanHandle(vk::Device Device);
+        TVulkanHandle(vk::Device Device, HandleType Handle, std::string_view HandleName);
+        TVulkanHandle(vk::Device Device, std::string_view HandleName);
         TVulkanHandle(const TVulkanHandle&) = delete;
         TVulkanHandle(TVulkanHandle&& Other) noexcept;
         ~TVulkanHandle() override;
@@ -408,13 +411,13 @@ namespace Npgs
         using Base = TVulkanHandle<vk::CommandPool>;
         using Base::Base;
 
-        FVulkanCommandPool(vk::Device Device, const vk::CommandPoolCreateInfo& CreateInfo);
-        FVulkanCommandPool(vk::Device Device, std::uint32_t QueueFamilyIndex, vk::CommandPoolCreateFlags Flags = {});
+        FVulkanCommandPool(vk::Device Device, std::string_view Name, const vk::CommandPoolCreateInfo& CreateInfo);
+        FVulkanCommandPool(vk::Device Device, std::string_view Name, std::uint32_t QueueFamilyIndex, vk::CommandPoolCreateFlags Flags = {});
 
-        vk::Result AllocateBuffer(vk::CommandBufferLevel Level, vk::CommandBuffer& Buffer) const;
-        vk::Result AllocateBuffer(vk::CommandBufferLevel Level, FVulkanCommandBuffer& Buffer) const;
-        vk::Result AllocateBuffers(vk::CommandBufferLevel Level, std::vector<vk::CommandBuffer>& Buffers) const;
-        vk::Result AllocateBuffers(vk::CommandBufferLevel Level, std::vector<FVulkanCommandBuffer>& Buffers) const;
+        vk::Result AllocateBuffer(vk::CommandBufferLevel Level, std::string_view Name, vk::CommandBuffer& Buffer) const;
+        vk::Result AllocateBuffer(vk::CommandBufferLevel Level, std::string_view Name, FVulkanCommandBuffer& Buffer) const;
+        vk::Result AllocateBuffers(vk::CommandBufferLevel Level, std::string_view Name, std::vector<vk::CommandBuffer>& Buffers) const;
+        vk::Result AllocateBuffers(vk::CommandBufferLevel Level, std::string_view Name, std::vector<FVulkanCommandBuffer>& Buffers) const;
         vk::Result FreeBuffer(vk::CommandBuffer& Buffer) const;
         vk::Result FreeBuffer(FVulkanCommandBuffer& Buffer) const;
         vk::Result FreeBuffers(const vk::ArrayProxy<const vk::CommandBuffer>& Buffers) const;
@@ -434,8 +437,8 @@ namespace Npgs
         using Base = TVulkanHandle<vk::DeviceMemory, true, EVulkanHandleReleaseMethod::kFree>;
         using Base::Base;
 
-        FVulkanDeviceMemory(vk::Device Device, VmaAllocator Allocator, VmaAllocation Allocation,
-                            const VmaAllocationInfo& AllocationInfo, vk::DeviceMemory Handle);
+        FVulkanDeviceMemory(vk::Device Device, std::string_view Name, VmaAllocator Allocator,
+                            VmaAllocation Allocation, const VmaAllocationInfo& AllocationInfo, vk::DeviceMemory Handle);
 
 		FVulkanDeviceMemory(const FVulkanDeviceMemory&) = delete;
         FVulkanDeviceMemory(FVulkanDeviceMemory&& Other) noexcept;
@@ -483,9 +486,8 @@ namespace Npgs
         using Base = TVulkanHandle<vk::Buffer>;
         using Base::Base;
 
-        FVulkanBuffer(vk::Device Device, VmaAllocator Allocator,
-                      const VmaAllocationCreateInfo& AllocationCreateInfo,
-                      const vk::BufferCreateInfo& CreateInfo);
+        FVulkanBuffer(vk::Device Device, std::string_view Name, VmaAllocator Allocator,
+                      const VmaAllocationCreateInfo& AllocationCreateInfo, const vk::BufferCreateInfo& CreateInfo);
 
 		FVulkanBuffer(const FVulkanBuffer&) = delete;
 		FVulkanBuffer(FVulkanBuffer&& Other) noexcept;
@@ -518,43 +520,14 @@ namespace Npgs
         using Base = TVulkanHandle<vk::BufferView>;
         using Base::Base;
 
-        FVulkanBufferView(vk::Device Device, const vk::BufferViewCreateInfo& CreateInfo);
-        FVulkanBufferView(vk::Device Device, const FVulkanBuffer& Buffer, vk::Format Format, vk::DeviceSize Offset = 0,
-                          vk::DeviceSize Range = 0, vk::BufferViewCreateFlags Flags = {});
+        FVulkanBufferView(vk::Device Device, std::string_view Name, const vk::BufferViewCreateInfo& CreateInfo);
+        FVulkanBufferView(vk::Device Device, std::string_view Name, const FVulkanBuffer& Buffer, vk::Format Format,
+                          vk::DeviceSize Offset = 0, vk::DeviceSize Range = 0, vk::BufferViewCreateFlags Flags = {});
 
     private:
         vk::Result CreateBufferView(const vk::BufferViewCreateInfo& CreateInfo);
         vk::Result CreateBufferView(const FVulkanBuffer& Buffer, vk::Format Format, vk::DeviceSize Offset,
                                     vk::DeviceSize Range, vk::BufferViewCreateFlags Flags);
-    };
-
-    // Wrapper for vk::DescriptorSet
-    // -----------------------------
-    class FVulkanDescriptorSet : public TVulkanHandleNoDestroy<vk::DescriptorSet>
-    {
-    public:
-        using Base = TVulkanHandleNoDestroy<vk::DescriptorSet>;
-        using Base::Base;
-
-        explicit FVulkanDescriptorSet(vk::Device Device);
-
-        void Write(const vk::ArrayProxy<const vk::DescriptorImageInfo>& ImageInfos, vk::DescriptorType Type,
-                   std::uint32_t BindingPoint, std::uint32_t ArrayElement = 0);
-
-        void Write(const vk::ArrayProxy<const vk::DescriptorBufferInfo>& BufferInfos, vk::DescriptorType Type,
-                   std::uint32_t BindingPoint, std::uint32_t ArrayElement = 0);
-
-        void Write(const vk::ArrayProxy<const vk::BufferView>& BufferViews, vk::DescriptorType Type,
-                   std::uint32_t BindingPoint, std::uint32_t ArrayElement = 0);
-
-        void Write(const vk::ArrayProxy<const FVulkanBufferView>& BufferViews, vk::DescriptorType Type,
-                   std::uint32_t BindingPoint, std::uint32_t ArrayElement = 0);
-
-        void Update(const vk::ArrayProxy<const vk::WriteDescriptorSet>& Writes,
-                    const vk::ArrayProxy<const vk::CopyDescriptorSet>& Copies = {});
-
-    private:
-        vk::Device Device_;
     };
 
     // Wrapper for vk::DescriptorSetLayout
@@ -565,38 +538,12 @@ namespace Npgs
         using Base = TVulkanHandle<vk::DescriptorSetLayout>;
         using Base::Base;
 
-        FVulkanDescriptorSetLayout(vk::Device Device, const vk::DescriptorSetLayoutCreateInfo& CreateInfo);
+        FVulkanDescriptorSetLayout(vk::Device Device, std::string_view Name, const vk::DescriptorSetLayoutCreateInfo& CreateInfo);
 
         static std::vector<vk::DescriptorSetLayout> GetNativeTypeArray(const vk::ArrayProxy<const FVulkanDescriptorSetLayout>& WrappedTypeArray);
 
     private:
         vk::Result CreateDescriptorSetLayout(const vk::DescriptorSetLayoutCreateInfo& CreateInfo);
-    };
-
-    // Wrapper for vk::DescriptorPool
-    // ------------------------------
-    class FVulkanDescriptorPool : public TVulkanHandle<vk::DescriptorPool>
-    {
-    public:
-        using Base = TVulkanHandle<vk::DescriptorPool>;
-        using Base::Base;
-
-        FVulkanDescriptorPool(vk::Device Device, const vk::DescriptorPoolCreateInfo& CreateInfo);
-        FVulkanDescriptorPool(vk::Device Device, std::uint32_t MaxSets,
-                              const vk::ArrayProxy<const vk::DescriptorPoolSize>& PoolSizes,
-                              vk::DescriptorPoolCreateFlags Flags = {});
-
-        vk::Result AllocateSets(const vk::ArrayProxy<const vk::DescriptorSetLayout>& Layouts, std::vector<vk::DescriptorSet>& Sets) const;
-        vk::Result AllocateSets(const vk::ArrayProxy<const vk::DescriptorSetLayout>& Layouts, std::vector<FVulkanDescriptorSet>& Sets) const;
-        vk::Result AllocateSets(const vk::ArrayProxy<const FVulkanDescriptorSetLayout>& Layouts, std::vector<vk::DescriptorSet>& Sets) const;
-        vk::Result AllocateSets(const vk::ArrayProxy<const FVulkanDescriptorSetLayout>& Layouts, std::vector<FVulkanDescriptorSet>& Sets) const;
-        vk::Result FreeSets(const vk::ArrayProxy<const vk::DescriptorSet>& Sets) const;
-        vk::Result FreeSets(const vk::ArrayProxy<const FVulkanDescriptorSet>& Sets) const;
-
-    private:
-        vk::Result CreateDescriptorPool(const vk::DescriptorPoolCreateInfo& CreateInfo);
-        vk::Result CreateDescriptorPool(std::uint32_t MaxSets, const vk::ArrayProxy<const vk::DescriptorPoolSize>& PoolSizes,
-                                        vk::DescriptorPoolCreateFlags Flags);
     };
 
     // Wrapper for vk::Fence
@@ -607,8 +554,8 @@ namespace Npgs
         using Base = TVulkanHandle<vk::Fence, false>;
         using Base::Base;
 
-        FVulkanFence(vk::Device Device, const vk::FenceCreateInfo& CreateInfo);
-        FVulkanFence(vk::Device Device, vk::FenceCreateFlags Flags = {});
+        FVulkanFence(vk::Device Device, std::string_view Name, const vk::FenceCreateInfo& CreateInfo);
+        FVulkanFence(vk::Device Device, std::string_view Name, vk::FenceCreateFlags Flags = {});
 
         vk::Result Wait() const;
         vk::Result Reset() const;
@@ -620,20 +567,6 @@ namespace Npgs
         vk::Result CreateFence(vk::FenceCreateFlags Flags);
     };
 
-    // Wrapper for vk::Framebuffer
-    // ---------------------------
-    class FVulkanFramebuffer : public TVulkanHandle<vk::Framebuffer>
-    {
-    public:
-        using Base = TVulkanHandle<vk::Framebuffer>;
-        using Base::Base;
-
-        FVulkanFramebuffer(vk::Device Device, const vk::FramebufferCreateInfo& CreateInfo);
-
-    private:
-        vk::Result CreateFramebuffer(const vk::FramebufferCreateInfo& CreateInfo);
-    };
-
     // Wrapper for vk::Image
     // ---------------------
     class FVulkanImage : public TVulkanHandle<vk::Image>
@@ -642,7 +575,7 @@ namespace Npgs
         using Base = TVulkanHandle<vk::Image>;
         using Base::Base;
 
-        FVulkanImage(vk::Device Device, VmaAllocator Allocator,
+        FVulkanImage(vk::Device Device, std::string_view Name, VmaAllocator Allocator,
                      const VmaAllocationCreateInfo& AllocationCreateInfo,
                      const vk::ImageCreateInfo& CreateInfo);
 
@@ -676,8 +609,8 @@ namespace Npgs
         using Base = TVulkanHandle<vk::ImageView>;
         using Base::Base;
 
-        FVulkanImageView(vk::Device Device, const vk::ImageViewCreateInfo& CreateInfo);
-        FVulkanImageView(vk::Device Device, const FVulkanImage& Image, vk::ImageViewType ViewType,
+        FVulkanImageView(vk::Device Device, std::string_view Name, const vk::ImageViewCreateInfo& CreateInfo);
+        FVulkanImageView(vk::Device Device, std::string_view Name, const FVulkanImage& Image, vk::ImageViewType ViewType,
                          vk::Format Format, vk::ComponentMapping Components,
                          vk::ImageSubresourceRange SubresourceRange, vk::ImageViewCreateFlags Flags = {});
 
@@ -696,11 +629,11 @@ namespace Npgs
         using Base = TVulkanHandle<vk::PipelineCache>;
         using Base::Base;
 
-        FVulkanPipelineCache(vk::Device Device, vk::PipelineCacheCreateFlags Flags);
-        FVulkanPipelineCache(vk::Device Device, vk::PipelineCacheCreateFlags Flags,
+        FVulkanPipelineCache(vk::Device Device, std::string_view Name, vk::PipelineCacheCreateFlags Flags);
+        FVulkanPipelineCache(vk::Device Device, std::string_view Name, vk::PipelineCacheCreateFlags Flags,
                              const vk::ArrayProxyNoTemporaries<const std::byte>& InitialData);
 
-        FVulkanPipelineCache(vk::Device Device, const vk::PipelineCacheCreateInfo& CreateInfo);
+        FVulkanPipelineCache(vk::Device Device, std::string_view Name, const vk::PipelineCacheCreateInfo& CreateInfo);
 
     private:
         vk::Result CreatePipelineCache(vk::PipelineCacheCreateFlags Flags);
@@ -718,8 +651,13 @@ namespace Npgs
         using Base = TVulkanHandle<vk::Pipeline>;
         using Base::Base;
 
-        FVulkanPipeline(vk::Device Device, const vk::GraphicsPipelineCreateInfo& CreateInfo, const FVulkanPipelineCache* Cache = nullptr);
-        FVulkanPipeline(vk::Device Device, const vk::ComputePipelineCreateInfo& CreateInfo, const FVulkanPipelineCache* Cache = nullptr);
+        FVulkanPipeline(vk::Device Device, std::string_view Name,
+                        const vk::GraphicsPipelineCreateInfo& CreateInfo,
+                        const FVulkanPipelineCache* Cache = nullptr);
+
+        FVulkanPipeline(vk::Device Device, std::string_view Name,
+                        const vk::ComputePipelineCreateInfo& CreateInfo,
+                        const FVulkanPipelineCache* Cache = nullptr);
 
     private:
         vk::Result CreateGraphicsPipeline(const vk::GraphicsPipelineCreateInfo& CreateInfo, const FVulkanPipelineCache* Cache = nullptr);
@@ -734,7 +672,7 @@ namespace Npgs
         using Base = TVulkanHandle<vk::PipelineLayout>;
         using Base::Base;
 
-        FVulkanPipelineLayout(vk::Device Device, const vk::PipelineLayoutCreateInfo& CreateInfo);
+        FVulkanPipelineLayout(vk::Device Device, std::string_view Name, const vk::PipelineLayoutCreateInfo& CreateInfo);
 
     private:
         vk::Result CreatePipelineLayout(const vk::PipelineLayoutCreateInfo& CreateInfo);
@@ -748,8 +686,8 @@ namespace Npgs
         using Base = TVulkanHandle<vk::QueryPool>;
         using Base::Base;
 
-        FVulkanQueryPool(vk::Device Device, const vk::QueryPoolCreateInfo& CreateInfo);
-        FVulkanQueryPool(vk::Device Device, vk::QueryType QueryType, std::uint32_t QueryCount,
+        FVulkanQueryPool(vk::Device Device, std::string_view Name, const vk::QueryPoolCreateInfo& CreateInfo);
+        FVulkanQueryPool(vk::Device Device, std::string_view Name, vk::QueryType QueryType, std::uint32_t QueryCount,
                          vk::QueryPoolCreateFlags Flags = {}, vk::QueryPipelineStatisticFlags PipelineStatisticsFlags = {});
 
         template <typename DataType>
@@ -762,32 +700,6 @@ namespace Npgs
         vk::Result CreateQueryPool(const vk::QueryPoolCreateInfo& CreateInfo);
     };
 
-    // Wrapper for vk::RenderPass
-    // --------------------------
-    class FVulkanRenderPass : public TVulkanHandle<vk::RenderPass>
-    {
-    public:
-        using Base = TVulkanHandle<vk::RenderPass>;
-        using Base::Base;
-
-        FVulkanRenderPass(vk::Device Device, const vk::RenderPassCreateInfo& CreateInfo);
-
-        void CommandBegin(const FVulkanCommandBuffer& CommandBuffer, const vk::RenderPassBeginInfo& BeginInfo,
-                          const vk::SubpassContents& SubpassContents = vk::SubpassContents::eInline) const;
-
-        void CommandBegin(const FVulkanCommandBuffer& CommandBuffer, const FVulkanFramebuffer& Framebuffer,
-                          const vk::Rect2D& RenderArea, const vk::ArrayProxy<const vk::ClearValue>& ClearValues,
-                          const vk::SubpassContents& SubpassContents = vk::SubpassContents::eInline) const;
-
-        void CommandNext(const FVulkanCommandBuffer& CommandBuffer,
-                         const vk::SubpassContents& SubpassContents = vk::SubpassContents::eInline) const;
-
-        void CommandEnd(const FVulkanCommandBuffer& CommandBuffer) const;
-
-    private:
-        vk::Result CreateRenderPass(const vk::RenderPassCreateInfo& CreateInfo);
-    };
-
     // Wrapper for vk::Sampler
     // -----------------------
     class FVulkanSampler : public TVulkanHandle<vk::Sampler>
@@ -796,7 +708,7 @@ namespace Npgs
         using Base = TVulkanHandle<vk::Sampler>;
         using Base::Base;
 
-        FVulkanSampler(vk::Device Device, const vk::SamplerCreateInfo& CreateInfo);
+        FVulkanSampler(vk::Device Device, std::string_view Name, const vk::SamplerCreateInfo& CreateInfo);
 
     private:
         vk::Result CreateSampler(const vk::SamplerCreateInfo& CreateInfo);
@@ -810,8 +722,8 @@ namespace Npgs
         using Base = TVulkanHandle<vk::Semaphore>;
         using Base::Base;
 
-        FVulkanSemaphore(vk::Device Device, const vk::SemaphoreCreateInfo& CreateInfo);
-        FVulkanSemaphore(vk::Device Device, vk::SemaphoreCreateFlags Flags = {});
+        FVulkanSemaphore(vk::Device Device, std::string_view Name, const vk::SemaphoreCreateInfo& CreateInfo);
+        FVulkanSemaphore(vk::Device Device, std::string_view Name, vk::SemaphoreCreateFlags Flags = {});
 
     private:
         vk::Result CreateSemaphore(const vk::SemaphoreCreateInfo& CreateInfo);
@@ -826,7 +738,7 @@ namespace Npgs
         using Base = TVulkanHandle<vk::ShaderModule>;
         using Base::Base;
 
-        FVulkanShaderModule(vk::Device Device, const vk::ShaderModuleCreateInfo& CreateInfo);
+        FVulkanShaderModule(vk::Device Device, std::string_view Name, const vk::ShaderModuleCreateInfo& CreateInfo);
 
     private:
         vk::Result CreateShaderModule(const vk::ShaderModuleCreateInfo& CreateInfo);
@@ -870,8 +782,8 @@ namespace Npgs
         using Base = TVulkanResourceMemory<FVulkanBuffer>;
         using Base::Base;
 
-        FVulkanBufferMemory(vk::Device Device, VmaAllocator Allocator,
-                            const VmaAllocationCreateInfo& AllocationCreateInfo,
+        FVulkanBufferMemory(vk::Device Device, std::string_view BufferName, std::string_view MemoryName,
+                            VmaAllocator Allocator, const VmaAllocationCreateInfo& AllocationCreateInfo,
                             const vk::BufferCreateInfo& BufferCreateInfo);
 
         vk::Result MapMemoryForSubmit(vk::DeviceSize Offset, vk::DeviceSize Size, void*& Target) const;
@@ -895,8 +807,8 @@ namespace Npgs
         using Base = TVulkanResourceMemory<FVulkanImage>;
         using Base::Base;
 
-        FVulkanImageMemory(vk::Device Device, VmaAllocator Allocator,
-                           const VmaAllocationCreateInfo& AllocationCreateInfo,
+        FVulkanImageMemory(vk::Device Device, std::string_view ImageName, std::string_view MemoryName,
+                           VmaAllocator Allocator, const VmaAllocationCreateInfo& AllocationCreateInfo,
                            const vk::ImageCreateInfo& ImageCreateInfo);
     };
 } // namespace Npgs

@@ -3,6 +3,8 @@
 #include <cstdint>
 #include <memory>
 #include <mutex>
+#include <string>
+#include <string_view>
 #include <type_traits>
 #include <vector>
 
@@ -16,7 +18,8 @@ namespace Npgs
     class FStagingBuffer
     {
     public:
-        FStagingBuffer(vk::PhysicalDevice, vk::Device Device, VmaAllocator Allocator,
+        FStagingBuffer(std::string_view Name, vk::PhysicalDevice PhysicalDevice,
+                       vk::Device Device, VmaAllocator Allocator,
                        const VmaAllocationCreateInfo& AllocationCreateInfo,
                        const vk::BufferCreateInfo& BufferCreateInfo);
 
@@ -58,6 +61,7 @@ namespace Npgs
         vk::DeviceSize                       MemoryUsage_;
         VmaAllocator                         Allocator_;
         VmaAllocationCreateInfo              AllocationCreateInfo_;
+        std::string                          Name_;
     };
 } // namespace Npgs
 

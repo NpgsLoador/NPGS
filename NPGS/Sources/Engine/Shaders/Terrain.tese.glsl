@@ -15,12 +15,12 @@ layout(location = 0) out _TeseOutput
 	float bDrawFrame;
 } TeseOutput;
 
-layout(std140, set = 0, binding = 0) uniform MvpMatrices
+layout(std140, set = 0, binding = 0) uniform _MvpMatrices
 {
-	mat4x4 Model;
-	mat4x4 View;
-	mat4x4 Projection;
-} iMvpMatrices;
+	mat4 Model;
+	mat4 View;
+	mat4 Projection;
+} MvpMatrices;
 
 layout(set = 1, binding = 0) uniform sampler2D iHeightMap;
 
@@ -63,5 +63,5 @@ void main()
 	}
 
 	Vertex += Normal * TeseOutput.HeightData;
-	gl_Position = iMvpMatrices.Projection * iMvpMatrices.View * iMvpMatrices.Model * Vertex;
+	gl_Position = MvpMatrices.Projection * MvpMatrices.View * MvpMatrices.Model * Vertex;
 }

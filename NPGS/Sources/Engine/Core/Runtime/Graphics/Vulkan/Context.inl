@@ -115,7 +115,7 @@ namespace Npgs
 
     NPGS_INLINE vk::Result FVulkanContext::ExecuteCommands(EQueueType QueueType, const FVulkanCommandBuffer& CommandBuffer) const
     {
-        return ExecuteCommands(QueueType, *CommandBuffer);
+        return ExecuteCommands(QueueType, *CommandBuffer, CommandBuffer.GetHandleName() + "_TemporaryFence");
     }
 
     NPGS_INLINE vk::Result
