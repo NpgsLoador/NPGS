@@ -23,7 +23,9 @@ namespace Npgs
         vk::DeviceSize           Size{};
         vk::Extent3D             Extent{};
         std::uint32_t            MipLevels{};
-        FFormatInfo              FormatInfo{ kFormatInfos[0] };
+        FFormatInfo              FormatInfo;
+
+        FImageData();
     };
 
     class FTexture

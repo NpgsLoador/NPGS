@@ -82,9 +82,7 @@ namespace Npgs
 
         struct FDataBufferInfo
         {
-            std::unordered_map<std::string, FDataBufferFieldInfo,
-                               Utils::FStringViewHeteroHash, Utils::FStringViewHeteroEqual> Fields;
-
+            Utils::FStringHeteroHashTable<std::string, FDataBufferFieldInfo> Fields;
             std::vector<FDeviceLocalBuffer> Buffers;
             FDataBufferCreateInfo           CreateInfo;
             vk::DeviceSize                  Size{};
@@ -177,15 +175,14 @@ namespace Npgs
 
         vk::PhysicalDeviceDescriptorBufferPropertiesEXT DescriptorBufferProperties_;
         // [DataBufferName, DataBuffer]
-        std::unordered_map<std::string, FDataBufferInfo, Utils::FStringViewHeteroHash, Utils::FStringViewHeteroEqual> DataBuffers_;
+        Utils::FStringHeteroHashTable<std::string, FDataBufferInfo> DataBuffers_;
         // [DescriptorBufferName, DescriptorBuffer]
-        std::unordered_map<std::string, FDescriptorBufferInfo, Utils::FStringViewHeteroHash, Utils::FStringViewHeteroEqual> DescriptorBuffers_;
+        Utils::FStringHeteroHashTable<std::string, FDescriptorBufferInfo> DescriptorBuffers_;
         // [DescriptorBufferName, [[Set, Binding], [Offset, Type]]]
         using FSubMap = std::unordered_map<std::pair<std::uint32_t, std::uint32_t>, std::pair<vk::DeviceSize, vk::DescriptorType>, FSetBindingHash>;
-        std::unordered_map<std::string, FSubMap, Utils::FStringViewHeteroHash, Utils::FStringViewHeteroEqual> OffsetsMap_;
+        Utils::FStringHeteroHashTable<std::string, FSubMap> OffsetsMap_;
         // [DescriptorBuffername, [Set, BaseOffset]]
-        std::unordered_map<std::string, std::unordered_map<std::uint32_t, vk::DeviceSize>,
-                           Utils::FStringViewHeteroHash, Utils::FStringViewHeteroEqual> SetBaseOffsetsMap_;
+        Utils::FStringHeteroHashTable<std::string, std::unordered_map<std::uint32_t, vk::DeviceSize>> SetBaseOffsetsMap_;
 
         VmaAllocator Allocator_;
     };

@@ -461,6 +461,11 @@ namespace Npgs
         }
     }
 
+    FImageData::FImageData()
+        : FormatInfo(0, 0, 0, FFormatInfo::ERawDataType::kOther, false)
+    {
+    }
+
     FTexture::FTexture(FVulkanContext* VulkanContext, VmaAllocator Allocator, const VmaAllocationCreateInfo& AllocationCreateInfo)
         : VulkanContext_(VulkanContext)
         , Allocator_(Allocator)

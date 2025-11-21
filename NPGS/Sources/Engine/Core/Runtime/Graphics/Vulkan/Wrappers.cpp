@@ -2,7 +2,6 @@
 #include "Wrappers.hpp"
 
 #include <algorithm>
-#include <format>
 #include <limits>
 #include <utility>
 
@@ -272,8 +271,7 @@ namespace Npgs
                                            std::uint32_t QueueFamilyIndex, vk::CommandPoolCreateFlags Flags)
         : Base(Device, Name)
     {
-        ReleaseInfo_ = std::format("Command pool \"{}\" destroyed successfully.", HandleName_);
-        Status_      = CreateCommandPool(QueueFamilyIndex, Flags);
+        Status_ = CreateCommandPool(QueueFamilyIndex, Flags);
     }
 
     vk::Result FVulkanCommandPool::AllocateBuffer(vk::CommandBufferLevel Level, std::string_view Name, vk::CommandBuffer& Buffer) const
@@ -309,6 +307,7 @@ namespace Npgs
         }
 
         SetDebugUtilsObjectName(Device_, vk::ObjectType::eCommandBuffer, *Buffer, Name);
+        Buffer.SetHandleName(Name);
 
         NpgsCoreTrace("Command buffer \"{}\" allocated successfully.", Name);
         return vk::Result::eSuccess;
@@ -330,7 +329,8 @@ namespace Npgs
         std::size_t Index = 0;
         for (const auto& Buffer : Buffers)
         {
-            SetDebugUtilsObjectName(Device_, vk::ObjectType::eCommandBuffer, Buffer, std::string(Name) + std::to_string(Index++));
+            std::string BufferName = std::string(Name) + std::to_string(Index++);
+            SetDebugUtilsObjectName(Device_, vk::ObjectType::eCommandBuffer, Buffer, BufferName);
         }
 
         NpgsCoreTrace("Command buffer array \"{}\" allocated successfully.", Name);
@@ -356,7 +356,9 @@ namespace Npgs
         for (std::size_t i = 0; i != CommandBuffers.size(); ++i)
         {
             *Buffers[i] = CommandBuffers[i];
-            SetDebugUtilsObjectName(Device_, vk::ObjectType::eCommandBuffer, CommandBuffers[i], std::string(Name) + std::to_string(i));
+            std::string BufferName = std::string(Name) + std::to_string(i);
+            SetDebugUtilsObjectName(Device_, vk::ObjectType::eCommandBuffer, CommandBuffers[i], BufferName);
+            Buffers[i].SetHandleName(BufferName);
         }
 
         NpgsCoreTrace("Command buffer array \"{}\" allocated successfully.", Name);
@@ -445,9 +447,8 @@ namespace Npgs
         , Allocation_(Allocation)
         , AllocationInfo_(AllocationInfo)
     {
-        ReleaseInfo_ = std::format("Device memory \"{}\" freed successfully.", Name);
-        Handle_      = Handle;
-        Status_      = vk::Result::eSuccess;
+        Handle_ = Handle;
+        Status_ = vk::Result::eSuccess;
 
         SetDebugUtilsObjectName(Device, vk::ObjectType::eDeviceMemory, Handle, Name);
 
@@ -609,8 +610,7 @@ namespace Npgs
         : Base(Device, Name)
         , Allocator_(Allocator)
     {
-        ReleaseInfo_ = std::format("Buffer \"{}\" destroyed successfully.", Name);
-        Status_      = CreateBuffer(AllocationCreateInfo, CreateInfo);
+        Status_ = CreateBuffer(AllocationCreateInfo, CreateInfo);
     }
 
     FVulkanBuffer::FVulkanBuffer(FVulkanBuffer&& Other) noexcept
@@ -627,7 +627,7 @@ namespace Npgs
         {
             vmaDestroyBuffer(Allocator_, Handle_, Allocation_);
             Handle_ = vk::Buffer();
-            NpgsCoreTrace(ReleaseInfo_);
+            NpgsCoreTrace("Buffer \"{}\" destroyed successfully.", HandleName_);
         }
     }
 
@@ -681,8 +681,7 @@ namespace Npgs
     FVulkanBufferView::FVulkanBufferView(vk::Device Device, std::string_view Name, const vk::BufferViewCreateInfo& CreateInfo)
         : Base(Device, Name)
     {
-        ReleaseInfo_ = std::format("Buffer view {} destroyed successfully.", Name);
-        Status_      = CreateBufferView(CreateInfo);
+        Status_ = CreateBufferView(CreateInfo);
     }
 
     FVulkanBufferView::FVulkanBufferView(vk::Device Device, std::string_view Name, const FVulkanBuffer& Buffer,
@@ -690,8 +689,7 @@ namespace Npgs
                                          vk::DeviceSize Range, vk::BufferViewCreateFlags Flags)
         : Base(Device, Name)
     {
-        ReleaseInfo_ = std::format("Buffer view \"{}\" destroyed successfully.", Name);
-        Status_      = CreateBufferView(Buffer, Format, Offset, Range, Flags);
+        Status_ = CreateBufferView(Buffer, Format, Offset, Range, Flags);
     }
 
     vk::Result FVulkanBufferView::CreateBufferView(const vk::BufferViewCreateInfo& CreateInfo)
@@ -725,8 +723,7 @@ namespace Npgs
                                                            const vk::DescriptorSetLayoutCreateInfo& CreateInfo)
         : Base(Device, Name)
     {
-        ReleaseInfo_ = std::format("Descriptor set layout \"{}\" destroyed successfully.", Name);
-        Status_      = CreateDescriptorSetLayout(CreateInfo);
+        Status_ = CreateDescriptorSetLayout(CreateInfo);
     }
 
     std::vector<vk::DescriptorSetLayout>
@@ -764,15 +761,13 @@ namespace Npgs
     FVulkanFence::FVulkanFence(vk::Device Device, std::string_view Name, const vk::FenceCreateInfo& CreateInfo)
         : Base(Device, Name)
     {
-        ReleaseInfo_ = std::format("Fence \"{}\" destroyed successfully.", Name);
-        Status_      = CreateFence(CreateInfo);
+        Status_ = CreateFence(CreateInfo);
     }
 
     FVulkanFence::FVulkanFence(vk::Device Device, std::string_view Name, vk::FenceCreateFlags Flags)
         : Base(Device, Name)
     {
-        ReleaseInfo_ = std::format("Fence \"{}\" destroyed successfully.", Name);
-        Status_      = CreateFence(Flags);
+        Status_ = CreateFence(Flags);
     }
 
     vk::Result FVulkanFence::Wait() const
@@ -850,8 +845,7 @@ namespace Npgs
         : Base(Device, Name)
         , Allocator_(Allocator)
     {
-        ReleaseInfo_ = std::format("Image \"{}\" destroyed successfully.", Name);
-        Status_      = CreateImage(AllocationCreateInfo, CreateInfo);
+        Status_ = CreateImage(AllocationCreateInfo, CreateInfo);
     }
 
     FVulkanImage::FVulkanImage(FVulkanImage&& Other) noexcept
@@ -867,7 +861,7 @@ namespace Npgs
         {
             vmaDestroyImage(Allocator_, Handle_, Allocation_);
             Handle_ = vk::Image();
-            NpgsCoreTrace(ReleaseInfo_);
+            NpgsCoreTrace("Image \"{}\" desctoyed successfully.", HandleName_);
         }
     }
 
@@ -920,17 +914,15 @@ namespace Npgs
     FVulkanImageView::FVulkanImageView(vk::Device Device, std::string_view Name, const vk::ImageViewCreateInfo& CreateInfo)
         : Base(Device, Name)
     {
-        ReleaseInfo_ = std::format("Image view \"{}\" destroyed successfully.", Name);
-        Status_      = CreateImageView(CreateInfo);
+        Status_ = CreateImageView(CreateInfo);
     }
 
-    FVulkanImageView::FVulkanImageView(vk::Device Device, std::string_view Name, const FVulkanImage& Image, vk::ImageViewType ViewType,
+    FVulkanImageView::FVulkanImageView(vk::Device Device, std::string_view Name, const FVulkanImage & Image, vk::ImageViewType ViewType,
                                        vk::Format Format, vk::ComponentMapping Components,
                                        vk::ImageSubresourceRange SubresourceRange, vk::ImageViewCreateFlags Flags)
         : Base(Device, Name)
     {
-        ReleaseInfo_ = std::format("Image view \"{}\" destroyed successfully.", Name);
-        Status_      = CreateImageView(Image, ViewType, Format, Components, SubresourceRange, Flags);
+        Status_ = CreateImageView(Image, ViewType, Format, Components, SubresourceRange, Flags);
     }
 
     vk::Result FVulkanImageView::CreateImageView(const vk::ImageViewCreateInfo& CreateInfo)
@@ -964,23 +956,20 @@ namespace Npgs
     FVulkanPipelineCache::FVulkanPipelineCache(vk::Device Device, std::string_view Name, vk::PipelineCacheCreateFlags Flags)
         : Base(Device, Name)
     {
-        ReleaseInfo_ = std::format("Pipeline cache \"{}\" destroyed successfully.", Name);
-        Status_      = CreatePipelineCache(Flags);
+        Status_ = CreatePipelineCache(Flags);
     }
 
     FVulkanPipelineCache::FVulkanPipelineCache(vk::Device Device, std::string_view Name, vk::PipelineCacheCreateFlags Flags,
                                                const vk::ArrayProxyNoTemporaries<const std::byte>& InitialData)
         : Base(Device, Name)
     {
-        ReleaseInfo_ = std::format("Pipeline cache \"{}\" destroyed successfully.", Name);
-        Status_      = CreatePipelineCache(Flags, InitialData);
+        Status_ = CreatePipelineCache(Flags, InitialData);
     }
 
     FVulkanPipelineCache::FVulkanPipelineCache(vk::Device Device, std::string_view Name, const vk::PipelineCacheCreateInfo& CreateInfo)
         : Base(Device, Name)
     {
-        ReleaseInfo_ = std::format("Pipeline cache \"{}\" destroyed successfully.", Name);
-        Status_      = CreatePipelineCache(CreateInfo);
+        Status_ = CreatePipelineCache(CreateInfo);
     }
 
     vk::Result FVulkanPipelineCache::CreatePipelineCache(vk::PipelineCacheCreateFlags Flags)
@@ -1021,8 +1010,7 @@ namespace Npgs
                                      const FVulkanPipelineCache* Cache)
         : Base(Device, Name)
     {
-        ReleaseInfo_ = std::format("Graphics pipeline \"{}\" destroyed successfully.", Name);
-        Status_      = CreateGraphicsPipeline(CreateInfo, Cache);
+        Status_ = CreateGraphicsPipeline(CreateInfo, Cache);
     }
 
     FVulkanPipeline::FVulkanPipeline(vk::Device Device, std::string_view Name,
@@ -1030,8 +1018,7 @@ namespace Npgs
                                      const FVulkanPipelineCache* Cache)
         : Base(Device, Name)
     {
-        ReleaseInfo_ = std::format("Compute pipeline \"{}\" destroyed successfully.", Name);
-        Status_      = CreateComputePipeline(CreateInfo, Cache);
+        Status_ = CreateComputePipeline(CreateInfo, Cache);
     }
 
     vk::Result FVulkanPipeline::CreateGraphicsPipeline(const vk::GraphicsPipelineCreateInfo& CreateInfo,
@@ -1080,8 +1067,7 @@ namespace Npgs
                                                  const vk::PipelineLayoutCreateInfo& CreateInfo)
         : Base(Device, Name)
     {
-        ReleaseInfo_ = std::format("Pipeline layout \"{}\" destroyed successfully.", Name);
-        Status_      = CreatePipelineLayout(CreateInfo);
+        Status_ = CreatePipelineLayout(CreateInfo);
     }
 
     vk::Result FVulkanPipelineLayout::CreatePipelineLayout(const vk::PipelineLayoutCreateInfo& CreateInfo)
@@ -1108,8 +1094,7 @@ namespace Npgs
     FVulkanQueryPool::FVulkanQueryPool(vk::Device Device, std::string_view Name, const vk::QueryPoolCreateInfo& CreateInfo)
         : Base(Device, Name)
     {
-        ReleaseInfo_ = std::format("Query pool \"{}\" destroyed successfully.", Name);
-        Status_      = CreateQueryPool(CreateInfo);
+        Status_ = CreateQueryPool(CreateInfo);
     }
 
     FVulkanQueryPool::FVulkanQueryPool(vk::Device Device, std::string_view Name, vk::QueryType QueryType, std::uint32_t QueryCount,
@@ -1117,8 +1102,7 @@ namespace Npgs
         : Base(Device, Name)
     {
         vk::QueryPoolCreateInfo CreateInfo(Flags, QueryType, QueryCount, PipelineStatisticsFlags);
-        ReleaseInfo_ = std::format("Query pool \"{}\" destroyed successfully.", Name);
-        Status_      = CreateQueryPool(CreateInfo);
+        Status_ = CreateQueryPool(CreateInfo);
     }
 
     vk::Result FVulkanQueryPool::Reset(std::uint32_t FirstQuery, std::uint32_t QueryCount)
@@ -1160,8 +1144,7 @@ namespace Npgs
     FVulkanSampler::FVulkanSampler(vk::Device Device, std::string_view Name, const vk::SamplerCreateInfo& CreateInfo)
         : Base(Device, Name)
     {
-        ReleaseInfo_ = std::format("Sampler \"{}\" destroyed successfully.", Name);
-        Status_      = CreateSampler(CreateInfo);
+        Status_ = CreateSampler(CreateInfo);
     }
 
     vk::Result FVulkanSampler::CreateSampler(const vk::SamplerCreateInfo& CreateInfo)
@@ -1187,15 +1170,13 @@ namespace Npgs
     FVulkanSemaphore::FVulkanSemaphore(vk::Device Device, std::string_view Name, const vk::SemaphoreCreateInfo& CreateInfo)
         : Base(Device, Name)
     {
-        ReleaseInfo_ = std::format("Semaphore \"{}\" destroyed successfully.", Name);
-        Status_      = CreateSemaphore(CreateInfo);
+        Status_ = CreateSemaphore(CreateInfo);
     }
 
     FVulkanSemaphore::FVulkanSemaphore(vk::Device Device, std::string_view Name, vk::SemaphoreCreateFlags Flags)
         : Base(Device, Name)
     {
-        ReleaseInfo_ = std::format("Semaphore \"{}\" destroyed successfully.", Name);
-        Status_      = CreateSemaphore(Flags);
+        Status_ = CreateSemaphore(Flags);
     }
 
     vk::Result FVulkanSemaphore::CreateSemaphore(const vk::SemaphoreCreateInfo& CreateInfo)
@@ -1228,8 +1209,7 @@ namespace Npgs
                                              const vk::ShaderModuleCreateInfo& CreateInfo)
         : Base(Device, Name)
     {
-        ReleaseInfo_ = std::format("Shader module \"{}\" destroyed successfully.", Name);
-        Status_      = CreateShaderModule(CreateInfo);
+        Status_ = CreateShaderModule(CreateInfo);
     }
 
     vk::Result FVulkanShaderModule::CreateShaderModule(const vk::ShaderModuleCreateInfo& CreateInfo)

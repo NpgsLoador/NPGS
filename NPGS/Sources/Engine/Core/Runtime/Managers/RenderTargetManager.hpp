@@ -3,7 +3,6 @@
 #include <memory>
 #include <string>
 #include <string_view>
-#include <unordered_map>
 
 #include <vulkan/vulkan.hpp>
 
@@ -51,8 +50,7 @@ namespace Npgs
     class FRenderTargetManager
     {
     private:
-        using FManagedTargetMap =
-            std::unordered_map<std::string, FManagedTarget, Utils::FStringViewHeteroHash, Utils::FStringViewHeteroEqual>;
+        using FManagedTargetMap = Utils::FStringHeteroHashTable<std::string, FManagedTarget>;
 
     public:
         FRenderTargetManager(FVulkanContext* VulkanContext);

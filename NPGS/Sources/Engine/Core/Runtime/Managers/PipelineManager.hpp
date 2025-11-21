@@ -3,7 +3,6 @@
 #include <cstdint>
 #include <string>
 #include <string_view>
-#include <unordered_map>
 #include <vector>
 
 #include <vulkan/vulkan.hpp>
@@ -50,17 +49,10 @@ namespace Npgs
         FVulkanContext*                                                  VulkanContext_;
         FAssetManager*                                                   AssetManager_;
         
-        std::unordered_map<std::string, FGraphicsPipelineCreateInfoPack,
-                           Utils::FStringViewHeteroHash, Utils::FStringViewHeteroEqual> GraphicsPipelineCreateInfoPacks_;
-
-        std::unordered_map<std::string, vk::ComputePipelineCreateInfo,
-                           Utils::FStringViewHeteroHash, Utils::FStringViewHeteroEqual> ComputePipelineCreateInfos_;
-        
-        std::unordered_map<std::string, FVulkanPipelineLayout,
-                           Utils::FStringViewHeteroHash, Utils::FStringViewHeteroEqual> PipelineLayouts_;
-
-        std::unordered_map<std::string, FVulkanPipeline,
-                           Utils::FStringViewHeteroHash, Utils::FStringViewHeteroEqual> Pipelines_;
+        Utils::FStringHeteroHashTable<std::string, FGraphicsPipelineCreateInfoPack> GraphicsPipelineCreateInfoPacks_;
+        Utils::FStringHeteroHashTable<std::string, vk::ComputePipelineCreateInfo>   ComputePipelineCreateInfos_;
+        Utils::FStringHeteroHashTable<std::string, FVulkanPipelineLayout>           PipelineLayouts_;
+        Utils::FStringHeteroHashTable<std::string, FVulkanPipeline>                 Pipelines_;
     };
 } // namespace Npgs
 

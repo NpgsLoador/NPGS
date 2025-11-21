@@ -6,7 +6,6 @@
 #include <memory>
 #include <string>
 #include <string_view>
-#include <unordered_map>
 #include <vector>
 
 #include "Engine/Core/Runtime/Graphics/Vulkan/Context.hpp"
@@ -74,7 +73,7 @@ namespace Npgs
 
     private:
         using FManagedAsset = std::unique_ptr<void, FTypeErasedDeleter>;
-        using FAssetMap     = std::unordered_map<std::string, FManagedAsset, Utils::FStringViewHeteroHash, Utils::FStringViewHeteroEqual>;
+        using FAssetMap     = Utils::FStringHeteroHashTable<std::string, FManagedAsset>;
 
         FAssetMap       Assets_;
         FVulkanContext* VulkanContext_;

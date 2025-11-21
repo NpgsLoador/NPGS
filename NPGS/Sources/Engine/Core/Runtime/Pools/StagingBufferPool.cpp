@@ -51,7 +51,7 @@ namespace Npgs
         vk::BufferCreateInfo BufferCreateInfo({}, AlignedSize, vk::BufferUsageFlagBits::eTransferSrc | vk::BufferUsageFlagBits::eTransferDst);
         
         std::uint64_t ResourceId = NextResourceId_.fetch_add(1);
-        std::string Name = std::format("StagingBuffer_PoolInst_{}_ID_{}", reinterpret_cast<std::uintptr_t>(this), ResourceId);
+        std::string Name = std::format("StagingBuffer_PoolInst_{:#x}_ID_{}", reinterpret_cast<std::uintptr_t>(this), ResourceId);
 
         BufferInfoPtr->Resource = std::make_unique<FStagingBuffer>(
             Name, PhysicalDevice_, Device_, Allocator_, AllocationCreateInfo_, BufferCreateInfo);

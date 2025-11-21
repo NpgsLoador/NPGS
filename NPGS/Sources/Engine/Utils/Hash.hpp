@@ -1,8 +1,10 @@
 #pragma once
 
 #include <cstddef>
+#include <concepts>
 #include <string>
 #include <string_view>
+#include <unordered_map>
 
 #include "Engine/Core/Base/Base.hpp"
 
@@ -52,6 +54,10 @@ namespace Npgs::Utils
             return std::hash<std::string_view>()(Key);
         }
     };
+
+    template <typename Key, typename Value>
+    requires std::same_as<Key, std::string>
+    using FStringHeteroHashTable = std::unordered_map<Key, Value, FStringViewHeteroHash, FStringViewHeteroEqual>;
 
     template <typename Ty>
     NPGS_INLINE void HashCombine(const Ty& Value, std::size_t& Seed)

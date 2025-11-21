@@ -1,6 +1,5 @@
 #include <utility>
 #include "Engine/Core/Base/Base.hpp"
-#include "Wrappers.hpp"
 
 namespace Npgs
 {
@@ -101,7 +100,6 @@ namespace Npgs
     requires std::is_class_v<HandleType>
     TVulkanHandle<HandleType, bEnableReleaseInfoOutput, ReleaseMethod>::TVulkanHandle(vk::Device Device, HandleType Handle, std::string_view HandleName)
         : Base(Handle, HandleName)
-        , ReleaseInfo_(std::string(HandleName) + " destroyed successfully.")
         , Device_(Device)
         , Status_(vk::Result::eSuccess)
     {
@@ -120,7 +118,6 @@ namespace Npgs
     requires std::is_class_v<HandleType>
     TVulkanHandle<HandleType, bEnableReleaseInfoOutput, ReleaseMethod>::TVulkanHandle(TVulkanHandle&& Other) noexcept
         : Base(std::move(Other))
-        , ReleaseInfo_(std::move(Other.ReleaseInfo_))
         , Device_(std::move(Other.Device_))
         , Status_(std::exchange(Other.Status_, {}))
     {
@@ -135,7 +132,7 @@ namespace Npgs
             ReleaseHandle();
             if constexpr (bEnableReleaseInfoOutput)
             {
-                NpgsCoreTrace(ReleaseInfo_);
+                NpgsCoreTrace("Resource \"{}\" desctoyed successfully.", this->HandleName_);
             }
         }
     }
@@ -154,9 +151,8 @@ namespace Npgs
 
             Base::operator=(std::move(Other));
 
-            ReleaseInfo_ = std::move(Other.ReleaseInfo_);
-            Device_      = std::move(Other.Device_);
-            Status_      = std::exchange(Other.Status_, {});
+            Device_ = std::move(Other.Device_);
+            Status_ = std::exchange(Other.Status_, {});
         }
 
         return *this;
@@ -184,6 +180,13 @@ namespace Npgs
                 Device_.free(this->Handle_);
             }
         }
+    }
+
+    // Wrapper for vk::CommandBuffer
+    // ----------------------------
+    NPGS_INLINE void FVulkanCommandBuffer::SetHandleName(std::string_view Name)
+    {
+        HandleName_ = Name;
     }
 
     // Wrapper for vk::DeviceMemory
