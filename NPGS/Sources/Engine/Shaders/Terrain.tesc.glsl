@@ -38,15 +38,15 @@ float MultiLevelTessellation(float NormalizedDistance)
 	float AdjustedDistance = sqrt(NormalizedDistance);
     if (AdjustedDistance < 0.2)
 	{
-        return mix(iTessArgs.MaxTessLevel, iTessArgs.MaxTessLevel * 0.75, smoothstep(0.0, 0.2, AdjustedDistance));
+        return mix(TessArgs.MaxTessLevel, TessArgs.MaxTessLevel * 0.75, smoothstep(0.0, 0.2, AdjustedDistance));
     } 
     else if (AdjustedDistance < 0.6)
 	{
-        return mix(iTessArgs.MaxTessLevel * 0.75, iTessArgs.MaxTessLevel * 0.3, smoothstep(0.2, 0.6, AdjustedDistance));
+        return mix(TessArgs.MaxTessLevel * 0.75, TessArgs.MaxTessLevel * 0.3, smoothstep(0.2, 0.6, AdjustedDistance));
     }
     else
 	{
-        return mix(iTessArgs.MaxTessLevel * 0.3, iTessArgs.MinTessLevel, smoothstep(0.6, 1.0, AdjustedDistance));
+        return mix(TessArgs.MaxTessLevel * 0.3, TessArgs.MinTessLevel, smoothstep(0.6, 1.0, AdjustedDistance));
     }
 }
 
@@ -69,7 +69,7 @@ void main()
 
 			VertexViewSpace[i] = MvpMatrices.View * MvpMatrices.Model * AdjustedVertex;
 
-			float NormalizedDistance = smoothstep(iTessArgs.MinDistance, iTessArgs.MaxDistance, abs(VertexViewSpace[i].z));
+			float NormalizedDistance = smoothstep(TessArgs.MinDistance, TessArgs.MaxDistance, abs(VertexViewSpace[i].z));
 			Distances[i] = NormalizedDistance;	
 		}
 

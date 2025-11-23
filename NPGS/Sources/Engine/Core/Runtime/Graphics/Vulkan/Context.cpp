@@ -30,11 +30,11 @@ namespace Npgs
 
             StagingBufferPools_[std::to_underlying(FStagingBufferPool::EPoolUsage::kSubmit)] = std::make_unique<FStagingBufferPool>(
                 VulkanCore_->GetPhysicalDevice(), VulkanCore_->GetDevice(), VulkanCore_->GetVmaAllocator(),
-                4, 64, 1000, 60000, FStagingBufferPool::EPoolUsage::kSubmit, true);
+                4, 64, 1000, 60000, FStagingBufferPool::EPoolUsage::kSubmit);
 
             StagingBufferPools_[std::to_underlying(FStagingBufferPool::EPoolUsage::kFetch)] = std::make_unique<FStagingBufferPool>(
                 VulkanCore_->GetPhysicalDevice(), VulkanCore_->GetDevice(), VulkanCore_->GetVmaAllocator(),
-                2, 8, 10000, 60000, FStagingBufferPool::EPoolUsage::kFetch, true);
+                2, 8, 10000, 60000, FStagingBufferPool::EPoolUsage::kFetch);
         };
 
         // auto InitializeFormatProperties = [this]() -> void

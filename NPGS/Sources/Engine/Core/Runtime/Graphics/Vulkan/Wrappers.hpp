@@ -94,7 +94,7 @@ namespace Npgs
         bool         bIsCompressed{ false };
 
         explicit FFormatInfo(vk::Format Format);
-        constexpr FFormatInfo(int ComponentCount, int ComponentSize, int PixelSize, ERawDataType RawDataType, bool bIsCompressed)
+        constexpr FFormatInfo(std::uint8_t ComponentCount, std::uint8_t ComponentSize, std::uint8_t PixelSize, ERawDataType RawDataType, bool bIsCompressed)
             : ComponentCount(ComponentCount)
             , ComponentSize(ComponentSize)
             , PixelSize(PixelSize)
@@ -244,7 +244,7 @@ namespace Npgs
         vk::Result FetchData(ContainerType& Data);
 
         const void* GetMappedDataMemory() const;
-        void* GetMappedTargetMemory();
+        void* GetMappedTargetMemory() const;
         vk::DeviceSize GetAllocationSize() const;
         vk::MemoryPropertyFlags GetMemoryPropertyFlags() const;
         bool IsPereistentlyMapped() const;

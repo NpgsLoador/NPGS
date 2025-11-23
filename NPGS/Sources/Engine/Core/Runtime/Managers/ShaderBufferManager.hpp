@@ -163,7 +163,7 @@ namespace Npgs
 
         const FDescriptorBufferInfo& GetDescriptorBufferInfo(std::string_view BufferName) const;
 
-        std::pair<vk::DeviceSize, vk::DescriptorType>
+        const std::pair<vk::DeviceSize, vk::DescriptorType>&
         GetDescriptorBindingOffsetAndType(std::string_view BufferName, std::uint32_t Set, std::uint32_t Binding) const;
         
         vk::DeviceSize GetDescriptorSize(vk::DescriptorType Usage) const;

@@ -48,12 +48,12 @@
 #include <cwchar>
 #include <cwctype>
 
-#if _MSVC_LANG >= 201103L
+#if __cplusplus >= 201103L
 #include <cfenv>
 #include <cinttypes>
 #include <cstdint>
 #include <cuchar>
-#if _MSVC_LANG < 201703L
+#if __cplusplus < 201703L
 #include <ccomplex>
 #include <cstdalign>
 #include <cstdbool>
@@ -61,7 +61,7 @@
 #endif
 #endif
 
-#if _MSVC_LANG >= 202302L
+#if __cplusplus >= 202302L
 #if __has_include(<stdbit.h>)
 #include <stdbit.h>
 #endif
@@ -104,7 +104,7 @@
 #include <valarray>
 #include <vector>
 
-#if _MSVC_LANG >= 201103L
+#if __cplusplus >= 201103L
 #include <array>
 #include <atomic>
 #include <chrono>
@@ -127,11 +127,11 @@
 #include <unordered_set>
 #endif
 
-#if _MSVC_LANG >= 201402L
+#if __cplusplus >= 201402L
 #include <shared_mutex>
 #endif
 
-#if _MSVC_LANG >= 201703L
+#if __cplusplus >= 201703L
 #include <any>
 #include <charconv>
 #include <execution>
@@ -142,7 +142,7 @@
 #include <variant>
 #endif
 
-#if _MSVC_LANG >= 202002L
+#if __cplusplus >= 202002L
 #include <barrier>
 #include <bit>
 #include <compare>
@@ -160,7 +160,7 @@
 #include <version>
 #endif
 
-#if _MSVC_LANG >= 202302L
+#if __cplusplus >= 202302L
 #include <expected>
 #if __has_include(<flat_map>)
 #include <flat_map>
@@ -177,7 +177,7 @@
 #include <stdfloat>
 #endif
 
-#if _MSVC_LANG >= 202602L
+#if __cplusplus >= 202602L
 #include <contracts>
 #include <debugging>
 #include <hazard_pointer>

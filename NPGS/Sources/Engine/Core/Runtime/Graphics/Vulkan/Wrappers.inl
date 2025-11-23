@@ -219,7 +219,7 @@ namespace Npgs
         return MappedDataMemory_;
     }
 
-    NPGS_INLINE void* FVulkanDeviceMemory::GetMappedTargetMemory()
+    NPGS_INLINE void* FVulkanDeviceMemory::GetMappedTargetMemory() const
     {
         return MappedTargetMemory_;
     }
@@ -285,16 +285,17 @@ namespace Npgs
     std::vector<DataType>
     FVulkanQueryPool::GetResult(std::uint32_t FirstQuery, std::uint32_t QueryCount, std::size_t DataSize, vk::DeviceSize Stride, vk::QueryResultFlags Flags)
     {
-        try
-        {
-            std::vector<DataType> Results = Device_.getQueryPoolResults(Handle_, FirstQuery, QueryCount, DataSize, Stride, Flags).value;
-            return Results;
-        }
-        catch (const vk::SystemError& e)
-        {
-            NpgsCoreError("Failed to get query pool results: {}", e.code().value());
-            return {};
-        }
+        // try
+        // {
+        //     std::vector<DataType> Results = Device_.getQueryPoolResults(Handle_, FirstQuery, QueryCount, DataSize, Stride, Flags).value;
+        //     return Results;
+        // }
+        // catch (const vk::SystemError& e)
+        // {
+        //     NpgsCoreError("Failed to get query pool results: {}", e.code().value());
+        //     return {};
+        // }
+        return {};
     }
     // -------------------
     // Native wrappers end

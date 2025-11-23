@@ -624,17 +624,17 @@ namespace Npgs
                     .FeHDistribution    = FeHDistribution
                 };
 
-                Generators.push_back(std::move(GenerationInfo));
+                Generators.emplace_back(GenerationInfo);
             }
         };
 
         // 生成基础属性
-        auto GenerateBasicProperties = [&, this](std::size_t NumStars) -> void
+        auto GenerateBasicProperties = [&](std::size_t NumStars) -> void
         {
             for (std::size_t i = 0; i != NumStars; ++i)
             {
                 std::size_t ThreadId = i % Generators.size();
-                BasicProperties.push_back(std::move(Generators[ThreadId].GenerateBasicProperties()));
+                BasicProperties.push_back(Generators[ThreadId].GenerateBasicProperties());
             }
         };
 
@@ -823,7 +823,7 @@ namespace Npgs
                 std::vector<Astro::AStar> Stars;
                 for (auto& Properties : PropertyLists[i])
                 {
-                    Stars.push_back(std::move(Generators[i].GenerateStar(Properties)));
+                    Stars.push_back(Generators[i].GenerateStar(Properties));
                 }
                 Promises[i].set_value(std::move(Stars));
             });
@@ -921,7 +921,7 @@ namespace Npgs
 
         Utils::TUniformRealDistribution Offset(-LeafRadius, LeafRadius - MinDistance); // 用于随机生成恒星位置相对于叶子节点中心点的偏移量
         // 遍历八叉树，为每个有效的叶子节点生成一个恒星
-        Octree_->Traverse([&Offset, LeafRadius, MinDistance, this](FNodeType& Node) -> void
+        Octree_->Traverse([&Offset, this](FNodeType& Node) -> void
         {
             if (Node.IsLeafNode() && Node.IsValid())
             {
@@ -977,9 +977,9 @@ namespace Npgs
         for (int i = 0; i != MaxThread; ++i)
         {
             std::vector<std::uint32_t> Seeds(32);
-            for (int i = 0; i != 32; ++i)
+            for (int j = 0; j != 32; ++j)
             {
-                Seeds[i] = SeedGenerator_(RandomEngine_);
+                Seeds[j] = SeedGenerator_(RandomEngine_);
             }
 
             std::ranges::shuffle(Seeds, RandomEngine_);
@@ -992,7 +992,7 @@ namespace Npgs
                 .MultiplicityOption = FStellarGenerator::EMultiplicityGenerationOption::kBinarySecondStar
             };
 
-            Generators.push_back(std::move(GenerationInfo));
+            Generators.emplace_back(GenerationInfo);
         }
 
         std::vector<Astro::FStellarSystem*> BinarySystems;
@@ -1029,7 +1029,7 @@ namespace Npgs
                 Age -= Star->GetLifetime();
             }
 
-            BasicProperties.push_back(std::move(SelectedGenerator.GenerateBasicProperties(static_cast<float>(Age), FeH)));
+            BasicProperties.push_back(SelectedGenerator.GenerateBasicProperties(static_cast<float>(Age), FeH));
         }
 
         std::vector<Astro::AStar> Stars = InterpolateStars(MaxThread, Generators, BasicProperties);

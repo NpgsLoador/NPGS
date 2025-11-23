@@ -25,7 +25,7 @@ namespace Npgs
 
         EImageType         Type;
         vk::DescriptorType Usage;
-        std::string        Name;
+        std::string        ImageName;
         std::string        SamplerName;
         std::uint32_t      Set{};
         std::uint32_t      Binding{};
@@ -37,7 +37,7 @@ namespace Npgs
         std::string                         ShaderName;
         std::vector<std::string>            UniformBufferNames;
         std::vector<std::string>            StorageBufferNames;
-        std::vector<FSamplerInfoCreateInfo> SamplerNames;
+        std::vector<FSamplerInfoCreateInfo> SamplerInfos;
         std::vector<FImageInfoCreateInfo>   ImageInfos;
     };
 

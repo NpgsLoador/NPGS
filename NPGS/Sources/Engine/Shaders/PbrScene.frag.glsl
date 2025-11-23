@@ -97,7 +97,7 @@ void main()
 {
 	_LightArgs LightArgs = _LightArgs(DeviceAddress.LightArgsAddress);
 #if defined(LAMP_BOX)
-	FragColor = vec4(iLightArgs.LightColor, 1.0);
+	FragColor = vec4(LightArgs.LightColor, 1.0);
 #else
 	vec3  TexAlbedo    = texture(sampler2D(iAlbedoTex, iSampler), FragInput.TexCoord).rgb;
 	vec3  TexNormal    = texture(sampler2D(iNormalTex, iSampler), FragInput.TexCoord).rgb;

@@ -154,8 +154,8 @@ namespace Npgs
     void FShaderBufferManager::UpdateResourceDescriptors(std::string_view BufferName, std::uint32_t Set, std::uint32_t Binding,
                                                          vk::DescriptorType ConfirmedUsage, const Type& DescriptorInfo)
     {
-        auto& BufferInfo    = GetDescriptorBufferInfo(BufferName);
-        auto& OffsetAndType = GetDescriptorBindingOffsetAndType(BufferName, Set, Binding);
+        const auto& BufferInfo    = GetDescriptorBufferInfo(BufferName);
+        const auto& OffsetAndType = GetDescriptorBindingOffsetAndType(BufferName, Set, Binding);
 
         vk::DeviceSize     Offset       = OffsetAndType.first;
         vk::DescriptorType CurrentUsage = OffsetAndType.second;
@@ -186,10 +186,8 @@ namespace Npgs
     void FShaderBufferManager::UpdateResourceDescriptor(std::uint32_t FrameIndex, std::string_view BufferName, std::uint32_t Set,
                                                         std::uint32_t Binding, vk::DescriptorType ConfirmedUsage, const Type& DescriptorInfo)
     {
-        auto& BufferInfo = GetDescriptorBufferInfo(BufferName);
-        auto& Buffer     = BufferInfo.Buffers[FrameIndex];
-
-        auto& OffsetAndType = GetDescriptorBindingOffsetAndType(BufferName, Set, Binding);
+        const auto& BufferInfo    = GetDescriptorBufferInfo(BufferName);
+        const auto& OffsetAndType = GetDescriptorBindingOffsetAndType(BufferName, Set, Binding);
 
         vk::DeviceSize     Offset       = OffsetAndType.first;
         vk::DescriptorType CurrentUsage = OffsetAndType.second;
@@ -207,7 +205,7 @@ namespace Npgs
         vk::DescriptorGetInfoEXT DescriptorGetInfo(ConfirmedUsage, &DescriptorInfo);
         vk::DeviceSize DescriptorSize = GetDescriptorSize(CurrentUsage);
 
-        auto& BufferMemory = Buffer.GetMemory();
+        auto& BufferMemory = BufferInfo.Buffers[FrameIndex].GetMemory();
         void* Target       = BufferMemory.GetMappedTargetMemory();
         vk::Device Device  = VulkanContext_->GetDevice();
         Device.getDescriptorEXT(DescriptorGetInfo, DescriptorSize, reinterpret_cast<std::byte*>(Target) + Offset);

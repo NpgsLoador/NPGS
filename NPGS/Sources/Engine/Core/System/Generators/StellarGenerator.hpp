@@ -251,9 +251,9 @@ namespace Npgs
         FStellarGenerator::EGenerationDistribution FeHDistribution{ FStellarGenerator::EGenerationDistribution::kFromPdf };
         float CoilTemperatureLimit{ 1514.114f };
         float dEpdM{ 2e6f };
-        const std::function<float(glm::vec3, float, float)>& AgePdf{ nullptr };
+        std::function<float(glm::vec3, float, float)> AgePdf{ nullptr };
         glm::vec2 AgeMaxPdf{ glm::vec2() };
-        const std::array<std::function<float(float)>, 2>& MassPdfs{ nullptr, nullptr };
+        std::array<std::function<float(float)>, 2> MassPdfs{ nullptr, nullptr };
         std::array<glm::vec2, 2> MassMaxPdfs{ glm::vec2(), glm::vec2() };
     };
 } // namespace Npgs

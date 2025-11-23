@@ -143,10 +143,10 @@ namespace Npgs
                           ? std::make_unique<Utils::TUniformRealDistribution<>>(0.0f, 1.0f)
                           : std::make_unique<Utils::TUniformRealDistribution<>>(std::log10(GenerationInfo.MassLowerLimit), std::log10(GenerationInfo.MassUpperLimit))),
 
-        MassPdfs_(GenerationInfo.MassPdfs),
+        MassPdfs_(std::move(GenerationInfo.MassPdfs)),
         MassMaxPdfs_(GenerationInfo.MassMaxPdfs),
         AgeMaxPdf_(GenerationInfo.AgeMaxPdf),
-        AgePdf_(GenerationInfo.AgePdf),
+        AgePdf_(std::move(GenerationInfo.AgePdf)),
         UniverseAge_(GenerationInfo.UniverseAge),
         AgeLowerLimit_(GenerationInfo.AgeLowerLimit),
         AgeUpperLimit_(GenerationInfo.AgeUpperLimit),

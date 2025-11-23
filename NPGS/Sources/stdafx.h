@@ -1,7 +1,5 @@
 #pragma once
 
-#define _SILENCE_CXX23_DENORM_DEPRECATION_WARNING // for std::float_denorm_style in Imath/half.h
-
 #include "xstdafx.h"
 
 #include <assimp/Importer.hpp>

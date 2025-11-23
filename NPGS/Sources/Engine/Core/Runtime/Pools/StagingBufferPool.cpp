@@ -12,8 +12,7 @@ namespace Npgs
 {
     FStagingBufferPool::FStagingBufferPool(vk::PhysicalDevice PhysicalDevice, vk::Device Device, VmaAllocator Allocator,
                                            std::uint32_t MinAvailableBufferLimit, std::uint32_t MaxAllocatedBufferLimit,
-                                           std::uint32_t BufferReclaimThresholdMs, std::uint32_t MaintenanceIntervalMs,
-                                           EPoolUsage PoolUsage, bool bUsingVma)
+                                           std::uint32_t BufferReclaimThresholdMs, std::uint32_t MaintenanceIntervalMs, EPoolUsage PoolUsage)
         : Base(MinAvailableBufferLimit, MaxAllocatedBufferLimit, BufferReclaimThresholdMs, MaintenanceIntervalMs)
         , PhysicalDevice_(PhysicalDevice)
         , Device_(Device)

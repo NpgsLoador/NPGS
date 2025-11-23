@@ -158,26 +158,27 @@ namespace Npgs
         VulkanHppCheck(CheckDeviceExtensions());
 
         float QueuePriority = 1.0f;
-        std::vector<float> QueuePriorities;
+        std::vector<std::vector<float>> QueuePriorityStorage(3);
         std::vector<vk::DeviceQueueCreateInfo> DeviceQueueCreateInfos;
 
         if (QueueFamilyIndices_.at(EQueueType::kGeneral) != vk::QueueFamilyIgnored)
         {
             const auto& QueueFamilyProperties = QueueFamilyProperties_[QueueFamilyIndices_.at(EQueueType::kGeneral)];
+            auto& QueuePriorities = QueuePriorityStorage[0];
             QueuePriorities.assign(QueueFamilyProperties.queueCount, QueuePriority);
             DeviceQueueCreateInfos.emplace_back(vk::DeviceQueueCreateFlags(), QueueFamilyIndices_.at(EQueueType::kGeneral), QueuePriorities);
         }
         if (QueueFamilyIndices_.at(EQueueType::kCompute) != vk::QueueFamilyIgnored)
         {
             const auto& QueueFamilyProperties = QueueFamilyProperties_[QueueFamilyIndices_.at(EQueueType::kCompute)];
-            QueuePriorities.clear();
+            auto& QueuePriorities = QueuePriorityStorage[1];
             QueuePriorities.assign(QueueFamilyProperties.queueCount, QueuePriority);
             DeviceQueueCreateInfos.emplace_back(vk::DeviceQueueCreateFlags(), QueueFamilyIndices_.at(EQueueType::kCompute), QueuePriorities);
         }
         if (QueueFamilyIndices_.at(EQueueType::kTransfer) != vk::QueueFamilyIgnored)
         {
             const auto& QueueFamilyProperties = QueueFamilyProperties_[QueueFamilyIndices_.at(EQueueType::kTransfer)];
-            QueuePriorities.clear();
+            auto& QueuePriorities = QueuePriorityStorage[2];
             QueuePriorities.assign(QueueFamilyProperties.queueCount, QueuePriority);
             DeviceQueueCreateInfos.emplace_back(vk::DeviceQueueCreateFlags(), QueueFamilyIndices_.at(EQueueType::kTransfer), QueuePriorities);
         }

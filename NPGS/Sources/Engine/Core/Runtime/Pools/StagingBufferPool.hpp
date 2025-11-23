@@ -37,8 +37,7 @@ namespace Npgs
 
         FStagingBufferPool(vk::PhysicalDevice PhysicalDevice, vk::Device Device, VmaAllocator Allocator,
                            std::uint32_t MinAvailableBufferLimit, std::uint32_t MaxAllocatedBufferLimit,
-                           std::uint32_t BufferReclaimThresholdMs, std::uint32_t MaintenanceIntervalMs,
-                           EPoolUsage PoolUsage, bool bUsingVma = true);
+                           std::uint32_t BufferReclaimThresholdMs, std::uint32_t MaintenanceIntervalMs, EPoolUsage PoolUsage);
 
         FBufferGuard AcquireBuffer(vk::DeviceSize RequestedSize);
 

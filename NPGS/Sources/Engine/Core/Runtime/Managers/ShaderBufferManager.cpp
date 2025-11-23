@@ -151,7 +151,7 @@ namespace Npgs
         return it->second;
     }
 
-    std::pair<vk::DeviceSize, vk::DescriptorType>
+    const std::pair<vk::DeviceSize, vk::DescriptorType>&
     FShaderBufferManager::GetDescriptorBindingOffsetAndType(std::string_view BufferName, std::uint32_t Set, std::uint32_t Binding) const
     {
         auto it = OffsetsMap_.find(BufferName);

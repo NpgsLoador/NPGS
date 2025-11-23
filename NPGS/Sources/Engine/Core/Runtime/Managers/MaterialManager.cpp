@@ -22,25 +22,25 @@ namespace Npgs
         DescriptorBufferCreateInfo.UniformBufferNames = DescriptorBindInfo.UniformBufferNames;
         DescriptorBufferCreateInfo.StorageBufferNames = DescriptorBindInfo.StorageBufferNames;
 
-        for (const auto& [Name, Set, Binding] : DescriptorBindInfo.SamplerNames)
+        for (const auto& [Name, Set, Binding] : DescriptorBindInfo.SamplerInfos)
         {
             auto* Sampler = AssetManager->GetAsset<FVulkanSampler>(Name);
             DescriptorBufferCreateInfo.SamplerInfos.emplace_back(Set, Binding, **Sampler);
         }
 
-        for (const auto& [Type, Usage, Name, Sampler, Set, Binding] : DescriptorBindInfo.ImageInfos)
+        for (const auto& [Type, Usage, ImageName, SamplerName, Set, Binding] : DescriptorBindInfo.ImageInfos)
         {
             vk::DescriptorImageInfo ImageInfo;
-            auto* Sampler = Name.empty() ? nullptr : AssetManager->GetAsset<FVulkanSampler>(Name);
+            auto* Sampler = SamplerName.empty() ? nullptr : AssetManager->GetAsset<FVulkanSampler>(SamplerName);
             if (Type == FImageInfoCreateInfo::EImageType::kAttachment)
             {
-                const auto& ManagedTarget = RenderTargetManager->GetManagedTarget(Name);
+                const auto& ManagedTarget = RenderTargetManager->GetManagedTarget(ImageName);
                 ImageInfo = vk::DescriptorImageInfo(
                     Sampler ? **Sampler : vk::Sampler(), ManagedTarget.GetImageView(), ManagedTarget.GetImageLayout());
             }
             else
             {
-                auto* Texture = AssetManager->GetAsset<FTexture2D>(Name);
+                auto* Texture = AssetManager->GetAsset<FTexture2D>(ImageName);
                 ImageInfo = Texture->CreateDescriptorImageInfo(Sampler ? **Sampler : vk::Sampler());
             }
 

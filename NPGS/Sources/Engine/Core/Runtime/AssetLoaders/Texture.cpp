@@ -136,6 +136,8 @@ namespace Npgs
             ImageData.Data.resize(ImageData.Size);
             std::ranges::copy_n(static_cast<std::byte*>(PixelData), ImageData.Size, ImageData.Data.data());
 
+            stbi_image_free(PixelData);
+
             return ImageData;
         }
 
@@ -183,8 +185,8 @@ namespace Npgs
             }
 
             FImageData ImageData;
-            int Width = 0, Height = 0;
-            std::vector<Imf::Rgba> Pixels;
+            int Width  = 0;
+            int Height = 0;
 
             if (bIsTiled)
             {
@@ -199,13 +201,14 @@ namespace Npgs
 
                 if (TileDesc.mode == Imf::ONE_LEVEL)
                 {
-                    Pixels.resize(static_cast<std::size_t>(Width) * Height);
-                    InputFile.setFrameBuffer(Pixels.data() - (DataWindow.min.x + DataWindow.min.y * Width), 1, Width);
-                    InputFile.readTiles(0, InputFile.numXTiles() - 1, 0, InputFile.numYTiles() - 1);
-
-                    ImageData.Size = static_cast<vk::DeviceSize>(Width) * Height * FormatInfo.PixelSize;
+                    ImageData.Size = static_cast<vk::DeviceSize>(Width) * Height * sizeof(Imf::Rgba);
                     ImageData.Data.resize(ImageData.Size);
-                    std::ranges::copy_n(reinterpret_cast<std::byte*>(Pixels.data()), ImageData.Size, ImageData.Data.data());
+
+                    Imf::Rgba* Base = reinterpret_cast<Imf::Rgba*>(ImageData.Data.data()) -
+                                      (DataWindow.min.x + DataWindow.min.y * Width);
+
+                    InputFile.setFrameBuffer(Base, 1, Width);
+                    InputFile.readTiles(0, InputFile.numXTiles() - 1, 0, InputFile.numYTiles() - 1);
                 }
                 else if (TileDesc.mode == Imf::MIPMAP_LEVELS)
                 {
@@ -222,28 +225,26 @@ namespace Npgs
                         std::uint32_t LevelHeight = MipmapSize(Height, MipLevel);
                         LevelExtents[MipLevel] = vk::Extent2D(LevelWidth, LevelHeight);
                         LevelOffsets[MipLevel] = TotalSize;
-                        TotalSize += static_cast<vk::DeviceSize>(LevelWidth) * LevelHeight * FormatInfo.PixelSize;
+                        TotalSize += static_cast<vk::DeviceSize>(LevelWidth) * LevelHeight * sizeof(Imf::Rgba);
                     }
 
                     ImageData.Size = TotalSize;
                     ImageData.Data.resize(TotalSize);
-                    std::vector<Imf::Rgba> LevelPixels;
 
                     for (int MipLevel = 0; MipLevel != MipLevels; ++MipLevel)
                     {
-                        int LevelWidth  = static_cast<int>(LevelExtents[MipLevel].width);
-                        int LevelHeight = static_cast<int>(LevelExtents[MipLevel].height);
+                        int          LevelWidth  = static_cast<int>(LevelExtents[MipLevel].width);
+                        Imath::Box2i LevelWindow = InputFile.dataWindowForLevel(MipLevel);
+                        Imf::Rgba*   LevelStart  = reinterpret_cast<Imf::Rgba*>(ImageData.Data.data() + LevelOffsets[MipLevel]);
+                        Imf::Rgba*   Base        = LevelStart - (LevelWindow.min.x + LevelWindow.min.y * LevelWidth);
 
-                        Pixels.resize(static_cast<std::size_t>(LevelWidth) * LevelHeight);
-                        InputFile.setFrameBuffer(Pixels.data() - (DataWindow.min.x + DataWindow.min.y * Width), 1, Width);
-                        InputFile.readTiles(0, InputFile.numXTiles(MipLevel) - 1, 0, InputFile.numYTiles(MipLevel) - 1, MipLevel, MipLevel);
-
-                        LevelPixels.resize(TotalSize);
-                        std::ranges::copy(Pixels, LevelPixels.begin() + LevelOffsets[MipLevel]);
+                        InputFile.setFrameBuffer(Base, 1, LevelWidth);
+                        InputFile.readTiles(0, InputFile.numXTiles(MipLevel) - 1,
+                                            0, InputFile.numYTiles(MipLevel) - 1,
+                                            MipLevel, MipLevel);
                     }
 
                     ImageData.LevelOffsets = std::move(LevelOffsets);
-                    std::ranges::copy_n(reinterpret_cast<std::byte*>(Pixels.data()), ImageData.Size, ImageData.Data.data());
                 }
             }
             else
@@ -253,14 +254,15 @@ namespace Npgs
                 Width  = DataWindow.max.x - DataWindow.min.x + 1;
                 Height = DataWindow.max.y - DataWindow.min.y + 1;
 
-                Pixels.resize(static_cast<std::size_t>(Width) * Height);
-                InputFile.setFrameBuffer(Pixels.data() - (DataWindow.min.x + DataWindow.min.y * Width), 1, Width);
-                InputFile.readPixels(DataWindow.min.y, DataWindow.max.y);
-
                 ImageData.Extent = vk::Extent3D(Width, Height, 1);
-                ImageData.Size   = static_cast<vk::DeviceSize>(Width) * Height * FormatInfo.PixelSize;
+                ImageData.Size   = static_cast<vk::DeviceSize>(Width) * Height * sizeof(Imf::Rgba);
                 ImageData.Data.resize(ImageData.Size);
-                std::ranges::copy_n(reinterpret_cast<std::byte*>(Pixels.data()), ImageData.Size, ImageData.Data.data());
+
+                Imf::Rgba* Base = reinterpret_cast<Imf::Rgba*>(ImageData.Data.data()) -
+                                  (DataWindow.min.x + DataWindow.min.y * Width);
+
+                InputFile.setFrameBuffer(Base, 1, Width);
+                InputFile.readPixels(DataWindow.min.y, DataWindow.max.y);
             }
 
             return ImageData;
