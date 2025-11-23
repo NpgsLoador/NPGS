@@ -4,10 +4,9 @@
 #include <cstddef>
 #include <exception>
 #include <filesystem>
-#include <fstream>
-#include <ios>
 #include <numeric>
 #include <set>
+#include <stdexcept>
 #include <utility>
 
 #include <spirv_cross/spirv_reflect.hpp>
@@ -187,16 +186,22 @@ namespace Npgs
         for (const auto& Filename : ShaderFiles)
         {
             FShaderInfo ShaderInfo = LoadShader(GetAssetFullPath(EAssetType::kShader, Filename));
-            if (ShaderInfo.Code.empty())
+            if (ShaderInfo.Code.Empty())
             {
                 return;
             }
 
-            vk::ShaderModuleCreateInfo ShaderModuleCreateInfo({}, ShaderInfo.Code);
+            if (ShaderInfo.Code.Size() % 4 != 0)
+            {
+                throw std::runtime_error("Invalid SPIR-V shader code size: Not a multiple of 4 bytes.");
+            }
+
+            auto SpirvSpan = ShaderInfo.Code.GetDataAs<std::uint32_t>();
+            vk::ShaderModuleCreateInfo ShaderModuleCreateInfo({}, SpirvSpan);
             FVulkanShaderModule ShaderModule(VulkanContext_->GetDevice(), Filename, ShaderModuleCreateInfo);
             ShaderModules_.emplace_back(ShaderInfo.Stage, std::move(ShaderModule));
 
-            ReflectShader(ShaderInfo, ResourceInfo);
+            ReflectShader(std::move(ShaderInfo), ResourceInfo);
         }
     }
 
@@ -208,30 +213,24 @@ namespace Npgs
             return {};
         }
 
-        std::ifstream ShaderFile(Filename, std::ios::ate | std::ios::binary);
-        if (!ShaderFile.is_open())
+        FFileLoader ShaderCode;
+        if (!ShaderCode.Load(Filename))
         {
             NpgsCoreError("Failed to open shader: \"{}\": Access denied.", Filename);
             return {};
         }
 
-        std::size_t FileSize = static_cast<std::size_t>(ShaderFile.tellg());
-        std::vector<std::uint32_t> ShaderCode(FileSize / sizeof(std::uint32_t));
-        ShaderFile.seekg(0);
-        ShaderFile.read(reinterpret_cast<char*>(ShaderCode.data()), static_cast<std::streamsize>(FileSize));
-        ShaderFile.close();
-
         vk::ShaderStageFlagBits Stage = GetShaderStageFromFilename(Filename);
-        return { ShaderCode, Stage };
+        return { std::move(ShaderCode), Stage };
     }
 
-    void FShader::ReflectShader(const FShaderInfo& ShaderInfo, const FResourceInfo& ResourceInfo)
+    void FShader::ReflectShader(FShaderInfo&& ShaderInfo, const FResourceInfo& ResourceInfo)
     {
         std::unique_ptr<spirv_cross::CompilerReflection> Reflection;
         std::unique_ptr<spirv_cross::ShaderResources>    Resources;
         try
         {
-            Reflection = std::make_unique<spirv_cross::CompilerReflection>(ShaderInfo.Code);
+            Reflection = std::make_unique<spirv_cross::CompilerReflection>(ShaderInfo.Code.StripData<std::uint32_t>());
             Resources  = std::make_unique<spirv_cross::ShaderResources>(Reflection->get_shader_resources());
         }
         catch (const spirv_cross::CompilerError& e)

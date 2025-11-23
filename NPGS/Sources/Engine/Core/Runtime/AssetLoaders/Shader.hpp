@@ -10,6 +10,7 @@
 
 #include <vulkan/vulkan.hpp>
 
+#include "Engine/Core/Runtime/AssetLoaders/FileLoader.hpp"
 #include "Engine/Core/Runtime/Graphics/Vulkan/Context.hpp"
 #include "Engine/Core/Runtime/Graphics/Vulkan/Wrappers.hpp"
 
@@ -65,8 +66,8 @@ namespace Npgs
     private:
         struct FShaderInfo
         {
-            std::vector<std::uint32_t> Code;
-            vk::ShaderStageFlagBits    Stage{};
+            FFileLoader             Code;
+            vk::ShaderStageFlagBits Stage{};
         };
 
         struct FShaderReflectionInfo
@@ -99,7 +100,7 @@ namespace Npgs
     private:
         void InitializeShaders(const std::vector<std::string>& ShaderFiles, const FResourceInfo& ResourceInfo);
         FShaderInfo LoadShader(const std::string& Filename);
-        void ReflectShader(const FShaderInfo& ShaderInfo, const FResourceInfo& ResourceInfo);
+        void ReflectShader(FShaderInfo&& ShaderInfo, const FResourceInfo& ResourceInfo);
         void AddDescriptorSetBindings(std::uint32_t Set, vk::DescriptorSetLayoutBinding& LayoutBinding);
         void CreateDescriptorSetLayouts();
         void GenerateDescriptorInfos();

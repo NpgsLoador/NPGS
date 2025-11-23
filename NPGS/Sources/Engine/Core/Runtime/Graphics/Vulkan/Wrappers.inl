@@ -1,5 +1,7 @@
 #include <utility>
+
 #include "Engine/Core/Base/Base.hpp"
+#include "Engine/Utils/Logger.hpp"
 
 namespace Npgs
 {

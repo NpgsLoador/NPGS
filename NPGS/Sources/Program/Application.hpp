@@ -4,7 +4,9 @@
 #include <string>
 #include <vector>
 
+#define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
+
 #include <vulkan/vulkan.hpp>
 
 #include "Engine/Core/Runtime/Graphics/Buffers/BufferStructs.hpp"

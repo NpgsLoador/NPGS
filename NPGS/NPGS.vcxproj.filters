@@ -174,6 +174,9 @@
     <ClCompile Include="Sources\ExternalImpl\volk_impl.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="Sources\Engine\Core\Runtime\AssetLoaders\FileLoader.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Sources\stdafx.h">
@@ -380,6 +383,9 @@
     <ClInclude Include="Sources\Engine\Core\Runtime\Graphics\Renderer\Renderer.hpp">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="Sources\Engine\Core\Runtime\AssetLoaders\FileLoader.hpp">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="Sources\Engine\Utils\Logger.inl">
@@ -492,6 +498,9 @@
       <Filter>头文件</Filter>
     </None>
     <None Include="Sources\Engine\Core\Runtime\Pools\CommandPoolPool.inl">
+      <Filter>头文件</Filter>
+    </None>
+    <None Include="Sources\Engine\Core\Runtime\AssetLoaders\FileLoader.inl">
       <Filter>头文件</Filter>
     </None>
   </ItemGroup>

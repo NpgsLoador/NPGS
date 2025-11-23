@@ -16,8 +16,6 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
-#include <stb_image.h>
-#include <vulkan/vulkan.hpp>
 #include <Windows.h>
 #include <winrt/Windows.Devices.Display.h>
 #include <winrt/Windows.Devices.Enumeration.h>

@@ -1,6 +1,5 @@
 #pragma once
 
-#define GLM_FORCE_DEPTH_ZERO_TO_ONE
 #include <glm/glm.hpp>
 #include <glm/gtc/quaternion.hpp>
 
@@ -64,7 +63,6 @@ namespace Npgs
         glm::vec3 Front_;
         glm::vec3 Up_;
         glm::vec3 Right_;
-        glm::vec3 WorldUp_;
 
         glm::vec3 OrbitTarget_{};
         glm::vec3 OrbitAxis_{};
