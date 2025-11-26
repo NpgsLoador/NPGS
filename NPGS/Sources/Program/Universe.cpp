@@ -15,9 +15,9 @@
 
 #include "Engine/Core/Base/Base.hpp"
 #include "Engine/Core/Math/NumericConstants.hpp"
-#include "Engine/Core/System/Generators/OrbitalGenerator.hpp"
-#include "Engine/Core/System/Services/EngineServices.hpp"
-#include "Engine/Utils/Logger.hpp"
+#include "Engine/Core/Logger.hpp"
+#include "Engine/System/Generators/OrbitalGenerator.hpp"
+#include "Engine/System/Services/EngineServices.hpp"
 
 namespace Npgs
 {
@@ -919,7 +919,7 @@ namespace Npgs
             }
         }
 
-        Utils::TUniformRealDistribution Offset(-LeafRadius, LeafRadius - MinDistance); // 用于随机生成恒星位置相对于叶子节点中心点的偏移量
+        Math::TUniformRealDistribution Offset(-LeafRadius, LeafRadius - MinDistance); // 用于随机生成恒星位置相对于叶子节点中心点的偏移量
         // 遍历八叉树，为每个有效的叶子节点生成一个恒星
         Octree_->Traverse([&Offset, this](FNodeType& Node) -> void
         {
@@ -1019,7 +1019,7 @@ namespace Npgs
             SelectedGenerator.SetMassLowerLimit(MassLowerLimit);
             SelectedGenerator.SetMassUpperLimit(MassUpperLimit);
             SelectedGenerator.SetLogMassSuggestDistribution(
-                std::make_unique<Utils::TNormalDistribution<>>(std::log10(FirstStarInitialMassSol), 0.25f));
+                std::make_unique<Math::TNormalDistribution<>>(std::log10(FirstStarInitialMassSol), 0.25f));
 
             double Age = Star->GetAge();
             float  FeH = Star->GetFeH();

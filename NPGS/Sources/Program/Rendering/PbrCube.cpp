@@ -1,7 +1,7 @@
 #include "stdafx.h"
 #include "PbrCube.hpp"
 
-#include "Engine/Core/Runtime/AssetLoaders/Shader.hpp"
+#include "Engine/Runtime/AssetLoaders/Shader.hpp"
 
 namespace Npgs
 {

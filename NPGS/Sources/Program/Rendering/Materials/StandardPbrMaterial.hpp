@@ -1,7 +1,7 @@
 #pragma once
 
-#include "Engine/Core/Runtime/AssetLoaders/Texture.hpp"
-#include "Engine/Core/Runtime/Graphics/Renderer/Material.hpp"
+#include "Engine/Runtime/AssetLoaders/Texture.hpp"
+#include "Engine/Runtime/Graphics/Renderer/Material.hpp"
 
 namespace Npgs
 {

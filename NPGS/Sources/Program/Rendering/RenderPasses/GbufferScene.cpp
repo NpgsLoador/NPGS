@@ -4,10 +4,10 @@
 #include <array>
 #include <vector>
 
-#include "Engine/Core/Runtime/AssetLoaders/Shader.hpp"
-#include "Engine/Core/Runtime/Graphics/Buffers/BufferStructs.hpp"
-#include "Engine/Core/Runtime/Graphics/Vulkan/Wrappers.hpp"
-#include "Engine/Core/System/Services/EngineServices.hpp"
+#include "Engine/Runtime/AssetLoaders/Shader.hpp"
+#include "Engine/Runtime/Graphics/Buffers/BufferStructs.hpp"
+#include "Engine/Runtime/Graphics/Vulkan/Wrappers.hpp"
+#include "Engine/System/Services/EngineServices.hpp"
 #include "Program/Rendering/NameLookup.hpp"
 
 namespace Npgs

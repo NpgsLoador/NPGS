@@ -7,12 +7,12 @@
 
 #include <glm/glm.hpp>
 
-#include "Engine/Core/Runtime/Pools/ThreadPool.hpp"
-#include "Engine/Core/System/Generators/StellarGenerator.hpp"
-#include "Engine/Core/System/Spatial/Octree.hpp"
+#include "Engine/Core/Math/Random.hpp"
 #include "Engine/Core/Types/Entries/Astro/Star.hpp"
 #include "Engine/Core/Types/Entries/Astro/StellarSystem.hpp"
-#include "Engine/Utils/Random.hpp"
+#include "Engine/Runtime/Pools/ThreadPool.hpp"
+#include "Engine/System/Generators/StellarGenerator.hpp"
+#include "Engine/System/Spatial/Octree.hpp"
 
 namespace Npgs
 {
@@ -47,8 +47,8 @@ namespace Npgs
     private:
         std::mt19937                                    RandomEngine_;
         std::vector<Astro::FStellarSystem>              StellarSystems_;
-        Utils::TUniformIntDistribution<std::uint32_t>   SeedGenerator_;
-        Utils::TUniformRealDistribution<>               CommonGenerator_;
+        Math::TUniformIntDistribution<std::uint32_t>    SeedGenerator_;
+        Math::TUniformRealDistribution<>                CommonGenerator_;
         std::unique_ptr<TOctree<Astro::FStellarSystem>> Octree_;
         FThreadPool*                                    ThreadPool_;
 

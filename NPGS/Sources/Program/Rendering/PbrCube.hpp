@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Engine/Core/Runtime/Graphics/Renderer/Renderable.hpp"
+#include "Engine/Runtime/Graphics/Renderer/Renderable.hpp"
 
 namespace Npgs
 {

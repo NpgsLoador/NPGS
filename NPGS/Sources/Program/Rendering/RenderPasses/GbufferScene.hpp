@@ -1,7 +1,7 @@
 #pragma once
 
 #include <string>
-#include "Engine/Core/Runtime/Graphics/Renderer/RenderPass.hpp"
+#include "Engine/Runtime/Graphics/Renderer/RenderPass.hpp"
 
 namespace Npgs
 {

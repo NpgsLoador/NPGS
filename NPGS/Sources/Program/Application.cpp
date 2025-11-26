@@ -26,13 +26,13 @@
 #include "Engine/Core/Base/Config/EngineConfig.hpp"
 #include "Engine/Core/Math/NumericConstants.hpp"
 #include "Engine/Core/Math/TangentSpaceTools.hpp"
-#include "Engine/Core/Runtime/AssetLoaders/Shader.hpp"
-#include "Engine/Core/Runtime/AssetLoaders/Texture.hpp"
-#include "Engine/Core/Runtime/Managers/AssetManager.hpp"
-#include "Engine/Core/Runtime/Managers/PipelineManager.hpp"
-#include "Engine/Core/Runtime/Managers/ShaderBufferManager.hpp"
-#include "Engine/Core/System/Services/EngineServices.hpp"
-#include "Engine/Utils/Logger.hpp"
+#include "Engine/Core/Logger.hpp"
+#include "Engine/Runtime/AssetLoaders/Shader.hpp"
+#include "Engine/Runtime/AssetLoaders/Texture.hpp"
+#include "Engine/Runtime/Managers/AssetManager.hpp"
+#include "Engine/Runtime/Managers/PipelineManager.hpp"
+#include "Engine/Runtime/Managers/ShaderBufferManager.hpp"
+#include "Engine/System/Services/EngineServices.hpp"
 
 namespace Npgs
 {

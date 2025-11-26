@@ -10,7 +10,7 @@
 #include <stdexcept>
 #include <utility>
 
-#include "Engine/Utils/Logger.hpp"
+#include "Engine/Core/Logger.hpp"
 
 namespace Npgs
 {

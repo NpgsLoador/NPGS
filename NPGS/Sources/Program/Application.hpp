@@ -9,13 +9,13 @@
 
 #include <vulkan/vulkan.hpp>
 
-#include "Engine/Core/Runtime/Graphics/Buffers/BufferStructs.hpp"
-#include "Engine/Core/Runtime/Graphics/Resources/Attachment.hpp"
-#include "Engine/Core/Runtime/Graphics/Resources/DeviceLocalBuffer.hpp"
-#include "Engine/Core/Runtime/Graphics/Vulkan/Context.hpp"
-#include "Engine/Core/Runtime/Graphics/Vulkan/Wrappers.hpp"
-#include "Engine/Core/Runtime/Pools/ThreadPool.hpp"
-#include "Engine/Core/System/Spatial/Camera.hpp"
+#include "Engine/Runtime/Graphics/Buffers/BufferStructs.hpp"
+#include "Engine/Runtime/Graphics/Resources/Attachment.hpp"
+#include "Engine/Runtime/Graphics/Resources/DeviceLocalBuffer.hpp"
+#include "Engine/Runtime/Graphics/Vulkan/Context.hpp"
+#include "Engine/Runtime/Graphics/Vulkan/Wrappers.hpp"
+#include "Engine/Runtime/Pools/ThreadPool.hpp"
+#include "Engine/System/Spatial/Camera.hpp"
 
 namespace Npgs
 {

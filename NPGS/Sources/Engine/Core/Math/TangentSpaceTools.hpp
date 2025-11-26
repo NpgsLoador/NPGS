@@ -4,7 +4,7 @@
 #include <cstdint>
 #include <vector>
 
-#include "Engine/Core/Runtime/Graphics/Buffers/BufferStructs.hpp"
+#include "Engine/Runtime/Graphics/Buffers/BufferStructs.hpp"
 
 namespace Npgs::Math
 {

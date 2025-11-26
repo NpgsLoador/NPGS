@@ -18,10 +18,10 @@
     <ClCompile Include="Sources\stdafx.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="Sources\Engine\Utils\Logger.cpp">
+    <ClCompile Include="Sources\Engine\Core\Logger.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="Sources\Engine\Utils\Utils.cpp">
+    <ClCompile Include="Sources\Engine\Core\Utils\Utils.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="Sources\Engine\Core\Types\Entries\Astro\CelestialObject.cpp">
@@ -48,40 +48,40 @@
     <ClCompile Include="Sources\Engine\Core\Types\Properties\StellarClass.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="Sources\Engine\Core\System\Generators\CivilizationGenerator.cpp">
+    <ClCompile Include="Sources\Engine\System\Generators\CivilizationGenerator.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="Sources\Engine\Core\System\Generators\OrbitalGenerator.cpp">
+    <ClCompile Include="Sources\Engine\System\Generators\OrbitalGenerator.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="Sources\Engine\Core\System\Spatial\Camera.cpp">
+    <ClCompile Include="Sources\Engine\System\Spatial\Camera.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="Sources\Engine\Core\Runtime\Pools\ThreadPool.cpp">
+    <ClCompile Include="Sources\Engine\Runtime\Pools\ThreadPool.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="Sources\Engine\Core\Runtime\Managers\AssetManager.cpp">
+    <ClCompile Include="Sources\Engine\Runtime\Managers\AssetManager.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="Sources\Engine\Core\Runtime\AssetLoaders\Texture.cpp">
+    <ClCompile Include="Sources\Engine\Runtime\AssetLoaders\Texture.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="Sources\Engine\Core\Runtime\Graphics\Vulkan\Context.cpp">
+    <ClCompile Include="Sources\Engine\Runtime\Graphics\Vulkan\Context.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="Sources\Engine\Core\Runtime\Graphics\Vulkan\Core.cpp">
+    <ClCompile Include="Sources\Engine\Runtime\Graphics\Vulkan\Core.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="Sources\Engine\Core\Runtime\Graphics\Vulkan\Wrappers.cpp">
+    <ClCompile Include="Sources\Engine\Runtime\Graphics\Vulkan\Wrappers.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="Sources\Engine\Core\Runtime\AssetLoaders\Shader.cpp">
+    <ClCompile Include="Sources\Engine\Runtime\AssetLoaders\Shader.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="Sources\Engine\Core\Runtime\Managers\ShaderBufferManager.cpp">
+    <ClCompile Include="Sources\Engine\Runtime\Managers\ShaderBufferManager.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="Sources\Engine\Core\Runtime\Managers\PipelineManager.cpp">
+    <ClCompile Include="Sources\Engine\Runtime\Managers\PipelineManager.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="Sources\ExternalImpl\stb_impl.cpp">
@@ -93,49 +93,49 @@
     <ClCompile Include="Sources\Engine\Core\Math\TangentSpaceTools.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="Sources\Engine\Core\Runtime\Managers\ImageTracker.cpp">
+    <ClCompile Include="Sources\Engine\Runtime\Managers\ImageTracker.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="Sources\Program\Application.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="Sources\Engine\Core\System\Generators\StellarGenerator.cpp">
+    <ClCompile Include="Sources\Engine\System\Generators\StellarGenerator.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="Sources\Engine\Core\Runtime\Graphics\Resources\StagingBuffer.cpp">
+    <ClCompile Include="Sources\Engine\Runtime\Graphics\Resources\StagingBuffer.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="Sources\Engine\Core\Runtime\Pools\StagingBufferPool.cpp">
+    <ClCompile Include="Sources\Engine\Runtime\Pools\StagingBufferPool.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="Sources\Engine\Core\Runtime\Graphics\Resources\Attachment.cpp">
+    <ClCompile Include="Sources\Engine\Runtime\Graphics\Resources\Attachment.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="Sources\Engine\Core\Runtime\Graphics\Resources\DeviceLocalBuffer.cpp">
+    <ClCompile Include="Sources\Engine\Runtime\Graphics\Resources\DeviceLocalBuffer.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="Sources\Engine\Core\System\Services\CoreServices.cpp">
+    <ClCompile Include="Sources\Engine\System\Services\CoreServices.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="Sources\Engine\Core\System\Services\EngineServices.cpp">
+    <ClCompile Include="Sources\Engine\System\Services\EngineServices.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="Sources\Engine\Core\System\Services\ResourceServices.cpp">
+    <ClCompile Include="Sources\Engine\System\Services\ResourceServices.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="Sources\Engine\Core\Runtime\Pools\QueuePool.cpp">
+    <ClCompile Include="Sources\Engine\Runtime\Pools\QueuePool.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="Sources\Engine\Core\Runtime\Pools\CommandPoolPool.cpp">
+    <ClCompile Include="Sources\Engine\Runtime\Pools\CommandPoolPool.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="Sources\Engine\Core\System\Events\Event.cpp">
+    <ClCompile Include="Sources\Engine\System\Events\Event.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="Sources\Engine\Core\System\Spatial\UniversalCoordinate.cpp">
+    <ClCompile Include="Sources\Engine\System\Spatial\UniversalCoordinate.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="Sources\Engine\Core\System\Spatial\Frustum.cpp">
+    <ClCompile Include="Sources\Engine\System\Spatial\Frustum.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="Sources\Program\main.cpp">
@@ -147,7 +147,7 @@
     <ClCompile Include="Sources\Engine\Core\Base\Config\ConfigWatcher.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="Sources\Engine\Core\Runtime\Managers\RenderTargetManager.cpp">
+    <ClCompile Include="Sources\Engine\Runtime\Managers\RenderTargetManager.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="Sources\Program\Rendering\PbrCube.cpp">
@@ -156,25 +156,25 @@
     <ClCompile Include="Sources\Program\Rendering\RenderPasses\GbufferScene.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="Sources\Engine\Core\Runtime\Graphics\Renderer\RenderPass.cpp">
+    <ClCompile Include="Sources\Engine\Runtime\Graphics\Renderer\RenderPass.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="Sources\Program\Rendering\Materials\StandardPbrMaterial.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="Sources\Engine\Core\Runtime\Graphics\Renderer\Material.cpp">
+    <ClCompile Include="Sources\Engine\Runtime\Graphics\Renderer\Material.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="Sources\Engine\Core\Runtime\Managers\MaterialManager.cpp">
+    <ClCompile Include="Sources\Engine\Runtime\Managers\MaterialManager.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="Sources\Engine\Core\Runtime\Graphics\Renderer\Renderer.cpp">
+    <ClCompile Include="Sources\Engine\Runtime\Graphics\Renderer\Renderer.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="Sources\ExternalImpl\volk_impl.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="Sources\Engine\Core\Runtime\AssetLoaders\FileLoader.cpp">
+    <ClCompile Include="Sources\Engine\Runtime\AssetLoaders\FileLoader.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>
@@ -185,10 +185,10 @@
     <ClInclude Include="Sources\xstdafx.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="Sources\Engine\Utils\Random.hpp">
+    <ClInclude Include="Sources\Engine\Core\Math\Random.hpp">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="Sources\Engine\Utils\Utils.hpp">
+    <ClInclude Include="Sources\Engine\Core\Utils\Utils.hpp">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="Sources\Engine\Core\Base\Assert.hpp">
@@ -224,40 +224,40 @@
     <ClInclude Include="Sources\Engine\Core\Types\Properties\StellarClass.hpp">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="Sources\Engine\Core\System\Generators\CivilizationGenerator.hpp">
+    <ClInclude Include="Sources\Engine\System\Generators\CivilizationGenerator.hpp">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="Sources\Engine\Core\System\Generators\OrbitalGenerator.hpp">
+    <ClInclude Include="Sources\Engine\System\Generators\OrbitalGenerator.hpp">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="Sources\Engine\Core\System\Generators\StellarGenerator.hpp">
+    <ClInclude Include="Sources\Engine\System\Generators\StellarGenerator.hpp">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="Sources\Engine\Core\System\Spatial\Camera.hpp">
+    <ClInclude Include="Sources\Engine\System\Spatial\Camera.hpp">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="Sources\Engine\Core\System\Spatial\Octree.hpp">
+    <ClInclude Include="Sources\Engine\System\Spatial\Octree.hpp">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="Sources\Engine\Core\Runtime\Pools\ThreadPool.hpp">
+    <ClInclude Include="Sources\Engine\Runtime\Pools\ThreadPool.hpp">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="Sources\Engine\Core\Runtime\Managers\AssetManager.hpp">
+    <ClInclude Include="Sources\Engine\Runtime\Managers\AssetManager.hpp">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="Sources\Engine\Core\Runtime\AssetLoaders\CommaSeparatedValues.hpp">
+    <ClInclude Include="Sources\Engine\Runtime\AssetLoaders\CommaSeparatedValues.hpp">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="Sources\Engine\Core\Runtime\AssetLoaders\Texture.hpp">
+    <ClInclude Include="Sources\Engine\Runtime\AssetLoaders\Texture.hpp">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="Sources\Engine\Core\Runtime\Graphics\Vulkan\Context.hpp">
+    <ClInclude Include="Sources\Engine\Runtime\Graphics\Vulkan\Context.hpp">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="Sources\Engine\Core\Runtime\Graphics\Vulkan\Core.hpp">
+    <ClInclude Include="Sources\Engine\Runtime\Graphics\Vulkan\Core.hpp">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="Sources\Engine\Core\Runtime\Graphics\Vulkan\Wrappers.hpp">
+    <ClInclude Include="Sources\Engine\Runtime\Graphics\Vulkan\Wrappers.hpp">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="Sources\Program\Application.hpp">
@@ -269,94 +269,94 @@
     <ClInclude Include="Sources\Program\Universe.hpp">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="Sources\Engine\Core\Runtime\AssetLoaders\Shader.hpp">
+    <ClInclude Include="Sources\Engine\Runtime\AssetLoaders\Shader.hpp">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="Sources\Engine\Core\Base\Config\EngineConfig.hpp">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="Sources\Engine\Utils\FieldReflection.hpp">
+    <ClInclude Include="Sources\Engine\Core\Utils\FieldReflection.hpp">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="Sources\Engine\Core\Runtime\Managers\ShaderBufferManager.hpp">
+    <ClInclude Include="Sources\Engine\Runtime\Managers\ShaderBufferManager.hpp">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="Sources\Engine\Core\Runtime\Managers\PipelineManager.hpp">
+    <ClInclude Include="Sources\Engine\Runtime\Managers\PipelineManager.hpp">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="Sources\Engine\Core\Runtime\Graphics\Buffers\BufferStructs.hpp">
+    <ClInclude Include="Sources\Engine\Runtime\Graphics\Buffers\BufferStructs.hpp">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="Sources\Engine\Core\Math\TangentSpaceTools.hpp">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="Sources\Engine\Core\Runtime\Managers\ImageTracker.hpp">
+    <ClInclude Include="Sources\Engine\Runtime\Managers\ImageTracker.hpp">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="Sources\Engine\Core\Runtime\Graphics\Resources\Pools\ResourcePoolBase.hpp">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="Sources\Engine\Core\Runtime\Pools\ResourcePool.hpp">
+    <ClInclude Include="Sources\Engine\Runtime\Pools\ResourcePool.hpp">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="Sources\Engine\Core\Runtime\Pools\StagingBufferPool.hpp">
+    <ClInclude Include="Sources\Engine\Runtime\Pools\StagingBufferPool.hpp">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="Sources\Engine\Core\Runtime\Graphics\Resources\Attachment.hpp">
+    <ClInclude Include="Sources\Engine\Runtime\Graphics\Resources\Attachment.hpp">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="Sources\Engine\Core\Runtime\Graphics\Resources\DeviceLocalBuffer.hpp">
+    <ClInclude Include="Sources\Engine\Runtime\Graphics\Resources\DeviceLocalBuffer.hpp">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="Sources\Engine\Core\Runtime\Graphics\Resources\StagingBuffer.hpp">
+    <ClInclude Include="Sources\Engine\Runtime\Graphics\Resources\StagingBuffer.hpp">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="Sources\Engine\Core\System\Services\CoreServices.hpp">
+    <ClInclude Include="Sources\Engine\System\Services\CoreServices.hpp">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="Sources\Engine\Utils\VulkanCheck.hpp">
+    <ClInclude Include="Sources\Engine\Core\Utils\VulkanCheck.hpp">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="Sources\Engine\Core\System\Services\EngineServices.hpp">
+    <ClInclude Include="Sources\Engine\System\Services\EngineServices.hpp">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="Sources\Engine\Core\System\Services\ResourceServices.hpp">
+    <ClInclude Include="Sources\Engine\System\Services\ResourceServices.hpp">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="Sources\Engine\Core\Runtime\Pools\CommandPoolPool.hpp">
+    <ClInclude Include="Sources\Engine\Runtime\Pools\CommandPoolPool.hpp">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="Sources\Engine\Core\System\Events\Event.hpp">
+    <ClInclude Include="Sources\Engine\System\Events\Event.hpp">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="Sources\Engine\Core\System\Spatial\UniversalCoordinate.hpp">
+    <ClInclude Include="Sources\Engine\System\Spatial\UniversalCoordinate.hpp">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="Sources\Engine\Core\System\Spatial\Frustum.hpp">
+    <ClInclude Include="Sources\Engine\System\Spatial\Frustum.hpp">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="Sources\Engine\Core\Runtime\Pools\MemoryPool.hpp">
+    <ClInclude Include="Sources\Engine\Runtime\Pools\MemoryPool.hpp">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="Sources\Engine\Core\Runtime\Pools\QueuePool.hpp">
+    <ClInclude Include="Sources\Engine\Runtime\Pools\QueuePool.hpp">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="Sources\Engine\Utils\Logger.hpp">
+    <ClInclude Include="Sources\Engine\Core\Logger.hpp">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="Sources\Engine\Utils\Hash.hpp">
+    <ClInclude Include="Sources\Engine\Core\Utils\Hash.hpp">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="Sources\Engine\Core\Base\Config\ConfigWatcher.hpp">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="Sources\Engine\Core\Runtime\Graphics\Renderer\Scene.hpp">
+    <ClInclude Include="Sources\Engine\Runtime\Graphics\Renderer\Scene.hpp">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="Sources\Engine\Core\Runtime\Graphics\Renderer\Renderable.hpp">
+    <ClInclude Include="Sources\Engine\Runtime\Graphics\Renderer\Renderable.hpp">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="Sources\Engine\Core\Runtime\Managers\RenderTargetManager.hpp">
+    <ClInclude Include="Sources\Engine\Runtime\Managers\RenderTargetManager.hpp">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="Sources\Program\Rendering\PbrCube.hpp">
@@ -365,33 +365,33 @@
     <ClInclude Include="Sources\Program\Rendering\RenderPasses\GbufferScene.hpp">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="Sources\Engine\Core\Runtime\Graphics\Renderer\Material.hpp">
+    <ClInclude Include="Sources\Engine\Runtime\Graphics\Renderer\Material.hpp">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="Sources\Program\Rendering\Materials\StandardPbrMaterial.hpp">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="Sources\Engine\Core\Runtime\Graphics\Renderer\RenderPass.hpp">
+    <ClInclude Include="Sources\Engine\Runtime\Graphics\Renderer\RenderPass.hpp">
       <Filter>源文件</Filter>
     </ClInclude>
     <ClInclude Include="Sources\Program\Rendering\NameLookup.hpp">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="Sources\Engine\Core\Runtime\Managers\MaterialManager.hpp">
+    <ClInclude Include="Sources\Engine\Runtime\Managers\MaterialManager.hpp">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="Sources\Engine\Core\Runtime\Graphics\Renderer\Renderer.hpp">
+    <ClInclude Include="Sources\Engine\Runtime\Graphics\Renderer\Renderer.hpp">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="Sources\Engine\Core\Runtime\AssetLoaders\FileLoader.hpp">
+    <ClInclude Include="Sources\Engine\Runtime\AssetLoaders\FileLoader.hpp">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <None Include="Sources\Engine\Utils\Logger.inl">
+    <None Include="Sources\Engine\Core\Logger.inl">
       <Filter>头文件</Filter>
     </None>
-    <None Include="Sources\Engine\Utils\Utils.inl">
+    <None Include="Sources\Engine\Core\Utils\Utils.inl">
       <Filter>头文件</Filter>
     </None>
     <None Include="Sources\Engine\Core\Types\Entries\Astro\CelestialObject.inl">
@@ -412,37 +412,37 @@
     <None Include="Sources\Engine\Core\Types\Properties\StellarClass.inl">
       <Filter>头文件</Filter>
     </None>
-    <None Include="Sources\Engine\Core\System\Generators\StellarGenerator.inl">
+    <None Include="Sources\Engine\System\Generators\StellarGenerator.inl">
       <Filter>头文件</Filter>
     </None>
-    <None Include="Sources\Engine\Core\System\Spatial\Camera.inl">
+    <None Include="Sources\Engine\System\Spatial\Camera.inl">
       <Filter>头文件</Filter>
     </None>
-    <None Include="Sources\Engine\Core\Runtime\Pools\ThreadPool.inl">
+    <None Include="Sources\Engine\Runtime\Pools\ThreadPool.inl">
       <Filter>头文件</Filter>
     </None>
-    <None Include="Sources\Engine\Core\Runtime\Managers\AssetManager.inl">
+    <None Include="Sources\Engine\Runtime\Managers\AssetManager.inl">
       <Filter>头文件</Filter>
     </None>
-    <None Include="Sources\Engine\Core\Runtime\AssetLoaders\Texture.inl">
+    <None Include="Sources\Engine\Runtime\AssetLoaders\Texture.inl">
       <Filter>头文件</Filter>
     </None>
-    <None Include="Sources\Engine\Core\Runtime\Graphics\Vulkan\Context.inl">
+    <None Include="Sources\Engine\Runtime\Graphics\Vulkan\Context.inl">
       <Filter>头文件</Filter>
     </None>
-    <None Include="Sources\Engine\Core\Runtime\Graphics\Vulkan\Core.inl">
+    <None Include="Sources\Engine\Runtime\Graphics\Vulkan\Core.inl">
       <Filter>头文件</Filter>
     </None>
-    <None Include="Sources\Engine\Core\Runtime\Graphics\Vulkan\Wrappers.inl">
+    <None Include="Sources\Engine\Runtime\Graphics\Vulkan\Wrappers.inl">
       <Filter>头文件</Filter>
     </None>
-    <None Include="Sources\Engine\Core\Runtime\AssetLoaders\Shader.inl">
+    <None Include="Sources\Engine\Runtime\AssetLoaders\Shader.inl">
       <Filter>头文件</Filter>
     </None>
-    <None Include="Sources\Engine\Core\Runtime\Managers\ShaderBufferManager.inl">
+    <None Include="Sources\Engine\Runtime\Managers\ShaderBufferManager.inl">
       <Filter>头文件</Filter>
     </None>
-    <None Include="Sources\Engine\Core\Runtime\Managers\PipelineManager.inl">
+    <None Include="Sources\Engine\Runtime\Managers\PipelineManager.inl">
       <Filter>头文件</Filter>
     </None>
     <None Include="Sources\Program\Application.cpp.bak" />
@@ -472,35 +472,35 @@
     <None Include="Sources\Engine\Shaders\PbrScene.vert.glsl" />
     <None Include="Sources\Engine\Shaders\PbrSceneGBuffer.frag.glsl" />
     <None Include="Sources\Engine\Shaders\PbrSceneMerge.comp.glsl" />
-    <None Include="Sources\Engine\Core\Runtime\Managers\ImageTracker.inl">
+    <None Include="Sources\Engine\Runtime\Managers\ImageTracker.inl">
       <Filter>头文件</Filter>
     </None>
     <None Include="Sources\Engine\Shaders\Common\BindlessExtensions.glsl" />
-    <None Include="Sources\Engine\Core\Runtime\Graphics\Resources\Attachment.inl">
+    <None Include="Sources\Engine\Runtime\Graphics\Resources\Attachment.inl">
       <Filter>头文件</Filter>
     </None>
-    <None Include="Sources\Engine\Core\Runtime\Graphics\Resources\DeviceLocalBuffer.inl">
+    <None Include="Sources\Engine\Runtime\Graphics\Resources\DeviceLocalBuffer.inl">
       <Filter>头文件</Filter>
     </None>
-    <None Include="Sources\Engine\Core\Runtime\Graphics\Resources\StagingBuffer.inl">
+    <None Include="Sources\Engine\Runtime\Graphics\Resources\StagingBuffer.inl">
       <Filter>头文件</Filter>
     </None>
-    <None Include="Sources\Engine\Core\System\Services\CoreServices.inl">
+    <None Include="Sources\Engine\System\Services\CoreServices.inl">
       <Filter>头文件</Filter>
     </None>
-    <None Include="Sources\Engine\Core\System\Services\EngineServices.inl">
+    <None Include="Sources\Engine\System\Services\EngineServices.inl">
       <Filter>头文件</Filter>
     </None>
-    <None Include="Sources\Engine\Core\System\Services\ResourceServices.inl">
+    <None Include="Sources\Engine\System\Services\ResourceServices.inl">
       <Filter>头文件</Filter>
     </None>
-    <None Include="Sources\Engine\Core\Runtime\Pools\QueuePool.inl">
+    <None Include="Sources\Engine\Runtime\Pools\QueuePool.inl">
       <Filter>头文件</Filter>
     </None>
-    <None Include="Sources\Engine\Core\Runtime\Pools\CommandPoolPool.inl">
+    <None Include="Sources\Engine\Runtime\Pools\CommandPoolPool.inl">
       <Filter>头文件</Filter>
     </None>
-    <None Include="Sources\Engine\Core\Runtime\AssetLoaders\FileLoader.inl">
+    <None Include="Sources\Engine\Runtime\AssetLoaders\FileLoader.inl">
       <Filter>头文件</Filter>
     </None>
   </ItemGroup>

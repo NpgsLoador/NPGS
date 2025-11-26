@@ -9,10 +9,10 @@
 #include <vma/vk_mem_alloc.h>
 #include <vulkan/vulkan.hpp>
 
-#include "Engine/Core/Runtime/AssetLoaders/Shader.hpp"
-#include "Engine/Core/Runtime/Graphics/Vulkan/Wrappers.hpp"
-#include "Engine/Core/Runtime/Managers/ShaderBufferManager.hpp"
-#include "Engine/Core/System/Services/EngineServices.hpp"
+#include "Engine/Runtime/AssetLoaders/Shader.hpp"
+#include "Engine/Runtime/Graphics/Vulkan/Wrappers.hpp"
+#include "Engine/Runtime/Managers/ShaderBufferManager.hpp"
+#include "Engine/System/Services/EngineServices.hpp"
 #include "Program/Rendering/NameLookup.hpp"
 
 namespace Npgs
