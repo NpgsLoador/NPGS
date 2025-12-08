@@ -1472,7 +1472,7 @@ namespace Npgs
         float MinSurfaceH1      = Astro::AStar::kFeHSurfaceH1Map_.at(FeH) - 0.01f;
 		float WNxhMassThreshold = CalculateWNxhMassThreshold(FeH);
 
-        auto CalculateSpectralSubclass = [&](this auto& Self, Astro::AStar::EEvolutionPhase BasePhase) -> void
+        auto CalculateSpectralSubclass = [&](this auto&& Self, Astro::AStar::EEvolutionPhase BasePhase) -> void
         {
             std::uint32_t SpectralClass = BasePhase == Astro::AStar::EEvolutionPhase::kWolfRayet ? 11 : 0;
 

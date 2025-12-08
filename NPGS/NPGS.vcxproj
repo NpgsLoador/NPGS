@@ -177,7 +177,7 @@
     <ClCompile Include="Sources\Engine\Runtime\Graphics\Renderer\Material.cpp" />
     <ClCompile Include="Sources\Engine\Runtime\Graphics\Renderer\RenderPass.cpp" />
     <ClCompile Include="Sources\Engine\Runtime\Managers\MaterialManager.cpp" />
-    <ClCompile Include="Sources\ExternalImpl\volk_impl.cpp" />
+    <ClCompile Include="Sources\ExternalImpl\VolkImpl.cpp" />
     <ClCompile Include="Sources\Program\Rendering\RenderPasses\GbufferScene.cpp" />
     <ClCompile Include="Sources\Program\Rendering\PbrCube.cpp" />
     <ClCompile Include="Sources\Engine\Runtime\Managers\RenderTargetManager.cpp" />
@@ -222,8 +222,8 @@
     <ClCompile Include="Sources\Engine\Core\Types\Properties\StellarClass.cpp" />
     <ClCompile Include="Sources\Engine\Core\Logger.cpp" />
     <ClCompile Include="Sources\Engine\Core\Utils\Utils.cpp" />
-    <ClCompile Include="Sources\ExternalImpl\stb_impl.cpp" />
-    <ClCompile Include="Sources\ExternalImpl\vma_impl.cpp" />
+    <ClCompile Include="Sources\ExternalImpl\stbImpl.cpp" />
+    <ClCompile Include="Sources\ExternalImpl\vmaImpl.cpp" />
     <ClCompile Include="Sources\Program\Application.cpp" />
     <ClCompile Include="Sources\Program\main.cpp" />
     <ClCompile Include="Sources\Program\Universe.cpp" />
