@@ -11,27 +11,18 @@
 
 namespace Npgs
 {
+    struct FImageState
+    {
+        vk::PipelineStageFlags2 StageMask{ vk::PipelineStageFlagBits2::eTopOfPipe };
+        vk::AccessFlags2        AccessMask{ vk::AccessFlagBits2::eNone };
+        vk::ImageLayout         ImageLayout{ vk::ImageLayout::eUndefined };
+
+        bool operator==(const FImageState& Other) const;
+        bool operator!=(const FImageState& Other) const;
+    };
+
     class FImageTracker
     {
-    public:
-        struct FImageState
-        {
-            vk::PipelineStageFlags2 StageMask{ vk::PipelineStageFlagBits2::eTopOfPipe };
-            vk::AccessFlags2        AccessMask{ vk::AccessFlagBits2::eNone };
-            vk::ImageLayout         ImageLayout{ vk::ImageLayout::eUndefined };
-
-            bool operator==(const FImageState& Other) const;
-            bool operator!=(const FImageState& Other) const;
-        };
-
-    private:
-        using FImageKey = std::variant<vk::Image, std::pair<vk::Image, vk::ImageSubresourceRange>>;
-
-        struct FImageHash
-        {
-            std::size_t operator()(const FImageKey& Key) const;
-        };
-
     public:
         FImageTracker(FVulkanContext* VulkanContext);
         FImageTracker(const FImageTracker&) = delete;
@@ -54,6 +45,14 @@ namespace Npgs
         void Remove(vk::Image Image);
         void Reset(vk::Image Image);
         void Clear();
+
+    private:
+        using FImageKey = std::variant<vk::Image, std::pair<vk::Image, vk::ImageSubresourceRange>>;
+
+        struct FImageHash
+        {
+            std::size_t operator()(const FImageKey& Key) const;
+        };
 
     private:
         std::unordered_map<FImageKey, FImageState, FImageHash> ImageStateMap_;

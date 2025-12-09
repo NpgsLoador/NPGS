@@ -1,8 +1,6 @@
 #include "stdafx.h"
 #include "MaterialManager.hpp"
 
-#include <vma/vk_mem_alloc.h>
-
 #include "Engine/Runtime/AssetLoaders/Shader.hpp"
 #include "Engine/Runtime/AssetLoaders/Texture.hpp"
 #include "Engine/Runtime/Managers/ShaderBufferManager.hpp"
@@ -63,14 +61,7 @@ namespace Npgs
             }
         }
 
-        VmaAllocationCreateInfo AllocationCreateInfo
-        {
-            .flags         = VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT,
-            .usage         = VMA_MEMORY_USAGE_CPU_TO_GPU,
-            .requiredFlags = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT | VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT,
-        };
-
         auto* ShaderBufferManager = EngineResourceServices->GetShaderBufferManager();
-        ShaderBufferManager->CreateDescriptorBuffer(DescriptorBufferCreateInfo, AllocationCreateInfo);
+        ShaderBufferManager->AllocateDescriptorBuffer(DescriptorBufferCreateInfo);
     }
 } // namespace Npgs

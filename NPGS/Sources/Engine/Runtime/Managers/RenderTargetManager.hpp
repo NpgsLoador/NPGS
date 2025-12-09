@@ -49,9 +49,6 @@ namespace Npgs
 
     class FRenderTargetManager
     {
-    private:
-        using FManagedTargetMap = Utils::FStringHeteroHashTable<std::string, FManagedTarget>;
-
     public:
         FRenderTargetManager(FVulkanContext* VulkanContext);
         FRenderTargetManager(const FRenderTargetManager&) = delete;
@@ -67,6 +64,9 @@ namespace Npgs
         void DesctoyAttachments();
 
         const FManagedTarget& GetManagedTarget(std::string_view Name) const;
+
+    private:
+        using FManagedTargetMap = Utils::FStringHeteroHashTable<std::string, FManagedTarget>;
 
     private:
         FVulkanContext*   VulkanContext_;

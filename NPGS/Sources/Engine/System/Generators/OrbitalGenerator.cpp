@@ -214,16 +214,16 @@ namespace Npgs
                 }
                 else
                 {
-                    if ((Current->GetStellarClass().GetStellarType() == Astro::FStellarClass::EStellarType::kNeutronStar ||
-                         Current->GetStellarClass().GetStellarType() == Astro::FStellarClass::EStellarType::kBlackHole) &&
+                    if ((Current->GetStellarClass().GetStellarType() == Astro::EStellarType::kNeutronStar ||
+                         Current->GetStellarClass().GetStellarType() == Astro::EStellarType::kBlackHole) &&
                         Current->GetStarFrom() != Astro::AStar::EStarFrom::kWhiteDwarfMerge)
                     {
                         Current->SetHasPlanets(false);
                     }
                     else
                     {
-                        if (TheOther->GetStellarClass().GetStellarType() == Astro::FStellarClass::EStellarType::kNeutronStar ||
-                            TheOther->GetStellarClass().GetStellarType() == Astro::FStellarClass::EStellarType::kBlackHole)
+                        if (TheOther->GetStellarClass().GetStellarType() == Astro::EStellarType::kNeutronStar ||
+                            TheOther->GetStellarClass().GetStellarType() == Astro::EStellarType::kBlackHole)
                         {
                             if (TheOther->GetFeH() >= -2.0f)
                             {
@@ -279,8 +279,8 @@ namespace Npgs
             }
             else
             {
-                if (Star->GetStellarClass().GetStellarType() == Astro::FStellarClass::EStellarType::kNeutronStar ||
-                    Star->GetStellarClass().GetStellarType() == Astro::FStellarClass::EStellarType::kBlackHole)
+                if (Star->GetStellarClass().GetStellarType() == Astro::EStellarType::kNeutronStar ||
+                    Star->GetStellarClass().GetStellarType() == Astro::EStellarType::kBlackHole)
                 {
                     if (Star->GetStarFrom() != Astro::AStar::EStarFrom::kWhiteDwarfMerge)
                     {
@@ -524,8 +524,7 @@ namespace Npgs
         std::vector<float> NewCoreMassesSol(PlanetCount); // 吸积核心质量，单位太阳
         float MigratedOriginSemiMajorAxisAu = 0.0f;       // 原有的半长轴，用于计算内迁行星
 
-        if (StellarType != Astro::FStellarClass::EStellarType::kNeutronStar &&
-            StellarType != Astro::FStellarClass::EStellarType::kBlackHole)
+        if (StellarType != Astro::EStellarType::kNeutronStar && StellarType != Astro::EStellarType::kBlackHole)
         {
             // 宜居带半径，单位 AU
             std::pair<float, float> HabitableZoneAu = CalculateHabitableZone(System, StarIndex, BinarySemiMajorAxis);
@@ -556,8 +555,7 @@ namespace Npgs
             // 处理白矮星引力散射
             for (std::size_t i = 0; i != PlanetCount; ++i)
             {
-                if (Star->GetStellarClass().GetStellarType() == Astro::FStellarClass::EStellarType::kWhiteDwarf &&
-                    Star->GetAge() > 1e6)
+                if (Star->GetStellarClass().GetStellarType() == Astro::EStellarType::kWhiteDwarf && Star->GetAge() > 1e6)
                 {
                     if (Planets[i]->GetPlanetType() == Astro::APlanet::EPlanetType::kRocky)
                     {
@@ -680,7 +678,7 @@ namespace Npgs
                 GenerateSpin(Orbits[i]->GetSemiMajorAxis(), Parent.GetOrbitalObject(), Planets[i].get());
 
                 // 计算类地行星、次生大气层和地壳矿脉
-                if (Star->GetStellarClass().GetStellarType() == Astro::FStellarClass::EStellarType::kNormalStar)
+                if (Star->GetStellarClass().GetStellarType() == Astro::EStellarType::kNormalStar)
                 {
                     GenerateTerra(Star, PoyntingVector, HabitableZoneAu, Orbits[i].get(), Planets[i].get());
                 }
@@ -917,8 +915,7 @@ namespace Npgs
         float DiskBase           = 1.0f + CommonGenerator_(RandomEngine_); // 基准随机数，1-2 之间
         float StarInitialMassSol = Star->GetInitialMass() / kSolarMass;
         auto  StellarType        = Star->GetStellarClass().GetStellarType();
-        if (StellarType != Astro::FStellarClass::EStellarType::kNeutronStar &&
-            StellarType != Astro::FStellarClass::EStellarType::kBlackHole)
+        if (StellarType != Astro::EStellarType::kNeutronStar && StellarType != Astro::EStellarType::kBlackHole)
         {
             float DiskMassSol     = DiskBase * StarInitialMassSol * std::pow(10.0f, -2.05f + 0.1214f * StarInitialMassSol - 0.02669f * std::pow(StarInitialMassSol, 2.0f) - 0.2274f * std::log(StarInitialMassSol));
             float DustMassSol     = DiskMassSol * 0.0142f * 0.4f * std::pow(10.0f, Star->GetFeH());
@@ -994,8 +991,7 @@ namespace Npgs
         std::size_t PlanetCount        = 0;
         float       StarInitialMassSol = Star->GetInitialMass() / kSolarMass;
         auto        StellarType        = Star->GetStellarClass().GetStellarType();
-        if (StellarType != Astro::FStellarClass::EStellarType::kNeutronStar &&
-            StellarType != Astro::FStellarClass::EStellarType::kBlackHole)
+        if (StellarType != Astro::EStellarType::kNeutronStar && StellarType != Astro::EStellarType::kBlackHole)
         {
             if (StarInitialMassSol < 0.6f)
             {
@@ -1347,7 +1343,7 @@ namespace Npgs
         {
             if ((Planets[i]->GetPlanetType() == Astro::APlanet::EPlanetType::kGasGiant ||
                  Planets[i]->GetPlanetType() == Astro::APlanet::EPlanetType::kIceGiant) &&
-                Star->GetStellarClass().GetStellarType() == Astro::FStellarClass::EStellarType::kWhiteDwarf &&
+                Star->GetStellarClass().GetStellarType() == Astro::EStellarType::kWhiteDwarf &&
                 Orbits[i]->GetSemiMajorAxis() < 2.0f * StarRadiusMaxSol * kSolarRadius)
             {
                 Planets[i]->SetPlanetType(Astro::APlanet::EPlanetType::kChthonian);
@@ -1492,8 +1488,8 @@ namespace Npgs
                     }
 
                     CalculatePlanetRadius(NewCoreMassesSol[i] * kSolarMassToEarth, Planets[i].get());
-                    if (Star->GetStellarClass().GetStellarType() == Astro::FStellarClass::EStellarType::kBlackHole ||
-                        Star->GetStellarClass().GetStellarType() == Astro::FStellarClass::EStellarType::kNeutronStar)
+                    if (Star->GetStellarClass().GetStellarType() == Astro::EStellarType::kBlackHole ||
+                        Star->GetStellarClass().GetStellarType() == Astro::EStellarType::kNeutronStar)
                     {
                         continue;
                     }
@@ -2218,7 +2214,7 @@ namespace Npgs
 
             CalculateTemperature(Astro::FOrbit::EObjectType::kPlanet, PoyntingVector, Moons[i].get());
 
-            if (Star->GetStellarClass().GetStellarType() == Astro::FStellarClass::EStellarType::kNormalStar)
+            if (Star->GetStellarClass().GetStellarType() == Astro::EStellarType::kNormalStar)
             {
                 GenerateTerra(Star, PoyntingVector, HabitableZoneAu, Orbits[i].get(), Moons[i].get());
             }

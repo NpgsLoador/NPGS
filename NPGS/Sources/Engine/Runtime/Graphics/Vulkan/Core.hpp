@@ -29,9 +29,6 @@ namespace Npgs
             kTransfer
         };
 
-    private:
-        struct FQueueFamilyIndicesComplex;
-
     public:
         FVulkanCore();
         FVulkanCore(const FVulkanCore&) = delete;
@@ -104,6 +101,9 @@ namespace Npgs
         std::uint32_t GetQueueFamilyIndex(EQueueType QueueType) const;
         std::uint32_t GetCurrentImageIndex() const;
         std::uint32_t GetApiVersion() const;
+
+    private:
+        struct FQueueFamilyIndicesComplex;
 
     private:
         void AddElementChecked(const char* Element, std::vector<const char*>& Vector);

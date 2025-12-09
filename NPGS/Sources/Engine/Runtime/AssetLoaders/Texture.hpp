@@ -54,6 +54,9 @@ namespace Npgs
                            vk::ImageViewType ImageViewType, vk::Format InitialFormat, vk::Format FinalFormat,
                            std::uint32_t ArrayLayers, bool bGenerateMipmaps);
 
+    protected:
+        std::string TextureName_;
+
     private:
         void CreateImageMemory(vk::ImageCreateFlags Flags, vk::ImageType ImageType, vk::Format Format,
                                vk::Extent3D Extent, std::uint32_t MipLevels, std::uint32_t ArrayLayers);
@@ -81,13 +84,12 @@ namespace Npgs
         void GenerateMipmaps(const FVulkanCommandBuffer& CommandBuffer, vk::Image Image, const FImageMemoryMaskPack& FinalState,
                              vk::Extent3D Extent, std::uint32_t MipLevels, std::uint32_t ArrayLayers, vk::Filter Filter);
 
-    protected:
+    private:
         FVulkanContext*                     VulkanContext_;
         std::unique_ptr<FVulkanImageMemory> ImageMemory_;
         std::unique_ptr<FVulkanImageView>   ImageView_;
         VmaAllocator                        Allocator_;
         VmaAllocationCreateInfo             AllocationCreateInfo_;
-        std::string                         TextureName_;
     };
 
     class FTexture2D : public FTexture

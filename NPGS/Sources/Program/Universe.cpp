@@ -174,29 +174,29 @@ namespace Npgs
             );
         };
 
-        auto CountClass = [](const Astro::FStellarClass::FSpectralType& SpectralType, std::array<std::size_t, 7>& Type)
+        auto CountClass = [](const Astro::FSpectralType& SpectralType, std::array<std::size_t, 7>& Type)
         {
             switch (SpectralType.HSpectralClass)
             {
-            case Astro::FStellarClass::ESpectralClass::kSpectral_O:
+            case Astro::ESpectralClass::kSpectral_O:
                 ++Type[kTypeOIndex];
                 break;
-            case Astro::FStellarClass::ESpectralClass::kSpectral_B:
+            case Astro::ESpectralClass::kSpectral_B:
                 ++Type[kTypeBIndex];
                 break;
-            case Astro::FStellarClass::ESpectralClass::kSpectral_A:
+            case Astro::ESpectralClass::kSpectral_A:
                 ++Type[kTypeAIndex];
                 break;
-            case Astro::FStellarClass::ESpectralClass::kSpectral_F:
+            case Astro::ESpectralClass::kSpectral_F:
                 ++Type[kTypeFIndex];
                 break;
-            case Astro::FStellarClass::ESpectralClass::kSpectral_G:
+            case Astro::ESpectralClass::kSpectral_G:
                 ++Type[kTypeGIndex];
                 break;
-            case Astro::FStellarClass::ESpectralClass::kSpectral_K:
+            case Astro::ESpectralClass::kSpectral_K:
                 ++Type[kTypeKIndex];
                 break;
-            case Astro::FStellarClass::ESpectralClass::kSpectral_M:
+            case Astro::ESpectralClass::kSpectral_M:
                 ++Type[kTypeMIndex];
                 break;
             }
@@ -336,18 +336,18 @@ namespace Npgs
                 }
 
                 const auto& Class = Star->GetStellarClass();
-                Astro::FStellarClass::EStellarType StellarType = Class.GetStellarType();
-                if (StellarType != Astro::FStellarClass::EStellarType::kNormalStar)
+                Astro::EStellarType StellarType = Class.GetStellarType();
+                if (StellarType != Astro::EStellarType::kNormalStar)
                 {
                     switch (StellarType)
                     {
-                    case Astro::FStellarClass::EStellarType::kBlackHole:
+                    case Astro::EStellarType::kBlackHole:
                         ++BlackHoles;
                         break;
-                    case Astro::FStellarClass::EStellarType::kNeutronStar:
+                    case Astro::EStellarType::kNeutronStar:
                         ++NeutronStars;
                         break;
-                    case Astro::FStellarClass::EStellarType::kWhiteDwarf:
+                    case Astro::EStellarType::kWhiteDwarf:
                         ++WhiteDwarfs;
                         break;
                     default:
@@ -357,13 +357,13 @@ namespace Npgs
                     continue;
                 }
 
-                Astro::FStellarClass::FSpectralType SpectralType = Class.Data();
+                Astro::FSpectralType SpectralType = Class.Data();
 
-                if (SpectralType.LuminosityClass == Astro::FStellarClass::ELuminosityClass::kLuminosity_Unknown)
+                if (SpectralType.LuminosityClass == Astro::ELuminosityClass::kLuminosity_Unknown)
                 {
-                    if (SpectralType.HSpectralClass == Astro::FStellarClass::ESpectralClass::kSpectral_WC ||
-                        SpectralType.HSpectralClass == Astro::FStellarClass::ESpectralClass::kSpectral_WN ||
-                        SpectralType.HSpectralClass == Astro::FStellarClass::ESpectralClass::kSpectral_WO)
+                    if (SpectralType.HSpectralClass == Astro::ESpectralClass::kSpectral_WC ||
+                        SpectralType.HSpectralClass == Astro::ESpectralClass::kSpectral_WN ||
+                        SpectralType.HSpectralClass == Astro::ESpectralClass::kSpectral_WO)
                     {
                         ++WolfRayet;
                         CountMostLuminous(Star, MostLuminousWolfRayet);
@@ -376,8 +376,8 @@ namespace Npgs
                     }
                 }
 
-                if (SpectralType.LuminosityClass == Astro::FStellarClass::ELuminosityClass::kLuminosity_0 ||
-                    SpectralType.LuminosityClass == Astro::FStellarClass::ELuminosityClass::kLuminosity_IaPlus)
+                if (SpectralType.LuminosityClass == Astro::ELuminosityClass::kLuminosity_0 ||
+                    SpectralType.LuminosityClass == Astro::ELuminosityClass::kLuminosity_IaPlus)
                 {
                     CountClass(SpectralType, Hypergiants);
                     CountMostLuminous(Star, MostLuminousHypergiant);
@@ -389,9 +389,9 @@ namespace Npgs
                     continue;
                 }
 
-                if (SpectralType.LuminosityClass == Astro::FStellarClass::ELuminosityClass::kLuminosity_Ia ||
-                    SpectralType.LuminosityClass == Astro::FStellarClass::ELuminosityClass::kLuminosity_Iab ||
-                    SpectralType.LuminosityClass == Astro::FStellarClass::ELuminosityClass::kLuminosity_Ib)
+                if (SpectralType.LuminosityClass == Astro::ELuminosityClass::kLuminosity_Ia ||
+                    SpectralType.LuminosityClass == Astro::ELuminosityClass::kLuminosity_Iab ||
+                    SpectralType.LuminosityClass == Astro::ELuminosityClass::kLuminosity_Ib)
                 {
                     CountClass(SpectralType, Supergiants);
                     CountMostLuminous(Star, MostLuminousSupergiant);
@@ -403,7 +403,7 @@ namespace Npgs
                     continue;
                 }
 
-                if (SpectralType.LuminosityClass == Astro::FStellarClass::ELuminosityClass::kLuminosity_II)
+                if (SpectralType.LuminosityClass == Astro::ELuminosityClass::kLuminosity_II)
                 {
                     CountClass(SpectralType, BrightGiants);
                     CountMostLuminous(Star, MostLuminousBrightGiant);
@@ -415,7 +415,7 @@ namespace Npgs
                     continue;
                 }
 
-                if (SpectralType.LuminosityClass == Astro::FStellarClass::ELuminosityClass::kLuminosity_III)
+                if (SpectralType.LuminosityClass == Astro::ELuminosityClass::kLuminosity_III)
                 {
                     CountClass(SpectralType, Giants);
                     CountMostLuminous(Star, MostLuminousGiant);
@@ -427,7 +427,7 @@ namespace Npgs
                     continue;
                 }
 
-                if (SpectralType.LuminosityClass == Astro::FStellarClass::ELuminosityClass::kLuminosity_IV)
+                if (SpectralType.LuminosityClass == Astro::ELuminosityClass::kLuminosity_IV)
                 {
                     CountClass(SpectralType, Subgiants);
                     CountMostLuminous(Star, MostLuminousSubgiant);
@@ -439,7 +439,7 @@ namespace Npgs
                     continue;
                 }
 
-                if (SpectralType.LuminosityClass == Astro::FStellarClass::ELuminosityClass::kLuminosity_V)
+                if (SpectralType.LuminosityClass == Astro::ELuminosityClass::kLuminosity_V)
                 {
                     CountClass(SpectralType, MainSequence);
                     CountMostLuminous(Star, MostLuminousMainSequence);
@@ -588,13 +588,13 @@ namespace Npgs
         std::vector<FStellarBasicProperties> BasicProperties;
 
         auto CreateGenerators =
-        [&, this](FStellarGenerator::EStellarTypeGenerationOption StellarTypeOption = FStellarGenerator::EStellarTypeGenerationOption::kRandom,
+        [&, this](EStellarTypeGenerationOption StellarTypeOption = EStellarTypeGenerationOption::kRandom,
                   float MassLowerLimit = 0.1f, float MassUpperLimit = 300.0f,
-                  FStellarGenerator::EGenerationDistribution MassDistribution = FStellarGenerator::EGenerationDistribution::kFromPdf,
+                  EGenerationDistribution MassDistribution = EGenerationDistribution::kFromPdf,
                   float AgeLowerLimit = 0.0f, float AgeUpperLimit = 1.26e10f,
-                  FStellarGenerator::EGenerationDistribution AgeDistribution = FStellarGenerator::EGenerationDistribution::kFromPdf,
+                  EGenerationDistribution AgeDistribution = EGenerationDistribution::kFromPdf,
                   float FeHLowerLimit = -4.0f, float FeHUpperLimit = 0.5f,
-                  FStellarGenerator::EGenerationDistribution FeHDistribution = FStellarGenerator::EGenerationDistribution::kFromPdf) -> void
+                  EGenerationDistribution FeHDistribution = EGenerationDistribution::kFromPdf) -> void
         {
             for (int i = 0; i != MaxThread; ++i)
             {
@@ -611,7 +611,7 @@ namespace Npgs
                 {
                     .SeedSequence       = &SeedSequence,
                     .StellarTypeOption  = StellarTypeOption,
-                    .MultiplicityOption = FStellarGenerator::EMultiplicityGenerationOption::kSingleStar,
+                    .MultiplicityOption = EMultiplicityGenerationOption::kSingleStar,
                     .UniverseAge        = UniverseAge_,
                     .MassLowerLimit     = MassLowerLimit,
                     .MassUpperLimit     = MassUpperLimit,
@@ -642,44 +642,43 @@ namespace Npgs
         if (ExtraGiantCount_ != 0)
         {
             Generators.clear();
-            CreateGenerators(FStellarGenerator::EStellarTypeGenerationOption::kGiant, 1.0f, 35.0f);
+            CreateGenerators(EStellarTypeGenerationOption::kGiant, 1.0f, 35.0f);
             GenerateBasicProperties(ExtraGiantCount_);
         }
 
         if (ExtraMassiveStarCount_ != 0)
         {
             Generators.clear();
-            CreateGenerators(FStellarGenerator::EStellarTypeGenerationOption::kRandom,
-                             20.0f, 300.0f, FStellarGenerator::EGenerationDistribution::kUniform,
-                             0.0f,  3.5e6f, FStellarGenerator::EGenerationDistribution::kUniform);
+            CreateGenerators(EStellarTypeGenerationOption::kRandom,
+                             20.0f, 300.0f, EGenerationDistribution::kUniform,
+                             0.0f,  3.5e6f, EGenerationDistribution::kUniform);
             GenerateBasicProperties(ExtraMassiveStarCount_);
         }
 
         if (ExtraNeutronStarCount_ != 0)
         {
             Generators.clear();
-            CreateGenerators(FStellarGenerator::EStellarTypeGenerationOption::kDeathStar,
-                             10.0f, 20.0f, FStellarGenerator::EGenerationDistribution::kUniform,
-                             1e7f,   1e8f, FStellarGenerator::EGenerationDistribution::kUniformByExponent);
+            CreateGenerators(EStellarTypeGenerationOption::kDeathStar,
+                             10.0f, 20.0f, EGenerationDistribution::kUniform,
+                             1e7f,   1e8f, EGenerationDistribution::kUniformByExponent);
             GenerateBasicProperties(ExtraNeutronStarCount_);
         }
 
         if (ExtraBlackHoleCount_ != 0)
         {
             Generators.clear();
-            CreateGenerators(FStellarGenerator::EStellarTypeGenerationOption::kRandom,
-                             35.0f,  300.0f, FStellarGenerator::EGenerationDistribution::kUniform,
-                             1e7f, 1.26e10f, FStellarGenerator::EGenerationDistribution::kFromPdf,
-                             -2.0, 0.5);
+            CreateGenerators(EStellarTypeGenerationOption::kRandom,
+                             35.0f,  300.0f, EGenerationDistribution::kUniform,
+                             1e7f, 1.26e10f, EGenerationDistribution::kFromPdf, -2.0, 0.5);
             GenerateBasicProperties(ExtraBlackHoleCount_);
         }
 
         if (ExtraMergeStarCount_ != 0)
         {
             Generators.clear();
-            CreateGenerators(FStellarGenerator::EStellarTypeGenerationOption::kMergeStar,
-                             0.0f, 0.0f, FStellarGenerator::EGenerationDistribution::kUniform,
-                             1e6f, 1e8f, FStellarGenerator::EGenerationDistribution::kUniformByExponent);
+            CreateGenerators(EStellarTypeGenerationOption::kMergeStar,
+                             0.0f, 0.0f, EGenerationDistribution::kUniform,
+                             1e6f, 1e8f, EGenerationDistribution::kUniformByExponent);
             GenerateBasicProperties(ExtraMergeStarCount_);
         }
 
@@ -687,7 +686,7 @@ namespace Npgs
             StarCount_ - ExtraGiantCount_ - ExtraMassiveStarCount_ - ExtraNeutronStarCount_ - ExtraBlackHoleCount_ - ExtraMergeStarCount_;
 
         Generators.clear();
-        CreateGenerators(FStellarGenerator::EStellarTypeGenerationOption::kRandom, 0.075f);
+        CreateGenerators(EStellarTypeGenerationOption::kRandom, 0.075f);
         GenerateBasicProperties(CommonStarsCount);
 
         NpgsCoreInfo("Interpolating stellar data as {} threads...", MaxThread);
@@ -988,8 +987,8 @@ namespace Npgs
             FStellarGenerationInfo GenerationInfo
             {
                 .SeedSequence       = &SeedSequence,
-                .StellarTypeOption  = FStellarGenerator::EStellarTypeGenerationOption::kRandom,
-                .MultiplicityOption = FStellarGenerator::EMultiplicityGenerationOption::kBinarySecondStar
+                .StellarTypeOption  = EStellarTypeGenerationOption::kRandom,
+                .MultiplicityOption = EMultiplicityGenerationOption::kBinarySecondStar
             };
 
             Generators.emplace_back(GenerationInfo);

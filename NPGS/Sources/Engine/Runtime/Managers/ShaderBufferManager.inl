@@ -154,78 +154,100 @@ namespace Npgs
     void FShaderBufferManager::UpdateResourceDescriptors(std::string_view BufferName, std::uint32_t Set, std::uint32_t Binding,
                                                          vk::DescriptorType ConfirmedUsage, const Type& DescriptorInfo)
     {
-        const auto& BufferInfo    = GetDescriptorBufferInfo(BufferName);
-        const auto& OffsetAndType = GetDescriptorBindingOffsetAndType(BufferName, Set, Binding);
+        //const auto& BufferInfo    = GetDescriptorBufferInfo(BufferName);
+        //const auto& OffsetAndType = GetDescriptorBindingOffsetAndType(BufferName, Set, Binding);
 
-        vk::DeviceSize     Offset       = OffsetAndType.first;
-        vk::DescriptorType CurrentUsage = OffsetAndType.second;
+        //vk::DeviceSize     Offset       = OffsetAndType.first;
+        //vk::DescriptorType CurrentUsage = OffsetAndType.second;
 
-        if (CurrentUsage != ConfirmedUsage)
-        {
-            throw std::invalid_argument(std::format(R"(Descriptor type mismatch for buffer "{}", set {}, binding {}.)",
-                                                    BufferName, Set, Binding));
-        }
-        if (ConfirmedUsage == vk::DescriptorType::eUniformBuffer || CurrentUsage == vk::DescriptorType::eStorageBuffer)
-        {
-            throw std::invalid_argument("Update buffer descriptor please use UpdateBufferDescriptors");
-        }
+        //if (CurrentUsage != ConfirmedUsage)
+        //{
+        //    throw std::invalid_argument(std::format(R"(Descriptor type mismatch for buffer "{}", set {}, binding {}.)",
+        //                                            BufferName, Set, Binding));
+        //}
+        //if (ConfirmedUsage == vk::DescriptorType::eUniformBuffer || CurrentUsage == vk::DescriptorType::eStorageBuffer)
+        //{
+        //    throw std::invalid_argument("Update buffer descriptor please use UpdateBufferDescriptors");
+        //}
 
-        vk::DescriptorGetInfoEXT DescriptorGetInfo(ConfirmedUsage, &DescriptorInfo);
-        vk::DeviceSize DescriptorSize = GetDescriptorSize(CurrentUsage);
+        //vk::DescriptorGetInfoEXT DescriptorGetInfo(ConfirmedUsage, &DescriptorInfo);
+        //vk::DeviceSize DescriptorSize = GetDescriptorSize(CurrentUsage);
 
-        for (std::uint32_t i = 0; i != Config::Graphics::kMaxFrameInFlight; ++i)
-        {
-            auto& BufferMemory = BufferInfo.Buffers[i].GetMemory();
-            void* Target       = BufferMemory.GetMappedTargetMemory();
-            vk::Device Device  = VulkanContext_->GetDevice();
-            Device.getDescriptorEXT(DescriptorGetInfo, DescriptorSize, reinterpret_cast<std::byte*>(Target) + Offset);
-        }
+        //for (std::uint32_t i = 0; i != Config::Graphics::kMaxFrameInFlight; ++i)
+        //{
+        //    auto& BufferMemory = BufferInfo.Buffers[i].GetMemory();
+        //    void* Target       = BufferMemory.GetMappedTargetMemory();
+        //    vk::Device Device  = VulkanContext_->GetDevice();
+        //    Device.getDescriptorEXT(DescriptorGetInfo, DescriptorSize, reinterpret_cast<std::byte*>(Target) + Offset);
+        //}
     }
 
     template <typename Type>
     void FShaderBufferManager::UpdateResourceDescriptor(std::uint32_t FrameIndex, std::string_view BufferName, std::uint32_t Set,
                                                         std::uint32_t Binding, vk::DescriptorType ConfirmedUsage, const Type& DescriptorInfo)
     {
-        const auto& BufferInfo    = GetDescriptorBufferInfo(BufferName);
-        const auto& OffsetAndType = GetDescriptorBindingOffsetAndType(BufferName, Set, Binding);
+        //const auto& BufferInfo    = GetDescriptorBufferInfo(BufferName);
+        //const auto& OffsetAndType = GetDescriptorBindingOffsetAndType(BufferName, Set, Binding);
 
-        vk::DeviceSize     Offset       = OffsetAndType.first;
-        vk::DescriptorType CurrentUsage = OffsetAndType.second;
+        //vk::DeviceSize     Offset       = OffsetAndType.first;
+        //vk::DescriptorType CurrentUsage = OffsetAndType.second;
 
-        if (CurrentUsage != ConfirmedUsage)
-        {
-            throw std::invalid_argument(std::format(R"(Descriptor type mismatch for buffer "{}", set {}, binding {}.)",
-                                                    BufferName, Set, Binding));
-        }
-        if (ConfirmedUsage == vk::DescriptorType::eUniformBuffer || CurrentUsage == vk::DescriptorType::eStorageBuffer)
-        {
-            throw std::invalid_argument("Update buffer descriptor please use UpdateBufferDescriptor");
-        }
+        //if (CurrentUsage != ConfirmedUsage)
+        //{
+        //    throw std::invalid_argument(std::format(R"(Descriptor type mismatch for buffer "{}", set {}, binding {}.)",
+        //                                            BufferName, Set, Binding));
+        //}
+        //if (ConfirmedUsage == vk::DescriptorType::eUniformBuffer || CurrentUsage == vk::DescriptorType::eStorageBuffer)
+        //{
+        //    throw std::invalid_argument("Update buffer descriptor please use UpdateBufferDescriptor");
+        //}
 
-        vk::DescriptorGetInfoEXT DescriptorGetInfo(ConfirmedUsage, &DescriptorInfo);
-        vk::DeviceSize DescriptorSize = GetDescriptorSize(CurrentUsage);
+        //vk::DescriptorGetInfoEXT DescriptorGetInfo(ConfirmedUsage, &DescriptorInfo);
+        //vk::DeviceSize DescriptorSize = GetDescriptorSize(CurrentUsage);
 
-        auto& BufferMemory = BufferInfo.Buffers[FrameIndex].GetMemory();
-        void* Target       = BufferMemory.GetMappedTargetMemory();
-        vk::Device Device  = VulkanContext_->GetDevice();
-        Device.getDescriptorEXT(DescriptorGetInfo, DescriptorSize, reinterpret_cast<std::byte*>(Target) + Offset);
+        //auto& BufferMemory = BufferInfo.Buffers[FrameIndex].GetMemory();
+        //void* Target       = BufferMemory.GetMappedTargetMemory();
+        //vk::Device Device  = VulkanContext_->GetDevice();
+        //Device.getDescriptorEXT(DescriptorGetInfo, DescriptorSize, reinterpret_cast<std::byte*>(Target) + Offset);
     }
 
     template <typename... Args>
     std::vector<vk::DeviceSize>
     FShaderBufferManager::GetDescriptorBindingOffsets(std::string_view BufferName, Args... Sets) const
     {
-        auto it = SetBaseOffsetsMap_.find(BufferName);
-        if (it == SetBaseOffsetsMap_.end())
+        auto it = DescriptorBuffers_.find(BufferName);
+        if (it == DescriptorBuffers_.end())
         {
             throw std::out_of_range(std::format(R"(Descriptor buffer set offsets for "{}" not found.)", BufferName));
         }
 
-        const auto& SetOffsets = it->second;
+        const auto& BufferInfo = it->second;
+
         std::vector<vk::DeviceSize> Offsets;
+        Offsets.reserve(sizeof...(Sets));
 
-        (Offsets.push_back(SetOffsets.at(Sets)), ...);
+        auto GetOffset = [&](std::uint32_t SetIndex) -> vk::DeviceSize
+        {
+            auto AllocIt = BufferInfo.SetAllocations.find(SetIndex);
+            if (AllocIt == BufferInfo.SetAllocations.end())
+            {
+                throw std::out_of_range(std::format(R"(Set {} allocation not found in descriptor buffer "{}".)", SetIndex, BufferName));
+            }
 
+            return AllocIt->second.Offset;
+        };
+
+        (Offsets.push_back(GetOffset(Sets)), ...);
         return Offsets;
+    }
+
+    NPGS_INLINE const FDeviceLocalBuffer& FShaderBufferManager::GetResourceDescriptorHeap(std::uint32_t FrameIndex) const
+    {
+        return ResourceDescriptorHeaps_[FrameIndex];
+    }
+
+    NPGS_INLINE const FDeviceLocalBuffer& FShaderBufferManager::GetSamplerDescriptorHeap(std::uint32_t FrameIndex) const
+    {
+        return SamplerDescriptorHeaps_[FrameIndex];
     }
 } // namespace Npgs

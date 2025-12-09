@@ -150,7 +150,7 @@
     <ClCompile Include="Sources\Engine\Runtime\Managers\RenderTargetManager.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="Sources\Program\Rendering\PbrCube.cpp">
+    <ClCompile Include="Sources\Program\Rendering\Meshes\PbrCube.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="Sources\Program\Rendering\RenderPasses\GbufferScene.cpp">
@@ -175,6 +175,9 @@
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="Sources\Engine\Runtime\AssetLoaders\FileLoader.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="Sources\Program\Rendering\RenderPasses\DepthMap.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>
@@ -359,7 +362,7 @@
     <ClInclude Include="Sources\Engine\Runtime\Managers\RenderTargetManager.hpp">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="Sources\Program\Rendering\PbrCube.hpp">
+    <ClInclude Include="Sources\Program\Rendering\Meshes\PbrCube.hpp">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="Sources\Program\Rendering\RenderPasses\GbufferScene.hpp">
@@ -384,6 +387,9 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="Sources\Engine\Runtime\AssetLoaders\FileLoader.hpp">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="Sources\Program\Rendering\RenderPasses\DepthMap.hpp">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>

@@ -88,8 +88,8 @@ int main1() {
     std::seed_seq SeedSeq = { seed };
     Info.SeedSequence = &SeedSeq;
     FStellarGenerator sg(Info);
-    FStellarBasicProperties b1{ FStellarGenerator::EStellarTypeGenerationOption::kRandom, FStellarGenerator::EMultiplicityGenerationOption::kBinaryFirstStar, 5e9f, 0.0f, 1.0f };
-    FStellarBasicProperties b2{ FStellarGenerator::EStellarTypeGenerationOption::kRandom, FStellarGenerator::EMultiplicityGenerationOption::kBinaryFirstStar, 5e9f, 0.0f, 0.3f };
+    FStellarBasicProperties b1{ EStellarTypeGenerationOption::kRandom, EMultiplicityGenerationOption::kBinaryFirstStar, 5e9f, 0.0f, 1.0f };
+    FStellarBasicProperties b2{ EStellarTypeGenerationOption::kRandom, EMultiplicityGenerationOption::kBinaryFirstStar, 5e9f, 0.0f, 0.3f };
     auto s1 = sg.GenerateStar(b1);
     auto s2 = sg.GenerateStar(b2);
 

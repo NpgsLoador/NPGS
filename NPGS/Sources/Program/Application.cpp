@@ -297,21 +297,26 @@ namespace Npgs
 
             for (std::uint32_t i = 0; i != Config::Graphics::kMaxFrameInFlight; ++i)
             {
-                const auto& SceneGBufferDescriptorBuffer = ShaderBufferManager->GetDescriptorBuffer(i, "SceneGBufferDescriptorBuffer");
-                vk::DescriptorBufferBindingInfoEXT SceneGBufferDescriptorBufferBindingInfo(
-                    SceneGBufferDescriptorBuffer.GetBuffer().GetDeviceAddress(), vk::BufferUsageFlagBits::eResourceDescriptorBufferEXT);
+                const auto& ResourceDescriptorHeap = ShaderBufferManager->GetResourceDescriptorHeap(i);
 
-                const auto& SceneMergeDescriptorBuffer = ShaderBufferManager->GetDescriptorBuffer(i, "SceneMergeDescriptorBuffer");
-                vk::DescriptorBufferBindingInfoEXT SceneMergeDescriptorBufferBindingInfo(
-                    SceneMergeDescriptorBuffer.GetBuffer().GetDeviceAddress(), vk::BufferUsageFlagBits::eResourceDescriptorBufferEXT);
+                auto ResourceHeapUsage = vk::BufferUsageFlagBits::eResourceDescriptorBufferEXT |
+                                         vk::BufferUsageFlagBits::eSamplerDescriptorBufferEXT |
+                                         vk::BufferUsageFlagBits::eShaderDeviceAddress |
+                                         vk::BufferUsageFlagBits::eTransferDst;
 
-                const auto& SkyboxDescriptorBuffer = ShaderBufferManager->GetDescriptorBuffer(i, "SkyboxDescriptorBuffer");
-                vk::DescriptorBufferBindingInfoEXT SkyboxDescriptorBufferBindingInfo(
-                    SkyboxDescriptorBuffer.GetBuffer().GetDeviceAddress(), vk::BufferUsageFlagBits::eResourceDescriptorBufferEXT);
+                vk::DescriptorBufferBindingInfoEXT ResourceDescriptorBufferBindingInfo(
+                    ResourceDescriptorHeap.GetBuffer().GetDeviceAddress(), ResourceHeapUsage);
 
-                const auto& PostDescriptorBuffer = ShaderBufferManager->GetDescriptorBuffer(i, "PostDescriptorBuffer");
-                vk::DescriptorBufferBindingInfoEXT PostDescriptorBufferBindingInfo(
-                    PostDescriptorBuffer.GetBuffer().GetDeviceAddress(), vk::BufferUsageFlagBits::eResourceDescriptorBufferEXT);
+                const auto& SamplerDescriptorHeap = ShaderBufferManager->GetSamplerDescriptorHeap(i);
+
+                auto SamplerHeapUsage = vk::BufferUsageFlagBits::eSamplerDescriptorBufferEXT |
+                                        vk::BufferUsageFlagBits::eShaderDeviceAddress |
+                                        vk::BufferUsageFlagBits::eTransferDst;
+
+                vk::DescriptorBufferBindingInfoEXT SamplerDescriptorBufferBindingInfo(
+                    SamplerDescriptorHeap.GetBuffer().GetDeviceAddress(), SamplerHeapUsage);
+
+                std::array DescriptorBufferBindingInfos{ ResourceDescriptorBufferBindingInfo, SamplerDescriptorBufferBindingInfo };;
 
                 auto& DepthMapCommandBuffer = DepthMapCommandBuffers[i];
 
@@ -339,9 +344,9 @@ namespace Npgs
                 SceneGBufferCommandBuffer->setViewport(0, CommonViewport);
                 SceneGBufferCommandBuffer->setScissor(0, CommonScissor);
                 SceneGBufferCommandBuffer->bindPipeline(vk::PipelineBindPoint::eGraphics, PbrSceneGBufferPipeline);
-                SceneGBufferCommandBuffer->bindDescriptorBuffersEXT(SceneGBufferDescriptorBufferBindingInfo);
+                SceneGBufferCommandBuffer->bindDescriptorBuffersEXT(DescriptorBufferBindingInfos);
                 auto Offsets = ShaderBufferManager->GetDescriptorBindingOffsets("SceneGBufferDescriptorBuffer", 0, 1, 2);
-                SceneGBufferCommandBuffer->setDescriptorBufferOffsetsEXT(vk::PipelineBindPoint::eGraphics, PbrSceneGBufferPipelineLayout, 0, { 0, 0, 0 }, Offsets);
+                SceneGBufferCommandBuffer->setDescriptorBufferOffsetsEXT(vk::PipelineBindPoint::eGraphics, PbrSceneGBufferPipelineLayout, 0, { 1, 0, 0 }, Offsets);
                 SceneGBufferCommandBuffer->bindVertexBuffers(0, PlaneVertexBuffers, PlaneOffsets);
                 SceneGBufferCommandBuffer->draw(6, 1, 0, 0);
                 SceneGBufferCommandBuffer->bindVertexBuffers(0, CubeVertexBuffers, CubeOffsets);
@@ -360,7 +365,7 @@ namespace Npgs
                 SceneMergeCommandBuffer->bindPipeline(vk::PipelineBindPoint::eCompute, PbrSceneMergePipeline);
                 vk::DeviceAddress LightArgsAddress = ShaderBufferManager->GetDataBuffer(i, "LightArgs").GetBuffer().GetDeviceAddress();
                 SceneMergeCommandBuffer->pushConstants<vk::DeviceAddress>(PbrSceneMergePipelineLayout, vk::ShaderStageFlagBits::eCompute, 0, LightArgsAddress);
-                SceneMergeCommandBuffer->bindDescriptorBuffersEXT(SceneMergeDescriptorBufferBindingInfo);
+                SceneMergeCommandBuffer->bindDescriptorBuffersEXT(DescriptorBufferBindingInfos);
                 Offsets = ShaderBufferManager->GetDescriptorBindingOffsets("SceneMergeDescriptorBuffer", 0, 1);
                 SceneMergeCommandBuffer->setDescriptorBufferOffsetsEXT(vk::PipelineBindPoint::eCompute, PbrSceneMergePipelineLayout, 0, { 0, 0 }, Offsets);
                 SceneMergeCommandBuffer->dispatch(WorkgroupSizeX, WorkgroupSizeY, 1);
@@ -381,7 +386,7 @@ namespace Npgs
                 FrontgroundCommandBuffer->draw(36, 1, 0, 0);
                 FrontgroundCommandBuffer->bindPipeline(vk::PipelineBindPoint::eGraphics, SkyboxPipeline);
                 FrontgroundCommandBuffer->pushConstants<vk::DeviceAddress>(SkyboxPipelineLayout, vk::ShaderStageFlagBits::eVertex, 0, MatricesAddress);
-                FrontgroundCommandBuffer->bindDescriptorBuffersEXT(SkyboxDescriptorBufferBindingInfo);
+                FrontgroundCommandBuffer->bindDescriptorBuffersEXT(DescriptorBufferBindingInfos);
                 vk::DeviceSize OffsetSet0 = ShaderBufferManager->GetDescriptorBindingOffset("SkyboxDescriptorBuffer", 0, 0);
                 FrontgroundCommandBuffer->setDescriptorBufferOffsetsEXT(vk::PipelineBindPoint::eGraphics, SkyboxPipelineLayout, 0, { 0 }, OffsetSet0);
                 FrontgroundCommandBuffer->bindVertexBuffers(0, *SkyboxVertexBuffer_->GetBuffer(), Offset);
@@ -397,7 +402,7 @@ namespace Npgs
                 PostProcessCommandBuffer->setViewport(0, CommonViewport);
                 PostProcessCommandBuffer->setScissor(0, CommonScissor);
                 PostProcessCommandBuffer->bindPipeline(vk::PipelineBindPoint::eGraphics, PostPipeline);
-                PostProcessCommandBuffer->bindDescriptorBuffersEXT(PostDescriptorBufferBindingInfo);
+                PostProcessCommandBuffer->bindDescriptorBuffersEXT(DescriptorBufferBindingInfos);
                 PostProcessCommandBuffer->pushConstants<vk::Bool32>(PostPipelineLayout, vk::ShaderStageFlagBits::eFragment, PostShader->GetPushConstantOffset("bEnableHdr"), static_cast<vk::Bool32>(bEnableHdr_));
                 OffsetSet0 = ShaderBufferManager->GetDescriptorBindingOffset("PostDescriptorBuffer", 0, 0);
                 PostProcessCommandBuffer->setDescriptorBufferOffsetsEXT(vk::PipelineBindPoint::eGraphics, PostPipelineLayout, 0, { 0 }, OffsetSet0);
@@ -1260,13 +1265,6 @@ namespace Npgs
 
         auto CreateAttachmentDescriptors = [=]() mutable -> void
         {
-            VmaAllocationCreateInfo AllocationCreateInfo
-            {
-                .flags = VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT,
-                .usage = VMA_MEMORY_USAGE_CPU_TO_GPU,
-                .requiredFlags = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT | VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT,
-            };
-
             FDescriptorBufferCreateInfo SceneGBufferDescriptorBufferCreateInfo;
             SceneGBufferDescriptorBufferCreateInfo.Name     = "SceneGBufferDescriptorBuffer";
             SceneGBufferDescriptorBufferCreateInfo.SetInfos = PbrSceneGBufferShader->GetDescriptorSetInfos();
@@ -1350,10 +1348,10 @@ namespace Npgs
             SceneMergeDescriptorBufferCreateInfo.StorageImageInfos.emplace_back(1u, 0u, ColorStorageImageInfo);
             PostDescriptorBufferCreateInfo.CombinedImageSamplerInfos.emplace_back(0u, 0u, ColorImageInfo);
 
-            ShaderBufferManager->CreateDescriptorBuffer(SceneGBufferDescriptorBufferCreateInfo, AllocationCreateInfo);
-            ShaderBufferManager->CreateDescriptorBuffer(SceneMergeDescriptorBufferCreateInfo, AllocationCreateInfo);
-            ShaderBufferManager->CreateDescriptorBuffer(SkyboxDescriptorBufferCreateInfo, AllocationCreateInfo);
-            ShaderBufferManager->CreateDescriptorBuffer(PostDescriptorBufferCreateInfo, AllocationCreateInfo);
+            ShaderBufferManager->AllocateDescriptorBuffer(SceneGBufferDescriptorBufferCreateInfo);
+            ShaderBufferManager->AllocateDescriptorBuffer(SceneMergeDescriptorBufferCreateInfo);
+            ShaderBufferManager->AllocateDescriptorBuffer(SkyboxDescriptorBufferCreateInfo);
+            ShaderBufferManager->AllocateDescriptorBuffer(PostDescriptorBufferCreateInfo);
         };
 
         auto DestroyAttachmentDescriptors = [=]() mutable -> void

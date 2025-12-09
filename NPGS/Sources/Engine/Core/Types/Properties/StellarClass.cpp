@@ -24,7 +24,7 @@ namespace Npgs::Astro
         Load(SpectralType);
     }
 
-    FStellarClass::FSpectralType FStellarClass::Data() const
+    FSpectralType FStellarClass::Data() const
     {
         FSpectralType SpectralType;
 
@@ -259,34 +259,35 @@ namespace Npgs::Astro
 
     // Processor functions implementations
     // -----------------------------------
-    FStellarClass::EParseState FStellarClass::ParseStellarType(char Char, FStellarClass::EStellarType& StellarType, FStellarClass::ESpectralClass& HSpectralClass, std::size_t& Index)
+    FStellarClass::EParseState FStellarClass::ParseStellarType(char Char, EStellarType& StellarType,
+                                                               ESpectralClass& HSpectralClass, std::size_t& Index)
     {
         switch (Char)
         {
         case 'X':
-            StellarType = FStellarClass::EStellarType::kBlackHole;
+            StellarType = EStellarType::kBlackHole;
             return EParseState::kEnd;
         case 'Q':
-            StellarType = FStellarClass::EStellarType::kNeutronStar;
+            StellarType = EStellarType::kNeutronStar;
             return EParseState::kEnd;
         case 'D':
-            StellarType    = FStellarClass::EStellarType::kWhiteDwarf;
-            HSpectralClass = FStellarClass::ESpectralClass::kSpectral_D;
+            StellarType    = EStellarType::kWhiteDwarf;
+            HSpectralClass = ESpectralClass::kSpectral_D;
             ++Index;
             return EParseState::kWhiteDwarf;
         case 's': // sd 前缀
-            StellarType = FStellarClass::EStellarType::kNormalStar;
+            StellarType = EStellarType::kNormalStar;
             ++Index;
             return EParseState::kSubdwarfPerfix;
         case '?':
             return EParseState::kEnd;
         default:
-            StellarType = FStellarClass::EStellarType::kNormalStar;
+            StellarType = EStellarType::kNormalStar;
             return EParseState::kSpectralClass;
         }
     }
 
-    FStellarClass::EParseState FStellarClass::ParseSpectralClass(char Char, FStellarClass::ESpectralClass& SpectralClass, std::size_t& Index)
+    FStellarClass::EParseState FStellarClass::ParseSpectralClass(char Char, ESpectralClass& SpectralClass, std::size_t& Index)
     {
         switch (Char)
         {
@@ -294,59 +295,59 @@ namespace Npgs::Astro
             ++Index;
             return EParseState::kWolfRayetStar;
         case 'O':
-            SpectralClass = FStellarClass::ESpectralClass::kSpectral_O;
+            SpectralClass = ESpectralClass::kSpectral_O;
             ++Index;
             return EParseState::kSubclass;
         case 'B':
-            SpectralClass = FStellarClass::ESpectralClass::kSpectral_B;
+            SpectralClass = ESpectralClass::kSpectral_B;
             ++Index;
             return EParseState::kSubclass;
         case 'A':
-            SpectralClass = FStellarClass::ESpectralClass::kSpectral_A;
+            SpectralClass = ESpectralClass::kSpectral_A;
             ++Index;
             return EParseState::kSubclass;
         case 'F':
-            SpectralClass = FStellarClass::ESpectralClass::kSpectral_F;
+            SpectralClass = ESpectralClass::kSpectral_F;
             ++Index;
             return EParseState::kSubclass;
         case 'G':
-            SpectralClass = FStellarClass::ESpectralClass::kSpectral_G;
+            SpectralClass = ESpectralClass::kSpectral_G;
             ++Index;
             return EParseState::kSubclass;
         case 'K':
-            SpectralClass = FStellarClass::ESpectralClass::kSpectral_K;
+            SpectralClass = ESpectralClass::kSpectral_K;
             ++Index;
             return EParseState::kSubclass;
         case 'M':
-            SpectralClass = FStellarClass::ESpectralClass::kSpectral_M;
+            SpectralClass = ESpectralClass::kSpectral_M;
             ++Index;
             return EParseState::kSubclass;
         case 'R':
-            SpectralClass = FStellarClass::ESpectralClass::kSpectral_R;
+            SpectralClass = ESpectralClass::kSpectral_R;
             ++Index;
             return EParseState::kSubclass;
         case 'N':
-            SpectralClass = FStellarClass::ESpectralClass::kSpectral_N;
+            SpectralClass = ESpectralClass::kSpectral_N;
             ++Index;
             return EParseState::kSubclass;
         case 'C':
-            SpectralClass = FStellarClass::ESpectralClass::kSpectral_C;
+            SpectralClass = ESpectralClass::kSpectral_C;
             ++Index;
             return EParseState::kSubclass;
         case 'S':
-            SpectralClass = FStellarClass::ESpectralClass::kSpectral_S;
+            SpectralClass = ESpectralClass::kSpectral_S;
             ++Index;
             return EParseState::kSubclass;
         case 'L':
-            SpectralClass = FStellarClass::ESpectralClass::kSpectral_L;
+            SpectralClass = ESpectralClass::kSpectral_L;
             ++Index;
             return EParseState::kSubclass;
         case 'T':
-            SpectralClass = FStellarClass::ESpectralClass::kSpectral_T;
+            SpectralClass = ESpectralClass::kSpectral_T;
             ++Index;
             return EParseState::kSubclass;
         case 'Y':
-            SpectralClass = FStellarClass::ESpectralClass::kSpectral_Y;
+            SpectralClass = ESpectralClass::kSpectral_Y;
             ++Index;
             return EParseState::kSubclass;
         default:
@@ -354,20 +355,20 @@ namespace Npgs::Astro
         }
     }
 
-    FStellarClass::EParseState FStellarClass::ParseWolfRayetStar(char Char, FStellarClass::ESpectralClass& SpectralClass, std::size_t& Index)
+    FStellarClass::EParseState FStellarClass::ParseWolfRayetStar(char Char, ESpectralClass& SpectralClass, std::size_t& Index)
     {
         switch (Char)
         {
         case 'C':
-            SpectralClass = FStellarClass::ESpectralClass::kSpectral_WC;
+            SpectralClass = ESpectralClass::kSpectral_WC;
             ++Index;
             return EParseState::kSubclass;
         case 'N':
-            SpectralClass = FStellarClass::ESpectralClass::kSpectral_WN;
+            SpectralClass = ESpectralClass::kSpectral_WN;
             ++Index;
             return EParseState::kSubclass;
         case 'O':
-            SpectralClass = FStellarClass::ESpectralClass::kSpectral_WO;
+            SpectralClass = ESpectralClass::kSpectral_WO;
             ++Index;
             return EParseState::kSubclass;
         default:
@@ -375,40 +376,40 @@ namespace Npgs::Astro
         }
     }
 
-    FStellarClass::EParseState FStellarClass::ParseWhiteDwarf(char Char, FStellarClass::ESpectralClass& SpectralClass, std::size_t& Index)
+    FStellarClass::EParseState FStellarClass::ParseWhiteDwarf(char Char, ESpectralClass& SpectralClass, std::size_t& Index)
     {
         ++Index;
 
         switch (Char)
         {
         case 'A':
-            SpectralClass = FStellarClass::ESpectralClass::kSpectral_DA;
+            SpectralClass = ESpectralClass::kSpectral_DA;
             return EParseState::kWhiteDwarfEx;
         case 'B':
-            SpectralClass = FStellarClass::ESpectralClass::kSpectral_DB;
+            SpectralClass = ESpectralClass::kSpectral_DB;
             return EParseState::kWhiteDwarfEx;
         case 'C':
-            SpectralClass = FStellarClass::ESpectralClass::kSpectral_DC;
+            SpectralClass = ESpectralClass::kSpectral_DC;
             return EParseState::kWhiteDwarfEx;
         case 'O':
-            SpectralClass = FStellarClass::ESpectralClass::kSpectral_DO;
+            SpectralClass = ESpectralClass::kSpectral_DO;
             return EParseState::kWhiteDwarfEx;
         case 'Q':
-            SpectralClass = FStellarClass::ESpectralClass::kSpectral_DQ;
+            SpectralClass = ESpectralClass::kSpectral_DQ;
             return EParseState::kWhiteDwarfEx;
         case 'X':
-            SpectralClass = FStellarClass::ESpectralClass::kSpectral_DX;
+            SpectralClass = ESpectralClass::kSpectral_DX;
             return EParseState::kWhiteDwarfEx;
         case 'Z':
-            SpectralClass = FStellarClass::ESpectralClass::kSpectral_DZ;
+            SpectralClass = ESpectralClass::kSpectral_DZ;
             return EParseState::kWhiteDwarfEx;
         default:
-            SpectralClass = FStellarClass::ESpectralClass::kSpectral_D;
+            SpectralClass = ESpectralClass::kSpectral_D;
             return EParseState::kSubclass;
         }
     }
 
-    FStellarClass::EParseState FStellarClass::ParseWhiteDwarfEx(char Char, char PrevChar, FStellarClass::ESpectralClass& SpectralClass, std::size_t& Index)
+    FStellarClass::EParseState FStellarClass::ParseWhiteDwarfEx(char Char, char PrevChar, ESpectralClass& SpectralClass, std::size_t& Index)
     {
         if (Char == PrevChar)
         {
@@ -445,14 +446,14 @@ namespace Npgs::Astro
         return EParseState::kSubclass;
     }
 
-    FStellarClass::EParseState FStellarClass::ParseLuminosityClass(char Char, FStellarClass::ELuminosityClass& LuminosityClass, std::size_t& Index)
+    FStellarClass::EParseState FStellarClass::ParseLuminosityClass(char Char, ELuminosityClass& LuminosityClass, std::size_t& Index)
     {
         switch (Char)
         {
         case '0':
-            if (LuminosityClass == FStellarClass::ELuminosityClass::kLuminosity_Unknown)
+            if (LuminosityClass == ELuminosityClass::kLuminosity_Unknown)
             {
-                LuminosityClass  = FStellarClass::ELuminosityClass::kLuminosity_0;
+                LuminosityClass  = ELuminosityClass::kLuminosity_0;
                 return EParseState::kSpecialMark;
             }
             else
@@ -473,7 +474,7 @@ namespace Npgs::Astro
         }
     }
 
-    FStellarClass::EParseState FStellarClass::ParseLuminosityClassI(char Char, FStellarClass::ELuminosityClass& LuminosityClass, std::size_t& Index)
+    FStellarClass::EParseState FStellarClass::ParseLuminosityClassI(char Char, ELuminosityClass& LuminosityClass, std::size_t& Index)
     {
         switch (Char)
         {
@@ -481,82 +482,82 @@ namespace Npgs::Astro
             ++Index;
             return EParseState::kLuminosityClassIa;
         case 'b':
-            LuminosityClass = FStellarClass::ELuminosityClass::kLuminosity_Ib;
+            LuminosityClass = ELuminosityClass::kLuminosity_Ib;
             ++Index;
             return EParseState::kSpecialMark;
         case 'I':
             ++Index;
             return EParseState::kLuminosityClassII;
         case 'V':
-            LuminosityClass = FStellarClass::ELuminosityClass::kLuminosity_IV;
+            LuminosityClass = ELuminosityClass::kLuminosity_IV;
             ++Index;
             return EParseState::kSpecialMark;
         default:
-            LuminosityClass = FStellarClass::ELuminosityClass::kLuminosity_I;
+            LuminosityClass = ELuminosityClass::kLuminosity_I;
             return EParseState::kSpecialMark;
         }
     }
 
-    FStellarClass::EParseState FStellarClass::ParseLuminosityClassIa(char Char, FStellarClass::ELuminosityClass& LuminosityClass)
+    FStellarClass::EParseState FStellarClass::ParseLuminosityClassIa(char Char, ELuminosityClass& LuminosityClass)
     {
         switch (Char)
         {
         case '+':
-            LuminosityClass = FStellarClass::ELuminosityClass::kLuminosity_IaPlus;
+            LuminosityClass = ELuminosityClass::kLuminosity_IaPlus;
             return EParseState::kSpecialMark;
         case 'b':
-            LuminosityClass = FStellarClass::ELuminosityClass::kLuminosity_Iab;
+            LuminosityClass = ELuminosityClass::kLuminosity_Iab;
             return EParseState::kSpecialMark;
         default:
-            LuminosityClass = FStellarClass::ELuminosityClass::kLuminosity_Ia;
+            LuminosityClass = ELuminosityClass::kLuminosity_Ia;
             return EParseState::kSpecialMark;
         }
     }
 
-    FStellarClass::EParseState FStellarClass::ParseLuminosityClassII(char Char, FStellarClass::ELuminosityClass& LuminosityClass)
+    FStellarClass::EParseState FStellarClass::ParseLuminosityClassII(char Char, ELuminosityClass& LuminosityClass)
     {
         switch (Char)
         {
         case 'I':
-            LuminosityClass = FStellarClass::ELuminosityClass::kLuminosity_III;
+            LuminosityClass = ELuminosityClass::kLuminosity_III;
             return EParseState::kSpecialMark;
         default:
-            LuminosityClass = FStellarClass::ELuminosityClass::kLuminosity_II;
+            LuminosityClass = ELuminosityClass::kLuminosity_II;
             return EParseState::kSpecialMark;
         }
     }
 
-    FStellarClass::EParseState FStellarClass::ParseLuminosityClassV(char Char, FStellarClass::ELuminosityClass& LuminosityClass)
+    FStellarClass::EParseState FStellarClass::ParseLuminosityClassV(char Char, ELuminosityClass& LuminosityClass)
     {
         switch (Char)
         {
         case 'I':
-            LuminosityClass = FStellarClass::ELuminosityClass::kLuminosity_VI;
+            LuminosityClass = ELuminosityClass::kLuminosity_VI;
             return EParseState::kSpecialMark;
         default:
-            LuminosityClass = FStellarClass::ELuminosityClass::kLuminosity_V;
+            LuminosityClass = ELuminosityClass::kLuminosity_V;
             return EParseState::kSpecialMark;
         }
     }
 
-    FStellarClass::EParseState FStellarClass::ParseSpecialMark(char Char, char NextChar, FStellarClass::FSpecialMarkDigital& SpecialMark, std::size_t& Index)
+    FStellarClass::EParseState FStellarClass::ParseSpecialMark(char Char, char NextChar, FSpecialMarkDigital& SpecialMark, std::size_t& Index)
     {
         switch (Char)
         {
         case 'm':
-            SpecialMark |= static_cast<std::uint32_t>(FStellarClass::ESpecialMark::kCode_m);
+            SpecialMark |= static_cast<std::uint32_t>(ESpecialMark::kCode_m);
             ++Index;
             return EParseState::kSpectralClass;
         case 'f':
-            SpecialMark |= static_cast<std::uint32_t>(FStellarClass::ESpecialMark::kCode_f);
+            SpecialMark |= static_cast<std::uint32_t>(ESpecialMark::kCode_f);
             ++Index;
             return (std::isalpha(NextChar) && std::islower(NextChar)) ? EParseState::kSpecialMark : EParseState::kEnd;
         case 'h':
-            SpecialMark |= static_cast<std::uint32_t>(FStellarClass::ESpecialMark::kCode_h);
+            SpecialMark |= static_cast<std::uint32_t>(ESpecialMark::kCode_h);
             ++Index;
             return (std::isalpha(NextChar) && std::islower(NextChar)) ? EParseState::kSpecialMark : EParseState::kEnd;
         case 'p':
-            SpecialMark |= static_cast<std::uint32_t>(FStellarClass::ESpecialMark::kCode_h);
+            SpecialMark |= static_cast<std::uint32_t>(ESpecialMark::kCode_h);
             ++Index;
             return (std::isalpha(NextChar) && std::islower(NextChar)) ? EParseState::kSpecialMark : EParseState::kEnd;
         case '+':
@@ -572,7 +573,7 @@ namespace Npgs::Astro
         }
     }
 
-    std::string FStellarClass::SpectralClassToString(FStellarClass::ESpectralClass SpectralClass, float Subclass)
+    std::string FStellarClass::SpectralClassToString(ESpectralClass SpectralClass, float Subclass)
     {
         std::ostringstream Stream;
 
@@ -588,107 +589,107 @@ namespace Npgs::Astro
 
         switch (SpectralClass)
         {
-        case FStellarClass::ESpectralClass::kSpectral_O:
+        case ESpectralClass::kSpectral_O:
             return "O" + Stream.str();
-        case FStellarClass::ESpectralClass::kSpectral_B:
+        case ESpectralClass::kSpectral_B:
             return "B" + Stream.str();
-        case FStellarClass::ESpectralClass::kSpectral_A:
+        case ESpectralClass::kSpectral_A:
             return "A" + Stream.str();
-        case FStellarClass::ESpectralClass::kSpectral_F:
+        case ESpectralClass::kSpectral_F:
             return "F" + Stream.str();
-        case FStellarClass::ESpectralClass::kSpectral_G:
+        case ESpectralClass::kSpectral_G:
             return "G" + Stream.str();
-        case FStellarClass::ESpectralClass::kSpectral_K:
+        case ESpectralClass::kSpectral_K:
             return "K" + Stream.str();
-        case FStellarClass::ESpectralClass::kSpectral_M:
+        case ESpectralClass::kSpectral_M:
             return "M" + Stream.str();
-        case FStellarClass::ESpectralClass::kSpectral_R:
+        case ESpectralClass::kSpectral_R:
             return "R" + Stream.str();
-        case FStellarClass::ESpectralClass::kSpectral_N:
+        case ESpectralClass::kSpectral_N:
             return "N" + Stream.str();
-        case FStellarClass::ESpectralClass::kSpectral_C:
+        case ESpectralClass::kSpectral_C:
             return "C" + Stream.str();
-        case FStellarClass::ESpectralClass::kSpectral_S:
+        case ESpectralClass::kSpectral_S:
             return "S" + Stream.str();
-        case FStellarClass::ESpectralClass::kSpectral_WO:
+        case ESpectralClass::kSpectral_WO:
             return "WO" + Stream.str();
-        case FStellarClass::ESpectralClass::kSpectral_WN:
+        case ESpectralClass::kSpectral_WN:
             return "WN" + Stream.str();
-        case FStellarClass::ESpectralClass::kSpectral_WC:
+        case ESpectralClass::kSpectral_WC:
             return "WC" + Stream.str();
-        case FStellarClass::ESpectralClass::kSpectral_L:
+        case ESpectralClass::kSpectral_L:
             return "L" + Stream.str();
-        case FStellarClass::ESpectralClass::kSpectral_T:
+        case ESpectralClass::kSpectral_T:
             return "T" + Stream.str();
-        case FStellarClass::ESpectralClass::kSpectral_Y:
+        case ESpectralClass::kSpectral_Y:
             return "Y" + Stream.str();
-        case FStellarClass::ESpectralClass::kSpectral_D:
+        case ESpectralClass::kSpectral_D:
             return "D" + Stream.str();
-        case FStellarClass::ESpectralClass::kSpectral_DA:
+        case ESpectralClass::kSpectral_DA:
             return "DA" + Stream.str();
-        case FStellarClass::ESpectralClass::kSpectral_DB:
+        case ESpectralClass::kSpectral_DB:
             return "DB" + Stream.str();
-        case FStellarClass::ESpectralClass::kSpectral_DC:
+        case ESpectralClass::kSpectral_DC:
             return "DC" + Stream.str();
-        case FStellarClass::ESpectralClass::kSpectral_DO:
+        case ESpectralClass::kSpectral_DO:
             return "DO" + Stream.str();
-        case FStellarClass::ESpectralClass::kSpectral_DQ:
+        case ESpectralClass::kSpectral_DQ:
             return "DQ" + Stream.str();
-        case FStellarClass::ESpectralClass::kSpectral_DX:
+        case ESpectralClass::kSpectral_DX:
             return "DX" + Stream.str();
-        case FStellarClass::ESpectralClass::kSpectral_DZ:
+        case ESpectralClass::kSpectral_DZ:
             return "DZ" + Stream.str();
-        case FStellarClass::ESpectralClass::kSpectral_Q:
+        case ESpectralClass::kSpectral_Q:
             return "Q";
-        case FStellarClass::ESpectralClass::kSpectral_X:
+        case ESpectralClass::kSpectral_X:
             return "X";
         default:
             return "Unknown";
         }
     }
 
-    std::string FStellarClass::LuminosityClassToString(FStellarClass::ELuminosityClass LuminosityClass)
+    std::string FStellarClass::LuminosityClassToString(ELuminosityClass LuminosityClass)
     {
         switch (LuminosityClass)
         {
-        case FStellarClass::ELuminosityClass::kLuminosity_0:
+        case ELuminosityClass::kLuminosity_0:
             return "0";
-        case FStellarClass::ELuminosityClass::kLuminosity_IaPlus:
+        case ELuminosityClass::kLuminosity_IaPlus:
             return "Ia+";
-        case FStellarClass::ELuminosityClass::kLuminosity_Ia:
+        case ELuminosityClass::kLuminosity_Ia:
             return "Ia";
-        case FStellarClass::ELuminosityClass::kLuminosity_Ib:
+        case ELuminosityClass::kLuminosity_Ib:
             return "Ib";
-        case FStellarClass::ELuminosityClass::kLuminosity_Iab:
+        case ELuminosityClass::kLuminosity_Iab:
             return "Iab";
-        case FStellarClass::ELuminosityClass::kLuminosity_I:
+        case ELuminosityClass::kLuminosity_I:
             return "I";
-        case FStellarClass::ELuminosityClass::kLuminosity_II:
+        case ELuminosityClass::kLuminosity_II:
             return "II";
-        case FStellarClass::ELuminosityClass::kLuminosity_III:
+        case ELuminosityClass::kLuminosity_III:
             return "III";
-        case FStellarClass::ELuminosityClass::kLuminosity_IV:
+        case ELuminosityClass::kLuminosity_IV:
             return "IV";
-        case FStellarClass::ELuminosityClass::kLuminosity_V:
+        case ELuminosityClass::kLuminosity_V:
             return "V";
-        case FStellarClass::ELuminosityClass::kLuminosity_VI:
+        case ELuminosityClass::kLuminosity_VI:
             return "VI";
         default:
             return "";
         }
     }
 
-    std::string FStellarClass::SpecialMarkToString(FStellarClass::ESpecialMark SpecialMark)
+    std::string FStellarClass::SpecialMarkToString(ESpecialMark SpecialMark)
     {
         switch (SpecialMark)
         {
-        case FStellarClass::ESpecialMark::kCode_Null:
+        case ESpecialMark::kCode_Null:
             return "";
-        case FStellarClass::ESpecialMark::kCode_f:
+        case ESpecialMark::kCode_f:
             return "f";
-        case FStellarClass::ESpecialMark::kCode_h:
+        case ESpecialMark::kCode_h:
             return "h";
-        case FStellarClass::ESpecialMark::kCode_p:
+        case ESpecialMark::kCode_p:
             return "p";
         default:
             return "";

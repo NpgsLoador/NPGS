@@ -63,21 +63,6 @@ namespace Npgs
 
     class FShader
     {
-    private:
-        struct FShaderInfo
-        {
-            FFileLoader             Code;
-            vk::ShaderStageFlagBits Stage{};
-        };
-
-        struct FShaderReflectionInfo
-        {
-            std::unordered_map<std::uint32_t, std::vector<vk::DescriptorSetLayoutBinding>> DescriptorSetBindings;
-            std::vector<vk::VertexInputBindingDescription>                                 VertexInputBindings;
-            std::vector<vk::VertexInputAttributeDescription>                               VertexInputAttributes;
-            std::vector<vk::PushConstantRange>                                             PushConstants;
-        };
-
     public:
         FShader(FVulkanContext* VulkanContext, const std::vector<std::string>& ShaderFiles, const FResourceInfo& ResourceInfo);
         FShader(const FShader&) = delete;
@@ -96,6 +81,21 @@ namespace Npgs
         const std::vector<vk::VertexInputAttributeDescription>& GetVertexInputAttributes() const;
         const FDescriptorSetInfo& GetDescriptorSetInfo(std::uint32_t Set) const;
         const std::unordered_map<std::uint32_t, FDescriptorSetInfo>& GetDescriptorSetInfos() const;
+
+    private:
+        struct FShaderInfo
+        {
+            FFileLoader             Code;
+            vk::ShaderStageFlagBits Stage{};
+        };
+
+        struct FShaderReflectionInfo
+        {
+            std::unordered_map<std::uint32_t, std::vector<vk::DescriptorSetLayoutBinding>> DescriptorSetBindings;
+            std::vector<vk::VertexInputBindingDescription>                                 VertexInputBindings;
+            std::vector<vk::VertexInputAttributeDescription>                               VertexInputAttributes;
+            std::vector<vk::PushConstantRange>                                             PushConstants;
+        };
 
     private:
         void InitializeShaders(const std::vector<std::string>& ShaderFiles, const FResourceInfo& ResourceInfo);

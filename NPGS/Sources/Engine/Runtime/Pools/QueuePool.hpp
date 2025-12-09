@@ -27,7 +27,7 @@ namespace Npgs
         class FQueueGuard
         {
         public:
-            FQueueGuard(FQueuePool* Pool, FQueueInfo&& QueueInfo);
+            FQueueGuard(FQueuePool* Pool, FQueueInfo QueueInfo);
             FQueueGuard(const FQueueGuard&) = delete;
             FQueueGuard(FQueueGuard&& Other) noexcept;
             ~FQueueGuard();
@@ -47,6 +47,18 @@ namespace Npgs
             FQueueInfo  QueueInfo_;
         };
 
+    public:
+        explicit FQueuePool(vk::Device Device);
+        FQueuePool(const FQueuePool&) = delete;
+        FQueuePool(FQueuePool&&)      = delete;
+        ~FQueuePool()                 = default;
+
+        FQueuePool& operator=(const FQueuePool&) = delete;
+        FQueuePool& operator=(FQueuePool&&)      = delete;
+
+        FQueueGuard AcquireQueue(vk::QueueFlags QueueFlags);
+        void Register(vk::QueueFlags QueueFlags, std::uint32_t QueueFamilyIndex, std::uint32_t QueueCount);
+
     private:
         struct FQueueFamilyPool
         {
@@ -61,18 +73,6 @@ namespace Npgs
         {
             std::size_t operator()(vk::QueueFlags QueueFlags) const;
         };
-
-    public:
-        explicit FQueuePool(vk::Device Device);
-        FQueuePool(const FQueuePool&) = delete;
-        FQueuePool(FQueuePool&&)      = delete;
-        ~FQueuePool()                 = default;
-
-        FQueuePool& operator=(const FQueuePool&) = delete;
-        FQueuePool& operator=(FQueuePool&&)      = delete;
-
-        FQueueGuard AcquireQueue(vk::QueueFlags QueueFlags);
-        void Register(vk::QueueFlags QueueFlags, std::uint32_t QueueFamilyIndex, std::uint32_t QueueCount);
 
     private:
         void ReleaseQueue(FQueueInfo&& QueueInfo);

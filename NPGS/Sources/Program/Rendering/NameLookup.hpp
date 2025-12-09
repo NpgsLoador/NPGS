@@ -22,6 +22,12 @@ namespace Npgs
     // RenderPasses
     namespace RenderPasses
     {
+        namespace DepthMap
+        {
+            inline const std::string kShaderName     = "DepthMapShader";
+            inline const std::string kPipelineName   = "DepthMapPipeline";
+        } // namespace DepthMap
+
         namespace GbufferScene
         {
             inline const std::string kShaderName      = "GbufferSceneShader";

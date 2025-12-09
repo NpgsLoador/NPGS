@@ -104,14 +104,7 @@ namespace Npgs
             **FramebufferSampler, DepthMapAttachment.GetImageView(), DepthMapAttachment.GetImageLayout());
         DescriptorBufferCreateInfo.CombinedImageSamplerInfos.emplace_back(2u, 0u, DepthMapImageInfo);
 
-        VmaAllocationCreateInfo AllocationCreateInfo
-        {
-            .flags         = VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT,
-            .usage         = VMA_MEMORY_USAGE_CPU_TO_GPU,
-            .requiredFlags = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT | VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT,
-        };
-
         auto* ShaderBufferManager = EngineResourceServices->GetShaderBufferManager();
-        ShaderBufferManager->CreateDescriptorBuffer(DescriptorBufferCreateInfo, AllocationCreateInfo);
+        ShaderBufferManager->AllocateDescriptorBuffer(DescriptorBufferCreateInfo);
     }
 } // namespace Npgs

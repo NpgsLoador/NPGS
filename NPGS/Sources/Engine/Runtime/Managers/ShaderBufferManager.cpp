@@ -1,7 +1,9 @@
 #include "stdafx.h"
 #include "ShaderBufferManager.hpp"
 
+#include <exception>
 #include <format>
+#include <iterator>
 #include <stdexcept>
 #include <Volk/volk.h>
 
@@ -10,6 +12,98 @@
 
 namespace Npgs
 {
+    namespace
+    {
+        bool IsPureSamplerSet(const FDescriptorSetInfo& SetInfo)
+        {
+            if (SetInfo.Bindings.empty())
+            {
+                return false;
+            }
+
+            for (const auto& [Binding, Info] : SetInfo.Bindings)
+            {
+                if (Info.Type != vk::DescriptorType::eSampler)
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+    }
+
+    void FShaderBufferManager::FHeapAllocator::Initialize(vk::DeviceSize TotalSize)
+    {
+        TotalSize_ = TotalSize;
+        FreeBlocks_.clear();
+        FreeBlocks_[0] = TotalSize;
+    }
+
+    vk::DeviceSize FShaderBufferManager::FHeapAllocator::Allocate(vk::DeviceSize Size, vk::DeviceSize Alignment)
+    {
+        for (auto it = FreeBlocks_.begin(); it != FreeBlocks_.end(); ++it)
+        {
+            vk::DeviceSize BlockOffset = it->first;
+            vk::DeviceSize BlockSize   = it->second;
+
+            vk::DeviceSize AlignedOffset = (BlockOffset + Alignment - 1) & ~(Alignment - 1);
+            vk::DeviceSize Padding       = AlignedOffset - BlockOffset;
+            vk::DeviceSize RequiredSize  = Size + Padding;
+
+            if (BlockSize >= RequiredSize)
+            {
+                FreeBlocks_.erase(it);
+                if (Padding > 0)
+                {
+                    FreeBlocks_[BlockOffset] = Padding;
+                }
+
+                vk::DeviceSize RemainingSize = BlockSize - RequiredSize;
+                if (RemainingSize > 0)
+                {
+                    FreeBlocks_[AlignedOffset + Size] = RemainingSize;
+                }
+
+                return AlignedOffset;
+            }
+        }
+
+        throw std::runtime_error("Heap allocation failed: insufficient memory.");
+    }
+
+    void FShaderBufferManager::FHeapAllocator::Free(vk::DeviceSize Offset, vk::DeviceSize Size)
+    {
+        FreeBlocks_[Offset] = Size;
+
+        auto it     = FreeBlocks_.find(Offset);
+        auto NextIt = std::next(it);
+        if (NextIt != FreeBlocks_.end())
+        {
+            if (it->first + it->second == NextIt->first)
+            {
+                it->second += NextIt->second;
+                FreeBlocks_.erase(NextIt);
+            }
+        }
+
+        if (it != FreeBlocks_.begin())
+        {
+            auto PrevIt = std::prev(it);
+            if (PrevIt->first + PrevIt->second == it->first)
+            {
+                PrevIt->second += it->second;
+                FreeBlocks_.erase(it);
+            }
+        }
+    }
+
+    void FShaderBufferManager::FHeapAllocator::Reset()
+    {
+        FreeBlocks_.clear();
+        FreeBlocks_[0] = TotalSize_;
+    }
+
     FShaderBufferManager::FShaderBufferManager(FVulkanContext* VulkanContext)
         : VulkanContext_(VulkanContext)
     {
@@ -29,12 +123,20 @@ namespace Npgs
         };
 
         vmaCreateAllocator(&AllocatorCreateInfo, &Allocator_);
+
+        vk::PhysicalDeviceProperties2 Properties2;
+        Properties2.pNext = &DescriptorBufferProperties_;
+        VulkanContext_->GetPhysicalDevice().getProperties2(&Properties2);
+
+        InitializeHeaps(64uz * 1024 * 1024, 4uz * 1024 * 1024);
     }
 
     FShaderBufferManager::~FShaderBufferManager()
     {
         DataBuffers_.clear();
         DescriptorBuffers_.clear();
+        ResourceDescriptorHeaps_.clear();
+        SamplerDescriptorHeaps_.clear();
         vmaDestroyAllocator(Allocator_);
     }
 
@@ -50,33 +152,44 @@ namespace Npgs
         return BufferInfo.Buffers[FrameIndex];
     }
 
-    void FShaderBufferManager::CreateDescriptorBuffer(const FDescriptorBufferCreateInfo& DescriptorBufferCreateInfo,
-                                                      const VmaAllocationCreateInfo& AllocationCreateInfo)
+    void FShaderBufferManager::AllocateDescriptorBuffer(const FDescriptorBufferCreateInfo& DescriptorBufferCreateInfo)
     {
-        vk::DeviceSize BufferSize = CalculateDescriptorBufferSize(DescriptorBufferCreateInfo);
-        if (BufferSize == 0)
-        {
-            NpgsCoreError("Failed to create descriptor buffer: buffer size is zero.");
-            return;
-        }
-
         FDescriptorBufferInfo BufferInfo;
         BufferInfo.Name = DescriptorBufferCreateInfo.Name;
-        BufferInfo.Size = BufferSize;
-        BufferInfo.Buffers.reserve(Config::Graphics::kMaxFrameInFlight);
 
-        for (std::uint32_t i = 0; i != Config::Graphics::kMaxFrameInFlight; ++i)
+        for (const auto& [SetIndex, SetInfo] : DescriptorBufferCreateInfo.SetInfos)
         {
-            std::string BufferName = std::format("{}_DescriptorBuffer_Frame{}", DescriptorBufferCreateInfo.Name, i);
-            auto BufferUsage = vk::BufferUsageFlagBits::eResourceDescriptorBufferEXT | vk::BufferUsageFlagBits::eShaderDeviceAddress;
-            vk::BufferCreateInfo BufferCreateInfo({}, BufferSize, BufferUsage);
-            BufferInfo.Buffers.emplace_back(VulkanContext_, BufferName, Allocator_, AllocationCreateInfo, BufferCreateInfo);
-            BufferInfo.Buffers[i].SetPersistentMapping(true);
+            bool bPureSampler = IsPureSamplerSet(SetInfo);
+
+            vk::DeviceSize AllocationSize   = SetInfo.Size;
+            vk::DeviceSize AllocationOffset = 0;
+            vk::DeviceSize Alignment        = DescriptorBufferProperties_.descriptorBufferOffsetAlignment;
+            AllocationSize = (AllocationSize + Alignment - 1) & ~(Alignment - 1);
+
+            EHeapType TargetHeap = EHeapType::kResource;
+            try
+            {
+                if (bPureSampler)
+                {
+                    TargetHeap = EHeapType::kSampler;
+                    AllocationOffset = SamplerHeapAllocator_.Allocate(AllocationSize, Alignment);
+                }
+                else
+                {
+                    TargetHeap = EHeapType::kResource;
+                    AllocationOffset = ResourceHeapAllocator_.Allocate(AllocationSize, Alignment);
+                }
+            }
+            catch (const std::exception& e)
+            {
+                NpgsCoreError("Heap allocation failed for Set {} in {}: {}", SetIndex, DescriptorBufferCreateInfo.Name, e.what());
+                continue;
+            }
+
+            BufferInfo.SetAllocations[SetIndex] = { TargetHeap, AllocationOffset, AllocationSize };
         }
 
-        DescriptorBuffers_.emplace(DescriptorBufferCreateInfo.Name, std::move(BufferInfo));
-        NpgsCoreTrace("Created descriptor buffer \"{}\" with size {} bytes.", DescriptorBufferCreateInfo.Name, BufferSize);
-
+        DescriptorBuffers_.emplace(BufferInfo.Name, std::move(BufferInfo));
         BindResourceToDescriptorBuffersInternal(DescriptorBufferCreateInfo);
     }
 
@@ -99,17 +212,46 @@ namespace Npgs
         return it->second.at(SetBindingPair).first;
     }
 
-    const FDeviceLocalBuffer&
-    FShaderBufferManager::GetDescriptorBuffer(std::uint32_t FrameIndex, std::string_view BufferName) const
+    void FShaderBufferManager::InitializeHeaps(vk::DeviceSize ResourceHeapSize, vk::DeviceSize SamplerHeapSize)
     {
-        auto it = DescriptorBuffers_.find(BufferName);
-        if (it == DescriptorBuffers_.end())
-        {
-            throw std::out_of_range(std::format(R"(Descriptor buffer "{}" not found.)", BufferName));
-        }
+        ResourceHeapAllocator_.Initialize(ResourceHeapSize);
+        SamplerHeapAllocator_.Initialize(SamplerHeapSize);
 
-        auto& BufferInfo = it->second;
-        return BufferInfo.Buffers[FrameIndex];
+        ResourceDescriptorHeaps_.reserve(Config::Graphics::kMaxFrameInFlight);
+        SamplerDescriptorHeaps_.reserve(Config::Graphics::kMaxFrameInFlight);
+
+        VmaAllocationCreateInfo AllocationCreateInfo
+        {
+            .flags = VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT,
+            .usage = VMA_MEMORY_USAGE_CPU_TO_GPU,
+            .requiredFlags = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT | VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT,
+        };
+
+        void* TempTarget = nullptr;
+
+        for (std::uint32_t i = 0; i != Config::Graphics::kMaxFrameInFlight; ++i)
+        {
+            auto ResourceHeapUsage = vk::BufferUsageFlagBits::eResourceDescriptorBufferEXT |
+                                     vk::BufferUsageFlagBits::eSamplerDescriptorBufferEXT  |
+                                     vk::BufferUsageFlagBits::eShaderDeviceAddress         |
+                                     vk::BufferUsageFlagBits::eTransferDst;
+
+            vk::BufferCreateInfo ResourceHeapCreateInfo({}, ResourceHeapSize, ResourceHeapUsage);
+            ResourceDescriptorHeaps_.emplace_back(VulkanContext_, std::format("ResourceHeap_Frame{}", i), Allocator_,
+                                                  AllocationCreateInfo, ResourceHeapCreateInfo);
+            ResourceDescriptorHeaps_.back().SetPersistentMapping(true);
+            ResourceDescriptorHeaps_.back().GetMemory().MapMemoryForSubmit(0, ResourceHeapSize, TempTarget);
+
+            auto SamplerHeapUsage = vk::BufferUsageFlagBits::eSamplerDescriptorBufferEXT |
+                                    vk::BufferUsageFlagBits::eShaderDeviceAddress        |
+                                    vk::BufferUsageFlagBits::eTransferDst;
+
+            vk::BufferCreateInfo SamplerHeapCreateInfo({}, SamplerHeapSize, SamplerHeapUsage);
+            SamplerDescriptorHeaps_.emplace_back(VulkanContext_, std::format("SamplerHeap_Frame{}", i), Allocator_,
+                                                 AllocationCreateInfo, SamplerHeapCreateInfo);
+            SamplerDescriptorHeaps_.back().SetPersistentMapping(true);
+            SamplerDescriptorHeaps_.back().GetMemory().MapMemoryForSubmit(0, SamplerHeapSize, TempTarget);
+        }
     }
 
     const FShaderBufferManager::FDataBufferInfo&
@@ -188,15 +330,6 @@ namespace Npgs
 
     vk::DeviceSize FShaderBufferManager::CalculateDescriptorBufferSize(const FDescriptorBufferCreateInfo& DescriptorBufferCreateInfo)
     {
-        static bool bDescriptorBufferPropertiesGot = false;
-        if (!bDescriptorBufferPropertiesGot)
-        {
-            vk::PhysicalDeviceProperties2 Properties2;
-            Properties2.pNext = &DescriptorBufferProperties_;
-            VulkanContext_->GetPhysicalDevice().getProperties2(&Properties2);
-            bDescriptorBufferPropertiesGot = true;
-        }
-
         vk::DeviceSize TotalSize = 0;
         for (auto& [Set, Info] : DescriptorBufferCreateInfo.SetInfos)
         {
@@ -211,127 +344,70 @@ namespace Npgs
         auto& DescriptorBufferInfo = DescriptorBuffers_.at(DescriptorBufferCreateInfo.Name);
         vk::Device Device = VulkanContext_->GetDevice();
 
-        auto InsertOffsetMap = [this, &DescriptorBufferCreateInfo](const auto& Info, vk::DeviceSize Offset, vk::DescriptorType Type) -> void
-        {
-            std::uint32_t Set     = Info.Set;
-            std::uint32_t Binding = Info.Binding;
-            OffsetsMap_[DescriptorBufferCreateInfo.Name].try_emplace(std::make_pair(Set, Binding), std::make_pair(Offset, Type));
-        };
+        auto& OffsetsSubMapRef = OffsetsMap_[DescriptorBufferInfo.Name];
+        OffsetsSubMapRef.clear();
 
-        auto& SetOffsets = SetBaseOffsetsMap_[DescriptorBufferCreateInfo.Name];
-        SetOffsets.clear();
-        vk::DeviceSize CurrentSetOffset = 0;
-        for (auto& [Set, Info] : DescriptorBufferCreateInfo.SetInfos)
+        for (const auto& [SetIndex, SetLayoutInfo] : DescriptorBufferCreateInfo.SetInfos)
         {
-            SetOffsets[Set] = CurrentSetOffset;
-            CurrentSetOffset += Info.Size;
+            const auto& SetAllocation = DescriptorBufferInfo.SetAllocations.at(SetIndex);
+            for (const auto& [Binding, BindingLayout] : SetLayoutInfo.Bindings)
+            {
+                vk::DeviceSize AbsoluteOffset = SetAllocation.Offset + BindingLayout.Offset;
+                OffsetsSubMapRef[{ SetIndex, Binding }] = { AbsoluteOffset, BindingLayout.Type };
+            }
         }
 
         for (std::uint32_t i = 0; i != Config::Graphics::kMaxFrameInFlight; ++i)
         {
-            void* Target       = nullptr;
-            auto& BufferMemory = DescriptorBufferInfo.Buffers[i].GetMemory();
-            BufferMemory.MapMemoryForSubmit(0, DescriptorBufferInfo.Size, Target);
+            void* ResourceHeapBase = ResourceDescriptorHeaps_[i].GetMemory().GetMappedTargetMemory();
+            void* SamplerHeapBase  = SamplerDescriptorHeaps_[i].GetMemory().GetMappedTargetMemory();
 
-            const auto& SetInfos = DescriptorBufferCreateInfo.SetInfos;
-
-            for (std::size_t j = 0; j != DescriptorBufferCreateInfo.UniformBufferNames.size(); ++j)
+            auto GetTargetAddress = [&](std::uint32_t Set, std::uint32_t Binding) -> std::byte*
             {
-                const auto&    BufferInfo     = DataBuffers_.at(DescriptorBufferCreateInfo.UniformBufferNames[j]);
-                std::uint32_t  CurrentSet     = BufferInfo.CreateInfo.Set;
-                std::uint32_t  CurrentBinding = BufferInfo.CreateInfo.Binding;
-                vk::DeviceSize SetOffset      = SetOffsets.at(CurrentSet);
-                vk::DeviceSize BindingOffset  = SetOffset + SetInfos.at(CurrentSet).Bindings.at(CurrentBinding).Offset;
+                const auto& SetAllocation = DescriptorBufferInfo.SetAllocations.at(Set);
+                vk::DeviceSize AbsoluteOffset = OffsetsSubMapRef.at({ Set, Binding }).first;
 
-                vk::DescriptorType Usage = BufferInfo.CreateInfo.Usage;
-                vk::DescriptorAddressInfoEXT AddressInfo(BufferInfo.Buffers[i].GetBuffer().GetDeviceAddress(), BufferInfo.Size);
-                vk::DescriptorGetInfoEXT DescriptorGetInfo(Usage, &AddressInfo);
-                vk::DeviceSize DescriptorSize = DescriptorBufferProperties_.uniformBufferDescriptorSize;
-                Device.getDescriptorEXT(DescriptorGetInfo, DescriptorSize, static_cast<std::byte*>(Target) + BindingOffset);
+                void* Base = (SetAllocation.HeapType == EHeapType::kResource) ? ResourceHeapBase : SamplerHeapBase;
+                return static_cast<std::byte*>(Base) + AbsoluteOffset;
+            };
 
-                InsertOffsetMap(BufferInfo.CreateInfo, BindingOffset, Usage);
+            auto GetBufferDescriptors = [&](const auto& Names) -> void
+            {
+                for (const auto& Name : Names)
+                {
+                    const auto& DataBuffer = DataBuffers_.at(Name);
+                    auto* Target = GetTargetAddress(DataBuffer.CreateInfo.Set, DataBuffer.CreateInfo.Binding);
+
+                    vk::DescriptorAddressInfoEXT AddressInfo(DataBuffer.Buffers[i].GetBuffer().GetDeviceAddress(), DataBuffer.Size);
+                    vk::DescriptorGetInfoEXT GetInfo(DataBuffer.CreateInfo.Usage, &AddressInfo);
+
+                    Device.getDescriptorEXT(GetInfo, GetDescriptorSize(DataBuffer.CreateInfo.Usage), Target);
+                }
+            };
+
+            GetBufferDescriptors(DescriptorBufferCreateInfo.UniformBufferNames);
+            GetBufferDescriptors(DescriptorBufferCreateInfo.StorageBufferNames);
+
+            for (const auto& Info : DescriptorBufferCreateInfo.SamplerInfos)
+            {
+                auto* Target = GetTargetAddress(Info.Set, Info.Binding);
+                vk::DescriptorGetInfoEXT GetInfo(vk::DescriptorType::eSampler, &Info.Sampler);
+                Device.getDescriptorEXT(GetInfo, GetDescriptorSize(vk::DescriptorType::eSampler), Target);
             }
 
-            for (std::size_t j = 0; j != DescriptorBufferCreateInfo.StorageBufferNames.size(); ++j)
+            auto GetImageDescriptors = [&](const auto& Infos, vk::DescriptorType Type) -> void
             {
-                const auto&    BufferInfo     = DataBuffers_.at(DescriptorBufferCreateInfo.StorageBufferNames[j]);
-                std::uint32_t  CurrentSet     = BufferInfo.CreateInfo.Set;
-                std::uint32_t  CurrentBinding = BufferInfo.CreateInfo.Binding;
-                vk::DeviceSize SetOffset      = SetOffsets.at(CurrentSet);
-                vk::DeviceSize BindingOffset  = SetOffset + SetInfos.at(CurrentSet).Bindings.at(CurrentBinding).Offset;
+                for (const auto& Info : Infos)
+                {
+                    auto* Target = GetTargetAddress(Info.Set, Info.Binding);
+                    vk::DescriptorGetInfoEXT GetInfo(Type, &Info.Info);
+                    Device.getDescriptorEXT(GetInfo, GetDescriptorSize(Type), Target);
+                }
+            };
 
-                vk::DescriptorType Usage = BufferInfo.CreateInfo.Usage;
-                vk::DescriptorAddressInfoEXT AddressInfo(BufferInfo.Buffers[i].GetBuffer().GetDeviceAddress(), BufferInfo.Size);
-                vk::DescriptorGetInfoEXT DescriptorGetInfo(Usage, &AddressInfo);
-                vk::DeviceSize DescriptorSize = DescriptorBufferProperties_.storageBufferDescriptorSize;
-                Device.getDescriptorEXT(DescriptorGetInfo, DescriptorSize, static_cast<std::byte*>(Target) + BindingOffset);
-
-                InsertOffsetMap(BufferInfo.CreateInfo, BindingOffset, Usage);
-            }
-
-            for (std::size_t j = 0; j != DescriptorBufferCreateInfo.SamplerInfos.size(); ++j)
-            {
-                const auto&    SamplerInfo    = DescriptorBufferCreateInfo.SamplerInfos[j];
-                std::uint32_t  CurrentSet     = SamplerInfo.Set;
-                std::uint32_t  CurrentBinding = SamplerInfo.Binding;
-                vk::DeviceSize SetOffset      = SetOffsets.at(CurrentSet);
-                vk::DeviceSize BindingOffset  = SetOffset + SetInfos.at(CurrentSet).Bindings.at(CurrentBinding).Offset;
-
-                vk::DescriptorType Usage = vk::DescriptorType::eSampler;
-                vk::DescriptorGetInfoEXT DescriptorGetInfo(Usage, &SamplerInfo.Sampler);
-                vk::DeviceSize DescriptorSize = DescriptorBufferProperties_.samplerDescriptorSize;
-                Device.getDescriptorEXT(DescriptorGetInfo, DescriptorSize, static_cast<std::byte*>(Target) + BindingOffset);
-
-                InsertOffsetMap(SamplerInfo, BindingOffset, Usage);
-            }
-
-            for (std::size_t j = 0; j != DescriptorBufferCreateInfo.SampledImageInfos.size(); ++j)
-            {
-                const auto&    ImageInfo      = DescriptorBufferCreateInfo.SampledImageInfos[j];
-                std::uint32_t  CurrentSet     = ImageInfo.Set;
-                std::uint32_t  CurrentBinding = ImageInfo.Binding;
-                vk::DeviceSize SetOffset      = SetOffsets.at(CurrentSet);
-                vk::DeviceSize BindingOffset  = SetOffset + SetInfos.at(CurrentSet).Bindings.at(CurrentBinding).Offset;
-
-                vk::DescriptorType Usage = vk::DescriptorType::eSampledImage;
-                vk::DescriptorGetInfoEXT DescriptorGetInfo(Usage, &ImageInfo.Info);
-                vk::DeviceSize DescriptorSize = DescriptorBufferProperties_.sampledImageDescriptorSize;
-                Device.getDescriptorEXT(DescriptorGetInfo, DescriptorSize, static_cast<std::byte*>(Target) + BindingOffset);
-
-                InsertOffsetMap(ImageInfo, BindingOffset, Usage);
-            }
-
-            for (std::size_t j = 0; j != DescriptorBufferCreateInfo.StorageImageInfos.size(); ++j)
-            {
-                const auto&    ImageInfo      = DescriptorBufferCreateInfo.StorageImageInfos[j];
-                std::uint32_t  CurrentSet     = ImageInfo.Set;
-                std::uint32_t  CurrentBinding = ImageInfo.Binding;
-                vk::DeviceSize SetOffset      = SetOffsets.at(CurrentSet);
-                vk::DeviceSize BindingOffset  = SetOffset + SetInfos.at(CurrentSet).Bindings.at(CurrentBinding).Offset;
-
-                vk::DescriptorType Usage = vk::DescriptorType::eStorageImage;
-                vk::DescriptorGetInfoEXT DescriptorGetInfo(Usage, &ImageInfo.Info);
-                vk::DeviceSize DescriptorSize = DescriptorBufferProperties_.storageImageDescriptorSize;
-                Device.getDescriptorEXT(DescriptorGetInfo, DescriptorSize, static_cast<std::byte*>(Target) + BindingOffset);
-
-                InsertOffsetMap(ImageInfo, BindingOffset, Usage);
-            }
-
-            for (std::size_t j = 0; j != DescriptorBufferCreateInfo.CombinedImageSamplerInfos.size(); ++j)
-            {
-                const auto&    ImageInfo      = DescriptorBufferCreateInfo.CombinedImageSamplerInfos[j];
-                std::uint32_t  CurrentSet     = ImageInfo.Set;
-                std::uint32_t  CurrentBinding = ImageInfo.Binding;
-                vk::DeviceSize SetOffset      = SetOffsets.at(CurrentSet);
-                vk::DeviceSize BindingOffset  = SetOffset + SetInfos.at(CurrentSet).Bindings.at(CurrentBinding).Offset;
-
-                vk::DescriptorType Usage = vk::DescriptorType::eCombinedImageSampler;
-                vk::DescriptorGetInfoEXT DescriptorGetInfo(Usage, &ImageInfo.Info);
-                vk::DeviceSize DescriptorSize = DescriptorBufferProperties_.combinedImageSamplerDescriptorSize;
-                Device.getDescriptorEXT(DescriptorGetInfo, DescriptorSize, static_cast<std::byte*>(Target) + BindingOffset);
-
-                InsertOffsetMap(ImageInfo, BindingOffset, Usage);
-            }
+            GetImageDescriptors(DescriptorBufferCreateInfo.SampledImageInfos, vk::DescriptorType::eSampledImage);
+            GetImageDescriptors(DescriptorBufferCreateInfo.StorageImageInfos, vk::DescriptorType::eStorageImage);
+            GetImageDescriptors(DescriptorBufferCreateInfo.CombinedImageSamplerInfos, vk::DescriptorType::eCombinedImageSampler);
         }
     }
 } // namespace Npgs

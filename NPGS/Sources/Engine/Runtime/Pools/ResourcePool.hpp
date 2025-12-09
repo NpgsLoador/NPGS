@@ -322,6 +322,25 @@ namespace Npgs
                 std::chrono::system_clock::now().time_since_epoch()).count();
         }
 
+    protected:
+        std::mutex                                    Mutex_;
+        std::mutex                                    MaintenanceMutex_;
+        std::condition_variable                       Condition_;
+        std::condition_variable                       MaintenanceCondition_;
+        std::deque<std::unique_ptr<ResourceInfoType>> AvailableResources_;
+        std::atomic<std::uint32_t>                    BusyResourceCount_{};
+        std::atomic<std::uint32_t>                    PeakResourceDemand_{};
+
+        std::uint32_t                                 MinAvailableResourceLimit_;
+        std::uint32_t                                 MaxAllocatedResourceLimit_;
+        std::uint32_t                                 ResourceReclaimThresholdMs_;
+        std::uint32_t                                 MaintenanceIntervalMs_;
+
+        std::atomic<std::uint64_t>                    NextResourceId_{};
+        std::atomic<bool>                             bStopMaintenance_{ false };
+
+        std::jthread                                  MaintenanceThread_;
+
     private:
         void Maintenance()
         {
@@ -348,24 +367,5 @@ namespace Npgs
             std::uint32_t CurrentPeak = PeakResourceDemand_.load(std::memory_order::relaxed);
             while (CurrentBusy > CurrentPeak && !PeakResourceDemand_.compare_exchange_weak(CurrentPeak, CurrentBusy, std::memory_order::relaxed));
         }
-
-    protected:
-        std::mutex                                    Mutex_;
-        std::mutex                                    MaintenanceMutex_;
-        std::condition_variable                       Condition_;
-        std::condition_variable                       MaintenanceCondition_;
-        std::deque<std::unique_ptr<ResourceInfoType>> AvailableResources_;
-        std::atomic<std::uint32_t>                    BusyResourceCount_{};
-        std::atomic<std::uint32_t>                    PeakResourceDemand_{};
-
-        std::uint32_t                                 MinAvailableResourceLimit_;
-        std::uint32_t                                 MaxAllocatedResourceLimit_;
-        std::uint32_t                                 ResourceReclaimThresholdMs_;
-        std::uint32_t                                 MaintenanceIntervalMs_;
-
-        std::atomic<std::uint64_t>                    NextResourceId_{};
-        std::atomic<bool>                             bStopMaintenance_{ false };
-
-        std::jthread                                  MaintenanceThread_;
     };
 } // namespace Npgs

@@ -205,14 +205,14 @@ namespace Npgs::Astro
         { 0, {} }
     };
 
-    const std::unordered_map<AStar::EEvolutionPhase, Astro::FStellarClass::ELuminosityClass> AStar::kLuminosityMap_
+    const std::unordered_map<AStar::EEvolutionPhase, Astro::ELuminosityClass> AStar::kLuminosityMap_
     {
-        { AStar::EEvolutionPhase::kMainSequence,     Astro::FStellarClass::ELuminosityClass::kLuminosity_V   },
-        { AStar::EEvolutionPhase::kRedGiant,         Astro::FStellarClass::ELuminosityClass::kLuminosity_III },
-        { AStar::EEvolutionPhase::kCoreHeBurn,       Astro::FStellarClass::ELuminosityClass::kLuminosity_IV  },
-        { AStar::EEvolutionPhase::kEarlyAgb,         Astro::FStellarClass::ELuminosityClass::kLuminosity_II  },
-        { AStar::EEvolutionPhase::kThermalPulseAgb,  Astro::FStellarClass::ELuminosityClass::kLuminosity_I   },
-        { AStar::EEvolutionPhase::kPostAgb,          Astro::FStellarClass::ELuminosityClass::kLuminosity_I   }
+        { AStar::EEvolutionPhase::kMainSequence,     Astro::ELuminosityClass::kLuminosity_V   },
+        { AStar::EEvolutionPhase::kRedGiant,         Astro::ELuminosityClass::kLuminosity_III },
+        { AStar::EEvolutionPhase::kCoreHeBurn,       Astro::ELuminosityClass::kLuminosity_IV  },
+        { AStar::EEvolutionPhase::kEarlyAgb,         Astro::ELuminosityClass::kLuminosity_II  },
+        { AStar::EEvolutionPhase::kThermalPulseAgb,  Astro::ELuminosityClass::kLuminosity_I   },
+        { AStar::EEvolutionPhase::kPostAgb,          Astro::ELuminosityClass::kLuminosity_I   }
     };
 
     const std::unordered_map<float, float> AStar::kFeHSurfaceH1Map_

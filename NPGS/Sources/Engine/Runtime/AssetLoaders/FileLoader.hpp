@@ -11,12 +11,6 @@ namespace Npgs
 {
     class FFileLoader
     {
-    private:
-        enum class EMode
-        {
-            kNone, kHeap, kMmap
-        };
-
     public:
         FFileLoader() = default;
         FFileLoader(std::string_view Filename);
@@ -39,6 +33,12 @@ namespace Npgs
         
         bool Empty() const;
         std::size_t Size() const;
+
+    private:
+        enum class EMode
+        {
+            kNone, kHeap, kMmap
+        };
 
     private:
         bool LoadMmapFileInternal(HANDLE File);

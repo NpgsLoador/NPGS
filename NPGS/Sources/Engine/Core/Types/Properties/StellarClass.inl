@@ -1,6 +1,6 @@
 namespace Npgs::Astro
 {
-    NPGS_INLINE FStellarClass::EStellarType FStellarClass::GetStellarType() const
+    NPGS_INLINE EStellarType FStellarClass::GetStellarType() const
     {
         return StellarType_;
     }

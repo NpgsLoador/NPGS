@@ -2,6 +2,7 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <map>
 #include <string>
 #include <string_view>
 #include <type_traits>
@@ -72,34 +73,6 @@ namespace Npgs
             vk::DeviceSize            Size_;
         };
 
-    private:
-        struct FDataBufferFieldInfo
-        {
-            vk::DeviceSize Offset{};
-            vk::DeviceSize Size{};
-            vk::DeviceSize Alignment{};
-        };
-
-        struct FDataBufferInfo
-        {
-            Utils::FStringHeteroHashTable<std::string, FDataBufferFieldInfo> Fields;
-            std::vector<FDeviceLocalBuffer> Buffers;
-            FDataBufferCreateInfo           CreateInfo;
-            vk::DeviceSize                  Size{};
-        };
-
-        struct FDescriptorBufferInfo
-        {
-            std::string                     Name;
-            std::vector<FDeviceLocalBuffer> Buffers;
-            vk::DeviceSize                  Size{};
-        };
-
-        struct FSetBindingHash
-        {
-            std::size_t operator()(const std::pair<std::uint32_t, std::uint32_t>& SetBinding) const noexcept;
-        };
-
     public:
         FShaderBufferManager(FVulkanContext* VulkanContext);
         FShaderBufferManager(const FShaderBufferManager&) = delete;
@@ -132,10 +105,7 @@ namespace Npgs
         TUpdater<FieldType> GetFieldUpdater(std::uint32_t FrameIndex, std::string_view BufferName, std::string_view FieldName) const;
 
         const FDeviceLocalBuffer& GetDataBuffer(std::uint32_t FrameIndex, std::string_view BufferName) const;
-
-        void CreateDescriptorBuffer(const FDescriptorBufferCreateInfo& DescriptorBufferCreateInfo,
-                                    const VmaAllocationCreateInfo& AllocationCreateInfo);
-
+        void AllocateDescriptorBuffer(const FDescriptorBufferCreateInfo& DescriptorBufferCreateInfo);
         void RemoveDescriptorBuffer(std::string_view Name);
 
         // TODO
@@ -153,9 +123,66 @@ namespace Npgs
         std::vector<vk::DeviceSize> GetDescriptorBindingOffsets(std::string_view BufferName, Args... Sets) const;
 
         vk::DeviceSize GetDescriptorBindingOffset(std::string_view BufferName, std::uint32_t Set, std::uint32_t Binding) const;
-        const FDeviceLocalBuffer& GetDescriptorBuffer(std::uint32_t FrameIndex, std::string_view BufferName) const;
+        const FDeviceLocalBuffer& GetResourceDescriptorHeap(std::uint32_t FrameIndex) const;
+        const FDeviceLocalBuffer& GetSamplerDescriptorHeap(std::uint32_t FrameIndex) const;
 
     private:
+        struct FDataBufferFieldInfo
+        {
+            vk::DeviceSize Offset{};
+            vk::DeviceSize Size{};
+            vk::DeviceSize Alignment{};
+        };
+
+        struct FDataBufferInfo
+        {
+            Utils::FStringHeteroHashTable<std::string, FDataBufferFieldInfo> Fields;
+            std::vector<FDeviceLocalBuffer> Buffers;
+            FDataBufferCreateInfo           CreateInfo;
+            vk::DeviceSize                  Size{};
+        };
+
+        enum class EHeapType
+        {
+            kResource, kSampler
+        };
+
+        struct FDescriptorBufferInfo
+        {
+            std::string Name;
+
+            struct FSetAllocation
+            {
+                EHeapType      HeapType;
+                vk::DeviceSize Offset;
+                vk::DeviceSize Size;
+            };
+
+            std::unordered_map<std::uint32_t, FSetAllocation> SetAllocations;
+        };
+
+        struct FSetBindingHash
+        {
+            std::size_t operator()(const std::pair<std::uint32_t, std::uint32_t>& SetBinding) const noexcept;
+        };
+
+        class FHeapAllocator
+        {
+        public:
+            void Initialize(vk::DeviceSize TotalSize);
+            vk::DeviceSize Allocate(vk::DeviceSize Size, vk::DeviceSize Alignment);
+            void Free(vk::DeviceSize Offset, vk::DeviceSize Size);
+            void Reset();
+
+        private:
+            vk::DeviceSize TotalSize_{};
+            // [BlockOffset, BlockSize]
+            std::map<vk::DeviceSize, vk::DeviceSize> FreeBlocks_;
+        };
+
+    private:
+        void InitializeHeaps(vk::DeviceSize ResourceHeapSize, vk::DeviceSize SamplerHeapSize);
+
         const FDataBufferInfo& GetDataBufferInfo(std::string_view BufferName) const;
 
         std::pair<vk::DeviceSize, vk::DeviceSize> 
@@ -181,10 +208,13 @@ namespace Npgs
         // [DescriptorBufferName, [[Set, Binding], [Offset, Type]]]
         using FSubMap = std::unordered_map<std::pair<std::uint32_t, std::uint32_t>, std::pair<vk::DeviceSize, vk::DescriptorType>, FSetBindingHash>;
         Utils::FStringHeteroHashTable<std::string, FSubMap> OffsetsMap_;
-        // [DescriptorBuffername, [Set, BaseOffset]]
-        Utils::FStringHeteroHashTable<std::string, std::unordered_map<std::uint32_t, vk::DeviceSize>> SetBaseOffsetsMap_;
-
-        VmaAllocator Allocator_;
+        
+        std::vector<FDeviceLocalBuffer> ResourceDescriptorHeaps_;
+        std::vector<FDeviceLocalBuffer> SamplerDescriptorHeaps_;
+        
+        VmaAllocator   Allocator_;
+        FHeapAllocator ResourceHeapAllocator_;
+        FHeapAllocator SamplerHeapAllocator_;
     };
 } // namespace Npgs
 

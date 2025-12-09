@@ -6,12 +6,12 @@
 
 namespace Npgs
 {
-    bool FImageTracker::FImageState::operator==(const FImageState& Other) const
+    bool FImageState::operator==(const FImageState& Other) const
     {
         return StageMask == Other.StageMask && AccessMask == Other.AccessMask && ImageLayout == Other.ImageLayout;
     }
 
-    bool FImageTracker::FImageState::operator!=(const FImageState& Other) const
+    bool FImageState::operator!=(const FImageState& Other) const
     {
         return !(*this == Other);
     }
@@ -107,7 +107,7 @@ namespace Npgs
         CollapseImageStates(Image, ImageState);
     }
 
-    FImageTracker::FImageState FImageTracker::GetImageState(vk::Image Image, const vk::ImageSubresourceRange& Range)
+    FImageState FImageTracker::GetImageState(vk::Image Image, const vk::ImageSubresourceRange& Range)
     {
         FImageKey ImageKey = std::make_pair(Image, Range);
         auto it = ImageStateMap_.find(ImageKey);

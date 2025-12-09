@@ -59,6 +59,8 @@ namespace Npgs
             Manager_         = Other.Manager_;
             Asset_           = Other.Asset_;
             ManagerLiveness_ = Other.ManagerLiveness_;
+
+            Asset_->RefCount->fetch_add(1, std::memory_order::relaxed);
         }
 
         return *this;

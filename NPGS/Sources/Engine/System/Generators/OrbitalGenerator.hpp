@@ -30,15 +30,6 @@ namespace Npgs
 
     class FOrbitalGenerator
     {
-    private:
-        struct FPlanetaryDisk
-        {
-            float InnerRadiusAu{};
-            float OuterRadiusAu{};
-            float DiskMassSol{};
-            float DustMassSol{};
-        };
-
     public:
         FOrbitalGenerator(const FOrbitalGenerationInfo& GenerationInfo);
         FOrbitalGenerator(const FOrbitalGenerator& Other);
@@ -49,6 +40,15 @@ namespace Npgs
         FOrbitalGenerator& operator=(FOrbitalGenerator&& Other) noexcept;
 
         void GenerateOrbitals(Astro::FStellarSystem& System);
+
+    private:
+        struct FPlanetaryDisk
+        {
+            float InnerRadiusAu{};
+            float OuterRadiusAu{};
+            float DiskMassSol{};
+            float DustMassSol{};
+        };
 
     private:
         void GenerateBinaryOrbit(Astro::FStellarSystem& System);

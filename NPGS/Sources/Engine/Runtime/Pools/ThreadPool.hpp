@@ -11,9 +11,6 @@ namespace Npgs
 {
     class FThreadPool
     {
-    private:
-        struct FWorker;
-
     public:
         FThreadPool(int MaxThreadCount = 0, bool bEnableHyperThread = false);
         FThreadPool(const FThreadPool&) = delete;
@@ -28,6 +25,9 @@ namespace Npgs
 
         void SwitchHyperThread();
         int  GetMaxThreadCount() const;
+
+    private:
+        struct FWorker;
 
     private:
         void SetThreadAffinity(std::jthread& Thread, std::size_t CoreId) const;

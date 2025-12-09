@@ -67,7 +67,6 @@ namespace Npgs::Astro
         float              GetMagneticField() const;
         FCelestialBody&    SetMagneticField(float MagneticField);
 
-
     private:
         FBasicProperties Properties_{};
     };

@@ -9,9 +9,9 @@
 
 namespace Npgs
 {
-    FQueuePool::FQueueGuard::FQueueGuard(FQueuePool* Pool, FQueueInfo&& QueueInfo)
+    FQueuePool::FQueueGuard::FQueueGuard(FQueuePool* Pool, FQueueInfo QueueInfo)
         : Pool_(Pool)
-        , QueueInfo_(std::exchange(QueueInfo, {}))
+        , QueueInfo_(QueueInfo)
     {
     }
 
@@ -59,7 +59,7 @@ namespace Npgs
         vk::Queue Queue;
         if (Pool.Queues.try_dequeue(Queue))
         {
-            ++Pool.BusyQueueCount;
+            Pool.BusyQueueCount.fetch_add(1, std::memory_order::relaxed);
             return FQueueGuard(this, { Queue, QueueFlags });
         }
 
@@ -73,7 +73,7 @@ namespace Npgs
 
             CurrentThread->wait(Lock, [this, &Pool, &Queue]() -> bool { return Pool.Queues.try_dequeue(Queue); });
 
-            ++Pool.BusyQueueCount;
+            Pool.BusyQueueCount.fetch_add(1, std::memory_order::relaxed);
             return FQueueGuard(this, { Queue, QueueFlags });
         }
 

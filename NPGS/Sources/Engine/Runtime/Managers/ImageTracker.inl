@@ -5,7 +5,7 @@ namespace Npgs
         ImageStateMap_[Image] = ImageState;
     }
 
-    inline FImageTracker::FImageState FImageTracker::GetImageState(vk::Image Image) const
+    inline FImageState FImageTracker::GetImageState(vk::Image Image) const
     {
         return ImageStateMap_.at(Image);
     }
