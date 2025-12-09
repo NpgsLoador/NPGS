@@ -683,13 +683,13 @@ namespace Npgs
 
     template <typename CsvType>
     requires std::is_class_v<CsvType>
-    CsvType* FStellarGenerator::LoadCsvAsset(const std::string& Filename, std::span<const std::string> Headers)
+    TAssetHandle<CsvType> FStellarGenerator::LoadCsvAsset(const std::string& Filename, std::span<const std::string> Headers)
     {
         auto* AssetManager = EngineCoreServices->GetAssetManager();
         {
             std::shared_lock Lock(CacheMutex_);
-            auto* Asset = AssetManager->GetAsset<CsvType>(Filename);
-            if (Asset != nullptr)
+            auto Asset = AssetManager->AcquireAsset<CsvType>(Filename);
+            if (Asset)
             {
                 return Asset;
             }
@@ -698,7 +698,7 @@ namespace Npgs
         std::unique_lock Lock(CacheMutex_);
         AssetManager->AddAsset<CsvType>(Filename, CsvType(Filename, Headers));
 
-        return AssetManager->GetAsset<CsvType>(Filename);
+        return AssetManager->AcquireAsset<CsvType>(Filename);
     }
 
     void FStellarGenerator::InitializeMistData()
@@ -928,11 +928,11 @@ namespace Npgs
         {
             if (Files.first != Files.second) [[likely]]
             {
-                FMistData* LowerData = LoadCsvAsset<FMistData>(Files.first,  kMistHeaders_);
-                FMistData* UpperData = LoadCsvAsset<FMistData>(Files.second, kMistHeaders_);
+                auto LowerData = LoadCsvAsset<FMistData>(Files.first,  kMistHeaders_);
+                auto UpperData = LoadCsvAsset<FMistData>(Files.second, kMistHeaders_);
 
-                auto LowerPhaseChanges = FindPhaseChanges(LowerData);
-                auto UpperPhaseChanges = FindPhaseChanges(UpperData);
+                auto LowerPhaseChanges = FindPhaseChanges(LowerData.Get());
+                auto UpperPhaseChanges = FindPhaseChanges(UpperData.Get());
 
                 if (std::isnan(TargetAge)) // 年龄为 NaN 在这里代表要生成濒死恒星
                 {
@@ -959,8 +959,8 @@ namespace Npgs
                 double LowerLifetime = PhaseChangePair.first.back()[kStarAgeIndex_];
                 double UpperLifetime = PhaseChangePair.second.back()[kStarAgeIndex_];
 
-                FDataArray LowerRows = InterpolateStarData(LowerData, EvolutionProgress);
-                FDataArray UpperRows = InterpolateStarData(UpperData, EvolutionProgress);
+                FDataArray LowerRows = InterpolateStarData(LowerData.Get(), EvolutionProgress);
+                FDataArray UpperRows = InterpolateStarData(UpperData.Get(), EvolutionProgress);
 
                 LowerRows.push_back(LowerLifetime);
                 UpperRows.push_back(UpperLifetime);
@@ -969,8 +969,8 @@ namespace Npgs
             }
             else [[unlikely]]
             {
-                FMistData* StarData = LoadCsvAsset<FMistData>(Files.first, kMistHeaders_);
-                auto PhaseChanges = FindPhaseChanges(StarData);
+                auto StarData     = LoadCsvAsset<FMistData>(Files.first, kMistHeaders_);
+                auto PhaseChanges = FindPhaseChanges(StarData.Get());
 
                 if (std::isnan(TargetAge))
                 {
@@ -991,7 +991,7 @@ namespace Npgs
 
                     EvolutionProgress = ExpectedResult.value();
                     Lifetime          = PhaseChanges.back()[kStarAgeIndex_];
-                    Result            = InterpolateStarData(StarData, EvolutionProgress);
+                    Result            = InterpolateStarData(StarData.Get(), EvolutionProgress);
                     Result.push_back(Lifetime);
                 }
                 else
@@ -1015,7 +1015,7 @@ namespace Npgs
                         return GenerateDeathStarPlaceholder(Lifetime);
                     }
 
-                    Result = InterpolateStarData(StarData, EvolutionProgress);
+                    Result = InterpolateStarData(StarData.Get(), EvolutionProgress);
                     Result.push_back(Lifetime);
                     ExpandMistData(TargetMassSol, Result);
                 }
@@ -1025,18 +1025,18 @@ namespace Npgs
         {
             if (Files.first != Files.second) [[likely]]
             {
-                FWdMistData* LowerData = LoadCsvAsset<FWdMistData>(Files.first,  kWdMistHeaders_);
-                FWdMistData* UpperData = LoadCsvAsset<FWdMistData>(Files.second, kWdMistHeaders_);
+                auto LowerData = LoadCsvAsset<FWdMistData>(Files.first,  kWdMistHeaders_);
+                auto UpperData = LoadCsvAsset<FWdMistData>(Files.second, kWdMistHeaders_);
 
-                FDataArray LowerRows = InterpolateStarData(LowerData, TargetAge);
-                FDataArray UpperRows = InterpolateStarData(UpperData, TargetAge);
+                FDataArray LowerRows = InterpolateStarData(LowerData.Get(), TargetAge);
+                FDataArray UpperRows = InterpolateStarData(UpperData.Get(), TargetAge);
 
                 Result = InterpolateFinalData(std::make_pair(LowerRows, UpperRows), MassCoefficient, true);
             }
             else [[unlikely]]
             {
-                FWdMistData* StarData = LoadCsvAsset<FWdMistData>(Files.first, kWdMistHeaders_);
-                Result = InterpolateStarData(StarData, TargetAge);
+                auto StarData = LoadCsvAsset<FWdMistData>(Files.first, kWdMistHeaders_);
+                Result = InterpolateStarData(StarData.Get(), TargetAge);
             }
         }
 
@@ -1721,7 +1721,7 @@ namespace Npgs
         }
 
         std::string HrDiagramDataFilePath = GetAssetFullPath(EAssetType::kDataTable, "StellarParameters/H-R Diagram/H-R Diagram.csv");
-        FHrDiagram* HrDiagramData         = LoadCsvAsset<FHrDiagram>(HrDiagramDataFilePath, kHrDiagramHeaders_);
+        auto        HrDiagramData         = LoadCsvAsset<FHrDiagram>(HrDiagramDataFilePath, kHrDiagramHeaders_);
 
         float Teff         = StarData.GetTeff();
         float BvColorIndex = 0.0f;
@@ -1771,7 +1771,7 @@ namespace Npgs
             }
         }
 
-        FDataArray LuminosityData = InterpolateHrDiagram(HrDiagramData, BvColorIndex);
+        FDataArray LuminosityData = InterpolateHrDiagram(HrDiagramData.Get(), BvColorIndex);
         if (LuminositySol > LuminosityData[1])
         {
             return Astro::FStellarClass::ELuminosityClass::kLuminosity_Ia;

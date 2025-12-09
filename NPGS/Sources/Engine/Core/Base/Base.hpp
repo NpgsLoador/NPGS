@@ -41,7 +41,7 @@
         // If you successfully build using LLVM, please consider contributing a Pull Request or Discussion on GitHub. :)
 #   endif // _MSVC_LANG
 #else
-#   error NPGS only support 64-bit Windows
+#   warning NPGS only support 64-bit Windows
 #endif // _WIN64
 
 // Bit operator function

@@ -54,12 +54,7 @@ namespace Npgs
                 if (Pool_ != nullptr && Resource_ != nullptr)
                 {
                     Pool_->ReleaseResource(Resource_, UsageCount_);
-                    --Pool_->BusyResourceCount_;
-
-                    std::uint32_t BusyResourceCount  = Pool_->BusyResourceCount_.load();
-                    std::uint32_t PeakResourceDemand = Pool_->PeakResourceDemand_.load();
-                    while (BusyResourceCount > PeakResourceDemand &&
-                           !Pool_->PeakResourceDemand_.compare_exchange_weak(PeakResourceDemand, BusyResourceCount));
+                    Pool_->BusyResourceCount_.fetch_sub(1, std::memory_order::relaxed);
                 }
             }
 
@@ -117,7 +112,7 @@ namespace Npgs
             , ResourceReclaimThresholdMs_(PoolReclaimThresholdMs)
             , MaintenanceIntervalMs_(MaintenanceIntervalMs)
         {
-            std::thread([this]() -> void { Maintenance(); }).detach();
+            MaintenanceThread_ = std::jthread([this]() -> void { Maintenance(); });
         }
 
         TResourcePool(const TResourcePool&) = delete;
@@ -127,7 +122,7 @@ namespace Npgs
         {
             MaintenanceIntervalMs_ = std::clamp(MaintenanceIntervalMs_, 0u, 500u);
             bStopMaintenance_.store(true);
-            std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+            MaintenanceCondition_.notify_all();
         }
 
         TResourcePool& operator=(const TResourcePool&) = delete;
@@ -164,7 +159,9 @@ namespace Npgs
                 ResourceType* Resource = (*BestIt)->Resource.release();
                 std::size_t UsageCount = (*BestIt)->UsageCount + 1;
                 AvailableResources_.erase(BestIt);
-                ++BusyResourceCount_;
+                BusyResourceCount_.fetch_add(1, std::memory_order::relaxed);
+
+                IncreasePeakDemand();
 
                 return FResourceGuard(this, Resource, UsageCount);
             }
@@ -175,7 +172,10 @@ namespace Npgs
 
                 ResourceType* Resource = AvailableResources_.back()->Resource.release();
                 AvailableResources_.pop_back();
-                ++BusyResourceCount_;
+                BusyResourceCount_.fetch_add(1, std::memory_order::relaxed);
+
+                IncreasePeakDemand();
+
                 return FResourceGuard(this, Resource, 1);
             }
 
@@ -196,7 +196,10 @@ namespace Npgs
                         ResourceType* Resource = (*it)->Resource.release();
                         std::size_t UsageCount = (*it)->UsageCount + 1;
                         AvailableResources_.erase(it);
-                        ++BusyResourceCount_;
+                        BusyResourceCount_.fetch_add(1, std::memory_order::relaxed);
+
+                        IncreasePeakDemand();
+
                         return FResourceGuard(this, Resource, UsageCount);
                     }
                 }
@@ -278,7 +281,7 @@ namespace Npgs
             std::lock_guard Lock(Mutex_);
 
             auto ResourceInfoPtr = std::make_unique<ResourceInfoType>();
-            ResourceInfoPtr->Resource          = std::make_unique<ResourceType>(std::move(*Resource));
+            ResourceInfoPtr->Resource          = std::unique_ptr<ResourceType>(Resource);
             ResourceInfoPtr->LastUsedTimestamp = GetCurrentTimeMs();
             ResourceInfoPtr->UsageCount        = UsageCount;
 
@@ -324,17 +327,33 @@ namespace Npgs
         {
             while (!bStopMaintenance_.load())
             {
-                std::this_thread::sleep_for(std::chrono::milliseconds(MaintenanceIntervalMs_));
-                if (!bStopMaintenance_.load())
+                std::unique_lock Lock(MaintenanceMutex_);
+                MaintenanceCondition_.wait_for(Lock, std::chrono::milliseconds(MaintenanceIntervalMs_), [this]() -> bool
                 {
-                    OptimizeResourceCount();
+                    return bStopMaintenance_.load();
+                });
+
+                if (bStopMaintenance_.load())
+                {
+                    break;
                 }
+
+                OptimizeResourceCount();
             }
+        }
+
+        void IncreasePeakDemand()
+        {
+            std::uint32_t CurrentBusy = BusyResourceCount_.load(std::memory_order::relaxed);
+            std::uint32_t CurrentPeak = PeakResourceDemand_.load(std::memory_order::relaxed);
+            while (CurrentBusy > CurrentPeak && !PeakResourceDemand_.compare_exchange_weak(CurrentPeak, CurrentBusy, std::memory_order::relaxed));
         }
 
     protected:
         std::mutex                                    Mutex_;
+        std::mutex                                    MaintenanceMutex_;
         std::condition_variable                       Condition_;
+        std::condition_variable                       MaintenanceCondition_;
         std::deque<std::unique_ptr<ResourceInfoType>> AvailableResources_;
         std::atomic<std::uint32_t>                    BusyResourceCount_{};
         std::atomic<std::uint32_t>                    PeakResourceDemand_{};
@@ -346,5 +365,7 @@ namespace Npgs
 
         std::atomic<std::uint64_t>                    NextResourceId_{};
         std::atomic<bool>                             bStopMaintenance_{ false };
+
+        std::jthread                                  MaintenanceThread_;
     };
 } // namespace Npgs

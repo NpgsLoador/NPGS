@@ -73,21 +73,21 @@ namespace Npgs
             Future.get();
         }
 
-        AlbedoMap_ = AssetManager->GetAsset<FTexture2D>(Materials::StandardPbr::kAlbedoName);
-        NormalMap_ = AssetManager->GetAsset<FTexture2D>(Materials::StandardPbr::kNormalName);
-        ArmMap_    = AssetManager->GetAsset<FTexture2D>(Materials::StandardPbr::kArmName);
+        AlbedoMap_ = AssetManager->AcquireAsset<FTexture2D>(Materials::StandardPbr::kAlbedoName);
+        NormalMap_ = AssetManager->AcquireAsset<FTexture2D>(Materials::StandardPbr::kNormalName);
+        ArmMap_    = AssetManager->AcquireAsset<FTexture2D>(Materials::StandardPbr::kArmName);
     }
 
     void FStandardPbrMaterial::BindDescriptors()
     {
         auto* AssetManager = EngineCoreServices->GetAssetManager();
-        auto* Shader       = AssetManager->GetAsset<FShader>(RenderPasses::GbufferScene::kShaderName);
+        auto  Shader       = AssetManager->AcquireAsset<FShader>(RenderPasses::GbufferScene::kShaderName);
 
         FDescriptorBufferCreateInfo DescriptorBufferCreateInfo;
         DescriptorBufferCreateInfo.Name     = Materials::StandardPbr::kDescriptorBufferName;
         DescriptorBufferCreateInfo.SetInfos = Shader->GetDescriptorSetInfos();
 
-        auto* Sampler = AssetManager->GetAsset<FVulkanSampler>(Public::Samplers::kPbrTextureSamplerName);
+        auto Sampler = AssetManager->AcquireAsset<FVulkanSampler>(Public::Samplers::kPbrTextureSamplerName);
         DescriptorBufferCreateInfo.SamplerInfos.emplace_back(0u, 0u, **Sampler);
         auto PbrAlbedoImageInfo = AlbedoMap_->CreateDescriptorImageInfo(nullptr);
         DescriptorBufferCreateInfo.SampledImageInfos.emplace_back(1u, 0u, PbrAlbedoImageInfo);
@@ -96,7 +96,7 @@ namespace Npgs
         auto PbrArmImageInfo = ArmMap_->CreateDescriptorImageInfo(nullptr);
         DescriptorBufferCreateInfo.SampledImageInfos.emplace_back(1u, 2u, PbrArmImageInfo);
 
-        auto*       FramebufferSampler  = AssetManager->GetAsset<FVulkanSampler>(Public::Samplers::kFramebufferSamplerName);
+        auto        FramebufferSampler  = AssetManager->AcquireAsset<FVulkanSampler>(Public::Samplers::kFramebufferSamplerName);
         auto*       RenderTargetManager = EngineResourceServices->GetRenderTargetManager();
         const auto& DepthMapAttachment  = RenderTargetManager->GetManagedTarget(Public::Attachments::kDepthMapAttachmentName);
         

@@ -14,7 +14,7 @@ namespace Npgs
     {
         auto* AssetManager        = EngineCoreServices->GetAssetManager();
         auto* RenderTargetManager = EngineResourceServices->GetRenderTargetManager();
-        auto* Shader              = AssetManager->GetAsset<FShader>(DescriptorBindInfo.ShaderName);
+        auto  Shader              = AssetManager->AcquireAsset<FShader>(DescriptorBindInfo.ShaderName);
 
         FDescriptorBufferCreateInfo DescriptorBufferCreateInfo;
         DescriptorBufferCreateInfo.Name               = DescriptorBindInfo.DescriptorBufferName;
@@ -24,14 +24,16 @@ namespace Npgs
 
         for (const auto& [Name, Set, Binding] : DescriptorBindInfo.SamplerInfos)
         {
-            auto* Sampler = AssetManager->GetAsset<FVulkanSampler>(Name);
+            auto Sampler = AssetManager->AcquireAsset<FVulkanSampler>(Name);
             DescriptorBufferCreateInfo.SamplerInfos.emplace_back(Set, Binding, **Sampler);
         }
 
         for (const auto& [Type, Usage, ImageName, SamplerName, Set, Binding] : DescriptorBindInfo.ImageInfos)
         {
             vk::DescriptorImageInfo ImageInfo;
-            auto* Sampler = SamplerName.empty() ? nullptr : AssetManager->GetAsset<FVulkanSampler>(SamplerName);
+            auto Sampler = SamplerName.empty() ? TAssetHandle<FVulkanSampler>()
+                                               : AssetManager->AcquireAsset<FVulkanSampler>(SamplerName);
+
             if (Type == FImageInfoCreateInfo::EImageType::kAttachment)
             {
                 const auto& ManagedTarget = RenderTargetManager->GetManagedTarget(ImageName);
@@ -40,7 +42,7 @@ namespace Npgs
             }
             else
             {
-                auto* Texture = AssetManager->GetAsset<FTexture2D>(ImageName);
+                auto Texture = AssetManager->AcquireAsset<FTexture2D>(ImageName);
                 ImageInfo = Texture->CreateDescriptorImageInfo(Sampler ? **Sampler : vk::Sampler());
             }
 

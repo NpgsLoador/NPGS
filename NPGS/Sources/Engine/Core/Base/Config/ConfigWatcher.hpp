@@ -26,6 +26,7 @@ namespace Npgs
         bool FindConfigPath();
         std::string GetAppName();
 
+    private:
         std::wstring                               ConfigFilename_;
         std::string                                AppName_;
         std::function<void(const nlohmann::json&)> UpdateCallback_;

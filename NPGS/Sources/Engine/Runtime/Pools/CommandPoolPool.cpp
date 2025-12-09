@@ -17,7 +17,7 @@ namespace Npgs
 
     void FCommandPoolPool::CreateResource(const FCommandPoolCreateInfo& CreateInfo)
     {
-        std::uint64_t ResourceId = NextResourceId_.fetch_add(1);
+        std::uint64_t ResourceId = NextResourceId_.fetch_add(1, std::memory_order::relaxed);
         std::string Name = std::format("CommandPool_PoolInst_{:#x}_ID_{}", reinterpret_cast<std::uintptr_t>(this), ResourceId);
         FVulkanCommandPool CommandPool(Device_, Name, QueueFamilyIndex_, CreateInfo.Flags);
         auto ResourceInfoPtr               = std::make_unique<FCommandPoolInfo>();

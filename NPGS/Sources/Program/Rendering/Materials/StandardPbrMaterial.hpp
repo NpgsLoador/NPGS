@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Engine/Runtime/AssetLoaders/Texture.hpp"
+#include "Engine/Runtime/Managers/AssetManager.hpp"
 #include "Engine/Runtime/Graphics/Renderer/Material.hpp"
 
 namespace Npgs
@@ -16,8 +17,8 @@ namespace Npgs
         void BindDescriptors() override;
 
     private:
-        FTexture2D* AlbedoMap_{ nullptr };
-        FTexture2D* NormalMap_{ nullptr };
-        FTexture2D* ArmMap_{ nullptr };
+        TAssetHandle<FTexture2D> AlbedoMap_;
+        TAssetHandle<FTexture2D> NormalMap_;
+        TAssetHandle<FTexture2D> ArmMap_;
     };
 } // namespace Npgs

@@ -122,14 +122,14 @@ namespace Npgs
         auto* ShaderBufferManager = EngineResourceServices->GetShaderBufferManager();
         auto* PipelineManager     = EngineResourceServices->GetPipelineManager();
 
-        auto* PbrSceneGBufferShader = AssetManager->GetAsset<FShader>("PbrSceneGBufferShader");
-        auto* PbrSceneMergeShader   = AssetManager->GetAsset<FShader>("PbrSceneMergeShader");
-        auto* PbrSceneShader        = AssetManager->GetAsset<FShader>("PbrSceneShader");
-        auto* LampShader            = AssetManager->GetAsset<FShader>("LampShader");
-        auto* DepthMapShader        = AssetManager->GetAsset<FShader>("DepthMapShader");
-        // auto* TerrainShader         = AssetManager->GetAsset<FShader>("TerrainShader");
-        auto* SkyboxShader          = AssetManager->GetAsset<FShader>("SkyboxShader");
-        auto* PostShader            = AssetManager->GetAsset<FShader>("PostShader");
+        auto PbrSceneGBufferShader = AssetManager->AcquireAsset<FShader>("PbrSceneGBufferShader");
+        auto PbrSceneMergeShader   = AssetManager->AcquireAsset<FShader>("PbrSceneMergeShader");
+        auto PbrSceneShader        = AssetManager->AcquireAsset<FShader>("PbrSceneShader");
+        auto LampShader            = AssetManager->AcquireAsset<FShader>("LampShader");
+        auto DepthMapShader        = AssetManager->AcquireAsset<FShader>("DepthMapShader");
+        // auto TerrainShader         = AssetManager->AcquireAsset<FShader>("TerrainShader");
+        auto SkyboxShader          = AssetManager->AcquireAsset<FShader>("SkyboxShader");
+        auto PostShader            = AssetManager->AcquireAsset<FShader>("PostShader");
 
         vk::Pipeline PbrSceneGBufferPipeline;
         vk::Pipeline PbrSceneMergePipeline;
@@ -1240,21 +1240,21 @@ namespace Npgs
     {
         auto* AssetManager = EngineCoreServices->GetAssetManager();
 
-        auto* PbrSceneGBufferShader = AssetManager->GetAsset<FShader>("PbrSceneGBufferShader");
-        auto* PbrSceneMergeShader   = AssetManager->GetAsset<FShader>("PbrSceneMergeShader");
-        auto* PbrSceneShader        = AssetManager->GetAsset<FShader>("PbrSceneShader");
-        auto* LampShader            = AssetManager->GetAsset<FShader>("LampShader");
-        auto* DepthMapShader        = AssetManager->GetAsset<FShader>("DepthMapShader");
-        // auto* TerrainShader         = AssetManager->GetAsset<FShader>("TerrainShader");
-        auto* SkyboxShader          = AssetManager->GetAsset<FShader>("SkyboxShader");
-        auto* PostShader            = AssetManager->GetAsset<FShader>("PostShader");
+        auto PbrSceneGBufferShader = AssetManager->AcquireAsset<FShader>("PbrSceneGBufferShader");
+        auto PbrSceneMergeShader   = AssetManager->AcquireAsset<FShader>("PbrSceneMergeShader");
+        auto PbrSceneShader        = AssetManager->AcquireAsset<FShader>("PbrSceneShader");
+        auto LampShader            = AssetManager->AcquireAsset<FShader>("LampShader");
+        auto DepthMapShader        = AssetManager->AcquireAsset<FShader>("DepthMapShader");
+        // auto TerrainShader         = AssetManager->AcquireAsset<FShader>("TerrainShader");
+        auto SkyboxShader          = AssetManager->AcquireAsset<FShader>("SkyboxShader");
+        auto PostShader            = AssetManager->AcquireAsset<FShader>("PostShader");
 
-        auto* PbrDisplacement = AssetManager->GetAsset<FTexture2D>("PbrDisplacement");
-        auto* PbrDiffuse      = AssetManager->GetAsset<FTexture2D>("PbrDiffuse");
-        auto* PbrNormal       = AssetManager->GetAsset<FTexture2D>("PbrNormal");
-        auto* PbrArm          = AssetManager->GetAsset<FTexture2D>("PbrArm");
-        // auto* IceLand         = AssetManager->GetAsset<FTexture2D>("IceLand");
-        auto* Skybox          = AssetManager->GetAsset<FTextureCube>("Skybox");
+        auto PbrDisplacement = AssetManager->AcquireAsset<FTexture2D>("PbrDisplacement");
+        auto PbrDiffuse      = AssetManager->AcquireAsset<FTexture2D>("PbrDiffuse");
+        auto PbrNormal       = AssetManager->AcquireAsset<FTexture2D>("PbrNormal");
+        auto PbrArm          = AssetManager->AcquireAsset<FTexture2D>("PbrArm");
+        // auto IceLand         = AssetManager->AcquireAsset<FTexture2D>("IceLand");
+        auto Skybox          = AssetManager->AcquireAsset<FTextureCube>("Skybox");
 
         auto* ShaderBufferManager = EngineResourceServices->GetShaderBufferManager();
 

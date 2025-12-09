@@ -22,6 +22,7 @@
 #include "Engine/Core/Types/Entries/Astro/Star.hpp"
 #include "Engine/Core/Types/Properties/StellarClass.hpp"
 #include "Engine/Runtime/AssetLoaders/CommaSeparatedValues.hpp"
+#include "Engine/Runtime/Managers/AssetManager.hpp"
 
 namespace Npgs
 {
@@ -94,7 +95,7 @@ namespace Npgs
     private:
         template <typename CsvType>
         requires std::is_class_v<CsvType>
-        CsvType* LoadCsvAsset(const std::string& Filename, std::span<const std::string> Headers);
+        TAssetHandle<CsvType> LoadCsvAsset(const std::string& Filename, std::span<const std::string> Headers);
 
         void InitializeMistData();
         void InitializePdfs();

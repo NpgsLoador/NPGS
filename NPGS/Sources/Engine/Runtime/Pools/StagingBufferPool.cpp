@@ -49,7 +49,7 @@ namespace Npgs
         vk::DeviceSize AlignedSize = AlignSize(CreateInfo.Size);
         vk::BufferCreateInfo BufferCreateInfo({}, AlignedSize, vk::BufferUsageFlagBits::eTransferSrc | vk::BufferUsageFlagBits::eTransferDst);
         
-        std::uint64_t ResourceId = NextResourceId_.fetch_add(1);
+        std::uint64_t ResourceId = NextResourceId_.fetch_add(1, std::memory_order::relaxed);
         std::string Name = std::format("StagingBuffer_PoolInst_{:#x}_ID_{}", reinterpret_cast<std::uintptr_t>(this), ResourceId);
 
         BufferInfoPtr->Resource = std::make_unique<FStagingBuffer>(

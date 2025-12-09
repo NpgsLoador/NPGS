@@ -17,7 +17,7 @@ namespace Npgs
     void FPipelineManager::CreateGraphicsPipeline(std::string_view PipelineName, std::string_view ShaderName,
                                                   FGraphicsPipelineCreateInfoPack& GraphicsPipelineCreateInfoPack)
     {
-        auto* Shader = AssetManager_->GetAsset<FShader>(ShaderName);
+        auto Shader = AssetManager_->AcquireAsset<FShader>(ShaderName);
 
         VulkanContext_->WaitIdle();
         vk::Device Device = VulkanContext_->GetDevice();
@@ -65,7 +65,7 @@ namespace Npgs
     void FPipelineManager::CreateComputePipeline(std::string_view PipelineName, std::string_view ShaderName,
                                                  vk::ComputePipelineCreateInfo* ComputePipelineCreateInfo)
     {
-        auto* Shader = AssetManager_->GetAsset<FShader>(ShaderName);
+        auto Shader = AssetManager_->AcquireAsset<FShader>(ShaderName);
 
         VulkanContext_->WaitIdle();
         vk::Device Device = VulkanContext_->GetDevice();
@@ -156,7 +156,7 @@ namespace Npgs
             DestroyPipeline = []() -> void {};
         }
 
-        VulkanContext_->RegisterAutoRemovedCallbacks(FVulkanContext::ECallbackType::kCreateSwapchain,  std::string(Name), CreatePipeline);
-        VulkanContext_->RegisterAutoRemovedCallbacks(FVulkanContext::ECallbackType::kDestroySwapchain, std::string(Name), DestroyPipeline);
+        VulkanContext_->RegisterAutoRemovedCallbacks(FVulkanContext::ECallbackType::kCreateSwapchain,  Name, CreatePipeline);
+        VulkanContext_->RegisterAutoRemovedCallbacks(FVulkanContext::ECallbackType::kDestroySwapchain, Name, DestroyPipeline);
     }
 } // namespace Npgs
