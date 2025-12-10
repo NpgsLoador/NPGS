@@ -122,6 +122,9 @@ namespace Npgs
     FShader::FShader(FVulkanContext* VulkanContext, const std::vector<std::string>& ShaderFiles, const FResourceInfo& ResourceInfo)
         : VulkanContext_(VulkanContext)
     {
+        vk::DescriptorSetLayoutCreateInfo EmptyLayoutCreateInfo(vk::DescriptorSetLayoutCreateFlagBits::eDescriptorBufferEXT);
+        EmptyDescriptorSetLayout_ = FVulkanDescriptorSetLayout(VulkanContext_->GetDevice(), "EmptyDescriptorSetLayout", EmptyLayoutCreateInfo);
+
         InitializeShaders(ShaderFiles, ResourceInfo);
         CreateDescriptorSetLayouts();
         GenerateDescriptorInfos();
@@ -173,9 +176,23 @@ namespace Npgs
 
         std::uint32_t MaxSet = DescriptorSetLayoutsMap_.rbegin()->first;
         std::vector<vk::DescriptorSetLayout> NativeTypeLayouts(MaxSet + 1);
+
+        std::uint32_t LastFilledIndex = 0;
+
         for (const auto& [Set, Layout] : DescriptorSetLayoutsMap_)
         {
+            for (std::uint32_t i = LastFilledIndex; i != Set; ++i)
+            {
+                NativeTypeLayouts[i] = *EmptyDescriptorSetLayout_;
+            }
+
             NativeTypeLayouts[Set] = *Layout;
+            LastFilledIndex        = Set + 1;
+        }
+
+        for (std::uint32_t i = LastFilledIndex; i <= MaxSet; ++i)
+        {
+            NativeTypeLayouts[i] = *EmptyDescriptorSetLayout_;
         }
 
         return NativeTypeLayouts;

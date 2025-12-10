@@ -106,18 +106,7 @@ namespace Npgs
 
         const FDeviceLocalBuffer& GetDataBuffer(std::uint32_t FrameIndex, std::string_view BufferName) const;
         void AllocateDescriptorBuffer(const FDescriptorBufferCreateInfo& DescriptorBufferCreateInfo);
-        void RemoveDescriptorBuffer(std::string_view Name);
-
-        // TODO
-        // UpdateBufferDescriptor(s)
-        // Complete UpdateResourceDescriptor(s) implementations
-        template <typename Type>
-        void UpdateResourceDescriptors(std::string_view BufferName, std::uint32_t Set, std::uint32_t Binding,
-                                       vk::DescriptorType ConfirmedUsage, const Type& DescriptorInfo);
-
-        template <typename Type>
-        void UpdateResourceDescriptor(std::uint32_t FrameIndex, std::string_view BufferName, std::uint32_t Set,
-                                      std::uint32_t Binding, vk::DescriptorType ConfirmedUsage, const Type& DescriptorInfo);
+        void FreeDescriptorBuffer(std::string_view Name);
 
         template <typename... Args>
         std::vector<vk::DeviceSize> GetDescriptorBindingOffsets(std::string_view BufferName, Args... Sets) const;
@@ -182,7 +171,6 @@ namespace Npgs
 
     private:
         void InitializeHeaps(vk::DeviceSize ResourceHeapSize, vk::DeviceSize SamplerHeapSize);
-
         const FDataBufferInfo& GetDataBufferInfo(std::string_view BufferName) const;
 
         std::pair<vk::DeviceSize, vk::DeviceSize> 
@@ -211,10 +199,14 @@ namespace Npgs
         
         std::vector<FDeviceLocalBuffer> ResourceDescriptorHeaps_;
         std::vector<FDeviceLocalBuffer> SamplerDescriptorHeaps_;
+        std::vector<FDeviceLocalBuffer> UniformDataHeaps_;
+        std::vector<FDeviceLocalBuffer> StorageDataHeaps_;
         
         VmaAllocator   Allocator_;
         FHeapAllocator ResourceHeapAllocator_;
         FHeapAllocator SamplerHeapAllocator_;
+        FHeapAllocator UniformHeapAllocator_;
+        FHeapAllocator StorageHeapAllocator_;
     };
 } // namespace Npgs
 

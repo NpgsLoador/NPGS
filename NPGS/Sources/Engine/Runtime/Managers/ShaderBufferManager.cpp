@@ -193,8 +193,22 @@ namespace Npgs
         BindResourceToDescriptorBuffersInternal(DescriptorBufferCreateInfo);
     }
 
-    void FShaderBufferManager::RemoveDescriptorBuffer(std::string_view Name)
+    void FShaderBufferManager::FreeDescriptorBuffer(std::string_view Name)
     {
+        const auto& BufferInfo = GetDescriptorBufferInfo(Name);
+
+        for (const auto& [SetIndex, SetAllocation] : BufferInfo.SetAllocations)
+        {
+            if (SetAllocation.HeapType == EHeapType::kResource)
+            {
+                ResourceHeapAllocator_.Free(SetAllocation.Offset, SetAllocation.Size);
+            }
+            else
+            {
+                SamplerHeapAllocator_.Free(SetAllocation.Offset, SetAllocation.Size);
+            }
+        }
+
         DescriptorBuffers_.erase(Name);
         OffsetsMap_.erase(Name);
     }
@@ -341,15 +355,15 @@ namespace Npgs
 
     void FShaderBufferManager::BindResourceToDescriptorBuffersInternal(const FDescriptorBufferCreateInfo& DescriptorBufferCreateInfo)
     {
-        auto& DescriptorBufferInfo = DescriptorBuffers_.at(DescriptorBufferCreateInfo.Name);
+        auto& BufferInfo = DescriptorBuffers_.at(DescriptorBufferCreateInfo.Name);
         vk::Device Device = VulkanContext_->GetDevice();
 
-        auto& OffsetsSubMapRef = OffsetsMap_[DescriptorBufferInfo.Name];
+        auto& OffsetsSubMapRef = OffsetsMap_[BufferInfo.Name];
         OffsetsSubMapRef.clear();
 
         for (const auto& [SetIndex, SetLayoutInfo] : DescriptorBufferCreateInfo.SetInfos)
         {
-            const auto& SetAllocation = DescriptorBufferInfo.SetAllocations.at(SetIndex);
+            const auto& SetAllocation = BufferInfo.SetAllocations.at(SetIndex);
             for (const auto& [Binding, BindingLayout] : SetLayoutInfo.Bindings)
             {
                 vk::DeviceSize AbsoluteOffset = SetAllocation.Offset + BindingLayout.Offset;
@@ -364,7 +378,7 @@ namespace Npgs
 
             auto GetTargetAddress = [&](std::uint32_t Set, std::uint32_t Binding) -> std::byte*
             {
-                const auto& SetAllocation = DescriptorBufferInfo.SetAllocations.at(Set);
+                const auto& SetAllocation = BufferInfo.SetAllocations.at(Set);
                 vk::DeviceSize AbsoluteOffset = OffsetsSubMapRef.at({ Set, Binding }).first;
 
                 void* Base = (SetAllocation.HeapType == EHeapType::kResource) ? ResourceHeapBase : SamplerHeapBase;

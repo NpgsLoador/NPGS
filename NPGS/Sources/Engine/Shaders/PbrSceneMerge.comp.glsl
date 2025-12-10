@@ -19,10 +19,10 @@ layout(buffer_reference, scalar) readonly buffer _LightArgs
 	vec3 CameraPos;
 };
 
-layout(set = 0, binding = 0) uniform texture2D iRgbPositionAAo;
-layout(set = 0, binding = 1) uniform texture2D iRgbNormalARough;
-layout(set = 0, binding = 2) uniform texture2D iRgbAlbedoAMetal;
-layout(set = 0, binding = 3) uniform texture2D iRShadowGbaNull;
+layout(set = 2, binding = 0) uniform texture2D iRgbPositionAAo;
+layout(set = 2, binding = 1) uniform texture2D iRgbNormalARough;
+layout(set = 2, binding = 2) uniform texture2D iRgbAlbedoAMetal;
+layout(set = 2, binding = 3) uniform texture2D iRShadowGbaNull;
 layout(set = 1, binding = 0, rgba16f) uniform writeonly image2D iStorageImage;
 
 float TrowbridgeReitzGGX(vec3 Normal, vec3 HalfDir, float Roughness)

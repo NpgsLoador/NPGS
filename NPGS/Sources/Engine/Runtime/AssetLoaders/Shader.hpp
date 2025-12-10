@@ -107,6 +107,7 @@ namespace Npgs
 
     private:
         FVulkanContext*                                                      VulkanContext_;
+        FVulkanDescriptorSetLayout                                           EmptyDescriptorSetLayout_;
         FShaderReflectionInfo                                                ReflectionInfo_;
         std::vector<std::pair<vk::ShaderStageFlagBits, FVulkanShaderModule>> ShaderModules_;
         std::unordered_map<std::string, std::uint32_t>                       PushConstantOffsetsMap_;  // [Name, Offset]

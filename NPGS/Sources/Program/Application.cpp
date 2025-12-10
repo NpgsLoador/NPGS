@@ -366,8 +366,8 @@ namespace Npgs
                 vk::DeviceAddress LightArgsAddress = ShaderBufferManager->GetDataBuffer(i, "LightArgs").GetBuffer().GetDeviceAddress();
                 SceneMergeCommandBuffer->pushConstants<vk::DeviceAddress>(PbrSceneMergePipelineLayout, vk::ShaderStageFlagBits::eCompute, 0, LightArgsAddress);
                 SceneMergeCommandBuffer->bindDescriptorBuffersEXT(DescriptorBufferBindingInfos);
-                Offsets = ShaderBufferManager->GetDescriptorBindingOffsets("SceneMergeDescriptorBuffer", 0, 1);
-                SceneMergeCommandBuffer->setDescriptorBufferOffsetsEXT(vk::PipelineBindPoint::eCompute, PbrSceneMergePipelineLayout, 0, { 0, 0 }, Offsets);
+                Offsets = ShaderBufferManager->GetDescriptorBindingOffsets("SceneMergeDescriptorBuffer", 1, 2);
+                SceneMergeCommandBuffer->setDescriptorBufferOffsetsEXT(vk::PipelineBindPoint::eCompute, PbrSceneMergePipelineLayout, 1, { 0, 0 }, Offsets);
                 SceneMergeCommandBuffer->dispatch(WorkgroupSizeX, WorkgroupSizeY, 1);
                 SceneMergeCommandBuffer.End();
 
@@ -417,27 +417,35 @@ namespace Npgs
         VulkanContext_->RegisterAutoRemovedCallbacks(
             FVulkanContext::ECallbackType::kCreateSwapchain, "RecordSecondaryCommands", RecordSecondaryCommands);
 
-        vk::ImageMemoryBarrier2 PrepareBarrier(
-            vk::PipelineStageFlagBits2::eTopOfPipe,
-            vk::AccessFlagBits2::eNone,
-            vk::PipelineStageFlagBits2::eColorAttachmentOutput,
-            vk::AccessFlagBits2::eColorAttachmentWrite,
-            vk::ImageLayout::eUndefined,
-            vk::ImageLayout::eTransferSrcOptimal,
-            vk::QueueFamilyIgnored,
-            vk::QueueFamilyIgnored,
-            *ResolveAttachment_->GetImage(),
-            ColorSubresourceRange
-        );
+        auto PrepareResolveAttachment = [&]() -> void
+        {
+            vk::ImageMemoryBarrier2 PrepareBarrier(
+                vk::PipelineStageFlagBits2::eTopOfPipe,
+                vk::AccessFlagBits2::eNone,
+                vk::PipelineStageFlagBits2::eColorAttachmentOutput,
+                vk::AccessFlagBits2::eColorAttachmentWrite,
+                vk::ImageLayout::eUndefined,
+                vk::ImageLayout::eTransferSrcOptimal,
+                vk::QueueFamilyIgnored,
+                vk::QueueFamilyIgnored,
+                *ResolveAttachment_->GetImage(),
+                ColorSubresourceRange
+            );
 
-        vk::DependencyInfo PrepareDependencyInfo = vk::DependencyInfo()
-            .setImageMemoryBarriers(PrepareBarrier);
+            vk::DependencyInfo PrepareDependencyInfo = vk::DependencyInfo()
+                .setImageMemoryBarriers(PrepareBarrier);
 
-        auto& PrepareCommandBuffer = CommandBuffers.front();
-        PrepareCommandBuffer.Begin();
-        PrepareCommandBuffer->pipelineBarrier2(PrepareDependencyInfo);
-        PrepareCommandBuffer.End();
-        VulkanContext_->ExecuteCommands(FVulkanContext::EQueueType::kGeneral, PrepareCommandBuffer);
+            auto& PrepareCommandBuffer = CommandBuffers.front();
+            PrepareCommandBuffer.Begin();
+            PrepareCommandBuffer->pipelineBarrier2(PrepareDependencyInfo);
+            PrepareCommandBuffer.End();
+            VulkanContext_->ExecuteCommands(FVulkanContext::EQueueType::kGeneral, PrepareCommandBuffer);
+        };
+
+        PrepareResolveAttachment();
+
+        VulkanContext_->RegisterAutoRemovedCallbacks(
+            FVulkanContext::ECallbackType::kCreateSwapchain, "PrepareResolveAttachment", PrepareResolveAttachment);
 
         // Main rendering loop
         while (!glfwWindowShouldClose(Window_))
@@ -1207,7 +1215,7 @@ namespace Npgs
             .Fields  = { "View", "Projection", "LightSpaceMatrix" },
             .Set     = 0,
             .Binding = 0,
-            .Usage   = vk::DescriptorType::eUniformBuffer
+            .Usage   = vk::DescriptorType::eStorageBuffer
         };
 
         FDataBufferCreateInfo MvpMatricesCreateInfo
@@ -1216,7 +1224,7 @@ namespace Npgs
             .Fields  = { "Model", "View", "Projection" },
             .Set     = 0,
             .Binding = 0,
-            .Usage   = vk::DescriptorType::eUniformBuffer
+            .Usage   = vk::DescriptorType::eStorageBuffer
         };
 
         FDataBufferCreateInfo LightArgsCreateInfo
@@ -1225,7 +1233,7 @@ namespace Npgs
             .Fields  = { "LightPos", "LightColor", "CameraPos" },
             .Set     = 0,
             .Binding = 0,
-            .Usage   = vk::DescriptorType::eUniformBuffer
+            .Usage   = vk::DescriptorType::eStorageBuffer
         };
 
         VmaAllocationCreateInfo AllocationCreateInfo
@@ -1341,10 +1349,10 @@ namespace Npgs
                 *FramebufferSampler, *ShadowAttachment_->GetImageView(), vk::ImageLayout::eShaderReadOnlyOptimal);
 
             SceneGBufferDescriptorBufferCreateInfo.CombinedImageSamplerInfos.emplace_back(2u, 0u, DepthMapImageInfo);
-            SceneMergeDescriptorBufferCreateInfo.SampledImageInfos.emplace_back(0u, 0u, PositionAoImageInfo);
-            SceneMergeDescriptorBufferCreateInfo.SampledImageInfos.emplace_back(0u, 1u, NormalRoughImageInfo);
-            SceneMergeDescriptorBufferCreateInfo.SampledImageInfos.emplace_back(0u, 2u, AlbedoMetalImageInfo);
-            SceneMergeDescriptorBufferCreateInfo.SampledImageInfos.emplace_back(0u, 3u, ShadowImageInfo);
+            SceneMergeDescriptorBufferCreateInfo.SampledImageInfos.emplace_back(2u, 0u, PositionAoImageInfo);
+            SceneMergeDescriptorBufferCreateInfo.SampledImageInfos.emplace_back(2u, 1u, NormalRoughImageInfo);
+            SceneMergeDescriptorBufferCreateInfo.SampledImageInfos.emplace_back(2u, 2u, AlbedoMetalImageInfo);
+            SceneMergeDescriptorBufferCreateInfo.SampledImageInfos.emplace_back(2u, 3u, ShadowImageInfo);
             SceneMergeDescriptorBufferCreateInfo.StorageImageInfos.emplace_back(1u, 0u, ColorStorageImageInfo);
             PostDescriptorBufferCreateInfo.CombinedImageSamplerInfos.emplace_back(0u, 0u, ColorImageInfo);
 
@@ -1356,10 +1364,10 @@ namespace Npgs
 
         auto DestroyAttachmentDescriptors = [=]() mutable -> void
         {
-            ShaderBufferManager->RemoveDescriptorBuffer("GBufferSceneDescriptorBuffer");
-            ShaderBufferManager->RemoveDescriptorBuffer("GBufferMergeDescriptorBuffer");
-            ShaderBufferManager->RemoveDescriptorBuffer("SkyboxDescriptorBuffer");
-            ShaderBufferManager->RemoveDescriptorBuffer("PostDescriptorBuffer");
+            ShaderBufferManager->FreeDescriptorBuffer("SceneGBufferDescriptorBuffer");
+            ShaderBufferManager->FreeDescriptorBuffer("SceneMergeDescriptorBuffer");
+            ShaderBufferManager->FreeDescriptorBuffer("SkyboxDescriptorBuffer");
+            ShaderBufferManager->FreeDescriptorBuffer("PostDescriptorBuffer");
         };
 
         CreateAttachmentDescriptors();
