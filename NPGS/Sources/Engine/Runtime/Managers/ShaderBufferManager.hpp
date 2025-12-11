@@ -84,11 +84,9 @@ namespace Npgs
 
         template <typename StructType>
         requires std::is_class_v<StructType>
-        void CreateDataBuffers(const FDataBufferCreateInfo& DataBufferCreateInfo,
-                               const VmaAllocationCreateInfo& AllocationCreateInfo,
-                               std::uint32_t BufferCount = 0);
+        void AllocateDataBuffers(const FDataBufferCreateInfo& DataBufferCreateInfo);
 
-        void RemoveDataBuffer(std::string_view Name);
+        void FreeDataBuffer(std::string_view Name);
 
         template <typename StructType>
         requires std::is_class_v<StructType>
@@ -104,7 +102,7 @@ namespace Npgs
         template <typename FieldType>
         TUpdater<FieldType> GetFieldUpdater(std::uint32_t FrameIndex, std::string_view BufferName, std::string_view FieldName) const;
 
-        const FDeviceLocalBuffer& GetDataBuffer(std::uint32_t FrameIndex, std::string_view BufferName) const;
+        vk::DeviceSize GetDataBufferDeviceAddress(std::uint32_t FrameIndex, std::string_view BufferName) const;
         void AllocateDescriptorBuffer(const FDescriptorBufferCreateInfo& DescriptorBufferCreateInfo);
         void FreeDescriptorBuffer(std::string_view Name);
 
@@ -126,9 +124,10 @@ namespace Npgs
         struct FDataBufferInfo
         {
             Utils::FStringHeteroHashTable<std::string, FDataBufferFieldInfo> Fields;
-            std::vector<FDeviceLocalBuffer> Buffers;
-            FDataBufferCreateInfo           CreateInfo;
-            vk::DeviceSize                  Size{};
+            FDataBufferCreateInfo CreateInfo;
+            vk::DeviceSize        Offset{};
+            vk::DeviceSize        Size{};
+            vk::DescriptorType    Type;
         };
 
         enum class EHeapType
@@ -142,9 +141,9 @@ namespace Npgs
 
             struct FSetAllocation
             {
-                EHeapType      HeapType;
-                vk::DeviceSize Offset;
-                vk::DeviceSize Size;
+                EHeapType HeapType{ EHeapType::kSampler };
+                vk::DeviceSize Offset{};
+                vk::DeviceSize Size{};
             };
 
             std::unordered_map<std::uint32_t, FSetAllocation> SetAllocations;
@@ -170,7 +169,7 @@ namespace Npgs
         };
 
     private:
-        void InitializeHeaps(vk::DeviceSize ResourceHeapSize, vk::DeviceSize SamplerHeapSize);
+        void InitializeHeaps();
         const FDataBufferInfo& GetDataBufferInfo(std::string_view BufferName) const;
 
         std::pair<vk::DeviceSize, vk::DeviceSize> 

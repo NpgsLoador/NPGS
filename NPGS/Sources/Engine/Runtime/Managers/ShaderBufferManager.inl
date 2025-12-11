@@ -1,3 +1,4 @@
+#include <exception>
 #include <format>
 #include <stdexcept>
 #include <utility>
@@ -36,12 +37,11 @@ namespace Npgs
 
     template <typename StructType>
     requires std::is_class_v<StructType>
-    void FShaderBufferManager::CreateDataBuffers(const FDataBufferCreateInfo& DataBufferCreateInfo,
-                                                 const VmaAllocationCreateInfo& AllocationCreateInfo,
-                                                 std::uint32_t BufferCount)
+    void FShaderBufferManager::AllocateDataBuffers(const FDataBufferCreateInfo& DataBufferCreateInfo)
     {
         FDataBufferInfo BufferInfo;
         BufferInfo.CreateInfo = DataBufferCreateInfo;
+        BufferInfo.Type       = DataBufferCreateInfo.Usage;
 
         StructType BufferStruct{};
         Utils::ForEachField(BufferStruct, [&, this](const auto& Field, std::size_t Index) -> void
@@ -74,29 +74,32 @@ namespace Npgs
             BufferInfo.Fields.emplace(DataBufferCreateInfo.Fields[Index], std::move(FieldInfo));
         });
 
-        BufferCount = BufferCount ? BufferCount : Config::Graphics::kMaxFrameInFlight;
-
-        BufferInfo.Buffers.reserve(BufferCount);
         vk::BufferUsageFlags BufferUsage = DataBufferCreateInfo.Usage == vk::DescriptorType::eUniformBuffer
                                          ? vk::BufferUsageFlagBits::eUniformBuffer
                                          : vk::BufferUsageFlagBits::eStorageBuffer;
 
         BufferUsage |= vk::BufferUsageFlagBits::eShaderDeviceAddress | vk::BufferUsageFlagBits::eTransferDst;
 
-        for (std::uint32_t i = 0; i != BufferCount; ++i)
+        const auto& Limits = VulkanContext_->GetPhysicalDeviceProperties().limits;
+
+        try
         {
-            std::string BufferName = std::format("{}_DataBuffer_Frame{}", DataBufferCreateInfo.Name, i);
-            vk::BufferCreateInfo BufferCreateInfo({}, BufferInfo.Size, BufferUsage);
-            BufferInfo.Buffers.emplace_back(VulkanContext_, BufferName, Allocator_, AllocationCreateInfo, BufferCreateInfo);
-            BufferInfo.Buffers[i].SetPersistentMapping(true);
+            if (BufferInfo.Type == vk::DescriptorType::eUniformBuffer ||
+                BufferInfo.Type == vk::DescriptorType::eUniformBufferDynamic)
+            {
+                BufferInfo.Offset = UniformHeapAllocator_.Allocate(BufferInfo.Size, Limits.minUniformBufferOffsetAlignment);
+            }
+            else
+            {
+                BufferInfo.Offset = StorageHeapAllocator_.Allocate(BufferInfo.Size, Limits.minStorageBufferOffsetAlignment);
+            }
+        }
+        catch (const std::exception& e)
+        {
+            NpgsCoreError("Heap allocation failed for data buffer {}: {}", DataBufferCreateInfo.Name, e.what());
         }
 
         DataBuffers_.emplace(DataBufferCreateInfo.Name, std::move(BufferInfo));
-    }
-
-    NPGS_INLINE void FShaderBufferManager::RemoveDataBuffer(std::string_view Name)
-    {
-        DataBuffers_.erase(Name);
     }
 
     template <typename StructType>
@@ -106,16 +109,39 @@ namespace Npgs
         const auto& BufferInfo = GetDataBufferInfo(Name);
         for (std::uint32_t i = 0; i != Config::Graphics::kMaxFrameInFlight; ++i)
         {
-            BufferInfo.Buffers[i].CopyData(0, 0, BufferInfo.Size, &Data);
+            const FDeviceLocalBuffer* TargetHeap = nullptr;
+            if (BufferInfo.Type == vk::DescriptorType::eUniformBuffer ||
+                BufferInfo.Type == vk::DescriptorType::eUniformBufferDynamic)
+            {
+                TargetHeap = &UniformDataHeaps_[i];
+            }
+            else
+            {
+                TargetHeap = &StorageDataHeaps_[i];
+            }
+
+            TargetHeap->CopyData(0, BufferInfo.Offset, BufferInfo.Size, &Data);
         }
     }
 
     template <typename StructType>
     requires std::is_class_v<StructType>
-    inline void FShaderBufferManager::UpdateDataBuffer(std::uint32_t FrameIndex, std::string_view Name, const StructType& Data) const
+    void FShaderBufferManager::UpdateDataBuffer(std::uint32_t FrameIndex, std::string_view Name, const StructType& Data) const
     {
         const auto& BufferInfo = GetDataBufferInfo(Name);
-        BufferInfo.Buffers[FrameIndex].CopyData(0, 0, BufferInfo.Size, &Data);
+
+        const FDeviceLocalBuffer* TargetHeap = nullptr;
+        if (BufferInfo.Type == vk::DescriptorType::eUniformBuffer ||
+            BufferInfo.Type == vk::DescriptorType::eUniformBufferDynamic)
+        {
+            TargetHeap = &UniformDataHeaps_[FrameIndex];
+        }
+        else
+        {
+            TargetHeap = &StorageDataHeaps_[FrameIndex];
+        }
+
+        TargetHeap->CopyData(0, BufferInfo.Offset, BufferInfo.Size, &Data);
     }
 
     template <typename FieldType>
@@ -125,13 +151,25 @@ namespace Npgs
         const auto& BufferInfo  = GetDataBufferInfo(BufferName);
         auto FieldOffsetAndSize = GetDataBufferFieldOffsetAndSize(BufferInfo, FieldName);
 
-        vk::DeviceSize FieldOffset = FieldOffsetAndSize.first;
-        vk::DeviceSize FieldSize   = FieldOffsetAndSize.second;
+        vk::DeviceSize FieldOffset    = FieldOffsetAndSize.first;
+        vk::DeviceSize FieldSize      = FieldOffsetAndSize.second;
+        vk::DeviceSize AbsoluteOffset = BufferInfo.Offset + FieldOffset;
 
         std::vector<TUpdater<FieldType>> Updaters;
         for (std::uint32_t i = 0; i != Config::Graphics::kMaxFrameInFlight; ++i)
         {
-            Updaters.emplace_back(BufferInfo.Buffers[i], FieldOffset, FieldSize);
+            const FDeviceLocalBuffer* TargetHeap = nullptr;
+            if (BufferInfo.Type == vk::DescriptorType::eUniformBuffer ||
+                BufferInfo.Type == vk::DescriptorType::eUniformBufferDynamic)
+            {
+                TargetHeap = &UniformDataHeaps_[i];
+            }
+            else
+            {
+                TargetHeap = &StorageDataHeaps_[i];
+            }
+
+            Updaters.emplace_back(*TargetHeap, AbsoluteOffset, FieldSize);
         }
 
         return Updaters;
@@ -144,10 +182,22 @@ namespace Npgs
         const auto& BufferInfo  = GetDataBufferInfo(BufferName);
         auto FieldOffsetAndSize = GetDataBufferFieldOffsetAndSize(BufferInfo, FieldName);
 
-        vk::DeviceSize FieldOffset = FieldOffsetAndSize.first;
-        vk::DeviceSize FieldSize   = FieldOffsetAndSize.second;
+        vk::DeviceSize FieldOffset    = FieldOffsetAndSize.first;
+        vk::DeviceSize FieldSize      = FieldOffsetAndSize.second;
+        vk::DeviceSize AbsoluteOffset = BufferInfo.Offset + FieldOffset;
 
-        return TUpdater<FieldType>(BufferInfo.Buffers[FrameIndex], FieldOffset, FieldSize);
+        const FDeviceLocalBuffer* TargetHeap = nullptr;
+        if (BufferInfo.Type == vk::DescriptorType::eUniformBuffer ||
+            BufferInfo.Type == vk::DescriptorType::eUniformBufferDynamic)
+        {
+            TargetHeap = &UniformDataHeaps_[FrameIndex];
+        }
+        else
+        {
+            TargetHeap = &StorageDataHeaps_[FrameIndex];
+        }
+
+        return TUpdater<FieldType>(*TargetHeap, AbsoluteOffset, FieldSize);
     }
 
     template <typename... Args>

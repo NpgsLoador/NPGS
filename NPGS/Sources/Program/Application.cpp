@@ -327,7 +327,7 @@ namespace Npgs
                 DepthMapCommandBuffer->setViewport(0, DepthMapViewport);
                 DepthMapCommandBuffer->setScissor(0, DepthMapScissor);
                 DepthMapCommandBuffer->bindPipeline(vk::PipelineBindPoint::eGraphics, DepthMapPipeline);
-                vk::DeviceSize MatricesAddress = ShaderBufferManager->GetDataBuffer(i, "Matrices").GetBuffer().GetDeviceAddress();
+                vk::DeviceSize MatricesAddress = ShaderBufferManager->GetDataBufferDeviceAddress(i, "Matrices");
                 DepthMapCommandBuffer->pushConstants<vk::DeviceAddress>(DepthMapPipelineLayout, vk::ShaderStageFlagBits::eVertex, 0, MatricesAddress);
                 DepthMapCommandBuffer->bindVertexBuffers(0, PlaneVertexBuffers, PlaneOffsets);
                 DepthMapCommandBuffer->draw(6, 1, 0, 0);
@@ -363,7 +363,7 @@ namespace Npgs
 
                 SceneMergeCommandBuffer.Begin(GBufferMergeInheritanceInfo, vk::CommandBufferUsageFlagBits::eSimultaneousUse);
                 SceneMergeCommandBuffer->bindPipeline(vk::PipelineBindPoint::eCompute, PbrSceneMergePipeline);
-                vk::DeviceAddress LightArgsAddress = ShaderBufferManager->GetDataBuffer(i, "LightArgs").GetBuffer().GetDeviceAddress();
+                vk::DeviceAddress LightArgsAddress = ShaderBufferManager->GetDataBufferDeviceAddress(i, "LightArgs");
                 SceneMergeCommandBuffer->pushConstants<vk::DeviceAddress>(PbrSceneMergePipelineLayout, vk::ShaderStageFlagBits::eCompute, 0, LightArgsAddress);
                 SceneMergeCommandBuffer->bindDescriptorBuffersEXT(DescriptorBufferBindingInfos);
                 Offsets = ShaderBufferManager->GetDescriptorBindingOffsets("SceneMergeDescriptorBuffer", 1, 2);
@@ -1236,17 +1236,10 @@ namespace Npgs
             .Usage   = vk::DescriptorType::eStorageBuffer
         };
 
-        VmaAllocationCreateInfo AllocationCreateInfo
-        {
-            .flags = VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT,
-            .usage = VMA_MEMORY_USAGE_CPU_TO_GPU,
-            .requiredFlags = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT | VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT,
-        };
-
         auto* ShaderBufferManager = EngineResourceServices->GetShaderBufferManager();
-        ShaderBufferManager->CreateDataBuffers<FMatrices>(MatricesCreateInfo, AllocationCreateInfo);
-        ShaderBufferManager->CreateDataBuffers<FMvpMatrices>(MvpMatricesCreateInfo, AllocationCreateInfo);
-        ShaderBufferManager->CreateDataBuffers<FLightArgs>(LightArgsCreateInfo, AllocationCreateInfo);
+        ShaderBufferManager->AllocateDataBuffers<FMatrices>(MatricesCreateInfo);
+        ShaderBufferManager->AllocateDataBuffers<FMvpMatrices>(MvpMatricesCreateInfo);
+        ShaderBufferManager->AllocateDataBuffers<FLightArgs>(LightArgsCreateInfo);
     }
 
     void FApplication::BindDescriptors()

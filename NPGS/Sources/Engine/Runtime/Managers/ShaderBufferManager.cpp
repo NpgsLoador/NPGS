@@ -128,28 +128,54 @@ namespace Npgs
         Properties2.pNext = &DescriptorBufferProperties_;
         VulkanContext_->GetPhysicalDevice().getProperties2(&Properties2);
 
-        InitializeHeaps(64uz * 1024 * 1024, 4uz * 1024 * 1024);
+        InitializeHeaps();
     }
 
     FShaderBufferManager::~FShaderBufferManager()
     {
         DataBuffers_.clear();
         DescriptorBuffers_.clear();
+
         ResourceDescriptorHeaps_.clear();
         SamplerDescriptorHeaps_.clear();
+        UniformDataHeaps_.clear();
+        StorageDataHeaps_.clear();
+
         vmaDestroyAllocator(Allocator_);
     }
 
-    const FDeviceLocalBuffer& FShaderBufferManager::GetDataBuffer(std::uint32_t FrameIndex, std::string_view BufferName) const
+    void FShaderBufferManager::FreeDataBuffer(std::string_view Name)
     {
-        auto it = DataBuffers_.find(BufferName);
-        if (it == DataBuffers_.end())
+        const auto& BufferInfo = GetDataBufferInfo(Name);
+        if (BufferInfo.Type == vk::DescriptorType::eUniformBuffer ||
+            BufferInfo.Type == vk::DescriptorType::eUniformBufferDynamic)
         {
-            throw std::out_of_range(std::format(R"(Data buffer "{}" not found.)", BufferName));
+            UniformHeapAllocator_.Free(BufferInfo.Offset, BufferInfo.Size);
+        }
+        else
+        {
+            StorageHeapAllocator_.Free(BufferInfo.Offset, BufferInfo.Size);
         }
 
-        auto& BufferInfo = it->second;
-        return BufferInfo.Buffers[FrameIndex];
+        DataBuffers_.erase(Name);
+    }
+
+    vk::DeviceSize FShaderBufferManager::GetDataBufferDeviceAddress(std::uint32_t FrameIndex, std::string_view BufferName) const
+    {
+        const auto& BufferInfo = GetDataBufferInfo(BufferName);
+        vk::DeviceSize HeapDeviceAddress = 0;
+
+        if (BufferInfo.Type == vk::DescriptorType::eUniformBuffer ||
+            BufferInfo.Type == vk::DescriptorType::eUniformBufferDynamic)
+        {
+            HeapDeviceAddress = UniformDataHeaps_.at(FrameIndex).GetBuffer().GetDeviceAddress();
+        }
+        else
+        {
+            HeapDeviceAddress = StorageDataHeaps_.at(FrameIndex).GetBuffer().GetDeviceAddress();
+        }
+
+        return HeapDeviceAddress + BufferInfo.Offset;
     }
 
     void FShaderBufferManager::AllocateDescriptorBuffer(const FDescriptorBufferCreateInfo& DescriptorBufferCreateInfo)
@@ -226,13 +252,22 @@ namespace Npgs
         return it->second.at(SetBindingPair).first;
     }
 
-    void FShaderBufferManager::InitializeHeaps(vk::DeviceSize ResourceHeapSize, vk::DeviceSize SamplerHeapSize)
+    void FShaderBufferManager::InitializeHeaps()
     {
+        vk::DeviceSize ResourceHeapSize = 1024uz * 1024;
+        vk::DeviceSize SamplerHeapSize  = 64uz   * 1024;
+        vk::DeviceSize UniformHeapSize  = 128uz  * 1024;
+        vk::DeviceSize StorageHeapSize  = 256uz  * 1024;
+
         ResourceHeapAllocator_.Initialize(ResourceHeapSize);
         SamplerHeapAllocator_.Initialize(SamplerHeapSize);
+        UniformHeapAllocator_.Initialize(UniformHeapSize);
+        StorageHeapAllocator_.Initialize(StorageHeapSize);
 
         ResourceDescriptorHeaps_.reserve(Config::Graphics::kMaxFrameInFlight);
         SamplerDescriptorHeaps_.reserve(Config::Graphics::kMaxFrameInFlight);
+        UniformDataHeaps_.reserve(Config::Graphics::kMaxFrameInFlight);
+        StorageDataHeaps_.reserve(Config::Graphics::kMaxFrameInFlight);
 
         VmaAllocationCreateInfo AllocationCreateInfo
         {
@@ -265,6 +300,26 @@ namespace Npgs
                                                  AllocationCreateInfo, SamplerHeapCreateInfo);
             SamplerDescriptorHeaps_.back().SetPersistentMapping(true);
             SamplerDescriptorHeaps_.back().GetMemory().MapMemoryForSubmit(0, SamplerHeapSize, TempTarget);
+
+            auto UniformHeapUsage = vk::BufferUsageFlagBits::eUniformBuffer       |
+                                    vk::BufferUsageFlagBits::eShaderDeviceAddress |
+                                    vk::BufferUsageFlagBits::eTransferDst;
+
+            vk::BufferCreateInfo UniformHeapCreateInfo({}, UniformHeapSize, UniformHeapUsage);
+            UniformDataHeaps_.emplace_back(VulkanContext_, std::format("UniformHeap_Frame{}", i), Allocator_,
+                                           AllocationCreateInfo, UniformHeapCreateInfo);
+            UniformDataHeaps_.back().SetPersistentMapping(true);
+            UniformDataHeaps_.back().GetMemory().MapMemoryForSubmit(0, UniformHeapSize, TempTarget);
+
+            auto StorageHeapUsage = vk::BufferUsageFlagBits::eStorageBuffer       |
+                                    vk::BufferUsageFlagBits::eShaderDeviceAddress |
+                                    vk::BufferUsageFlagBits::eTransferDst;
+
+            vk::BufferCreateInfo StorageHeapCreateInfo({}, StorageHeapSize, StorageHeapUsage);
+            StorageDataHeaps_.emplace_back(VulkanContext_, std::format("StorageHeap_Frame{}", i), Allocator_,
+                                           AllocationCreateInfo, StorageHeapCreateInfo);
+            StorageDataHeaps_.back().SetPersistentMapping(true);
+            StorageDataHeaps_.back().GetMemory().MapMemoryForSubmit(0, StorageHeapSize, TempTarget);
         }
     }
 
@@ -392,7 +447,18 @@ namespace Npgs
                     const auto& DataBuffer = DataBuffers_.at(Name);
                     auto* Target = GetTargetAddress(DataBuffer.CreateInfo.Set, DataBuffer.CreateInfo.Binding);
 
-                    vk::DescriptorAddressInfoEXT AddressInfo(DataBuffer.Buffers[i].GetBuffer().GetDeviceAddress(), DataBuffer.Size);
+                    vk::DeviceSize HeapAddress = 0;
+                    if (DataBuffer.CreateInfo.Usage == vk::DescriptorType::eUniformBuffer ||
+                        DataBuffer.CreateInfo.Usage == vk::DescriptorType::eUniformBufferDynamic)
+                    {
+                        HeapAddress = UniformDataHeaps_[i].GetBuffer().GetDeviceAddress();
+                    }
+                    else
+                    {
+                        HeapAddress = StorageDataHeaps_[i].GetBuffer().GetDeviceAddress();
+                    }
+
+                    vk::DescriptorAddressInfoEXT AddressInfo(HeapAddress + DataBuffer.Offset, DataBuffer.Size);
                     vk::DescriptorGetInfoEXT GetInfo(DataBuffer.CreateInfo.Usage, &AddressInfo);
 
                     Device.getDescriptorEXT(GetInfo, GetDescriptorSize(DataBuffer.CreateInfo.Usage), Target);
