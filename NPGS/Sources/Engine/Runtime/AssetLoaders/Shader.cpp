@@ -2,6 +2,7 @@
 #include "Shader.hpp"
 
 #include <cstddef>
+#include <algorithm>
 #include <exception>
 #include <filesystem>
 #include <numeric>
@@ -9,7 +10,7 @@
 #include <stdexcept>
 #include <utility>
 
-#include <spirv_cross/spirv_reflect.hpp>
+#include <SPIRV-Reflect/spirv_reflect.h>
 
 #include "Engine/Core/Logger.hpp"
 #include "Engine/Runtime/Managers/AssetManager.hpp"
@@ -36,85 +37,36 @@ namespace Npgs
                 return vk::ShaderStageFlagBits::eAll;
         }
 
-        vk::Format GetVectorFormat(spirv_cross::SPIRType::BaseType BaseType, std::uint32_t Components)
+        vk::DescriptorType GetDescriptorType(SpvReflectDescriptorType ReflectDescriptorType)
         {
-            switch (BaseType)
+            switch (ReflectDescriptorType)
             {
-            case spirv_cross::SPIRType::BaseType::Int:
-                switch (Components)
-                {
-                case 1:
-                    return vk::Format::eR32Sint;
-                case 2:
-                    return vk::Format::eR32G32Sint;
-                case 3:
-                    return vk::Format::eR32G32B32Sint;
-                case 4:
-                    return vk::Format::eR32G32B32A32Sint;
-                default:
-                    return vk::Format::eUndefined;
-                }
-            case spirv_cross::SPIRType::BaseType::UInt:
-                switch (Components)
-                {
-                case 1:
-                    return vk::Format::eR32Uint;
-                case 2:
-                    return vk::Format::eR32G32Uint;
-                case 3:
-                    return vk::Format::eR32G32B32Uint;
-                case 4:
-                    return vk::Format::eR32G32B32A32Uint;
-                default:
-                    return vk::Format::eUndefined;
-                }
-            case spirv_cross::SPIRType::BaseType::Float:
-                switch (Components)
-                {
-                case 1:
-                    return vk::Format::eR32Sfloat;
-                case 2:
-                    return vk::Format::eR32G32Sfloat;
-                case 3:
-                    return vk::Format::eR32G32B32Sfloat;
-                case 4:
-                    return vk::Format::eR32G32B32A32Sfloat;
-                default:
-                    return vk::Format::eUndefined;
-                }
-            case spirv_cross::SPIRType::BaseType::Double:
-                switch (Components)
-                {
-                case 1:
-                    return vk::Format::eR64Sfloat;
-                case 2:
-                    return vk::Format::eR64G64Sfloat;
-                case 3:
-                    return vk::Format::eR64G64B64Sfloat;
-                case 4:
-                    return vk::Format::eR64G64B64A64Sfloat;
-                default:
-                    return vk::Format::eUndefined;
-                }
+            case SPV_REFLECT_DESCRIPTOR_TYPE_SAMPLER:
+                return vk::DescriptorType::eSampler;
+            case SPV_REFLECT_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER:
+                return vk::DescriptorType::eCombinedImageSampler;
+            case SPV_REFLECT_DESCRIPTOR_TYPE_SAMPLED_IMAGE:
+                return vk::DescriptorType::eSampledImage;
+            case SPV_REFLECT_DESCRIPTOR_TYPE_STORAGE_IMAGE:
+                return vk::DescriptorType::eStorageImage;
+            case SPV_REFLECT_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER:
+                return vk::DescriptorType::eUniformTexelBuffer;
+            case SPV_REFLECT_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER:
+                return vk::DescriptorType::eStorageTexelBuffer;
+            case SPV_REFLECT_DESCRIPTOR_TYPE_UNIFORM_BUFFER:
+                return vk::DescriptorType::eUniformBuffer;
+            case SPV_REFLECT_DESCRIPTOR_TYPE_STORAGE_BUFFER:
+                return vk::DescriptorType::eStorageBuffer;
+            case SPV_REFLECT_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC:
+                return vk::DescriptorType::eUniformBufferDynamic;
+            case SPV_REFLECT_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC:
+                return vk::DescriptorType::eStorageBufferDynamic;
+            case SPV_REFLECT_DESCRIPTOR_TYPE_INPUT_ATTACHMENT:
+                return vk::DescriptorType::eInputAttachment;
+            case SPV_REFLECT_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR:
+                return vk::DescriptorType::eAccelerationStructureKHR;
             default:
-                return vk::Format::eUndefined;
-            }
-        }
-
-        std::uint32_t GetTypeSize(spirv_cross::SPIRType::BaseType BaseType)
-        {
-            switch (BaseType)
-            {
-            case spirv_cross::SPIRType::BaseType::Int:
-                return sizeof(int);
-            case spirv_cross::SPIRType::BaseType::UInt:
-                return sizeof(unsigned int);
-            case spirv_cross::SPIRType::BaseType::Float:
-                return sizeof(float);
-            case spirv_cross::SPIRType::BaseType::Double:
-                return sizeof(double);
-            default:
-                return 0;
+                return vk::DescriptorType::eMutableEXT;
             }
         }
     }
@@ -174,7 +126,7 @@ namespace Npgs
             return {};
         }
 
-        std::uint32_t MaxSet = DescriptorSetLayoutsMap_.rbegin()->first;
+        const std::uint32_t MaxSet = DescriptorSetLayoutsMap_.rbegin()->first;
         std::vector<vk::DescriptorSetLayout> NativeTypeLayouts(MaxSet + 1);
 
         std::uint32_t LastFilledIndex = 0;
@@ -243,258 +195,248 @@ namespace Npgs
 
     void FShader::ReflectShader(FShaderInfo&& ShaderInfo, const FResourceInfo& ResourceInfo)
     {
-        std::unique_ptr<spirv_cross::CompilerReflection> Reflection;
-        std::unique_ptr<spirv_cross::ShaderResources>    Resources;
-        try
+        auto ShaderCode = ShaderInfo.Code.StripData<std::uint32_t>();
+        spv_reflect::ShaderModule ShaderModule(ShaderCode, SPV_REFLECT_MODULE_FLAG_NO_COPY);
+        if (ShaderModule.GetResult() != SPV_REFLECT_RESULT_SUCCESS)
         {
-            Reflection = std::make_unique<spirv_cross::CompilerReflection>(ShaderInfo.Code.StripData<std::uint32_t>());
-            Resources  = std::make_unique<spirv_cross::ShaderResources>(Reflection->get_shader_resources());
-        }
-        catch (const spirv_cross::CompilerError& e)
-        {
-            NpgsCoreError("SPIR-V Cross compiler error: {}", e.what());
-            return;
-        }
-        catch (const std::exception& e)
-        {
-            NpgsCoreError("Shader reflection failed: {}", e.what());
+            NpgsCoreError("Failed to reflect shader.");
             return;
         }
 
-        for (const auto& PushConstant : Resources->push_constant_buffers)
-        {
-            const auto&   Type        = Reflection->get_type(PushConstant.type_id);
-            std::size_t   BufferSize  = Reflection->get_declared_struct_size(Type);
-            std::uint32_t TotalOffset = 0;
+        std::uint32_t Count = 0;
 
-            if (ReflectionInfo_.PushConstants.size() > 0)
+        // Push Constants
+        ShaderModule.EnumeratePushConstantBlocks(&Count, nullptr);
+        if (Count > 0)
+        {
+            std::vector<SpvReflectBlockVariable*> PushConstants(Count);
+            ShaderModule.EnumeratePushConstantBlocks(&Count, PushConstants.data());
+
+            for (const auto* Block : PushConstants)
             {
-                TotalOffset = ReflectionInfo_.PushConstants.back().offset + ReflectionInfo_.PushConstants.back().size;
-            }
+                if (ResourceInfo.PushConstantInfos.count(ShaderInfo.Stage))
+                {
+                    const auto& ConfiguredNames = ResourceInfo.PushConstantInfos.at(ShaderInfo.Stage);
+                    for (std::uint32_t i = 0; i != Block->member_count; ++i)
+                    {
+                        const auto&      Member     = Block->members[i];
+                        std::string_view MemberName = ConfiguredNames[i];
 
-            const auto& PushConstantNames = ResourceInfo.PushConstantInfos.at(ShaderInfo.Stage);
-            for (std::uint32_t i = 0; i != Type.member_types.size(); ++i)
+                        if (!MemberName.empty())
+                        {
+                            PushConstantOffsetsMap_[std::string(MemberName)] = Member.offset;
+                            NpgsCoreTrace("  Member \"{}\" at offset={}", MemberName, Member.offset);
+                        }
+                    }
+                }
+
+                NpgsCoreTrace("Push Constant \"{}\" size={} bytes, offset={}",
+                              Block->name ? Block->name : "unnamed", Block->size, Block->offset);
+
+                vk::PushConstantRange PushConstantRange(ShaderInfo.Stage, Block->offset, Block->size);
+                AddPushConstantRange(PushConstantRange);
+            }
+        }
+
+        // Descriptor Sets
+        Count = 0;
+        ShaderModule.EnumerateDescriptorSets(&Count, nullptr);
+        if (Count > 0)
+        {
+            std::vector<SpvReflectDescriptorSet*> DescriptorSets(Count);
+            ShaderModule.EnumerateDescriptorSets(&Count, DescriptorSets.data());
+
+            for (const auto* Set : DescriptorSets)
             {
-                const std::string& MemberName   = PushConstantNames[i];
-                std::uint32_t      MemberOffset = Reflection->get_member_decoration(Type.self, i, spv::DecorationOffset);
+                for (std::uint32_t i = 0; i != Set->binding_count; ++i)
+                {
+                    const auto* Binding = Set->bindings[i];
+                    vk::DescriptorType Type = GetDescriptorType(Binding->descriptor_type);
+                    std::uint32_t ArraySize = Binding->count;
 
-                PushConstantOffsetsMap_[MemberName] = MemberOffset;
-                NpgsCoreTrace("  Member \"{}\" at offset={}", MemberName, MemberOffset);
+                    NpgsCoreTrace("Descriptor \"{}\" at set={}, binding={}, type={}, array_size={}",
+                                  Binding->name ? Binding->name : "unnamed", Set->set,
+                                  Binding->binding, std::to_underlying(Type), ArraySize);
+
+                    vk::DescriptorSetLayoutBinding LayoutBinding = vk::DescriptorSetLayoutBinding()
+                        .setBinding(Binding->binding)
+                        .setDescriptorType(Type)
+                        .setDescriptorCount(ArraySize)
+                        .setStageFlags(ShaderInfo.Stage);
+
+                    AddDescriptorSetBindings(Set->set, LayoutBinding);
+                }
             }
-
-            NpgsCoreTrace("Push Constant \"{}\" size={} bytes, offset={}", PushConstant.name, BufferSize - TotalOffset, TotalOffset);
-            vk::PushConstantRange PushConstantRange(ShaderInfo.Stage, TotalOffset, static_cast<std::uint32_t>(BufferSize - TotalOffset));
-            ReflectionInfo_.PushConstants.push_back(std::move(PushConstantRange));
         }
 
-        std::unordered_map<std::uint64_t, bool> DynemicBufferMap;
-        for (const auto& Buffer : ResourceInfo.ShaderBufferInfos)
-        {
-            std::uint64_t Key = (static_cast<std::uint64_t>(Buffer.Set) << 32) | Buffer.Binding;
-            DynemicBufferMap[Key] = Buffer.bIsDynamic;
-        }
-
-        auto CheckDynamic = [&DynemicBufferMap](std::uint32_t Set, std::uint32_t Binding) -> bool
-        {
-            std::uint64_t Key = (static_cast<std::uint64_t>(Set) << 32) | Binding;
-            auto it = DynemicBufferMap.find(Key);
-            return it != DynemicBufferMap.end() ? it->second : false;
-        };
-
-        for (const auto& UniformBuffer : Resources->uniform_buffers)
-        {
-            std::uint32_t Set     = Reflection->get_decoration(UniformBuffer.id, spv::DecorationDescriptorSet);
-            std::uint32_t Binding = Reflection->get_decoration(UniformBuffer.id, spv::DecorationBinding);
-
-            const auto&   Type       = Reflection->get_type(UniformBuffer.type_id);
-            std::uint32_t ArraySize  = Type.array.empty() ? 1 : Type.array[0];
-            bool          bIsDynamic = CheckDynamic(Set, Binding);
-
-            NpgsCoreTrace("UBO \"{}\" at set={}, binding={} is {}, array_size={}",
-                          UniformBuffer.name, Set, Binding, bIsDynamic ? "dynamic" : "static", ArraySize);
-
-            vk::DescriptorSetLayoutBinding LayoutBinding = vk::DescriptorSetLayoutBinding()
-                .setBinding(Binding)
-                .setDescriptorType(bIsDynamic ? vk::DescriptorType::eUniformBufferDynamic : vk::DescriptorType::eUniformBuffer)
-                .setDescriptorCount(ArraySize)
-                .setStageFlags(ShaderInfo.Stage);
-
-            AddDescriptorSetBindings(Set, LayoutBinding);
-        }
-
-        for (const auto& StorageBuffer : Resources->storage_buffers)
-        {
-            std::uint32_t Set     = Reflection->get_decoration(StorageBuffer.id, spv::DecorationDescriptorSet);
-            std::uint32_t Binding = Reflection->get_decoration(StorageBuffer.id, spv::DecorationBinding);
-
-            const auto&   Type       = Reflection->get_type(StorageBuffer.type_id);
-            std::uint32_t ArraySize  = Type.array.empty() ? 1 : Type.array[0];
-            bool          bIsDynamic = CheckDynamic(Set, Binding);
-
-            NpgsCoreTrace("SSBO \"{}\" at set={}, binding={} is {}, array_size={}",
-                          StorageBuffer.name, Set, Binding, bIsDynamic ? "dynamic" : "static", ArraySize);
-
-            vk::DescriptorSetLayoutBinding LayoutBinding = vk::DescriptorSetLayoutBinding()
-                .setBinding(Binding)
-                .setDescriptorType(bIsDynamic ? vk::DescriptorType::eStorageBufferDynamic : vk::DescriptorType::eStorageBuffer)
-                .setDescriptorCount(ArraySize)
-                .setStageFlags(ShaderInfo.Stage);
-
-            AddDescriptorSetBindings(Set, LayoutBinding);
-        }
-
-        for (const auto& SampledImage : Resources->sampled_images)
-        {
-            std::uint32_t Set     = Reflection->get_decoration(SampledImage.id, spv::DecorationDescriptorSet);
-            std::uint32_t Binding = Reflection->get_decoration(SampledImage.id, spv::DecorationBinding);
-
-            const auto&   Type      = Reflection->get_type(SampledImage.type_id);
-            std::uint32_t ArraySize = Type.array.empty() ? 1 : Type.array[0];
-
-            NpgsCoreTrace("Sampled Image \"{}\" at set={}, binding={}, array_size={}",
-                          SampledImage.name, Set, Binding, ArraySize);
-
-            vk::DescriptorSetLayoutBinding LayoutBinding = vk::DescriptorSetLayoutBinding()
-                .setBinding(Binding)
-                .setDescriptorType(vk::DescriptorType::eCombinedImageSampler)
-                .setDescriptorCount(ArraySize)
-                .setStageFlags(ShaderInfo.Stage);
-
-            AddDescriptorSetBindings(Set, LayoutBinding);
-        }
-
-        for (const auto& Sampler : Resources->separate_samplers)
-        {
-            std::uint32_t Set     = Reflection->get_decoration(Sampler.id, spv::DecorationDescriptorSet);
-            std::uint32_t Binding = Reflection->get_decoration(Sampler.id, spv::DecorationBinding);
-
-            const auto&   Type      = Reflection->get_type(Sampler.type_id);
-            std::uint32_t ArraySize = Type.array.empty() ? 1 : Type.array[0];
-
-            NpgsCoreTrace("Separate Sampler \"{}\" at set={}, binding={}, array_size={}", Sampler.name, Set, Binding, ArraySize);
-
-            vk::DescriptorSetLayoutBinding LayoutBinding = vk::DescriptorSetLayoutBinding()
-                .setBinding(Binding)
-                .setDescriptorType(vk::DescriptorType::eSampler)
-                .setDescriptorCount(ArraySize)
-                .setStageFlags(ShaderInfo.Stage);
-
-            AddDescriptorSetBindings(Set, LayoutBinding);
-        }
-
-        for (const auto& Image : Resources->separate_images)
-        {
-            std::uint32_t Set     = Reflection->get_decoration(Image.id, spv::DecorationDescriptorSet);
-            std::uint32_t Binding = Reflection->get_decoration(Image.id, spv::DecorationBinding);
-
-            const auto&   Type      = Reflection->get_type(Image.type_id);
-            std::uint32_t ArraySize = Type.array.empty() ? 1 : Type.array[0];
-
-            NpgsCoreTrace("Separate Image \"{}\" at set={}, binding={}, array_size={}", Image.name, Set, Binding, ArraySize);
-
-            vk::DescriptorSetLayoutBinding LayoutBinding = vk::DescriptorSetLayoutBinding()
-                .setBinding(Binding)
-                .setDescriptorType(vk::DescriptorType::eSampledImage)
-                .setDescriptorCount(ArraySize)
-                .setStageFlags(ShaderInfo.Stage);
-
-            AddDescriptorSetBindings(Set, LayoutBinding);
-        }
-
-        for (const auto& Image : Resources->storage_images)
-        {
-            std::uint32_t Set     = Reflection->get_decoration(Image.id, spv::DecorationDescriptorSet);
-            std::uint32_t Binding = Reflection->get_decoration(Image.id, spv::DecorationBinding);
-
-            const auto&   Type      = Reflection->get_type(Image.type_id);
-            std::uint32_t ArraySize = Type.array.empty() ? 1 : Type.array[0];
-
-            NpgsCoreTrace("Storage Image \"{}\" at set={}, binding={}, array_size={}", Image.name, Set, Binding, ArraySize);
-
-            vk::DescriptorSetLayoutBinding LayoutBinding = vk::DescriptorSetLayoutBinding()
-                .setBinding(Binding)
-                .setDescriptorType(vk::DescriptorType::eStorageImage)
-                .setDescriptorCount(ArraySize)
-                .setStageFlags(ShaderInfo.Stage);
-
-            AddDescriptorSetBindings(Set, LayoutBinding);
-        }
-
+        // Vertex Inputs
         if (ShaderInfo.Stage == vk::ShaderStageFlagBits::eVertex)
         {
-            std::unordered_map<std::uint32_t, FVertexBufferInfo> BufferMap;
-            for (const auto& Buffer : ResourceInfo.VertexBufferInfos)
+            Count = 0;
+            ShaderModule.EnumerateInputVariables(&Count, nullptr);
+            if (Count > 0)
             {
-                BufferMap[Buffer.Binding] = Buffer;
-            }
+                std::vector<SpvReflectInterfaceVariable*> InputVariables(Count);
+                ShaderModule.EnumerateInputVariables(&Count, InputVariables.data());
 
-            std::unordered_map<std::uint32_t, std::pair<std::uint32_t, std::uint32_t>> LocationMap;
-            for (const auto& Vertex : ResourceInfo.VertexAttributeInfos)
-            {
-                LocationMap[Vertex.Location] = std::make_pair(Vertex.Binding, Vertex.Offset);
-            }
-
-            std::uint32_t CurrentBinding = 0;
-            std::uint32_t CurrentOffset  = 0;
-            std::set<vk::VertexInputBindingDescription> UniqueBindings;
-
-            for (const auto& Input : Resources->stage_inputs)
-            {
-                const auto&   Type     = Reflection->get_type(Input.type_id);
-                std::uint32_t Location = Reflection->get_decoration(Input.id, spv::DecorationLocation);
-
-                auto LocationIt = LocationMap.find(Location);
-                std::uint32_t Binding = LocationIt != LocationMap.end() ? LocationIt->second.first  : CurrentBinding;
-                std::uint32_t Offset  = LocationIt != LocationMap.end() ? LocationIt->second.second : CurrentOffset;
-
-                auto BufferIt = BufferMap.find(Binding);
-                std::uint32_t Stride = BufferIt != BufferMap.end() ? BufferIt->second.Stride : GetTypeSize(Type.basetype) * Type.vecsize;
-                bool bIsPerInstance  = BufferIt != BufferMap.end() ? BufferIt->second.bIsPerInstance : false;
-
-                UniqueBindings.emplace(Binding, Stride, bIsPerInstance ? vk::VertexInputRate::eInstance : vk::VertexInputRate::eVertex);
-
-                bool bIsMatrix = Type.columns > 1;
-                if (bIsMatrix)
+                std::ranges::sort(InputVariables, [](const auto* Lhs, const auto* Rhs) -> bool
                 {
-                    Stride = GetTypeSize(Type.basetype) * Type.columns * Type.vecsize;
-                    for (std::uint32_t Column = 0; Column != Type.columns; ++Column)
+                    return Lhs->location < Rhs->location;
+                });
+
+                std::unordered_map<std::uint32_t, FVertexBufferInfo> BufferMap;
+                for (const auto& Buffer : ResourceInfo.VertexBufferInfos)
+                {
+                    BufferMap[Buffer.Binding] = Buffer;
+                }
+
+                // [Location, [Binding, Offset]]
+                std::unordered_map<std::uint32_t, std::pair<std::uint32_t, std::uint32_t>> LocationMap;
+                for (const auto& Vertex : ResourceInfo.VertexAttributeInfos)
+                {
+                    LocationMap[Vertex.Location] = std::make_pair(Vertex.Binding, Vertex.Offset);
+                }
+
+                std::uint32_t CurrentBinding = 0;
+                std::uint32_t CurrentOffset  = 0;
+                std::set<vk::VertexInputBindingDescription> UniqueBindings;
+
+                for (const auto* Input : InputVariables)
+                {
+                    if (Input->decoration_flags & SPV_REFLECT_DECORATION_BUILT_IN)
                     {
-                        ReflectionInfo_.VertexInputAttributes.emplace_back(
-                            Location + Column, Binding, GetVectorFormat(Type.basetype, Type.vecsize),
-                            Offset + GetTypeSize(Type.basetype) * Column * Type.vecsize);
+                        continue;
                     }
 
-                    NpgsCoreTrace("Vertex Attribute \"{}\" at location={}, binding={}, offset={}, stride={}, rate={} (matrix)",
-                                  Input.name, Location, Binding, Offset, Stride, bIsPerInstance ? "per instance" : "per vertex");
-                }
-                else
-                {
-                    ReflectionInfo_.VertexInputAttributes.emplace_back(
-                        Location, Binding, GetVectorFormat(Type.basetype, Type.vecsize), Offset);
+                    const auto* TypeDescription = Input->type_description;
 
-                    NpgsCoreTrace("Vertex Attribute \"{}\" at location={}, binding={}, offset={}, stride={}, rate={}",
-                                  Input.name, Location, Binding, Offset, Stride, bIsPerInstance ? "per instance" : "per vertex");
+                    std::uint32_t Binding  = 0;
+                    std::uint32_t Offset   = 0;
+                    std::uint32_t Location = Input->location;
+                    auto LocationIt = LocationMap.find(Location);
+                    if (LocationIt != LocationMap.end())
+                    {
+                        Binding = LocationIt->second.first;
+                        Offset  = LocationIt->second.second;
+                    }
+                    else
+                    {
+                        Binding = CurrentBinding;
+                        Offset  = CurrentOffset;
+                    }
+
+                    std::uint32_t MatrixColumns = Input->numeric.matrix.column_count;
+                    std::uint32_t MatrixRows    = Input->numeric.matrix.row_count;
+                    std::uint32_t VectorSize    = Input->numeric.vector.component_count;
+                    VectorSize = VectorSize == 0 ? 1 : VectorSize;
+
+                    std::uint32_t Width        = Input->numeric.scalar.width;
+                    std::uint32_t ScalarSize   = Width / 8;
+                    std::uint32_t VariableSize = 0;
+                    if (MatrixColumns > 1)
+                    {
+                        VariableSize = ScalarSize * MatrixRows * MatrixColumns;
+                    }
+                    else
+                    {
+                        VariableSize = ScalarSize * VectorSize;
+                    }
+
+                    std::uint32_t Stride = 0;
+                    bool bIsPerInstance  = false;
+                    auto BufferIt = BufferMap.find(Binding);
+                    if (BufferIt != BufferMap.end())
+                    {
+                        Stride         = BufferIt->second.Stride;
+                        bIsPerInstance = BufferIt->second.bIsPerInstance;
+                    }
+                    else
+                    {
+                        Stride = VariableSize;
+                    }
+
+                    UniqueBindings.emplace(Binding, Stride, bIsPerInstance ? vk::VertexInputRate::eInstance : vk::VertexInputRate::eVertex);
+                
+                    if (MatrixColumns > 1)
+                    {
+                        vk::Format ColumnFormat = static_cast<vk::Format>(Input->format);
+                        for (std::uint32_t i = 0; i != MatrixColumns; ++i)
+                        {
+                            ReflectionInfo_.VertexInputAttributes.emplace_back(
+                                Location + i, Binding, ColumnFormat, Offset + (ScalarSize * MatrixRows * i));
+                        }
+
+                        NpgsCoreTrace("Vertex Attribute \"{}\" at location={}, binding={}, offset={}, stride={}, rate={} (matrix)",
+                                      Input->name ? Input->name : "unnamed", Location, Binding, Offset, Stride,
+                                      bIsPerInstance ? "per instance" : "per vertex");
+                    }
+                    else
+                    {
+                        vk::Format Format = static_cast<vk::Format>(Input->format);
+                        ReflectionInfo_.VertexInputAttributes.emplace_back(Location, Binding, Format, Offset);
+
+                        NpgsCoreTrace("Vertex Attribute \"{}\" at location={}, binding={}, offset={}, stride={}, rate={}",
+                                      Input->name ? Input->name : "unnamed", Location, Binding, Offset, Stride,
+                                      bIsPerInstance ? "per instance" : "per vertex");
+                    }
+
+                    if (LocationIt == LocationMap.end())
+                    {
+                        CurrentOffset += VariableSize;
+                    }
                 }
 
-                if (LocationIt == LocationMap.end())
-                {
-                    ++CurrentBinding;
-                }
+                ReflectionInfo_.VertexInputBindings =
+                    std::vector<vk::VertexInputBindingDescription>(UniqueBindings.begin(), UniqueBindings.end());
             }
-
-            ReflectionInfo_.VertexInputBindings =
-                std::vector<vk::VertexInputBindingDescription>(UniqueBindings.begin(), UniqueBindings.end());
         }
 
         NpgsCoreTrace("Shader reflection completed.");
     }
 
-    void FShader::AddDescriptorSetBindings(std::uint32_t Set, vk::DescriptorSetLayoutBinding& LayoutBinding)
+    void FShader::AddPushConstantRange(vk::PushConstantRange NewRange)
+    {
+        if (NewRange.size == 0)
+        {
+            return;
+        }
+
+        for (auto it = ReflectionInfo_.PushConstants.begin(); it != ReflectionInfo_.PushConstants.end();)
+        {
+            const auto& ExistingRange = *it;
+            bool bOverlaps = NewRange.offset < (ExistingRange.offset + ExistingRange.size) &&
+                             ExistingRange.offset < (NewRange.offset + NewRange.size);
+
+            if (bOverlaps)
+            {
+                std::uint32_t MinOffset = std::min(NewRange.offset, ExistingRange.offset);
+                std::uint32_t MaxEnd    = std::max(NewRange.offset + NewRange.size, ExistingRange.offset + ExistingRange.size);
+
+                NewRange.offset      = MinOffset;
+                NewRange.size        = MaxEnd - MinOffset;
+                NewRange.stageFlags |= ExistingRange.stageFlags;
+
+                it = ReflectionInfo_.PushConstants.erase(it);
+            }
+            else
+            {
+                ++it;
+            }
+        }
+
+        ReflectionInfo_.PushConstants.push_back(NewRange);
+        std::ranges::sort(ReflectionInfo_.PushConstants, [](const auto& Lhs, const auto& Rhs) -> bool
+        {
+            return Lhs.offset < Rhs.offset;
+        });
+    }
+
+    void FShader::AddDescriptorSetBindings(std::uint32_t Set, const vk::DescriptorSetLayoutBinding& LayoutBinding)
     {
         auto it = ReflectionInfo_.DescriptorSetBindings.find(Set);
         if (it == ReflectionInfo_.DescriptorSetBindings.end())
         {
-            ReflectionInfo_.DescriptorSetBindings[Set].push_back(std::move(LayoutBinding));
+            ReflectionInfo_.DescriptorSetBindings[Set].push_back(LayoutBinding);
             return;
         }
 
@@ -514,7 +456,7 @@ namespace Npgs
 
         if (!bMergedStage)
         {
-            ExistedLayoutBindings.push_back(std::move(LayoutBinding));
+            ExistedLayoutBindings.push_back(LayoutBinding);
         }
     }
 

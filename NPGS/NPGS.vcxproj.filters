@@ -180,6 +180,9 @@
     <ClCompile Include="Sources\Program\Rendering\RenderPasses\DepthMap.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="Sources\ExternalImpl\spirv_reflect_impl.c">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Sources\stdafx.h">

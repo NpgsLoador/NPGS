@@ -101,7 +101,8 @@ namespace Npgs
         void InitializeShaders(const std::vector<std::string>& ShaderFiles, const FResourceInfo& ResourceInfo);
         FShaderInfo LoadShader(const std::string& Filename);
         void ReflectShader(FShaderInfo&& ShaderInfo, const FResourceInfo& ResourceInfo);
-        void AddDescriptorSetBindings(std::uint32_t Set, vk::DescriptorSetLayoutBinding& LayoutBinding);
+        void AddPushConstantRange(vk::PushConstantRange NewRange);
+        void AddDescriptorSetBindings(std::uint32_t Set, const vk::DescriptorSetLayoutBinding& LayoutBinding);
         void CreateDescriptorSetLayouts();
         void GenerateDescriptorInfos();
 

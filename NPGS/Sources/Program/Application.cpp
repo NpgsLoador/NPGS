@@ -380,8 +380,8 @@ namespace Npgs
                 FrontgroundCommandBuffer->setScissor(0, CommonScissor);
                 FrontgroundCommandBuffer->setViewport(0, CommonViewport);
                 FrontgroundCommandBuffer->bindPipeline(vk::PipelineBindPoint::eGraphics, LampPipeline);
-                FrontgroundCommandBuffer->pushConstants<vk::DeviceAddress>(LampPipelineLayout, vk::ShaderStageFlagBits::eVertex, 0, MatricesAddress);
-                FrontgroundCommandBuffer->pushConstants<vk::DeviceAddress>(LampPipelineLayout, vk::ShaderStageFlagBits::eFragment, LampShader->GetPushConstantOffset("LightArgsAddress"), LightArgsAddress);
+                FrontgroundCommandBuffer->pushConstants<vk::DeviceAddress>(LampPipelineLayout, vk::ShaderStageFlagBits::eVertex | vk::ShaderStageFlagBits::eFragment, 0, MatricesAddress);
+                FrontgroundCommandBuffer->pushConstants<vk::DeviceAddress>(LampPipelineLayout, vk::ShaderStageFlagBits::eVertex | vk::ShaderStageFlagBits::eFragment, LampShader->GetPushConstantOffset("LightArgsAddress"), LightArgsAddress);
                 FrontgroundCommandBuffer->bindVertexBuffers(0, CubeVertexBuffers, LampOffsets);
                 FrontgroundCommandBuffer->draw(36, 1, 0, 0);
                 FrontgroundCommandBuffer->bindPipeline(vk::PipelineBindPoint::eGraphics, SkyboxPipeline);
@@ -1039,7 +1039,7 @@ namespace Npgs
             {},
             {
                 { vk::ShaderStageFlagBits::eVertex, { "MatricesAddress" } },
-                { vk::ShaderStageFlagBits::eFragment, { "LightArgsAddress" } }
+                { vk::ShaderStageFlagBits::eFragment, { "MatricesAddress", "LightArgsAddress" } }
             }
         };
 

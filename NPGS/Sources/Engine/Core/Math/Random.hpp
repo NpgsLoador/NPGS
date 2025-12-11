@@ -1,6 +1,7 @@
 #pragma once
 
 #include <random>
+#include <memory>
 #include <type_traits>
 
 namespace Npgs::Math
@@ -10,9 +11,10 @@ namespace Npgs::Math
     class TDistribution
     {
     public:
-        virtual ~TDistribution()                          = default;
-        virtual BaseType operator()(RandomEngine& Engine) = 0;
-        virtual BaseType Generate(RandomEngine& Engine)   = 0;
+        virtual ~TDistribution()                             = default;
+        virtual BaseType operator()(RandomEngine& Engine)    = 0;
+        virtual BaseType Generate(RandomEngine& Engine)      = 0;
+        virtual std::unique_ptr<TDistribution> Clone() const = 0;
     };
 
     template <typename BaseType = int, typename RandomEngine = std::mt19937>
@@ -34,6 +36,11 @@ namespace Npgs::Math
         BaseType Generate(RandomEngine& Engine) override
         {
             return operator()(Engine);
+        }
+
+        std::unique_ptr<TDistribution<BaseType, RandomEngine>> Clone() const override
+        {
+            return std::make_unique<TUniformIntDistribution<BaseType, RandomEngine>>(*this);
         }
 
     private:
@@ -61,6 +68,11 @@ namespace Npgs::Math
             return operator()(Engine);
         }
 
+        std::unique_ptr<TDistribution<BaseType, RandomEngine>> Clone() const override
+        {
+            return std::make_unique<TUniformRealDistribution<BaseType, RandomEngine>>(*this);
+        }
+
     private:
         std::uniform_real_distribution<BaseType> Distribution_;
     };
@@ -84,6 +96,11 @@ namespace Npgs::Math
         BaseType Generate(RandomEngine& Engine) override
         {
             return operator()(Engine);
+        }
+
+        std::unique_ptr<TDistribution<BaseType, RandomEngine>> Clone() const override
+        {
+            return std::make_unique<TNormalDistribution<BaseType, RandomEngine>>(*this);
         }
 
     private:
@@ -111,6 +128,11 @@ namespace Npgs::Math
             return operator()(Engine);
         }
 
+        std::unique_ptr<TDistribution<BaseType, RandomEngine>> Clone() const override
+        {
+            return std::make_unique<TLogNormalDistribution<BaseType, RandomEngine>>(*this);
+        }
+
     private:
         std::lognormal_distribution<BaseType> Distribution_;
     };
@@ -134,6 +156,11 @@ namespace Npgs::Math
         double Generate(RandomEngine& Engine) override
         {
             return operator()(Engine);
+        }
+
+        std::unique_ptr<TDistribution<double, RandomEngine>> Clone() const override
+        {
+            return std::make_unique<TBernoulliDistribution<RandomEngine>>(*this);
         }
 
     private:

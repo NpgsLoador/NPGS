@@ -144,10 +144,10 @@ namespace Npgs
                           : std::make_unique<Math::TUniformRealDistribution<>>(std::log10(GenerationInfo.MassLowerLimit),
                                                                                std::log10(GenerationInfo.MassUpperLimit))),
 
-        MassPdfs_(std::move(GenerationInfo.MassPdfs)),
+        MassPdfs_(GenerationInfo.MassPdfs),
         MassMaxPdfs_(GenerationInfo.MassMaxPdfs),
         AgeMaxPdf_(GenerationInfo.AgeMaxPdf),
-        AgePdf_(std::move(GenerationInfo.AgePdf)),
+        AgePdf_(GenerationInfo.AgePdf),
         UniverseAge_(GenerationInfo.UniverseAge),
         AgeLowerLimit_(GenerationInfo.AgeLowerLimit),
         AgeUpperLimit_(GenerationInfo.AgeUpperLimit),
@@ -195,32 +195,16 @@ namespace Npgs
     {
         if (Other.LogMassGenerator_ != nullptr)
         {
-            LogMassGenerator_ = std::make_unique<Math::TUniformRealDistribution<>>(
-                std::log10(Other.MassLowerLimit_), std::log10(Other.MassUpperLimit_));
+            LogMassGenerator_ = Other.LogMassGenerator_->Clone();
         }
 
-        if (Other.FeHGenerators_[0] != nullptr)
+        for (std::size_t i = 0; i != Other.FeHGenerators_.size(); ++i)
         {
-            auto* LogNormal = dynamic_cast<Math::TLogNormalDistribution<>*>(Other.FeHGenerators_[0].get());
-            FeHGenerators_[0] = std::make_unique<Math::TLogNormalDistribution<>>(*LogNormal);
-        }
-
-        if (Other.FeHGenerators_[1] != nullptr)
-        {
-            auto* Normal = dynamic_cast<Math::TNormalDistribution<>*>(Other.FeHGenerators_[1].get());
-            FeHGenerators_[1] = std::make_unique<Math::TNormalDistribution<>>(*Normal);
-        }
-
-        if (Other.FeHGenerators_[2] != nullptr)
-        {
-            auto* Normal = dynamic_cast<Math::TNormalDistribution<>*>(Other.FeHGenerators_[2].get());
-            FeHGenerators_[2] = std::make_unique<Math::TNormalDistribution<>>(*Normal);
-        }
-
-        if (Other.FeHGenerators_[3] != nullptr)
-        {
-            auto* Normal = dynamic_cast<Math::TNormalDistribution<>*>(Other.FeHGenerators_[3].get());
-            FeHGenerators_[3] = std::make_unique<Math::TNormalDistribution<>>(*Normal);
+            const auto& OtherGenerator = Other.FeHGenerators_[i];
+            if (OtherGenerator != nullptr)
+            {
+                FeHGenerators_[i] = OtherGenerator->Clone();
+            }
         }
     }
 
