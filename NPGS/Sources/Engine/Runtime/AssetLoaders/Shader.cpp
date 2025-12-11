@@ -36,39 +36,6 @@ namespace Npgs
             else
                 return vk::ShaderStageFlagBits::eAll;
         }
-
-        vk::DescriptorType GetDescriptorType(SpvReflectDescriptorType ReflectDescriptorType)
-        {
-            switch (ReflectDescriptorType)
-            {
-            case SPV_REFLECT_DESCRIPTOR_TYPE_SAMPLER:
-                return vk::DescriptorType::eSampler;
-            case SPV_REFLECT_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER:
-                return vk::DescriptorType::eCombinedImageSampler;
-            case SPV_REFLECT_DESCRIPTOR_TYPE_SAMPLED_IMAGE:
-                return vk::DescriptorType::eSampledImage;
-            case SPV_REFLECT_DESCRIPTOR_TYPE_STORAGE_IMAGE:
-                return vk::DescriptorType::eStorageImage;
-            case SPV_REFLECT_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER:
-                return vk::DescriptorType::eUniformTexelBuffer;
-            case SPV_REFLECT_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER:
-                return vk::DescriptorType::eStorageTexelBuffer;
-            case SPV_REFLECT_DESCRIPTOR_TYPE_UNIFORM_BUFFER:
-                return vk::DescriptorType::eUniformBuffer;
-            case SPV_REFLECT_DESCRIPTOR_TYPE_STORAGE_BUFFER:
-                return vk::DescriptorType::eStorageBuffer;
-            case SPV_REFLECT_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC:
-                return vk::DescriptorType::eUniformBufferDynamic;
-            case SPV_REFLECT_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC:
-                return vk::DescriptorType::eStorageBufferDynamic;
-            case SPV_REFLECT_DESCRIPTOR_TYPE_INPUT_ATTACHMENT:
-                return vk::DescriptorType::eInputAttachment;
-            case SPV_REFLECT_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR:
-                return vk::DescriptorType::eAccelerationStructureKHR;
-            default:
-                return vk::DescriptorType::eMutableEXT;
-            }
-        }
     }
 
     FShader::FShader(FVulkanContext* VulkanContext, const std::vector<std::string>& ShaderFiles, const FResourceInfo& ResourceInfo)
@@ -251,7 +218,7 @@ namespace Npgs
                 for (std::uint32_t i = 0; i != Set->binding_count; ++i)
                 {
                     const auto* Binding = Set->bindings[i];
-                    vk::DescriptorType Type = GetDescriptorType(Binding->descriptor_type);
+                    vk::DescriptorType Type = static_cast<vk::DescriptorType>(Binding->descriptor_type);
                     std::uint32_t ArraySize = Binding->count;
 
                     NpgsCoreTrace("Descriptor \"{}\" at set={}, binding={}, type={}, array_size={}",

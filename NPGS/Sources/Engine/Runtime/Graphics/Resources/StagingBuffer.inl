@@ -22,26 +22,14 @@ namespace Npgs
         return BufferMemory_->GetMemory();
     }
 
-    inline void FStagingBuffer::UnmapMemory()
+    NPGS_INLINE void FStagingBuffer::SubmitBufferData(vk::DeviceSize MapOffset, vk::DeviceSize SubmitOffset, vk::DeviceSize Size, const void* Data)
     {
-        BufferMemory_->UnmapMemory(0, MemoryUsage_);
-        MemoryUsage_ = 0;
-    }
-
-    inline void FStagingBuffer::SubmitBufferData(vk::DeviceSize MapOffset, vk::DeviceSize SubmitOffset, vk::DeviceSize Size, const void* Data)
-    {
-        Expand(Size);
         BufferMemory_->SubmitBufferData(MapOffset, SubmitOffset, Size, Data);
     }
 
     NPGS_INLINE void FStagingBuffer::FetchBufferData(vk::DeviceSize MapOffset, vk::DeviceSize FetchOffset, vk::DeviceSize Size, void* Target) const
     {
         BufferMemory_->FetchBufferData(MapOffset, FetchOffset, Size, Target);
-    }
-
-    NPGS_INLINE void FStagingBuffer::Release()
-    {
-        BufferMemory_.reset();
     }
 
     NPGS_INLINE FVulkanBuffer& FStagingBuffer::GetBuffer()

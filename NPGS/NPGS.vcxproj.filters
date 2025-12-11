@@ -395,6 +395,15 @@
     <ClInclude Include="Sources\Program\Rendering\RenderPasses\DepthMap.hpp">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="Sources\Program\Rendering\RenderPasses\DepthMapNameLookup.hpp">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="Sources\Program\Rendering\RenderPasses\GbufferSceneNameLookup.hpp">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="Sources\Program\Rendering\Materials\StandardPbrMaterialNameLookup.hpp">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="Sources\Engine\Core\Logger.inl">

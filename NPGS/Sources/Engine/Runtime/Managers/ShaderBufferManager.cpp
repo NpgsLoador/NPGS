@@ -197,12 +197,12 @@ namespace Npgs
             {
                 if (bPureSampler)
                 {
-                    TargetHeap = EHeapType::kSampler;
+                    TargetHeap       = EHeapType::kSampler;
                     AllocationOffset = SamplerHeapAllocator_.Allocate(AllocationSize, Alignment);
                 }
                 else
                 {
-                    TargetHeap = EHeapType::kResource;
+                    TargetHeap       = EHeapType::kResource;
                     AllocationOffset = ResourceHeapAllocator_.Allocate(AllocationSize, Alignment);
                 }
             }
@@ -236,20 +236,20 @@ namespace Npgs
         }
 
         DescriptorBuffers_.erase(Name);
-        OffsetsMap_.erase(Name);
     }
 
     vk::DeviceSize
-    FShaderBufferManager::GetDescriptorBindingOffset(std::string_view BufferName, std::uint32_t Set, std::uint32_t Binding) const
+    FShaderBufferManager::GetDescriptorBindingOffset(std::string_view BufferName, std::uint32_t Set) const
     {
-        auto SetBindingPair = std::make_pair(Set, Binding);
-        auto it = OffsetsMap_.find(BufferName);
-        if (it == OffsetsMap_.end())
+        const auto& BufferInfo = GetDescriptorBufferInfo(BufferName);
+
+        auto AllocIt = BufferInfo.SetAllocations.find(Set);
+        if (AllocIt == BufferInfo.SetAllocations.end())
         {
-            throw std::out_of_range(std::format(R"(Buffer offset "{}" not found.)", BufferName));
+            throw std::out_of_range(std::format(R"(Descriptor set "{}" not found in buffer "{}".)", Set, BufferName));
         }
 
-        return it->second.at(SetBindingPair).first;
+        return AllocIt->second.Offset;
     }
 
     void FShaderBufferManager::InitializeHeaps()
@@ -362,20 +362,6 @@ namespace Npgs
         return it->second;
     }
 
-    const std::pair<vk::DeviceSize, vk::DescriptorType>&
-    FShaderBufferManager::GetDescriptorBindingOffsetAndType(std::string_view BufferName, std::uint32_t Set, std::uint32_t Binding) const
-    {
-        auto it = OffsetsMap_.find(BufferName);
-        if (it == OffsetsMap_.end())
-        {
-            throw std::out_of_range(std::format(R"(Descriptor buffer offsets for "{}" not found.)", BufferName));
-        }
-
-        const auto& OffsetMap = it->second;
-        auto SetBindingPair   = std::make_pair(Set, Binding);
-        return OffsetMap.at(SetBindingPair);
-    }
-
     vk::DeviceSize FShaderBufferManager::GetDescriptorSize(vk::DescriptorType Usage) const
     {
         switch (Usage)
@@ -413,19 +399,6 @@ namespace Npgs
         auto& BufferInfo = DescriptorBuffers_.at(DescriptorBufferCreateInfo.Name);
         vk::Device Device = VulkanContext_->GetDevice();
 
-        auto& OffsetsSubMapRef = OffsetsMap_[BufferInfo.Name];
-        OffsetsSubMapRef.clear();
-
-        for (const auto& [SetIndex, SetLayoutInfo] : DescriptorBufferCreateInfo.SetInfos)
-        {
-            const auto& SetAllocation = BufferInfo.SetAllocations.at(SetIndex);
-            for (const auto& [Binding, BindingLayout] : SetLayoutInfo.Bindings)
-            {
-                vk::DeviceSize AbsoluteOffset = SetAllocation.Offset + BindingLayout.Offset;
-                OffsetsSubMapRef[{ SetIndex, Binding }] = { AbsoluteOffset, BindingLayout.Type };
-            }
-        }
-
         for (std::uint32_t i = 0; i != Config::Graphics::kMaxFrameInFlight; ++i)
         {
             void* ResourceHeapBase = ResourceDescriptorHeaps_[i].GetMemory().GetMappedTargetMemory();
@@ -434,8 +407,9 @@ namespace Npgs
             auto GetTargetAddress = [&](std::uint32_t Set, std::uint32_t Binding) -> std::byte*
             {
                 const auto& SetAllocation = BufferInfo.SetAllocations.at(Set);
-                vk::DeviceSize AbsoluteOffset = OffsetsSubMapRef.at({ Set, Binding }).first;
+                const auto& SetInfo       = DescriptorBufferCreateInfo.SetInfos.at(Set);
 
+                vk::DeviceSize AbsoluteOffset = SetAllocation.Offset + SetInfo.Bindings.at(Binding).Offset;
                 void* Base = (SetAllocation.HeapType == EHeapType::kResource) ? ResourceHeapBase : SamplerHeapBase;
                 return static_cast<std::byte*>(Base) + AbsoluteOffset;
             };

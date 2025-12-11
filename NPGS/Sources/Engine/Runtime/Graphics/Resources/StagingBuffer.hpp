@@ -35,11 +35,8 @@ namespace Npgs
         operator FVulkanDeviceMemory& ();
         operator const FVulkanDeviceMemory& () const;
 
-        void* MapMemory(vk::DeviceSize Size);
-        void  UnmapMemory();
-        void  SubmitBufferData(vk::DeviceSize MapOffset, vk::DeviceSize SubmitOffset, vk::DeviceSize Size, const void* Data);
-        void  FetchBufferData(vk::DeviceSize MapOffset, vk::DeviceSize FetchOffset, vk::DeviceSize Size, void* Target) const;
-        void  Release();
+        void SubmitBufferData(vk::DeviceSize MapOffset, vk::DeviceSize SubmitOffset, vk::DeviceSize Size, const void* Data);
+        void FetchBufferData(vk::DeviceSize MapOffset, vk::DeviceSize FetchOffset, vk::DeviceSize Size, void* Target) const;
 
         FVulkanImage* CreateAliasedImage(vk::Format OriginFormat, const vk::ImageCreateInfo& ImageCreateInfo);
 
@@ -51,7 +48,7 @@ namespace Npgs
         const FVulkanDeviceMemory& GetMemory() const;
 
     private:
-        void Expand(vk::DeviceSize Size);
+        void CreateStagingBuffer(vk::DeviceSize Size);
 
     private:
         vk::PhysicalDevice                   PhysicalDevice_;

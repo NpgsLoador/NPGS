@@ -1,5 +1,6 @@
 #include "stdafx.h"
 #include "DepthMap.hpp"
+#include "DepthMapNameLookup.hpp"
 
 #include "Engine/Runtime/AssetLoaders/Shader.hpp"
 #include "Engine/Runtime/Graphics/Buffers/BufferStructs.hpp"

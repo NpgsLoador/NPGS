@@ -1,17 +1,28 @@
 #include "stdafx.h"
 #include "GbufferScene.hpp"
-
-#include <array>
-#include <vector>
+#include "GbufferSceneNameLookup.hpp"
 
 #include "Engine/Runtime/AssetLoaders/Shader.hpp"
 #include "Engine/Runtime/Graphics/Buffers/BufferStructs.hpp"
-#include "Engine/Runtime/Graphics/Vulkan/Wrappers.hpp"
 #include "Engine/System/Services/EngineServices.hpp"
 #include "Program/Rendering/NameLookup.hpp"
 
 namespace Npgs
 {
+    void FGbufferScene::RecordCommands(FVulkanContext* VulkanContext)
+    {
+        auto CommandPool = VulkanContext->AcquireCommandPool(FVulkanContext::EQueueType::kGeneral);
+
+        vk::CommandBufferInheritanceRenderingInfo InheritanceRenderingInfo = vk::CommandBufferInheritanceRenderingInfo()
+            .setColorAttachmentCount(GbufferAttachmentFormats_.size())
+            .setColorAttachmentFormats(GbufferAttachmentFormats_)
+            .setDepthAttachmentFormat(DepthAttachmentFormat_)
+            .setRasterizationSamples(vk::SampleCountFlagBits::e1); // TODO 全局设置 MSAA 抗锯齿
+
+        vk::CommandBufferInheritanceInfo InheritanceInfo = vk::CommandBufferInheritanceInfo()
+            .setPNext(&InheritanceRenderingInfo);
+    }
+
     void FGbufferScene::LoadShaders()
     {
         FResourceInfo ResourceInfo
@@ -55,7 +66,7 @@ namespace Npgs
                                vk::ColorComponentFlagBits::eB | vk::ColorComponentFlagBits::eA);
         PipelineCreateInfoPack.ColorBlendAttachmentStates.assign(4, ColorBlendAttachmentState);
 
-        std::array AttachmentFormats
+        GbufferAttachmentFormats_ =
         {
             vk::Format::eR16G16B16A16Sfloat,
             vk::Format::eR16G16B16A16Sfloat,
@@ -63,7 +74,9 @@ namespace Npgs
             vk::Format::eR16G16B16A16Sfloat
         };
 
-        vk::PipelineRenderingCreateInfo RenderingCreateInfo(0, AttachmentFormats, vk::Format::eD32Sfloat);
+        DepthAttachmentFormat_ = vk::Format::eD32Sfloat;
+
+        vk::PipelineRenderingCreateInfo RenderingCreateInfo(0, GbufferAttachmentFormats_, DepthAttachmentFormat_);
 
         PipelineCreateInfoPack.GraphicsPipelineCreateInfo.setFlags(vk::PipelineCreateFlagBits::eDescriptorBufferEXT);
         PipelineCreateInfoPack.GraphicsPipelineCreateInfo.setPNext(&RenderingCreateInfo);
@@ -79,6 +92,23 @@ namespace Npgs
 
     void FGbufferScene::BindDescriptors()
     {
+        auto* AssetManager = EngineCoreServices->GetAssetManager();
+        auto  Shader       = AssetManager->AcquireAsset<FShader>(RenderPasses::GbufferScene::kShaderName);
+
+        FDescriptorBufferCreateInfo DescriptorBufferCreateInfo;
+        DescriptorBufferCreateInfo.Name     = RenderPasses::GbufferScene::kDescriptorBufferName;
+        DescriptorBufferCreateInfo.SetInfos = Shader->GetDescriptorSetInfos();
+
+        auto        FramebufferSampler  = AssetManager->AcquireAsset<FVulkanSampler>(Public::Samplers::kFramebufferSamplerName);
+        auto*       RenderTargetManager = EngineResourceServices->GetRenderTargetManager();
+        const auto& DepthMapAttachment  = RenderTargetManager->GetManagedTarget(Public::Attachments::kDepthMapAttachmentName);
+
+        vk::DescriptorImageInfo DepthMapImageInfo(
+            **FramebufferSampler, DepthMapAttachment.GetImageView(), DepthMapAttachment.GetImageLayout());
+        DescriptorBufferCreateInfo.CombinedImageSamplerInfos.emplace_back(2u, 0u, DepthMapImageInfo);
+
+        auto* ShaderBufferManager = EngineResourceServices->GetShaderBufferManager();
+        ShaderBufferManager->AllocateDescriptorBuffer(DescriptorBufferCreateInfo);
     }
 
     void FGbufferScene::DeclareAttachments()

@@ -3,6 +3,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <array>
+#include <memory>
 
 #include <vma/vk_mem_alloc.h>
 #include <vulkan/vulkan.hpp>
@@ -42,8 +43,8 @@ namespace Npgs
         FBufferGuard AcquireBuffer(vk::DeviceSize RequestedSize);
 
     private:
-        void CreateResource(const FStagingBufferCreateInfo& CreateInfo) override;
-        bool HandleResourceEmergency(FStagingBufferInfo& LowUsageResource, const FStagingBufferCreateInfo& CreateInfo) override;
+        std::unique_ptr<FStagingBufferInfo> CreateResource(const FStagingBufferCreateInfo& CreateInfo) override;
+        bool HandleResourceEmergency(const FStagingBufferCreateInfo& CreateInfo, FStagingBufferInfo& LowUsageResource) override;
         void ReleaseResource(FStagingBuffer* Buffer, std::size_t UsageCount) override;
         void OptimizeResourceCount() override;
         void RemoveOversizedBuffers(vk::DeviceSize Threshold);

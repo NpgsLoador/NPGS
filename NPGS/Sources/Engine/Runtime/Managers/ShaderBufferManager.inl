@@ -233,4 +233,25 @@ namespace Npgs
     {
         return SamplerDescriptorHeaps_[FrameIndex];
     }
+
+    NPGS_INLINE vk::DescriptorBufferBindingInfoEXT FShaderBufferManager::GetResourceHeapBindingInfo(std::uint32_t FrameIndex) const
+    {
+        auto HeapUsage = vk::BufferUsageFlagBits::eResourceDescriptorBufferEXT |
+                         vk::BufferUsageFlagBits::eSamplerDescriptorBufferEXT  |
+                         vk::BufferUsageFlagBits::eShaderDeviceAddress         |
+                         vk::BufferUsageFlagBits::eTransferDst;
+
+        vk::DescriptorBufferBindingInfoEXT BindingInfo(GetResourceDescriptorHeap(FrameIndex).GetBuffer().GetDeviceAddress(), HeapUsage);
+        return BindingInfo;
+    }
+
+    NPGS_INLINE vk::DescriptorBufferBindingInfoEXT FShaderBufferManager::GetSamplerHeapBindingInfo(std::uint32_t FrameIndex) const
+    {
+        auto HeapUsage = vk::BufferUsageFlagBits::eSamplerDescriptorBufferEXT |
+                         vk::BufferUsageFlagBits::eShaderDeviceAddress        |
+                         vk::BufferUsageFlagBits::eTransferDst;
+
+        vk::DescriptorBufferBindingInfoEXT BindingInfo(GetSamplerDescriptorHeap(FrameIndex).GetBuffer().GetDeviceAddress(), HeapUsage);
+        return BindingInfo;
+    }
 } // namespace Npgs

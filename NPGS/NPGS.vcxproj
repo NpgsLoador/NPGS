@@ -188,6 +188,7 @@
     <ClCompile Include="Sources\Program\Rendering\RenderPasses\GbufferScene.cpp" />
     <ClCompile Include="Sources\Program\Rendering\Meshes\PbrCube.cpp" />
     <ClCompile Include="Sources\Engine\Runtime\Managers\RenderTargetManager.cpp" />
+    <ClInclude Include="Sources\Program\Rendering\Materials\StandardPbrMaterialNameLookup.hpp" />
     <ClInclude Include="Sources\Program\Rendering\RenderPasses\DepthMap.hpp" />
     <ClInclude Include="Sources\Engine\Runtime\AssetLoaders\FileLoader.hpp" />
     <ClInclude Include="Sources\Engine\Runtime\Graphics\Renderer\Renderer.hpp" />
@@ -245,6 +246,7 @@
     <ClInclude Include="Sources\Engine\Runtime\Graphics\Renderer\Material.hpp" />
     <ClInclude Include="Sources\Engine\Runtime\Managers\MaterialManager.hpp" />
     <ClInclude Include="Sources\Program\Rendering\NameLookup.hpp" />
+    <ClInclude Include="Sources\Program\Rendering\RenderPasses\DepthMapNameLookup.hpp" />
     <ClInclude Include="Sources\Program\Rendering\RenderPasses\GbufferScene.hpp" />
     <ClInclude Include="Sources\Program\Rendering\Meshes\PbrCube.hpp" />
     <ClInclude Include="Sources\Engine\Runtime\Managers\RenderTargetManager.hpp" />
@@ -304,6 +306,7 @@
     <ClInclude Include="Sources\Program\Application.hpp" />
     <ClInclude Include="Sources\Program\Npgs.hpp" />
     <ClInclude Include="Sources\Engine\Runtime\Graphics\Buffers\BufferStructs.hpp" />
+    <ClInclude Include="Sources\Program\Rendering\RenderPasses\GbufferSceneNameLookup.hpp" />
     <ClInclude Include="Sources\Program\Universe.hpp" />
     <ClInclude Include="Sources\stdafx.h" />
     <ClInclude Include="Sources\xstdafx.h" />

@@ -1,5 +1,6 @@
 #include "stdafx.h"
 #include "StandardPbrMaterial.hpp"
+#include "StandardPbrMaterialNameLookup.hpp"
 
 #include <cstddef>
 #include <future>
@@ -13,6 +14,7 @@
 #include "Engine/Runtime/Graphics/Vulkan/Wrappers.hpp"
 #include "Engine/Runtime/Managers/ShaderBufferManager.hpp"
 #include "Engine/System/Services/EngineServices.hpp"
+#include "Program/Rendering/RenderPasses/GbufferSceneNameLookup.hpp"
 #include "Program/Rendering/NameLookup.hpp"
 
 namespace Npgs
@@ -95,14 +97,6 @@ namespace Npgs
         DescriptorBufferCreateInfo.SampledImageInfos.emplace_back(1u, 1u, PbrNormalImageInfo);
         auto PbrArmImageInfo = ArmMap_->CreateDescriptorImageInfo(nullptr);
         DescriptorBufferCreateInfo.SampledImageInfos.emplace_back(1u, 2u, PbrArmImageInfo);
-
-        auto        FramebufferSampler  = AssetManager->AcquireAsset<FVulkanSampler>(Public::Samplers::kFramebufferSamplerName);
-        auto*       RenderTargetManager = EngineResourceServices->GetRenderTargetManager();
-        const auto& DepthMapAttachment  = RenderTargetManager->GetManagedTarget(Public::Attachments::kDepthMapAttachmentName);
-        
-        vk::DescriptorImageInfo DepthMapImageInfo(
-            **FramebufferSampler, DepthMapAttachment.GetImageView(), DepthMapAttachment.GetImageLayout());
-        DescriptorBufferCreateInfo.CombinedImageSamplerInfos.emplace_back(2u, 0u, DepthMapImageInfo);
 
         auto* ShaderBufferManager = EngineResourceServices->GetShaderBufferManager();
         ShaderBufferManager->AllocateDescriptorBuffer(DescriptorBufferCreateInfo);

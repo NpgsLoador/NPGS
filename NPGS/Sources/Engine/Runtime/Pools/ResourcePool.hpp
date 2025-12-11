@@ -26,7 +26,29 @@ namespace Npgs
         std::size_t LastUsedTimestamp{};
         std::size_t UsageCount{};
 
+        TResourceInfo()                     = default;
+        TResourceInfo(const TResourceInfo&) = delete;
+        TResourceInfo(TResourceInfo&& Other) noexcept
+            : Resource(std::move(Other.Resource))
+            , LastUsedTimestamp(std::exchange(Other.LastUsedTimestamp, 0))
+            , UsageCount(std::exchange(Other.UsageCount, 0))
+        {
+        }
+
         virtual ~TResourceInfo() = default;
+
+        TResourceInfo& operator=(const TResourceInfo&) = delete;
+        TResourceInfo& operator=(TResourceInfo&& Other) noexcept
+        {
+            if (this != &Other)
+            {
+                Resource          = std::move(Other.Resource);
+                LastUsedTimestamp = std::exchange(Other.LastUsedTimestamp, 0);
+                UsageCount        = std::exchange(Other.UsageCount, 0);
+            }
+
+            return *this;
+        }
     };
 
     template <typename ResourceType, typename ResourceCreateInfoType, typename ResourceInfoType = TResourceInfo<ResourceType>>
@@ -128,86 +150,6 @@ namespace Npgs
         TResourcePool& operator=(const TResourcePool&) = delete;
         TResourcePool& operator=(TResourcePool&&)      = delete;
 
-        template <typename Func>
-        requires std::predicate<Func, const std::unique_ptr<ResourceInfoType>&>
-        FResourceGuard AcquireResource(const ResourceCreateInfoType& CreateInfo, Func&& Pred)
-        {
-            std::unique_lock Lock(Mutex_);
-
-            std::vector<typename std::deque<std::unique_ptr<ResourceInfoType>>::iterator> MatchedResources;
-            for (auto it = AvailableResources_.begin(); it != AvailableResources_.end(); ++it)
-            {
-                if (Pred(*it))
-                {
-                    MatchedResources.push_back(it);
-                }
-            }
-
-            if (!MatchedResources.empty())
-            {
-                if (MatchedResources.size() > 1)
-                {
-                    std::ranges::sort(MatchedResources, [](const auto& Lhs, const auto& Rhs) -> bool
-                    {
-                        return (*Lhs)->UsageCount       != (*Rhs)->UsageCount ?
-                               (*Lhs)->UsageCount        > (*Rhs)->UsageCount :
-                               (*Lhs)->LastUsedTimestamp > (*Rhs)->LastUsedTimestamp;
-                    });
-                }
-
-                auto BestIt = MatchedResources.front();
-                ResourceType* Resource = (*BestIt)->Resource.release();
-                std::size_t UsageCount = (*BestIt)->UsageCount + 1;
-                AvailableResources_.erase(BestIt);
-                BusyResourceCount_.fetch_add(1, std::memory_order::relaxed);
-
-                IncreasePeakDemand();
-
-                return FResourceGuard(this, Resource, UsageCount);
-            }
-
-            if (BusyResourceCount_.load() + AvailableResources_.size() < MaxAllocatedResourceLimit_)
-            {
-                CreateResource(CreateInfo);
-
-                ResourceType* Resource = AvailableResources_.back()->Resource.release();
-                AvailableResources_.pop_back();
-                BusyResourceCount_.fetch_add(1, std::memory_order::relaxed);
-
-                IncreasePeakDemand();
-
-                return FResourceGuard(this, Resource, 1);
-            }
-
-            constexpr std::uint32_t kMaxWaitTimeMs = 2000;
-            if (Condition_.wait_for(Lock, std::chrono::milliseconds(kMaxWaitTimeMs),
-                [this, &Pred]() -> bool { return std::ranges::any_of(AvailableResources_, Pred); }))
-            {
-                Lock.unlock();
-                return AcquireResource(CreateInfo, Pred);
-            }
-
-            if (!AvailableResources_.empty())
-            {
-                for (auto it = AvailableResources_.begin(); it != AvailableResources_.end(); ++it)
-                {
-                    if (HandleResourceEmergency(**it, CreateInfo))
-                    {
-                        ResourceType* Resource = (*it)->Resource.release();
-                        std::size_t UsageCount = (*it)->UsageCount + 1;
-                        AvailableResources_.erase(it);
-                        BusyResourceCount_.fetch_add(1, std::memory_order::relaxed);
-
-                        IncreasePeakDemand();
-
-                        return FResourceGuard(this, Resource, UsageCount);
-                    }
-                }
-            }
-
-            throw std::runtime_error("Failed to acquire resource. Reset the max resource limit or reduce resource requirements.");
-        }
-
         void Reset()
         {
             std::lock_guard Lock(Mutex_);
@@ -268,8 +210,123 @@ namespace Npgs
         }
 
     protected:
-        virtual void CreateResource(const ResourceCreateInfoType& CreateInfo) = 0;
-        virtual bool HandleResourceEmergency(ResourceInfoType& LowUsageResource, const ResourceCreateInfoType& CreateInfo) = 0;
+        template <typename Func>
+        requires std::predicate<Func, const std::unique_ptr<ResourceInfoType>&>
+        FResourceGuard AcquireResource(const ResourceCreateInfoType& CreateInfo, Func&& Pred)
+        {
+            std::unique_lock Lock(Mutex_);
+
+            std::vector<typename std::deque<std::unique_ptr<ResourceInfoType>>::iterator> MatchedResources;
+            for (auto it = AvailableResources_.begin(); it != AvailableResources_.end(); ++it)
+            {
+                if (Pred(*it))
+                {
+                    MatchedResources.push_back(it);
+                }
+            }
+
+            if (!MatchedResources.empty())
+            {
+                if (MatchedResources.size() > 1)
+                {
+                    std::ranges::sort(MatchedResources, [](const auto& Lhs, const auto& Rhs) -> bool
+                    {
+                        return (*Lhs)->UsageCount       != (*Rhs)->UsageCount ?
+                               (*Lhs)->UsageCount        > (*Rhs)->UsageCount :
+                               (*Lhs)->LastUsedTimestamp > (*Rhs)->LastUsedTimestamp;
+                    });
+                }
+
+                auto BestIt = MatchedResources.front();
+                ResourceType* Resource = (*BestIt)->Resource.release();
+                std::size_t UsageCount = (*BestIt)->UsageCount + 1;
+                AvailableResources_.erase(BestIt);
+
+                BusyResourceCount_.fetch_add(1, std::memory_order::relaxed);
+                IncreasePeakDemand();
+
+                return FResourceGuard(this, Resource, UsageCount);
+            }
+
+            if (BusyResourceCount_.load() + AvailableResources_.size() < MaxAllocatedResourceLimit_)
+            {
+                auto ResourceInfo = CreateResource(CreateInfo);
+                ResourceType* Resource = ResourceInfo->Resource.release();
+
+                BusyResourceCount_.fetch_add(1, std::memory_order::relaxed);
+                IncreasePeakDemand();
+
+                return FResourceGuard(this, Resource, 1);
+            }
+
+            constexpr std::uint32_t kMaxWaitTimeMs = 2000;
+            if (Condition_.wait_for(Lock, std::chrono::milliseconds(kMaxWaitTimeMs),
+                [this, &Pred]() -> bool { return std::ranges::any_of(AvailableResources_, Pred); }))
+            {
+                Lock.unlock();
+                return AcquireResource(CreateInfo, Pred);
+            }
+
+            if (!AvailableResources_.empty())
+            {
+                for (auto it = AvailableResources_.begin(); it != AvailableResources_.end(); ++it)
+                {
+                    if (HandleResourceEmergency(CreateInfo, **it))
+                    {
+                        ResourceType* Resource = (*it)->Resource.release();
+                        std::size_t UsageCount = (*it)->UsageCount + 1;
+                        AvailableResources_.erase(it);
+
+                        BusyResourceCount_.fetch_add(1, std::memory_order::relaxed);
+                        IncreasePeakDemand();
+
+                        return FResourceGuard(this, Resource, UsageCount);
+                    }
+                }
+            }
+
+            throw std::runtime_error("Failed to acquire resource. Reset the max resource limit or reduce resource requirements.");
+        }
+
+        template <typename Func>
+        requires std::predicate<Func, const std::unique_ptr<ResourceInfoType>&>
+        FResourceGuard AcquireResourceLastUsed(const ResourceCreateInfoType& CreateInfo, Func&& Pred)
+        {
+            std::unique_lock Lock(Mutex_);
+
+            if (!AvailableResources_.empty())
+            {
+                auto& LastResource = AvailableResources_.back();
+                if (Pred(LastResource))
+                {
+                    ResourceType* Resource = LastResource->Resource.release();
+                    std::size_t UsageCount = LastResource->UsageCount + 1;
+                    AvailableResources_.pop_back();
+
+                    BusyResourceCount_.fetch_add(1, std::memory_order::relaxed);
+                    IncreasePeakDemand();
+
+                    return FResourceGuard(this, Resource, UsageCount);
+                }
+            }
+
+            if (BusyResourceCount_.load() + AvailableResources_.size() < MaxAllocatedResourceLimit_)
+            {
+                auto ResourceInfo = CreateResource(CreateInfo);
+                ResourceType* Resource = ResourceInfo->Resource.release();
+
+                BusyResourceCount_.fetch_add(1, std::memory_order::relaxed);
+                IncreasePeakDemand();
+
+                return FResourceGuard(this, Resource, 1);
+            }
+
+            Lock.unlock();
+            return AcquireResource(CreateInfo, std::forward<Func>(Pred));
+        }
+
+        virtual std::unique_ptr<ResourceInfoType> CreateResource(const ResourceCreateInfoType& CreateInfo) = 0;
+        virtual bool HandleResourceEmergency(const ResourceCreateInfoType& CreateInfo, ResourceInfoType& LowUsageResource) = 0;
 
         virtual void OnReleaseResource(ResourceInfoType& ResourceInfo)
         {

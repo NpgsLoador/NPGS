@@ -2,6 +2,7 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <memory>
 
 #include <vulkan/vulkan.hpp>
 
@@ -34,8 +35,8 @@ namespace Npgs
         FPoolGuard AcquirePool(vk::CommandPoolCreateFlags Flags = vk::CommandPoolCreateFlagBits::eResetCommandBuffer);
 
     private:
-        void CreateResource(const FCommandPoolCreateInfo& CreateInfo) override;
-        bool HandleResourceEmergency(FCommandPoolInfo& LowUsageResource, const FCommandPoolCreateInfo& CreateInfo) override;
+        std::unique_ptr<FCommandPoolInfo> CreateResource(const FCommandPoolCreateInfo& CreateInfo) override;
+        bool HandleResourceEmergency(const FCommandPoolCreateInfo& CreateInfo, FCommandPoolInfo& LowUsageResource) override;
         void OnReleaseResource(FCommandPoolInfo& ResourceInfo) override;
 
     private:

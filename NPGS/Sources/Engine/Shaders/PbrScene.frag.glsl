@@ -16,8 +16,7 @@ layout(location = 0) in _FragInput
 
 layout(push_constant) uniform _DeviceAddress
 {
-	uint64_t MatricesAddress;
-	uint64_t LightArgsAddress;
+	layout(offset = 8) uint64_t LightArgsAddress;
 } DeviceAddress;
 
 layout(buffer_reference, scalar) readonly buffer _LightArgs

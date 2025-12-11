@@ -175,7 +175,7 @@ namespace Npgs
         , AllocationCreateInfo_(AllocationCreateInfo)
         , Name_(Name)
     {
-        Expand(BufferCreateInfo.size);
+        CreateStagingBuffer(BufferCreateInfo.size);
     }
 
     FStagingBuffer::FStagingBuffer(FStagingBuffer&& Other) noexcept
@@ -206,17 +206,6 @@ namespace Npgs
 
         return *this;
     }
-
-	void* FStagingBuffer::MapMemory(vk::DeviceSize Size)
-	{
-		Expand(Size);
-
-		void* Target = nullptr;
-		BufferMemory_->MapMemoryForSubmit(0, Size, Target);
-		MemoryUsage_ = Size;
-		
-        return Target;
-	}
 
     FVulkanImage* FStagingBuffer::CreateAliasedImage(vk::Format OriginFormat, const vk::ImageCreateInfo& ImageCreateInfo)
     {
@@ -266,18 +255,12 @@ namespace Npgs
         return AliasedImage_.get();
     }
 
-    void FStagingBuffer::Expand(vk::DeviceSize Size)
+    void FStagingBuffer::CreateStagingBuffer(vk::DeviceSize Size)
     {
-        if (BufferMemory_ != nullptr && Size <= BufferMemory_->GetMemory().GetAllocationSize())
-        {
-            return;
-        }
-
-        Release();
-
         std::string BufferName = Name_ + "_Buffer";
         std::string MemoryName = Name_ + "_Memory";
-        vk::BufferCreateInfo BufferCreateInfo({}, Size, vk::BufferUsageFlagBits::eTransferSrc | vk::BufferUsageFlagBits::eTransferDst);
+        vk::BufferUsageFlags BufferUsage = vk::BufferUsageFlagBits::eTransferSrc | vk::BufferUsageFlagBits::eTransferDst;
+        vk::BufferCreateInfo BufferCreateInfo({}, Size, BufferUsage);
 
         BufferMemory_ = std::make_unique<FVulkanBufferMemory>(
             Device_, BufferName, MemoryName, Allocator_, AllocationCreateInfo_, BufferCreateInfo);

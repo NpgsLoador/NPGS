@@ -42,12 +42,13 @@ namespace Npgs
         });
     }
 
-    void FStagingBufferPool::CreateResource(const FStagingBufferCreateInfo& CreateInfo)
+    std::unique_ptr<FStagingBufferInfo> FStagingBufferPool::CreateResource(const FStagingBufferCreateInfo& CreateInfo)
     {
         auto BufferInfoPtr = std::make_unique<FStagingBufferInfo>();
 
-        vk::DeviceSize AlignedSize = AlignSize(CreateInfo.Size);
-        vk::BufferCreateInfo BufferCreateInfo({}, AlignedSize, vk::BufferUsageFlagBits::eTransferSrc | vk::BufferUsageFlagBits::eTransferDst);
+        vk::DeviceSize       AlignedSize = AlignSize(CreateInfo.Size);
+        vk::BufferUsageFlags BufferUsage = vk::BufferUsageFlagBits::eTransferSrc | vk::BufferUsageFlagBits::eTransferDst;
+        vk::BufferCreateInfo BufferCreateInfo({}, AlignedSize, BufferUsage);
         
         std::uint64_t ResourceId = NextResourceId_.fetch_add(1, std::memory_order::relaxed);
         std::string Name = std::format("StagingBuffer_PoolInst_{:#x}_ID_{}", reinterpret_cast<std::uintptr_t>(this), ResourceId);
@@ -60,22 +61,24 @@ namespace Npgs
         BufferInfoPtr->LastUsedTimestamp = GetCurrentTimeMs();
         BufferInfoPtr->UsageCount        = 1;
 
-        AvailableResources_.push_back(std::move(BufferInfoPtr));
+        return BufferInfoPtr;
     }
 
-    bool FStagingBufferPool::HandleResourceEmergency(FStagingBufferInfo& LowUsageResource, const FStagingBufferCreateInfo& CreateInfo)
+    bool FStagingBufferPool::HandleResourceEmergency(const FStagingBufferCreateInfo& CreateInfo, FStagingBufferInfo& LowUsageResource)
     {
-        auto& BufferInfo = static_cast<FStagingBufferInfo&>(LowUsageResource);
-        if (BufferInfo.Size < CreateInfo.Size)
+        if (LowUsageResource.Size < CreateInfo.Size)
         {
-            vk::DeviceSize NewSize = std::max(AlignSize(CreateInfo.Size), BufferInfo.Size * 2);
+            vk::DeviceSize NewSize = std::max(AlignSize(CreateInfo.Size), LowUsageResource.Size * 2);
             if (NewSize > kSizeTiers.back())
             {
-                NewSize = static_cast<vk::DeviceSize>(BufferInfo.Size * 1.5);
+                NewSize = static_cast<vk::DeviceSize>(LowUsageResource.Size * 1.5);
             }
 
             FStagingBufferCreateInfo NewCreateInfo{ NewSize };
-            CreateResource(NewCreateInfo);
+            auto NewBufferInfo = CreateResource(NewCreateInfo);
+
+            LowUsageResource = std::move(*NewBufferInfo);
+
             return true;
         }
 
@@ -103,7 +106,7 @@ namespace Npgs
         std::uint32_t TargetCount = std::max(MinAvailableResourceLimit_, PeakResourceDemand_.load());
         std::lock_guard Lock(Mutex_);
 
-        constexpr vk::DeviceSize kCompactSizeThreshold = 32ull * 1024 * 1024;
+        constexpr vk::DeviceSize kCompactSizeThreshold = 32uz * 1024 * 1024;
         RemoveOversizedBuffers(kCompactSizeThreshold);
 
         if (AvailableResources_.size() < MinAvailableResourceLimit_ &&
@@ -268,7 +271,7 @@ namespace Npgs
         }
 
         std::vector<std::size_t> NeedRemoveIndices;
-        constexpr vk::DeviceSize kLargeBufferThreshold = 256ull * 1024 * 1024;
+        constexpr vk::DeviceSize kLargeBufferThreshold = 256uz * 1024 * 1024;
         for (auto [Size, Usage] : CategoryUsages)
         {
             if (Size > Threshold || Usage < 5 || Size > kLargeBufferThreshold)

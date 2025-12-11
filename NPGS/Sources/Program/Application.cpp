@@ -297,24 +297,8 @@ namespace Npgs
 
             for (std::uint32_t i = 0; i != Config::Graphics::kMaxFrameInFlight; ++i)
             {
-                const auto& ResourceDescriptorHeap = ShaderBufferManager->GetResourceDescriptorHeap(i);
-
-                auto ResourceHeapUsage = vk::BufferUsageFlagBits::eResourceDescriptorBufferEXT |
-                                         vk::BufferUsageFlagBits::eSamplerDescriptorBufferEXT |
-                                         vk::BufferUsageFlagBits::eShaderDeviceAddress |
-                                         vk::BufferUsageFlagBits::eTransferDst;
-
-                vk::DescriptorBufferBindingInfoEXT ResourceDescriptorBufferBindingInfo(
-                    ResourceDescriptorHeap.GetBuffer().GetDeviceAddress(), ResourceHeapUsage);
-
-                const auto& SamplerDescriptorHeap = ShaderBufferManager->GetSamplerDescriptorHeap(i);
-
-                auto SamplerHeapUsage = vk::BufferUsageFlagBits::eSamplerDescriptorBufferEXT |
-                                        vk::BufferUsageFlagBits::eShaderDeviceAddress |
-                                        vk::BufferUsageFlagBits::eTransferDst;
-
-                vk::DescriptorBufferBindingInfoEXT SamplerDescriptorBufferBindingInfo(
-                    SamplerDescriptorHeap.GetBuffer().GetDeviceAddress(), SamplerHeapUsage);
+                auto ResourceDescriptorBufferBindingInfo = ShaderBufferManager->GetResourceHeapBindingInfo(i);
+                auto SamplerDescriptorBufferBindingInfo  = ShaderBufferManager->GetSamplerHeapBindingInfo(i);
 
                 std::array DescriptorBufferBindingInfos{ ResourceDescriptorBufferBindingInfo, SamplerDescriptorBufferBindingInfo };;
 
@@ -380,14 +364,14 @@ namespace Npgs
                 FrontgroundCommandBuffer->setScissor(0, CommonScissor);
                 FrontgroundCommandBuffer->setViewport(0, CommonViewport);
                 FrontgroundCommandBuffer->bindPipeline(vk::PipelineBindPoint::eGraphics, LampPipeline);
-                FrontgroundCommandBuffer->pushConstants<vk::DeviceAddress>(LampPipelineLayout, vk::ShaderStageFlagBits::eVertex | vk::ShaderStageFlagBits::eFragment, 0, MatricesAddress);
-                FrontgroundCommandBuffer->pushConstants<vk::DeviceAddress>(LampPipelineLayout, vk::ShaderStageFlagBits::eVertex | vk::ShaderStageFlagBits::eFragment, LampShader->GetPushConstantOffset("LightArgsAddress"), LightArgsAddress);
+                FrontgroundCommandBuffer->pushConstants<vk::DeviceAddress>(LampPipelineLayout, vk::ShaderStageFlagBits::eVertex, 0, MatricesAddress);
+                FrontgroundCommandBuffer->pushConstants<vk::DeviceAddress>(LampPipelineLayout, vk::ShaderStageFlagBits::eFragment, LampShader->GetPushConstantOffset("LightArgsAddress"), LightArgsAddress);
                 FrontgroundCommandBuffer->bindVertexBuffers(0, CubeVertexBuffers, LampOffsets);
                 FrontgroundCommandBuffer->draw(36, 1, 0, 0);
                 FrontgroundCommandBuffer->bindPipeline(vk::PipelineBindPoint::eGraphics, SkyboxPipeline);
                 FrontgroundCommandBuffer->pushConstants<vk::DeviceAddress>(SkyboxPipelineLayout, vk::ShaderStageFlagBits::eVertex, 0, MatricesAddress);
                 FrontgroundCommandBuffer->bindDescriptorBuffersEXT(DescriptorBufferBindingInfos);
-                vk::DeviceSize OffsetSet0 = ShaderBufferManager->GetDescriptorBindingOffset("SkyboxDescriptorBuffer", 0, 0);
+                vk::DeviceSize OffsetSet0 = ShaderBufferManager->GetDescriptorBindingOffset("SkyboxDescriptorBuffer", 0);
                 FrontgroundCommandBuffer->setDescriptorBufferOffsetsEXT(vk::PipelineBindPoint::eGraphics, SkyboxPipelineLayout, 0, { 0 }, OffsetSet0);
                 FrontgroundCommandBuffer->bindVertexBuffers(0, *SkyboxVertexBuffer_->GetBuffer(), Offset);
                 FrontgroundCommandBuffer->draw(36, 1, 0, 0);
@@ -404,7 +388,7 @@ namespace Npgs
                 PostProcessCommandBuffer->bindPipeline(vk::PipelineBindPoint::eGraphics, PostPipeline);
                 PostProcessCommandBuffer->bindDescriptorBuffersEXT(DescriptorBufferBindingInfos);
                 PostProcessCommandBuffer->pushConstants<vk::Bool32>(PostPipelineLayout, vk::ShaderStageFlagBits::eFragment, PostShader->GetPushConstantOffset("bEnableHdr"), static_cast<vk::Bool32>(bEnableHdr_));
-                OffsetSet0 = ShaderBufferManager->GetDescriptorBindingOffset("PostDescriptorBuffer", 0, 0);
+                OffsetSet0 = ShaderBufferManager->GetDescriptorBindingOffset("PostDescriptorBuffer", 0);
                 PostProcessCommandBuffer->setDescriptorBufferOffsetsEXT(vk::PipelineBindPoint::eGraphics, PostPipelineLayout, 0, { 0 }, OffsetSet0);
                 PostProcessCommandBuffer->bindVertexBuffers(0, *QuadVertexBuffer_->GetBuffer(), Offset);
                 PostProcessCommandBuffer->draw(6, 1, 0, 0);
@@ -1039,7 +1023,7 @@ namespace Npgs
             {},
             {
                 { vk::ShaderStageFlagBits::eVertex, { "MatricesAddress" } },
-                { vk::ShaderStageFlagBits::eFragment, { "MatricesAddress", "LightArgsAddress" } }
+                { vk::ShaderStageFlagBits::eFragment, { "LightArgsAddress" } }
             }
         };
 
@@ -1347,7 +1331,7 @@ namespace Npgs
             SceneMergeDescriptorBufferCreateInfo.SampledImageInfos.emplace_back(2u, 2u, AlbedoMetalImageInfo);
             SceneMergeDescriptorBufferCreateInfo.SampledImageInfos.emplace_back(2u, 3u, ShadowImageInfo);
             SceneMergeDescriptorBufferCreateInfo.StorageImageInfos.emplace_back(1u, 0u, ColorStorageImageInfo);
-            PostDescriptorBufferCreateInfo.CombinedImageSamplerInfos.emplace_back(0u, 0u, ColorImageInfo);
+            PostDescriptorBufferCreateInfo.CombinedImageSamplerInfos.emplace_back(0u, 1u, ColorImageInfo);
 
             ShaderBufferManager->AllocateDescriptorBuffer(SceneGBufferDescriptorBufferCreateInfo);
             ShaderBufferManager->AllocateDescriptorBuffer(SceneMergeDescriptorBufferCreateInfo);
