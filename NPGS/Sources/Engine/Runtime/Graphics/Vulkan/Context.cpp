@@ -8,7 +8,7 @@
 namespace Npgs
 {
     FVulkanContext::FVulkanContext()
-        : VulkanCore_(std::make_unique<FVulkanCore>())
+        : VulkanCore_(new FVulkanCore)
     {
         auto InitializeResourcePool = [this]() -> void
         {
@@ -28,11 +28,11 @@ namespace Npgs
                     2, 8,  5000, 60000, VulkanCore_->GetDevice(), VulkanCore_->GetQueueFamilyIndex(EQueueType::kTransfer));
             }
 
-            StagingBufferPools_[std::to_underlying(FStagingBufferPool::EPoolUsage::kSubmit)] = std::make_unique<FStagingBufferPool>(
+            StagingBufferPools_[std::to_underlying(FStagingBufferPool::EPoolUsage::kSubmit)] = new FStagingBufferPool(
                 VulkanCore_->GetPhysicalDevice(), VulkanCore_->GetDevice(), VulkanCore_->GetVmaAllocator(),
                 4, 64, 1000, 60000, FStagingBufferPool::EPoolUsage::kSubmit);
 
-            StagingBufferPools_[std::to_underlying(FStagingBufferPool::EPoolUsage::kFetch)] = std::make_unique<FStagingBufferPool>(
+            StagingBufferPools_[std::to_underlying(FStagingBufferPool::EPoolUsage::kFetch)] = new FStagingBufferPool(
                 VulkanCore_->GetPhysicalDevice(), VulkanCore_->GetDevice(), VulkanCore_->GetVmaAllocator(),
                 2, 8, 10000, 60000, FStagingBufferPool::EPoolUsage::kFetch);
         };
@@ -53,10 +53,21 @@ namespace Npgs
     FVulkanContext::~FVulkanContext()
     {
         WaitIdle();
-        RemoveRegisteredCallbacks();
+        RemoveRuntimeOnlyCallbacks();
+
+        for (auto* StagingBufferPool : StagingBufferPools_)
+        {
+            delete StagingBufferPool;
+            StagingBufferPool = nullptr;
+        }
+
+        CommandPoolPools_.clear();
+
+        delete VulkanCore_;
+        VulkanCore_ = nullptr;
     }
 
-    void FVulkanContext::RegisterAutoRemovedCallbacks(ECallbackType Type, std::string_view Name, const std::function<void()>& Callback)
+    void FVulkanContext::RegisterRuntimeOnlyCallbacks(ECallbackType Type, std::string_view Name, const std::function<void()>& Callback)
     {
         switch (Type)
         {
@@ -76,31 +87,7 @@ namespace Npgs
             break;
         }
 
-        AutoRemovedCallbacks_.emplace_back(Type, Name);
-    }
-
-    void FVulkanContext::RemoveRegisteredCallbacks()
-    {
-        for (const auto& [Type, Name] : AutoRemovedCallbacks_)
-        {
-            switch (Type)
-            {
-            case ECallbackType::kCreateSwapchain:
-                RemoveCreateSwapchainCallback(Name);
-                break;
-            case ECallbackType::kDestroySwapchain:
-                RemoveDestroySwapchainCallback(Name);
-                break;
-            case ECallbackType::kCreateDevice:
-                RemoveCreateDeviceCallback(Name);
-                break;
-            case ECallbackType::kDestroyDevice:
-                RemoveDestroyDeviceCallback(Name);
-                break;
-            default:
-                break;
-            }
-        }
+        RuntimeOnlyCallbacks_.emplace_back(Type, Name);
     }
 
     vk::Result FVulkanContext::ExecuteCommands(EQueueType QueueType, vk::CommandBuffer CommandBuffer, std::string_view FenceName) const
@@ -197,5 +184,29 @@ namespace Npgs
         if (Counts & vk::SampleCountFlagBits::e2)  return vk::SampleCountFlagBits::e2;
 
         return vk::SampleCountFlagBits::e1;
+    }
+
+    void FVulkanContext::RemoveRuntimeOnlyCallbacks()
+    {
+        for (const auto& [Type, Name] : RuntimeOnlyCallbacks_)
+        {
+            switch (Type)
+            {
+            case ECallbackType::kCreateSwapchain:
+                RemoveCreateSwapchainCallback(Name);
+                break;
+            case ECallbackType::kDestroySwapchain:
+                RemoveDestroySwapchainCallback(Name);
+                break;
+            case ECallbackType::kCreateDevice:
+                RemoveCreateDeviceCallback(Name);
+                break;
+            case ECallbackType::kDestroyDevice:
+                RemoveDestroyDeviceCallback(Name);
+                break;
+            default:
+                break;
+            }
+        }
     }
 } // namespace Npgs

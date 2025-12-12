@@ -44,13 +44,6 @@ namespace Npgs
             if (Device_)
             {
                 WaitIdle();
-                if (VmaAllocator_)
-                {
-                    vmaDestroyAllocator(VmaAllocator_);
-                    VmaAllocator_ = nullptr;
-                    NpgsCoreInfo("Destroyed VMA allocator.");
-                }
-
                 if (Swapchain_)
                 {
                     for (auto& Callback : DestroySwapchainCallbacks_)
@@ -74,6 +67,14 @@ namespace Npgs
                 {
                     Callback.second();
                 }
+
+                if (VmaAllocator_)
+                {
+                    vmaDestroyAllocator(VmaAllocator_);
+                    VmaAllocator_ = nullptr;
+                    NpgsCoreInfo("Destroyed VMA allocator.");
+                }
+
                 Device_.destroy();
                 NpgsCoreInfo("Destroyed logical device.");
             }

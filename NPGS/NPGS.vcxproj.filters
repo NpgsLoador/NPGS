@@ -183,6 +183,12 @@
     <ClCompile Include="Sources\ExternalImpl\spirv_reflect_impl.c">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="Sources\Program\Rendering\Techniques\GbufferSceneTechnique.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="Sources\Engine\Runtime\Graphics\Renderer\MaterialTemplate.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Sources\stdafx.h">
@@ -402,6 +408,15 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="Sources\Program\Rendering\Materials\StandardPbrMaterialNameLookup.hpp">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="Sources\Engine\Runtime\Graphics\Renderer\MaterialTemplate.hpp">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="Sources\Program\Rendering\Techniques\GbufferSceneTechnique.hpp">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="Sources\Program\Rendering\Techniques\GbufferSceneTechniqueNameLookup.hpp">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>

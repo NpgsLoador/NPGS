@@ -154,7 +154,7 @@ namespace Npgs
 
         GetPipelines();
 
-        VulkanContext_->RegisterAutoRemovedCallbacks(
+        VulkanContext_->RegisterRuntimeOnlyCallbacks(
             FVulkanContext::ECallbackType::kCreateSwapchain, "GetPipelines", GetPipelines);
 
         auto PbrSceneGBufferPipelineLayout = PipelineManager->GetPipelineLayout("PbrSceneGBufferPipeline");
@@ -398,7 +398,7 @@ namespace Npgs
 
         RecordSecondaryCommands();
 
-        VulkanContext_->RegisterAutoRemovedCallbacks(
+        VulkanContext_->RegisterRuntimeOnlyCallbacks(
             FVulkanContext::ECallbackType::kCreateSwapchain, "RecordSecondaryCommands", RecordSecondaryCommands);
 
         auto PrepareResolveAttachment = [&]() -> void
@@ -428,7 +428,7 @@ namespace Npgs
 
         PrepareResolveAttachment();
 
-        VulkanContext_->RegisterAutoRemovedCallbacks(
+        VulkanContext_->RegisterRuntimeOnlyCallbacks(
             FVulkanContext::ECallbackType::kCreateSwapchain, "PrepareResolveAttachment", PrepareResolveAttachment);
 
         // Main rendering loop
@@ -973,16 +973,16 @@ namespace Npgs
             PostProcessAttachmentInfo_.setImageView(*ResolveAttachment_->GetImageView());
         };
 
-        auto DestroyFramebuffers = [&]() -> void
+        auto DestroyFramebuffers = [VulkanContext = VulkanContext_]() -> void
         {
-            VulkanContext_->WaitIdle();
+            VulkanContext->WaitIdle();
         };
 
         CreateFramebuffers();
 
-        VulkanContext_->RegisterAutoRemovedCallbacks(
+        VulkanContext_->RegisterRuntimeOnlyCallbacks(
             FVulkanContext::ECallbackType::kCreateSwapchain, "CreateFramebuffers", CreateFramebuffers);
-        VulkanContext_->RegisterAutoRemovedCallbacks(
+        VulkanContext_->RegisterRuntimeOnlyCallbacks(
             FVulkanContext::ECallbackType::kDestroySwapchain, "DestroyFramebuffers", DestroyFramebuffers);
     }
 
@@ -1339,7 +1339,7 @@ namespace Npgs
             ShaderBufferManager->AllocateDescriptorBuffer(PostDescriptorBufferCreateInfo);
         };
 
-        auto DestroyAttachmentDescriptors = [=]() mutable -> void
+        auto DestroyAttachmentDescriptors = [ShaderBufferManager]() mutable -> void
         {
             ShaderBufferManager->FreeDescriptorBuffer("SceneGBufferDescriptorBuffer");
             ShaderBufferManager->FreeDescriptorBuffer("SceneMergeDescriptorBuffer");
@@ -1349,9 +1349,9 @@ namespace Npgs
 
         CreateAttachmentDescriptors();
 
-        VulkanContext_->RegisterAutoRemovedCallbacks(
+        VulkanContext_->RegisterRuntimeOnlyCallbacks(
             FVulkanContext::ECallbackType::kCreateSwapchain, "CreateAttachmentDescriptors", CreateAttachmentDescriptors);
-        VulkanContext_->RegisterAutoRemovedCallbacks(
+        VulkanContext_->RegisterRuntimeOnlyCallbacks(
             FVulkanContext::ECallbackType::kDestroySwapchain, "DestroyAttachmentDescriptors", DestroyAttachmentDescriptors);
     }
 

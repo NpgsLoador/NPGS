@@ -7,8 +7,6 @@ namespace Npgs
     class FDepthMap : public IRenderPass
     {
     private:
-        void LoadShaders() override;
-        void SetupPipeline() override;
         void BindDescriptors() override;
         void DeclareAttachments() override;
     };

@@ -10,10 +10,8 @@ namespace Npgs
 
     void IRenderPass::Setup()
     {
-        LoadShaders();
-        SetupPipeline();
         BindDescriptors();
         DeclareAttachments();
-        RecordCommands(VulkanContext_);
+        //RecordCommands(VulkanContext_);
     }
 } // namespace Npgs

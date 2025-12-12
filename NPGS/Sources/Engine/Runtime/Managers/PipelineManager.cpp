@@ -156,7 +156,7 @@ namespace Npgs
             DestroyPipeline = []() -> void {};
         }
 
-        VulkanContext_->RegisterAutoRemovedCallbacks(FVulkanContext::ECallbackType::kCreateSwapchain,  Name, CreatePipeline);
-        VulkanContext_->RegisterAutoRemovedCallbacks(FVulkanContext::ECallbackType::kDestroySwapchain, Name, DestroyPipeline);
+        VulkanContext_->RegisterRuntimeOnlyCallbacks(FVulkanContext::ECallbackType::kCreateSwapchain,  Name, CreatePipeline);
+        VulkanContext_->RegisterRuntimeOnlyCallbacks(FVulkanContext::ECallbackType::kDestroySwapchain, Name, DestroyPipeline);
     }
 } // namespace Npgs

@@ -1,6 +1,11 @@
 #pragma once
 
+#include <vector>
+#include <vulkan/vulkan.hpp>
+
 #include "Engine/Runtime/Graphics/Vulkan/Context.hpp"
+#include "Engine/Runtime/Graphics/Vulkan/Wrappers.hpp"
+#include "Engine/Runtime/Pools/CommandPoolPool.hpp"
 
 namespace Npgs
 {
@@ -16,11 +21,11 @@ namespace Npgs
         IRenderPass& operator=(IRenderPass&&)      = delete;
 
         void Setup();
-        virtual void RecordCommands(FVulkanContext* VulkanContext) = 0;
+        
+        virtual std::vector<FVulkanCommandBuffer>
+        RecordCommands(const FCommandPoolPool::FPoolGuard& CommandPool, vk::Viewport Viewport, vk::Rect2D Scissor) = 0;
 
     protected:
-        virtual void LoadShaders()        = 0;
-        virtual void SetupPipeline()      = 0;
         virtual void BindDescriptors()    = 0;
         virtual void DeclareAttachments() = 0;
 

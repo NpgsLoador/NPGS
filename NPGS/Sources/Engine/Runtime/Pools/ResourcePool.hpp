@@ -58,6 +58,7 @@ namespace Npgs
         class FResourceGuard
         {
         public:
+            FResourceGuard() = default;
             FResourceGuard(TResourcePool* Pool, ResourceType* Resource, std::size_t UsageCount)
                 : Pool_(Pool), Resource_(Resource), UsageCount_(UsageCount)
             {
@@ -114,9 +115,9 @@ namespace Npgs
             }
 
         private:
-            TResourcePool* Pool_;
-            ResourceType*  Resource_;
-            std::size_t    UsageCount_;
+            TResourcePool* Pool_{ nullptr };
+            ResourceType*  Resource_{ nullptr };
+            std::size_t    UsageCount_{};
         };
 
         struct FStatisticsInfo

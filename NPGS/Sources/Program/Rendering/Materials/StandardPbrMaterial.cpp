@@ -82,23 +82,23 @@ namespace Npgs
 
     void FStandardPbrMaterial::BindDescriptors()
     {
-        auto* AssetManager = EngineCoreServices->GetAssetManager();
-        auto  Shader       = AssetManager->AcquireAsset<FShader>(RenderPasses::GbufferScene::kShaderName);
+        //auto* AssetManager = EngineCoreServices->GetAssetManager();
+        //auto  Shader       = AssetManager->AcquireAsset<FShader>(RenderPasses::GbufferScene::kShaderName);
 
-        FDescriptorBufferCreateInfo DescriptorBufferCreateInfo;
-        DescriptorBufferCreateInfo.Name     = Materials::StandardPbr::kDescriptorBufferName;
-        DescriptorBufferCreateInfo.SetInfos = Shader->GetDescriptorSetInfos();
+        //FDescriptorBufferCreateInfo DescriptorBufferCreateInfo;
+        //DescriptorBufferCreateInfo.Name     = Materials::StandardPbr::kDescriptorBufferName;
+        //DescriptorBufferCreateInfo.SetInfos = Shader->GetDescriptorSetInfos();
 
-        auto Sampler = AssetManager->AcquireAsset<FVulkanSampler>(Public::Samplers::kPbrTextureSamplerName);
-        DescriptorBufferCreateInfo.SamplerInfos.emplace_back(0u, 0u, **Sampler);
-        auto PbrAlbedoImageInfo = AlbedoMap_->CreateDescriptorImageInfo(nullptr);
-        DescriptorBufferCreateInfo.SampledImageInfos.emplace_back(1u, 0u, PbrAlbedoImageInfo);
-        auto PbrNormalImageInfo = NormalMap_->CreateDescriptorImageInfo(nullptr);
-        DescriptorBufferCreateInfo.SampledImageInfos.emplace_back(1u, 1u, PbrNormalImageInfo);
-        auto PbrArmImageInfo = ArmMap_->CreateDescriptorImageInfo(nullptr);
-        DescriptorBufferCreateInfo.SampledImageInfos.emplace_back(1u, 2u, PbrArmImageInfo);
+        //auto Sampler = AssetManager->AcquireAsset<FVulkanSampler>(Public::Samplers::kPbrTextureSamplerName);
+        //DescriptorBufferCreateInfo.SamplerInfos.emplace_back(0u, 0u, **Sampler);
+        //auto PbrAlbedoImageInfo = AlbedoMap_->CreateDescriptorImageInfo(nullptr);
+        //DescriptorBufferCreateInfo.SampledImageInfos.emplace_back(1u, 0u, PbrAlbedoImageInfo);
+        //auto PbrNormalImageInfo = NormalMap_->CreateDescriptorImageInfo(nullptr);
+        //DescriptorBufferCreateInfo.SampledImageInfos.emplace_back(1u, 1u, PbrNormalImageInfo);
+        //auto PbrArmImageInfo = ArmMap_->CreateDescriptorImageInfo(nullptr);
+        //DescriptorBufferCreateInfo.SampledImageInfos.emplace_back(1u, 2u, PbrArmImageInfo);
 
-        auto* ShaderBufferManager = EngineResourceServices->GetShaderBufferManager();
-        ShaderBufferManager->AllocateDescriptorBuffer(DescriptorBufferCreateInfo);
+        //auto* ShaderBufferManager = EngineResourceServices->GetShaderBufferManager();
+        //ShaderBufferManager->AllocateDescriptorBuffer(DescriptorBufferCreateInfo);
     }
 } // namespace Npgs

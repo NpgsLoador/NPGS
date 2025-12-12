@@ -50,8 +50,7 @@ namespace Npgs
         void RemoveDestroyDeviceCallback(std::string_view Name);
         void RemoveCreateSwapchainCallback(std::string_view Name);
         void RemoveDestroySwapchainCallback(std::string_view Name);
-        void RegisterAutoRemovedCallbacks(ECallbackType Type, std::string_view Name, const std::function<void()>& Callback);
-        void RemoveRegisteredCallbacks();
+        void RegisterRuntimeOnlyCallbacks(ECallbackType Type, std::string_view Name, const std::function<void()>& Callback);
 
         void AddInstanceLayer(const char* Layer);
         void SetInstanceLayers(const std::vector<const char*>& Layers);
@@ -134,10 +133,13 @@ namespace Npgs
         std::uint32_t GetApiVersion() const;
 
     private:
-        std::unique_ptr<FVulkanCore>                                         VulkanCore_;
+        void RemoveRuntimeOnlyCallbacks();
+
+    private:
+        FVulkanCore*                                                         VulkanCore_;
         std::unordered_map<std::uint32_t, std::unique_ptr<FCommandPoolPool>> CommandPoolPools_;
-        std::array<std::unique_ptr<FStagingBufferPool>, 2>                   StagingBufferPools_;
-        std::vector<std::pair<ECallbackType, std::string>>                   AutoRemovedCallbacks_;
+        std::array<FStagingBufferPool*, 2>                                   StagingBufferPools_;
+        std::vector<std::pair<ECallbackType, std::string>>                   RuntimeOnlyCallbacks_;
         // std::array<vk::FormatProperties, magic_enum::enum_count<vk::Format>()> FormatProperties_;
     };
 } // namespace Npgs

@@ -9,48 +9,48 @@
 
 namespace Npgs
 {
-    void FDepthMap::LoadShaders()
-    {
-        FResourceInfo ResourceInfo
-        {
-            .VertexBufferInfos
-            {
-                { 0, sizeof(FVertex), false },
-                { 1, sizeof(FInstanceData), true }
-            },
-            .VertexAttributeInfos
-            {
-                { 0, 0, offsetof(FVertex, Position) },
-                { 1, 1, offsetof(FInstanceData, Model) }
-            },
-            .ShaderBufferInfos{},
-            .PushConstantInfos{ { vk::ShaderStageFlagBits::eVertex, { "MatricesAddress" } } }
-        };
+    //void FDepthMap::LoadShaders()
+    //{
+    //    FResourceInfo ResourceInfo
+    //    {
+    //        .VertexBufferInfos
+    //        {
+    //            { 0, sizeof(FVertex), false },
+    //            { 1, sizeof(FInstanceData), true }
+    //        },
+    //        .VertexAttributeInfos
+    //        {
+    //            { 0, 0, offsetof(FVertex, Position) },
+    //            { 1, 1, offsetof(FInstanceData, Model) }
+    //        },
+    //        .ShaderBufferInfos{},
+    //        .PushConstantInfos{ { vk::ShaderStageFlagBits::eVertex, { "MatricesAddress" } } }
+    //    };
 
-        std::vector<std::string> ShaderFiles({ "DepthMap.vert.spv" });
+    //    std::vector<std::string> ShaderFiles({ "DepthMap.vert.spv" });
 
-        auto* AssetManager = EngineCoreServices->GetAssetManager();
-        AssetManager->AddAsset<FShader>(RenderPasses::DepthMap::kShaderName, ShaderFiles, ResourceInfo);
-    }
+    //    auto* AssetManager = EngineCoreServices->GetAssetManager();
+    //    AssetManager->AddAsset<FShader>(RenderPasses::DepthMap::kShaderName, ShaderFiles, ResourceInfo);
+    //}
 
-    void FDepthMap::SetupPipeline()
-    {
-        FGraphicsPipelineCreateInfoPack PipelineCreateInfoPack;
+    //void FDepthMap::SetupPipeline()
+    //{
+    //    FGraphicsPipelineCreateInfoPack PipelineCreateInfoPack;
 
-        PipelineCreateInfoPack.DynamicStates.push_back(vk::DynamicState::eScissor);
-        PipelineCreateInfoPack.DynamicStates.push_back(vk::DynamicState::eViewport);
+    //    PipelineCreateInfoPack.DynamicStates.push_back(vk::DynamicState::eScissor);
+    //    PipelineCreateInfoPack.DynamicStates.push_back(vk::DynamicState::eViewport);
 
-        vk::PipelineRenderingCreateInfo RenderingCreateInfo = vk::PipelineRenderingCreateInfo()
-            .setDepthAttachmentFormat(vk::Format::eD32Sfloat);
+    //    vk::PipelineRenderingCreateInfo RenderingCreateInfo = vk::PipelineRenderingCreateInfo()
+    //        .setDepthAttachmentFormat(vk::Format::eD32Sfloat);
 
-        PipelineCreateInfoPack.GraphicsPipelineCreateInfo.setFlags(vk::PipelineCreateFlagBits::eDescriptorBufferEXT);
-        PipelineCreateInfoPack.GraphicsPipelineCreateInfo.setPNext(&RenderingCreateInfo);
-        PipelineCreateInfoPack.InputAssemblyStateCreateInfo.setTopology(vk::PrimitiveTopology::eTriangleList);
+    //    PipelineCreateInfoPack.GraphicsPipelineCreateInfo.setFlags(vk::PipelineCreateFlagBits::eDescriptorBufferEXT);
+    //    PipelineCreateInfoPack.GraphicsPipelineCreateInfo.setPNext(&RenderingCreateInfo);
+    //    PipelineCreateInfoPack.InputAssemblyStateCreateInfo.setTopology(vk::PrimitiveTopology::eTriangleList);
 
-        auto* PipelineManager = EngineResourceServices->GetPipelineManager();
-        PipelineManager->CreateGraphicsPipeline(
-            RenderPasses::DepthMap::kPipelineName, RenderPasses::DepthMap::kShaderName, PipelineCreateInfoPack);
-    }
+    //    auto* PipelineManager = EngineResourceServices->GetPipelineManager();
+    //    PipelineManager->CreateGraphicsPipeline(
+    //        RenderPasses::DepthMap::kPipelineName, RenderPasses::DepthMap::kShaderName, PipelineCreateInfoPack);
+    //}
 
     void FDepthMap::BindDescriptors()
     {
