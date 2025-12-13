@@ -6,7 +6,6 @@
 #include <memory>
 #include <string>
 #include <string_view>
-#include <unordered_map>
 #include <utility>
 
 // #include <magic_enum/magic_enum.hpp>
@@ -136,10 +135,10 @@ namespace Npgs
         void RemoveRuntimeOnlyCallbacks();
 
     private:
-        FVulkanCore*                                                         VulkanCore_;
-        std::unordered_map<std::uint32_t, std::unique_ptr<FCommandPoolPool>> CommandPoolPools_;
-        std::array<FStagingBufferPool*, 2>                                   StagingBufferPools_;
-        std::vector<std::pair<ECallbackType, std::string>>                   RuntimeOnlyCallbacks_;
+        FVulkanCore*                                       VulkanCore_;
+        std::array<FCommandPoolPool*, 3>                   CommandPoolPools_{};
+        std::array<FStagingBufferPool*, 2>                 StagingBufferPools_{};
+        std::vector<std::pair<ECallbackType, std::string>> RuntimeOnlyCallbacks_;
         // std::array<vk::FormatProperties, magic_enum::enum_count<vk::Format>()> FormatProperties_;
     };
 } // namespace Npgs

@@ -14,17 +14,17 @@ namespace Npgs
         {
             if (VulkanCore_->GetQueueFamilyIndex(EQueueType::kGeneral) != vk::QueueFamilyIgnored)
             {
-                CommandPoolPools_[VulkanCore_->GetQueueFamilyIndex(EQueueType::kGeneral)] = std::make_unique<FCommandPoolPool>(
+                CommandPoolPools_[std::to_underlying(EQueueType::kGeneral)] = new FCommandPoolPool(
                     8, 32, 5000, 60000, VulkanCore_->GetDevice(), VulkanCore_->GetQueueFamilyIndex(EQueueType::kGeneral));
             }
             if (VulkanCore_->GetQueueFamilyIndex(EQueueType::kCompute) != vk::QueueFamilyIgnored)
             {
-                CommandPoolPools_[VulkanCore_->GetQueueFamilyIndex(EQueueType::kCompute)] = std::make_unique<FCommandPoolPool>(
+                CommandPoolPools_[std::to_underlying(EQueueType::kCompute)] = new FCommandPoolPool(
                     4, 16, 5000, 60000, VulkanCore_->GetDevice(), VulkanCore_->GetQueueFamilyIndex(EQueueType::kCompute));
             }
             if (VulkanCore_->GetQueueFamilyIndex(EQueueType::kTransfer) != vk::QueueFamilyIgnored)
             {
-                CommandPoolPools_[VulkanCore_->GetQueueFamilyIndex(EQueueType::kTransfer)] = std::make_unique<FCommandPoolPool>(
+                CommandPoolPools_[std::to_underlying(EQueueType::kTransfer)] = new FCommandPoolPool(
                     2, 8,  5000, 60000, VulkanCore_->GetDevice(), VulkanCore_->GetQueueFamilyIndex(EQueueType::kTransfer));
             }
 
@@ -61,7 +61,14 @@ namespace Npgs
             StagingBufferPool = nullptr;
         }
 
-        CommandPoolPools_.clear();
+        for (auto* CommandPoolPool : CommandPoolPools_)
+        {
+            if (CommandPoolPool != nullptr)
+            {
+                delete CommandPoolPool;
+                CommandPoolPool = nullptr;
+            }
+        }
 
         delete VulkanCore_;
         VulkanCore_ = nullptr;

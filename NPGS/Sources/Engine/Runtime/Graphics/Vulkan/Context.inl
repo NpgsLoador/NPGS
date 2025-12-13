@@ -293,7 +293,7 @@ namespace Npgs
     NPGS_INLINE FCommandPoolPool::FPoolGuard
     FVulkanContext::AcquireCommandPool(EQueueType QueueType, vk::CommandPoolCreateFlags Flags)
     {
-        return CommandPoolPools_.at(VulkanCore_->GetQueueFamilyIndex(QueueType))->AcquirePool(Flags);
+        return CommandPoolPools_.at(std::to_underlying(QueueType))->AcquirePool(Flags);
     }
 
     NPGS_INLINE FStagingBufferPool::FBufferGuard
