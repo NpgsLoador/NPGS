@@ -212,10 +212,10 @@ namespace Npgs
 
     // Wrapper for vk::DeviceMemory
     // ----------------------------
-    class FVulkanDeviceMemory : public TVulkanHandle<vk::DeviceMemory, true, EVulkanHandleReleaseMethod::kFree>
+    class FVulkanDeviceMemory : public TVulkanHandleNoDestroy<vk::DeviceMemory>
     {
     public:
-        using Base = TVulkanHandle<vk::DeviceMemory, true, EVulkanHandleReleaseMethod::kFree>;
+        using Base = TVulkanHandleNoDestroy<vk::DeviceMemory>;
         using Base::Base;
 
         FVulkanDeviceMemory(vk::Device Device, std::string_view Name, VmaAllocator Allocator,
@@ -302,13 +302,9 @@ namespace Npgs
         using Base::Base;
 
         FVulkanBufferView(vk::Device Device, std::string_view Name, const vk::BufferViewCreateInfo& CreateInfo);
-        FVulkanBufferView(vk::Device Device, std::string_view Name, const FVulkanBuffer& Buffer, vk::Format Format,
-                          vk::DeviceSize Offset = 0, vk::DeviceSize Range = 0, vk::BufferViewCreateFlags Flags = {});
 
     private:
         vk::Result CreateBufferView(const vk::BufferViewCreateInfo& CreateInfo);
-        vk::Result CreateBufferView(const FVulkanBuffer& Buffer, vk::Format Format, vk::DeviceSize Offset,
-                                    vk::DeviceSize Range, vk::BufferViewCreateFlags Flags);
     };
 
     // Wrapper for vk::DescriptorSetLayout
@@ -391,15 +387,9 @@ namespace Npgs
         using Base::Base;
 
         FVulkanImageView(vk::Device Device, std::string_view Name, const vk::ImageViewCreateInfo& CreateInfo);
-        FVulkanImageView(vk::Device Device, std::string_view Name, const FVulkanImage& Image, vk::ImageViewType ViewType,
-                         vk::Format Format, vk::ComponentMapping Components,
-                         vk::ImageSubresourceRange SubresourceRange, vk::ImageViewCreateFlags Flags = {});
 
     private:
         vk::Result CreateImageView(const vk::ImageViewCreateInfo& CreateInfo);
-        vk::Result CreateImageView(const FVulkanImage& Image, vk::ImageViewType ViewType, vk::Format Format,
-                                   vk::ComponentMapping Components, vk::ImageSubresourceRange SubresourceRange,
-                                   vk::ImageViewCreateFlags Flags);
     };
 
     // Wrapper for vk::PipelineCache
@@ -509,6 +499,19 @@ namespace Npgs
     private:
         vk::Result CreateSemaphore(const vk::SemaphoreCreateInfo& CreateInfo);
         vk::Result CreateSemaphore(vk::SemaphoreCreateFlags Flags);
+    };
+
+    // Wrapper for vk::ShaderEXT
+    // -------------------------
+    class FVulkanShader : public TVulkanHandle<vk::ShaderEXT>
+    {
+        using Base = TVulkanHandle<vk::ShaderEXT>;
+        using Base::Base;
+
+        FVulkanShader(vk::Device Device, std::string_view Name, const vk::ShaderCreateInfoEXT& CreateInfo);
+
+    private:
+        vk::Result CreateShader(const vk::ShaderCreateInfoEXT& CreateInfo);
     };
 
     // Wrapper for vk::ShaderModule

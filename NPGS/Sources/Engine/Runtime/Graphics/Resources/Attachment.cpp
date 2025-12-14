@@ -102,16 +102,10 @@ namespace Npgs
 
         std::string ImageViewName = std::string(Name) + "_ImageView";
         vk::ImageSubresourceRange SubresourceRange(vk::ImageAspectFlagBits::eColor, 0, 1, 0, LayerCount);
+        vk::ImageViewType ImageViewType = LayerCount > 1 ? vk::ImageViewType::e2DArray : vk::ImageViewType::e2D;
+        vk::ImageViewCreateInfo ImageViewCreateInfo({}, *ImageMemory_->GetResource(), ImageViewType, Format, {}, SubresourceRange);
 
-        ImageView_ = std::make_unique<FVulkanImageView>(
-            VulkanContext_->GetDevice(),
-            ImageViewName,
-            ImageMemory_->GetResource(),
-            LayerCount > 1 ? vk::ImageViewType::e2DArray : vk::ImageViewType::e2D,
-            Format,
-            vk::ComponentMapping(),
-            SubresourceRange
-        );
+        ImageView_ = std::make_unique<FVulkanImageView>(VulkanContext_->GetDevice(), ImageViewName, ImageViewCreateInfo);
 
         if (!ImageView_->IsValid())
         {
@@ -189,16 +183,10 @@ namespace Npgs
 
         std::string ImageViewName = std::string(Name) + "_ImageView";
         vk::ImageSubresourceRange SubresourceRange(AspectFlags, 0, 1, 0, LayerCount);
+        vk::ImageViewType ImageViewType = LayerCount > 1 ? vk::ImageViewType::e2DArray : vk::ImageViewType::e2D;
+        vk::ImageViewCreateInfo ImageViewCreateInfo({}, *ImageMemory_->GetResource(), ImageViewType, Format, {}, SubresourceRange);
 
-        ImageView_ = std::make_unique<FVulkanImageView>(
-            VulkanContext_->GetDevice(),
-            ImageViewName,
-            ImageMemory_->GetResource(),
-            LayerCount > 1 ? vk::ImageViewType::e2DArray : vk::ImageViewType::e2D,
-            Format,
-            vk::ComponentMapping(),
-            SubresourceRange
-        );
+        ImageView_ = std::make_unique<FVulkanImageView>(VulkanContext_->GetDevice(), ImageViewName, ImageViewCreateInfo);
 
         if (!ImageView_->IsValid())
         {

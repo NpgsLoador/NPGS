@@ -150,6 +150,7 @@ namespace Npgs
         AddDeviceExtension(vk::EXTCustomBorderColorExtensionName);
         AddDeviceExtension(vk::EXTDescriptorBufferExtensionName);    
         AddDeviceExtension(vk::EXTHdrMetadataExtensionName);
+        AddDeviceExtension(vk::EXTShaderObjectExtensionName);
         AddDeviceExtension(vk::KHRMaintenance6ExtensionName);
         AddDeviceExtension(vk::KHRSwapchainExtensionName);
         AddDeviceExtension(vk::KHRUnifiedImageLayoutsExtensionName);
@@ -202,7 +203,8 @@ namespace Npgs
         vk::PhysicalDeviceDescriptorBufferFeaturesEXT DescriptorBufferFeatures(
             vk::True, vk::True, vk::True, vk::True, &CustomBorderColorFeatures);
 
-        vk::PhysicalDeviceUnifiedImageLayoutsFeaturesKHR UnifiedImageLayoutsFeatures(vk::True, vk::True, &DescriptorBufferFeatures);
+        vk::PhysicalDeviceShaderObjectFeaturesEXT ShaderObjectFeatures(vk::True, &DescriptorBufferFeatures);
+        vk::PhysicalDeviceUnifiedImageLayoutsFeaturesKHR UnifiedImageLayoutsFeatures(vk::True, vk::True, &ShaderObjectFeatures);
 
         Features11.setPNext(&UnifiedImageLayoutsFeatures);
         vk::DeviceCreateInfo DeviceCreateInfo(Flags, DeviceQueueCreateInfos, {}, DeviceExtensions_, &Features2.features, &Features14);

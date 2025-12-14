@@ -739,17 +739,9 @@ namespace Npgs
     {
         std::string ImageViewName = TextureName_ + "_ImageView";
         vk::ImageSubresourceRange ImageSubresourceRange(vk::ImageAspectFlagBits::eColor, 0, MipLevels, 0, ArrayLayers);
+        vk::ImageViewCreateInfo ImageViewCreateInfo(Flags, *ImageMemory_->GetResource(), ImageViewType, Format, {}, ImageSubresourceRange);
 
-        ImageView_ = std::make_unique<FVulkanImageView>(
-            VulkanContext_->GetDevice(),
-            ImageViewName,
-            ImageMemory_->GetResource(),
-            ImageViewType,
-            Format,
-            vk::ComponentMapping(),
-            ImageSubresourceRange,
-            Flags
-        );
+        ImageView_ = std::make_unique<FVulkanImageView>(VulkanContext_->GetDevice(), ImageViewName, ImageViewCreateInfo);
     }
 
     void FTexture::CopyBlitGenerateTexture(const FVulkanCommandPool& CommandPool, vk::Buffer SrcBuffer, vk::Extent3D Extent,

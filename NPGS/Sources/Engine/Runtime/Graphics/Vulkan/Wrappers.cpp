@@ -442,14 +442,11 @@ namespace Npgs
     FVulkanDeviceMemory::FVulkanDeviceMemory(vk::Device Device, std::string_view Name,
                                              VmaAllocator Allocator, VmaAllocation Allocation,
                                              const VmaAllocationInfo& AllocationInfo, vk::DeviceMemory Handle)
-        : Base(Device, Name)
+        : Base(Handle, Name)
         , Allocator_(Allocator)
         , Allocation_(Allocation)
         , AllocationInfo_(AllocationInfo)
     {
-        Handle_ = Handle;
-        Status_ = vk::Result::eSuccess;
-
         SetDebugUtilsObjectName(Device, vk::ObjectType::eDeviceMemory, Handle, Name);
 
         vmaGetMemoryTypeProperties(Allocator_, AllocationInfo_.memoryType,
@@ -684,14 +681,6 @@ namespace Npgs
         Status_ = CreateBufferView(CreateInfo);
     }
 
-    FVulkanBufferView::FVulkanBufferView(vk::Device Device, std::string_view Name, const FVulkanBuffer& Buffer,
-                                         vk::Format Format, vk::DeviceSize Offset,
-                                         vk::DeviceSize Range, vk::BufferViewCreateFlags Flags)
-        : Base(Device, Name)
-    {
-        Status_ = CreateBufferView(Buffer, Format, Offset, Range, Flags);
-    }
-
     vk::Result FVulkanBufferView::CreateBufferView(const vk::BufferViewCreateInfo& CreateInfo)
     {
         try
@@ -708,13 +697,6 @@ namespace Npgs
 
         NpgsCoreTrace("Buffer view \"{}\" created successfully.", HandleName_);
         return vk::Result::eSuccess;
-    }
-
-    vk::Result FVulkanBufferView::CreateBufferView(const FVulkanBuffer& Buffer, vk::Format Format, vk::DeviceSize Offset,
-                                                   vk::DeviceSize Range, vk::BufferViewCreateFlags Flags)
-    {
-        vk::BufferViewCreateInfo CreateInfo(Flags, *Buffer, Format, Offset, Range);
-        return CreateBufferView(CreateInfo);
     }
 
     // Wrapper for vk::DescriptorSetLayout
@@ -917,14 +899,6 @@ namespace Npgs
         Status_ = CreateImageView(CreateInfo);
     }
 
-    FVulkanImageView::FVulkanImageView(vk::Device Device, std::string_view Name, const FVulkanImage & Image, vk::ImageViewType ViewType,
-                                       vk::Format Format, vk::ComponentMapping Components,
-                                       vk::ImageSubresourceRange SubresourceRange, vk::ImageViewCreateFlags Flags)
-        : Base(Device, Name)
-    {
-        Status_ = CreateImageView(Image, ViewType, Format, Components, SubresourceRange, Flags);
-    }
-
     vk::Result FVulkanImageView::CreateImageView(const vk::ImageViewCreateInfo& CreateInfo)
     {
         try
@@ -941,14 +915,6 @@ namespace Npgs
 
         NpgsCoreTrace("Image view \"{}\" created successfully.", HandleName_);
         return vk::Result::eSuccess;
-    }
-
-    vk::Result FVulkanImageView::CreateImageView(const FVulkanImage& Image, vk::ImageViewType ViewType, vk::Format Format,
-                                                 vk::ComponentMapping Components, vk::ImageSubresourceRange SubresourceRange,
-                                                 vk::ImageViewCreateFlags Flags)
-    {
-        vk::ImageViewCreateInfo CreateInfo(Flags, *Image, ViewType, Format, Components, SubresourceRange);
-        return CreateImageView(CreateInfo);
     }
 
     // Wrapper for vk::PipelineCache
@@ -1203,6 +1169,32 @@ namespace Npgs
         return CreateSemaphore(SemaphoreCreateInfo);
     }
 
+    // Wrapper for vk::ShaderEXT
+    // -------------------------
+    FVulkanShader::FVulkanShader(vk::Device Device, std::string_view Name, const vk::ShaderCreateInfoEXT& CreateInfo)
+        : Base(Device, Name)
+    {
+        Status_ = CreateShader(CreateInfo);
+    }
+
+    vk::Result FVulkanShader::CreateShader(const vk::ShaderCreateInfoEXT& CreateInfo)
+    {
+        try
+        {
+            Handle_ = Device_.createShaderEXT(CreateInfo).value;
+        }
+        catch (const vk::SystemError& e)
+        {
+            NpgsCoreError("Failed to create shader \"{}\": {}", HandleName_, e.what());
+            return static_cast<vk::Result>(e.code().value());
+        }
+
+        SetDebugUtilsObjectName(Device_, vk::ObjectType::eShaderEXT, Handle_, HandleName_);
+
+        NpgsCoreTrace("Shader \"{}\" created successfully.", HandleName_);
+        return vk::Result::eSuccess;
+    }
+
     // Wrapper for vk::ShaderModule
     // ----------------------------
     FVulkanShaderModule::FVulkanShaderModule(vk::Device Device, std::string_view Name,
@@ -1223,6 +1215,8 @@ namespace Npgs
             NpgsCoreError("Failed to create shader module \"{}\": {}", HandleName_, e.what());
             return static_cast<vk::Result>(e.code().value());
         }
+
+        SetDebugUtilsObjectName(Device_, vk::ObjectType::eShaderModule, Handle_, HandleName_);
 
         NpgsCoreTrace("Shader module \"{}\" created successfully.", HandleName_);
         return vk::Result::eSuccess;
