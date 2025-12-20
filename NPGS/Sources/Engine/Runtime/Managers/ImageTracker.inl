@@ -1,3 +1,5 @@
+#include "ImageTracker.hpp"
+
 namespace Npgs
 {
     inline void FImageTracker::TrackImage(vk::Image Image, const FImageState& ImageState)

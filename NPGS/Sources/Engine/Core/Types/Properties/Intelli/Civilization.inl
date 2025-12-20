@@ -1,3 +1,5 @@
+#include "Civilization.hpp"
+
 #include <utility>
 #include "Engine/Core/Base/Base.hpp"
 

@@ -40,7 +40,7 @@
 #include "Engine/Core/Types/Entries/Astro/CelestialObject.hpp"
 #include "Engine/Core/Types/Entries/Astro/Planet.hpp"
 #include "Engine/Core/Types/Entries/Astro/Star.hpp"
-#include "Engine/Core/Types/Entries/Astro/StellarSystem.hpp"
+#include "Engine/Core/Types/Entries/Astro/OrbitalSystem.hpp"
 #include "Engine/Core/Types/Entries/NpgsObject.hpp"
 
 #include "Engine/Core/Types/Properties/Intelli/Artifact.hpp"

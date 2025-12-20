@@ -1,3 +1,4 @@
+#include "PipelineManager.hpp"
 #include "Engine/Core/Base/Base.hpp"
 
 namespace Npgs

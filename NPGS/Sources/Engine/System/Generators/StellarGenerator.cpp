@@ -107,6 +107,32 @@ namespace Npgs
 
     // FStellarGenerator implementations
     // ---------------------------------
+    const std::array<std::string, 12> FStellarGenerator::kMistHeaders_
+    {
+        "star_age",
+        "star_mass",
+        "star_mdot",
+        "log_Teff",
+        "log_R",
+        "log_surf_z",
+        "surface_h1",
+        "surface_he3",
+        "log_center_T",
+        "log_center_Rho",
+        "phase",
+        "x"
+    };
+
+    const std::array<std::string, 5> FStellarGenerator::kWdMistHeaders_
+    {
+        "star_age", "log_R", "log_Teff", "log_center_T", "log_center_Rho"
+    };
+
+    const std::array<std::string, 7> FStellarGenerator::kHrDiagramHeaders_
+    {
+        "B-V", "Ia", "Ib", "II", "III", "IV", "V"
+    };
+
     FStellarGenerator::FStellarGenerator(const FStellarGenerationInfo& GenerationInfo)
         :
         RandomEngine_(*GenerationInfo.SeedSequence),
@@ -2400,9 +2426,4 @@ namespace Npgs
         LogTeff = std::log10(Teff);
         LogR    = std::log10(RadiusSol);
     }
-
-    std::unordered_map<std::string, std::vector<float>> FStellarGenerator::MassFilesCache_;
-    std::unordered_map<const FStellarGenerator::FMistData*, std::vector<FStellarGenerator::FDataArray>> FStellarGenerator::PhaseChangesCache_;
-    std::shared_mutex FStellarGenerator::CacheMutex_;
-    bool FStellarGenerator::bMistDataInitiated_ = false;
 } // namespace Npgs

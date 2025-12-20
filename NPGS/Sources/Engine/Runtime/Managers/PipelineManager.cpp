@@ -50,9 +50,9 @@ namespace Npgs
         PipelineLayouts_.emplace(PipelineName, std::move(PipelineLayout));
 
         GraphicsPipelineCreateInfoPack.VertexInputBindings.clear();
-        GraphicsPipelineCreateInfoPack.VertexInputBindings.append_range(Shader->GetVertexInputBindings());
+        //GraphicsPipelineCreateInfoPack.VertexInputBindings.append_range(Shader->GetVertexInputBindings());
         GraphicsPipelineCreateInfoPack.VertexInputAttributes.clear();
-        GraphicsPipelineCreateInfoPack.VertexInputAttributes.append_range(Shader->GetVertexInputAttributes());
+        //GraphicsPipelineCreateInfoPack.VertexInputAttributes.append_range(Shader->GetVertexInputAttributes());
         GraphicsPipelineCreateInfoPack.Update();
         GraphicsPipelineCreateInfoPacks_.emplace(PipelineName, GraphicsPipelineCreateInfoPack);
 

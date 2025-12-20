@@ -2,10 +2,11 @@
 
 #include <cstddef>
 #include <concepts>
+#include <span>
 #include <string>
 #include <string_view>
-#include <unordered_map>
 
+#include <ankerl/unordered_dense.h>
 #include "Engine/Core/Base/Base.hpp"
 
 namespace Npgs::Utils
@@ -57,12 +58,21 @@ namespace Npgs::Utils
 
     template <typename Key, typename Value>
     requires std::same_as<Key, std::string>
-    using FStringHeteroHashTable = std::unordered_map<Key, Value, FStringViewHeteroHash, FStringViewHeteroEqual>;
+    using TStringHeteroHashTable = ankerl::unordered_dense::map<Key, Value, FStringViewHeteroHash, FStringViewHeteroEqual>;
 
-    template <typename Ty>
+    template <typename Ty, typename Hash = std::hash<Ty>>
     NPGS_INLINE void HashCombine(const Ty& Value, std::size_t& Seed)
     {
-        std::hash<Ty> Hasher;
+        Hash Hasher{};
         Seed ^= Hasher(Value) + 0x9e3779b9 + (Seed << 6) + (Seed >> 2);
+    }
+
+    template <typename Ty, typename Hash = std::hash<Ty>>
+    NPGS_INLINE void HashCombineRange(std::span<const Ty> Values, std::size_t& Seed)
+    {
+        for (const auto& Value : Values)
+        {
+            HashCombine<Ty, Hash>(Value, Seed);
+        }
     }
 } // namespace Npgs::Utils

@@ -8,6 +8,7 @@ namespace Npgs
         , ImageTracker_(std::make_unique<FImageTracker>(CoreServices_->GetVulkanContext()))
         , PipelineManager_(std::make_unique<FPipelineManager>(CoreServices_->GetVulkanContext(), CoreServices_->GetAssetManager()))
         , ShaderBufferManager_(std::make_unique<FShaderBufferManager>(CoreServices_->GetVulkanContext()))
+        , ShaderManager_(std::make_unique<FShaderManager>(CoreServices_->GetVulkanContext(), CoreServices_->GetAssetManager()))
     {
     }
 } // namespace Npgs

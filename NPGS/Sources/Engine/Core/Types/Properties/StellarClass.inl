@@ -1,3 +1,5 @@
+#include "StellarClass.hpp"
+
 namespace Npgs::Astro
 {
     NPGS_INLINE EStellarType FStellarClass::GetStellarType() const

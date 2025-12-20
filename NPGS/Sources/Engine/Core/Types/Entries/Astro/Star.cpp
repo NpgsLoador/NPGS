@@ -4,7 +4,8 @@
 namespace Npgs::Astro
 {
     AStar::AStar(const FCelestialBody::FBasicProperties& BasicProperties, const FExtendedProperties& ExtraProperties)
-        : FCelestialBody(BasicProperties), ExtraProperties_(ExtraProperties)
+        : FCelestialBody(BasicProperties)
+        , ExtraProperties_(ExtraProperties)
     {
     }
 
@@ -205,7 +206,7 @@ namespace Npgs::Astro
         { 0, {} }
     };
 
-    const std::unordered_map<AStar::EEvolutionPhase, Astro::ELuminosityClass> AStar::kLuminosityMap_
+    const ankerl::unordered_dense::map<AStar::EEvolutionPhase, Astro::ELuminosityClass> AStar::kLuminosityMap_
     {
         { AStar::EEvolutionPhase::kMainSequence,     Astro::ELuminosityClass::kLuminosity_V   },
         { AStar::EEvolutionPhase::kRedGiant,         Astro::ELuminosityClass::kLuminosity_III },
@@ -215,7 +216,7 @@ namespace Npgs::Astro
         { AStar::EEvolutionPhase::kPostAgb,          Astro::ELuminosityClass::kLuminosity_I   }
     };
 
-    const std::unordered_map<float, float> AStar::kFeHSurfaceH1Map_
+    const ankerl::unordered_dense::map<float, float> AStar::kFeHSurfaceH1Map_
     {
         { -4.0f, 0.75098f },
         { -3.0f, 0.75095f },

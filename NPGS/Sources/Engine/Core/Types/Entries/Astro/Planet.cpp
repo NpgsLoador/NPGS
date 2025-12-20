@@ -6,7 +6,8 @@
 namespace Npgs::Astro
 {
     APlanet::APlanet(const FCelestialBody::FBasicProperties& BasicProperties, FExtendedProperties&& ExtraProperties)
-        : Base(BasicProperties), ExtraProperties_(std::move(ExtraProperties))
+        : Base(BasicProperties)
+        , ExtraProperties_(std::move(ExtraProperties))
     {
     }
 

@@ -1,3 +1,5 @@
+#include "ShaderBufferManager.hpp"
+
 #include <exception>
 #include <format>
 #include <stdexcept>

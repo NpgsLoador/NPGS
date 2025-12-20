@@ -6,10 +6,10 @@
 #include <optional>
 #include <string>
 #include <string_view>
-#include <unordered_map>
 #include <utility>
 #include <vector>
 
+#include <ankerl/unordered_dense.h>
 #include <vma/vk_mem_alloc.h>
 #include <vulkan/vulkan.hpp>
 #include <vulkan/vulkan_to_string.hpp>
@@ -158,8 +158,8 @@ namespace Npgs
 
         VmaAllocator                       VmaAllocator_{ nullptr };
 
-        std::unordered_map<EQueueType, vk::Queue>     Queues_;
-        std::unordered_map<EQueueType, std::uint32_t> QueueFamilyIndices_;
+        ankerl::unordered_dense::map<EQueueType, vk::Queue>     Queues_;
+        ankerl::unordered_dense::map<EQueueType, std::uint32_t> QueueFamilyIndices_;
 
         std::uint32_t                      CurrentImageIndex_{ std::numeric_limits<std::uint32_t>::max() };
         std::uint32_t                      ApiVersion_{ vk::ApiVersion14 };

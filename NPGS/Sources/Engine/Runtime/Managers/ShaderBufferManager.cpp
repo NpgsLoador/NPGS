@@ -12,27 +12,6 @@
 
 namespace Npgs
 {
-    namespace
-    {
-        bool IsPureSamplerSet(const FDescriptorSetInfo& SetInfo)
-        {
-            if (SetInfo.Bindings.empty())
-            {
-                return false;
-            }
-
-            for (const auto& [Binding, Info] : SetInfo.Bindings)
-            {
-                if (Info.Type != vk::DescriptorType::eSampler)
-                {
-                    return false;
-                }
-            }
-
-            return true;
-        }
-    }
-
     void FShaderBufferManager::FHeapAllocator::Initialize(vk::DeviceSize TotalSize)
     {
         TotalSize_ = TotalSize;
@@ -182,6 +161,24 @@ namespace Npgs
     {
         FDescriptorBufferInfo BufferInfo;
         BufferInfo.Name = DescriptorBufferCreateInfo.Name;
+
+        auto IsPureSamplerSet = [](const auto& SetInfo) -> bool
+        {
+            if (SetInfo.Bindings.empty())
+            {
+                return false;
+            }
+
+            for (const auto& [Binding, Info] : SetInfo.Bindings)
+            {
+                if (Info.Type != vk::DescriptorType::eSampler)
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        };
 
         for (const auto& [SetIndex, SetInfo] : DescriptorBufferCreateInfo.SetInfos)
         {

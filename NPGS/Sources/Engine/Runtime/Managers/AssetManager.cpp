@@ -5,7 +5,7 @@
 
 namespace Npgs
 {
-    std::string GetAssetFullPath(EAssetType Type, const std::string& Filename)
+    std::string GetAssetFullPath(EAssetType Type, std::string_view Filename)
     {
         std::string RootFolderName = "Assets/";
 #ifdef _RELEASE
@@ -37,7 +37,7 @@ namespace Npgs
             NpgsAssert(false, "Invalid asset type");
         };
 
-        return RootFolderName + AssetFolderName + Filename;
+        return RootFolderName + AssetFolderName + std::string(Filename);
     }
 
     FAssetEntry::FAssetEntry()

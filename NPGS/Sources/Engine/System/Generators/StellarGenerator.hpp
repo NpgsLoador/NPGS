@@ -11,10 +11,10 @@
 #include <shared_mutex>
 #include <span>
 #include <type_traits>
-#include <unordered_map>
 #include <utility>
 #include <vector>
 
+#include <ankerl/unordered_dense.h>
 #include <glm/glm.hpp>
 
 #include "Engine/Core/Math/NumericConstants.hpp"
@@ -220,40 +220,14 @@ namespace Npgs
         EStellarTypeGenerationOption  StellarTypeOption_;
         EMultiplicityGenerationOption MultiplicityOption_;
 
-        static const inline std::array<std::string, 12> kMistHeaders_
-        {
-            "star_age",
-            "star_mass",
-            "star_mdot",
-            "log_Teff",
-            "log_R",
-            "log_surf_z",
-            "surface_h1",
-            "surface_he3",
-            "log_center_T",
-            "log_center_Rho",
-            "phase",
-            "x"
-        };
+        static const std::array<std::string, 12> kMistHeaders_;
+        static const std::array<std::string, 5>  kWdMistHeaders_;
+        static const std::array<std::string, 7>  kHrDiagramHeaders_;
 
-        static const inline std::array<std::string, 5> kWdMistHeaders_
-        {
-            "star_age",
-            "log_R",
-            "log_Teff",
-            "log_center_T",
-            "log_center_Rho"
-        };
-
-        static const inline std::array<std::string, 7> kHrDiagramHeaders_
-        {
-            "B-V", "Ia", "Ib", "II", "III", "IV", "V"
-        };
-
-        static std::unordered_map<std::string, std::vector<float>>           MassFilesCache_;
-        static std::unordered_map<const FMistData*, std::vector<FDataArray>> PhaseChangesCache_;
-        static std::shared_mutex                                             CacheMutex_;
-        static bool                                                          bMistDataInitiated_;
+        static inline ankerl::unordered_dense::map<std::string, std::vector<float>>           MassFilesCache_;
+        static inline ankerl::unordered_dense::map<const FMistData*, std::vector<FDataArray>> PhaseChangesCache_;
+        static inline std::shared_mutex                                                       CacheMutex_;
+        static inline bool                                                                    bMistDataInitiated_{ false };
     };
 } // namespace Npgs
 

@@ -5,8 +5,9 @@
 #include <format>
 #include <functional>
 #include <string>
-#include <unordered_map>
 #include <utility>
+
+#include <ankerl/unordered_dense.h>
 
 namespace Npgs
 {
@@ -128,8 +129,8 @@ namespace Npgs
             return;
         }
 
-        std::unordered_map<vk::DeviceSize, std::vector<std::size_t>> CategoryBufferIndices;
-        std::unordered_map<vk::DeviceSize, std::size_t> CategoryUsages;
+        ankerl::unordered_dense::map<vk::DeviceSize, std::vector<std::size_t>> CategoryBufferIndices;
+        ankerl::unordered_dense::map<vk::DeviceSize, std::size_t> CategoryUsages;
 
         for (std::size_t i = 0; i != AvailableResources_.size(); ++i)
         {
@@ -184,7 +185,7 @@ namespace Npgs
 
         if (AvailableResources_.size() > TargetCount)
         {
-            std::unordered_map<vk::DeviceSize, std::size_t> RemainingCounts;
+            ankerl::unordered_dense::map<vk::DeviceSize, std::size_t> RemainingCounts;
             for (const auto& Resource : AvailableResources_)
             {
                 const auto& BufferInfo = *Resource;
@@ -192,7 +193,7 @@ namespace Npgs
             }
 
             std::size_t TotalRemoveCount = AvailableResources_.size() - TargetCount;
-            std::unordered_map<vk::DeviceSize, std::size_t> NeedRemoveCounts;
+            ankerl::unordered_dense::map<vk::DeviceSize, std::size_t> NeedRemoveCounts;
             for (auto [Size, Count] : RemainingCounts)
             {
                 std::size_t MinKeep   = std::min<std::size_t>(1, Count);
@@ -230,7 +231,7 @@ namespace Npgs
             });
 
             std::vector<std::size_t> NeedRemoveIndices;
-            std::unordered_map<vk::DeviceSize, std::size_t> RemovedCounts;
+            ankerl::unordered_dense::map<vk::DeviceSize, std::size_t> RemovedCounts;
             for (auto [Size, Index] : IndexedBuffers)
             {
                 if (RemovedCounts[Size] < NeedRemoveCounts[Size])
@@ -260,8 +261,8 @@ namespace Npgs
 
     void FStagingBufferPool::RemoveOversizedBuffers(vk::DeviceSize Threshold)
     {
-        std::unordered_map<vk::DeviceSize, std::vector<std::size_t>> CategoryBufferIndices;
-        std::unordered_map<vk::DeviceSize, std::size_t> CategoryUsages;
+        ankerl::unordered_dense::map<vk::DeviceSize, std::vector<std::size_t>> CategoryBufferIndices;
+        ankerl::unordered_dense::map<vk::DeviceSize, std::size_t>              CategoryUsages;
 
         for (std::size_t i = 0; i != AvailableResources_.size(); ++i)
         {

@@ -4,7 +4,8 @@
 namespace Npgs::Intelli
 {
     FStandard::FStandard(const FLifeProperties& LifeProperties, const FCivilizationProperties& CivilizationProperties)
-        : LifeProperties_(LifeProperties), CivilizationProperties_(CivilizationProperties)
+        : LifeProperties_(LifeProperties)
+        , CivilizationProperties_(CivilizationProperties)
     {
     }
 

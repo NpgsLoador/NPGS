@@ -57,23 +57,23 @@ namespace Npgs
         auto& Pool = QueueFamilyPools_.at(Index);
 
         vk::Queue Queue;
-        if (Pool.Queues.try_dequeue(Queue))
+        if (Pool->Queues.try_dequeue(Queue))
         {
-            Pool.BusyQueueCount.fetch_add(1, std::memory_order::relaxed);
+            Pool->BusyQueueCount.fetch_add(1, std::memory_order::relaxed);
             return FQueueGuard(this, { Queue, QueueFlags });
         }
 
-        auto& Mutex     = Pool.Mutex;
-        auto& WaitQueue = Pool.WaitQueue;
+        auto& Mutex     = Pool->Mutex;
+        auto& WaitQueue = Pool->WaitQueue;
         std::unique_lock Lock(Mutex);
-        if (Pool.BusyQueueCount.load() >= Pool.TotalQueueCount)
+        if (Pool->BusyQueueCount.load() >= Pool->TotalQueueCount)
         {
             auto CurrentThread = std::make_shared<std::condition_variable>();
             WaitQueue.push(CurrentThread);
 
-            CurrentThread->wait(Lock, [this, &Pool, &Queue]() -> bool { return Pool.Queues.try_dequeue(Queue); });
+            CurrentThread->wait(Lock, [this, &Pool, &Queue]() -> bool { return Pool->Queues.try_dequeue(Queue); });
 
-            Pool.BusyQueueCount.fetch_add(1, std::memory_order::relaxed);
+            Pool->BusyQueueCount.fetch_add(1, std::memory_order::relaxed);
             return FQueueGuard(this, { Queue, QueueFlags });
         }
 
@@ -89,12 +89,14 @@ namespace Npgs
         }
 
         QueueFamilyIndices_[QueueFlags] = QueueFamilyIndex;
-        auto& Pool = QueueFamilyPools_[QueueFamilyIndex];
-        Pool.TotalQueueCount = QueueCount;
+        QueueFamilyPools_.emplace(QueueFamilyIndex, std::make_unique<FQueueFamilyPool>());
+
+        auto& Pool = QueueFamilyPools_.at(QueueFamilyIndex);
+        Pool->TotalQueueCount = QueueCount;
         for (std::uint32_t i = 0; i != QueueCount; ++i)
         {
             vk::Queue Queue = Device_.getQueue(QueueFamilyIndex, i);
-            Pool.Queues.enqueue(std::move(Queue));
+            Pool->Queues.enqueue(std::move(Queue));
         }
     }
 
@@ -102,12 +104,12 @@ namespace Npgs
     {
         std::uint32_t Index = QueueFamilyIndices_.at(QueueInfo.QueueFlags);
         auto& Pool          = QueueFamilyPools_.at(Index);
-        auto& Mutex         = Pool.Mutex;
-        auto& WaitQueue     = Pool.WaitQueue;
+        auto& Mutex         = Pool->Mutex;
+        auto& WaitQueue     = Pool->WaitQueue;
 
-        if (Pool.Queues.try_enqueue(QueueInfo.Queue))
+        if (Pool->Queues.try_enqueue(QueueInfo.Queue))
         {
-            --Pool.BusyQueueCount;
+            --Pool->BusyQueueCount;
             std::shared_ptr<std::condition_variable> TopThread = nullptr;
             {
                 std::lock_guard Lock(Mutex);

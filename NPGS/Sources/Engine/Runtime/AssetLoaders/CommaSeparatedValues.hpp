@@ -12,10 +12,10 @@
 #include <string_view>
 #include <tuple>
 #include <type_traits>
-#include <unordered_map>
 #include <utility>
 #include <vector>
 
+#include <ankerl/unordered_dense.h>
 #include <fast-cpp-csv-parser/csv.h>
 
 namespace Npgs
@@ -205,9 +205,9 @@ namespace Npgs
         }
 
     private:
-        std::unordered_map<std::string, std::size_t> HeaderMap_;
-        std::string                                  Filename_;
-        std::vector<std::string>                     ColNames_;
-        std::vector<FRowArray>                       Data_;
+        ankerl::unordered_dense::map<std::string, std::size_t> HeaderMap_;
+        std::string                                            Filename_;
+        std::vector<std::string>                               ColNames_;
+        std::vector<FRowArray>                                 Data_;
     };
 } // namespace Npgs

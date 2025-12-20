@@ -10,6 +10,7 @@
 #include "Engine/Runtime/Managers/RenderTargetManager.hpp"
 #include "Engine/Runtime/Managers/PipelineManager.hpp"
 #include "Engine/Runtime/Managers/ShaderBufferManager.hpp"
+#include "Engine/Runtime/Managers/ShaderManager.hpp"
 #include "Engine/Runtime/Pools/StagingBufferPool.hpp"
 #include "Engine/System/Services/CoreServices.hpp"
 
@@ -30,6 +31,7 @@ namespace Npgs
         FPipelineManager*     GetPipelineManager() const;
         FRenderTargetManager* GetRenderTargetManager() const;
         FShaderBufferManager* GetShaderBufferManager() const;
+        FShaderManager*       GetShaderManager() const;
 
     private:
         const FCoreServices*                  CoreServices_;
@@ -37,6 +39,7 @@ namespace Npgs
         std::unique_ptr<FPipelineManager>     PipelineManager_;
         std::unique_ptr<FRenderTargetManager> RenderTargetManager_;
         std::unique_ptr<FShaderBufferManager> ShaderBufferManager_;
+        std::unique_ptr<FShaderManager>       ShaderManager_;
     };
 } // namespace Npgs
 

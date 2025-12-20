@@ -32,7 +32,10 @@
 #include "Engine/Runtime/Managers/AssetManager.hpp"
 #include "Engine/Runtime/Managers/PipelineManager.hpp"
 #include "Engine/Runtime/Managers/ShaderBufferManager.hpp"
+#include "Engine/Runtime/Managers/ShaderManager.hpp"
 #include "Engine/System/Services/EngineServices.hpp"
+
+#include "Engine/Runtime/Managers/ShaderManager.hpp"
 
 namespace Npgs
 {
@@ -120,51 +123,138 @@ namespace Npgs
 
         auto* AssetManager        = EngineCoreServices->GetAssetManager();
         auto* ShaderBufferManager = EngineResourceServices->GetShaderBufferManager();
-        auto* PipelineManager     = EngineResourceServices->GetPipelineManager();
+        auto* ShaderManager       = EngineResourceServices->GetShaderManager();
 
-        auto PbrSceneGBufferShader = AssetManager->AcquireAsset<FShader>("PbrSceneGBufferShader");
-        auto PbrSceneMergeShader   = AssetManager->AcquireAsset<FShader>("PbrSceneMergeShader");
-        auto PbrSceneShader        = AssetManager->AcquireAsset<FShader>("PbrSceneShader");
-        auto LampShader            = AssetManager->AcquireAsset<FShader>("LampShader");
-        auto DepthMapShader        = AssetManager->AcquireAsset<FShader>("DepthMapShader");
-        // auto TerrainShader         = AssetManager->AcquireAsset<FShader>("TerrainShader");
-        auto SkyboxShader          = AssetManager->AcquireAsset<FShader>("SkyboxShader");
-        auto PostShader            = AssetManager->AcquireAsset<FShader>("PostShader");
-
-        vk::Pipeline PbrSceneGBufferPipeline;
-        vk::Pipeline PbrSceneMergePipeline;
-        vk::Pipeline PbrScenePipeline;
-        vk::Pipeline LampPipeline;
-        vk::Pipeline DepthMapPipeline;
-        vk::Pipeline TerrainPipeline;
-        vk::Pipeline PostPipeline;
-        vk::Pipeline SkyboxPipeline;
-
-        auto GetPipelines = [&]() -> void
+        FShaderAcquireInfo::FShaderInfo PbrSceneVertShaderInfo
         {
-            PbrSceneGBufferPipeline = PipelineManager->GetPipeline("PbrSceneGBufferPipeline");
-            PbrSceneMergePipeline   = PipelineManager->GetPipeline("PbrSceneMergePipeline");
-            PbrScenePipeline        = PipelineManager->GetPipeline("PbrScenePipeline");
-            LampPipeline            = PipelineManager->GetPipeline("LampPipeline");
-            DepthMapPipeline        = PipelineManager->GetPipeline("DepthMapPipeline");
-            // TerrainPipeline         = PipelineManager->GetPipeline("TerrainPipeline");
-            PostPipeline            = PipelineManager->GetPipeline("PostPipeline");
-            SkyboxPipeline          = PipelineManager->GetPipeline("SkyboxPipeline");
+            .Name = "PbrSceneVertShader",
+            .NextStage = vk::ShaderStageFlagBits::eFragment
         };
 
-        GetPipelines();
+        FShaderAcquireInfo::FShaderInfo PbrSceneGbufferShaderInfo
+        {
+            .Name = "PbrSceneGbufferShader"
+        };
 
-        VulkanContext_->RegisterRuntimeOnlyCallbacks(
-            FVulkanContext::ECallbackType::kCreateSwapchain, "GetPipelines", GetPipelines);
+        FShaderAcquireInfo::FShaderInfo LampShaderInfo
+        {
+            .Name = "LampShader"
+        };
 
-        auto PbrSceneGBufferPipelineLayout = PipelineManager->GetPipelineLayout("PbrSceneGBufferPipeline");
-        auto PbrSceneMergePipelineLayout   = PipelineManager->GetPipelineLayout("PbrSceneMergePipeline");
-        auto PbrScenePipelineLayout        = PipelineManager->GetPipelineLayout("PbrScenePipeline");
-        auto LampPipelineLayout            = PipelineManager->GetPipelineLayout("LampPipeline");
-        auto DepthMapPipelineLayout        = PipelineManager->GetPipelineLayout("DepthMapPipeline");
-        // auto TerrainPipelineLayout         = PipelineManager->GetPipelineLayout("TerrainPipeline");
-        auto PostPipelineLayout            = PipelineManager->GetPipelineLayout("PostPipeline");
-        auto SkyboxPipelineLayout          = PipelineManager->GetPipelineLayout("SkyboxPipeline");
+        FShaderAcquireInfo PbrSceneGbufferShaderAcquireInfo;
+        PbrSceneGbufferShaderAcquireInfo.ShaderInfos.emplace(vk::ShaderStageFlagBits::eVertex, PbrSceneVertShaderInfo);
+        PbrSceneGbufferShaderAcquireInfo.ShaderInfos.emplace(vk::ShaderStageFlagBits::eFragment, PbrSceneGbufferShaderInfo);
+        auto* PbrSceneGbufferShaderRes = ShaderManager->AcquireShaderResource(PbrSceneGbufferShaderAcquireInfo);
+
+        FShaderAcquireInfo LampShaderAcquireInfo;
+        LampShaderAcquireInfo.ShaderInfos.emplace(vk::ShaderStageFlagBits::eVertex, PbrSceneVertShaderInfo);
+        LampShaderAcquireInfo.ShaderInfos.emplace(vk::ShaderStageFlagBits::eFragment, LampShaderInfo);
+        auto* LampShaderRes = ShaderManager->AcquireShaderResource(LampShaderAcquireInfo);
+
+        FShaderAcquireInfo::FShaderInfo SkyboxVertShaderInfo
+        {
+            .Name = "SkyboxVertShader",
+            .NextStage = vk::ShaderStageFlagBits::eFragment
+        };
+
+        FShaderAcquireInfo::FShaderInfo SkyboxFragShaderInfo
+        {
+            .Name = "SkyboxFragShader"
+        };
+
+        FShaderAcquireInfo SkyboxShaderAcquireInfo;
+        SkyboxShaderAcquireInfo.ShaderInfos.emplace(vk::ShaderStageFlagBits::eVertex, SkyboxVertShaderInfo);
+        SkyboxShaderAcquireInfo.ShaderInfos.emplace(vk::ShaderStageFlagBits::eFragment, SkyboxFragShaderInfo);
+        auto* SkyboxShaderRes = ShaderManager->AcquireShaderResource(SkyboxShaderAcquireInfo);
+
+        FShaderAcquireInfo::FShaderInfo PbrSceneMergeShaderInfo
+        {
+            .Name = "PbrSceneMergeShader"
+        };
+
+        FShaderAcquireInfo PbrSceneMergeShaderAcquireInfo;
+        PbrSceneMergeShaderAcquireInfo.ShaderInfos.emplace(vk::ShaderStageFlagBits::eCompute, PbrSceneMergeShaderInfo);
+        auto* PbrSceneMergeShaderRes = ShaderManager->AcquireShaderResource(PbrSceneMergeShaderAcquireInfo);
+
+        FShaderAcquireInfo::FShaderInfo PostVertShaderInfo
+        {
+            .Name = "PostVertShader",
+            .NextStage = vk::ShaderStageFlagBits::eFragment
+        };
+
+        FShaderAcquireInfo::FShaderInfo PostFragShaderInfo
+        {
+            .Name = "PostFragShader"
+        };
+
+        FShaderAcquireInfo PostShaderAcquireInfo;
+        PostShaderAcquireInfo.ShaderInfos.emplace(vk::ShaderStageFlagBits::eVertex, PostVertShaderInfo);
+        PostShaderAcquireInfo.ShaderInfos.emplace(vk::ShaderStageFlagBits::eFragment, PostFragShaderInfo);
+        auto* PostShaderRes = ShaderManager->AcquireShaderResource(PostShaderAcquireInfo);
+
+        FShaderAcquireInfo::FShaderInfo DepthMapShaderInfo
+        {
+            .Name = "DepthMapShader"
+        };
+
+        FShaderAcquireInfo DepthMapShaderAcquireInfo;
+        DepthMapShaderAcquireInfo.ShaderInfos.emplace(vk::ShaderStageFlagBits::eVertex, DepthMapShaderInfo);
+        auto* DepthMapShaderRes = ShaderManager->AcquireShaderResource(DepthMapShaderAcquireInfo);
+        
+        //FShaderAcquireInfo DepthMapShaderAcquireInfo;
+        //{
+        //    FShaderAcquireInfo::FShaderInfo VertexShaderInfo;
+        //    VertexShaderInfo.Shader = AssetManager->AcquireAsset<FShader>("DepthMapShader");
+        //    DepthMapShaderAcquireInfo.ShaderInfos.emplace(vk::ShaderStageFlagBits::eVertex, VertexShaderInfo);
+        //}
+
+        //auto* DepthMapShader = ShaderManager->AcquireShaderResource(DepthMapShaderAcquireInfo);
+
+        //auto* PipelineManager     = EngineResourceServices->GetPipelineManager();
+
+        //auto PbrSceneGBufferShader = AssetManager->AcquireAsset<FShader>("PbrSceneGBufferShader");
+        //auto PbrSceneMergeShader   = AssetManager->AcquireAsset<FShader>("PbrSceneMergeShader");
+        //auto PbrSceneShader        = AssetManager->AcquireAsset<FShader>("PbrSceneShader");
+        //auto LampShader            = AssetManager->AcquireAsset<FShader>("LampShader");
+        //auto DepthMapShader        = AssetManager->AcquireAsset<FShader>("DepthMapShader");
+        //// auto TerrainShader         = AssetManager->AcquireAsset<FShader>("TerrainShader");
+        //auto SkyboxShader          = AssetManager->AcquireAsset<FShader>("SkyboxShader");
+        //auto PostShader            = AssetManager->AcquireAsset<FShader>("PostShader");
+
+        //vk::Pipeline PbrSceneGBufferPipeline;
+        //vk::Pipeline PbrSceneMergePipeline;
+        //vk::Pipeline PbrScenePipeline;
+        //vk::Pipeline LampPipeline;
+        //vk::Pipeline DepthMapPipeline;
+        //vk::Pipeline TerrainPipeline;
+        //vk::Pipeline PostPipeline;
+        //vk::Pipeline SkyboxPipeline;
+
+        //auto GetPipelines = [&]() -> void
+        //{
+        //    PbrSceneGBufferPipeline = PipelineManager->GetPipeline("PbrSceneGBufferPipeline");
+        //    PbrSceneMergePipeline   = PipelineManager->GetPipeline("PbrSceneMergePipeline");
+        //    PbrScenePipeline        = PipelineManager->GetPipeline("PbrScenePipeline");
+        //    LampPipeline            = PipelineManager->GetPipeline("LampPipeline");
+        //    DepthMapPipeline        = PipelineManager->GetPipeline("DepthMapPipeline");
+        //    // TerrainPipeline         = PipelineManager->GetPipeline("TerrainPipeline");
+        //    PostPipeline            = PipelineManager->GetPipeline("PostPipeline");
+        //    SkyboxPipeline          = PipelineManager->GetPipeline("SkyboxPipeline");
+        //};
+
+        //GetPipelines();
+
+        //VulkanContext_->RegisterRuntimeOnlyCallbacks(
+        //    FVulkanContext::ECallbackType::kCreateSwapchain, "GetPipelines", GetPipelines);
+
+        //auto PbrSceneGBufferPipelineLayout = PipelineManager->GetPipelineLayout("PbrSceneGBufferPipeline");
+        //auto PbrSceneMergePipelineLayout   = PipelineManager->GetPipelineLayout("PbrSceneMergePipeline");
+        //auto PbrScenePipelineLayout        = PipelineManager->GetPipelineLayout("PbrScenePipeline");
+        //auto LampPipelineLayout            = PipelineManager->GetPipelineLayout("LampPipeline");
+        //auto DepthMapPipelineLayout        = PipelineManager->GetPipelineLayout("DepthMapPipeline");
+        //// auto TerrainPipelineLayout         = PipelineManager->GetPipelineLayout("TerrainPipeline");
+        //auto PostPipelineLayout            = PipelineManager->GetPipelineLayout("PostPipeline");
+        //auto SkyboxPipelineLayout          = PipelineManager->GetPipelineLayout("SkyboxPipeline");
 
         std::vector<FVulkanFence> InFlightFences;
         std::vector<FVulkanSemaphore> Semaphores_ImageAvailable;
@@ -244,6 +334,24 @@ namespace Npgs
         // Camera_->SetOrbitTarget(glm::vec3(0.0f));
         // Camera_->SetOrbitAxis(glm::vec3(0.0f, 1.0f, 0.0f));
 
+        auto SetDefaultGraphicsState = [&](vk::CommandBuffer& CommandBuffer) -> void
+        {
+            // 这些状态在 PSO 时代是写在 CreateInfo 里的默认 False
+            // 现在必须显式设置为 False
+            CommandBuffer.setDepthClampEnableEXT(vk::False);
+            CommandBuffer.setLogicOpEnableEXT(vk::False);
+            CommandBuffer.setDepthBiasEnable(vk::False);
+
+            // 如果你开启了 alphaToOne 特性
+            CommandBuffer.setAlphaToOneEnableEXT(vk::False);
+
+            // 栅格化丢弃通常也是关的
+            CommandBuffer.setRasterizerDiscardEnable(vk::False);
+
+            // 如果启用了 extendedDynamicState，Viewports/Scissors 也会报错
+            // 见下文详解
+        };
+
         // Record secondary commands
         // -------------------------
         auto RecordSecondaryCommands = [&]() -> void
@@ -307,35 +415,137 @@ namespace Npgs
                 vk::CommandBufferInheritanceInfo DepthMapInheritanceInfo = vk::CommandBufferInheritanceInfo()
                     .setPNext(&DepthMapInheritanceRenderingInfo);
 
+                const auto& DepthMapPipelineLayout = *DepthMapShaderRes->PipelineLayout;
+
                 DepthMapCommandBuffer.Begin(DepthMapInheritanceInfo, vk::CommandBufferUsageFlagBits::eRenderPassContinue | vk::CommandBufferUsageFlagBits::eSimultaneousUse);
-                DepthMapCommandBuffer->setViewport(0, DepthMapViewport);
-                DepthMapCommandBuffer->setScissor(0, DepthMapScissor);
-                DepthMapCommandBuffer->bindPipeline(vk::PipelineBindPoint::eGraphics, DepthMapPipeline);
+                SetDefaultGraphicsState(*DepthMapCommandBuffer);
+                // 1. Bind Shaders
+                DepthMapCommandBuffer->bindShadersEXT(DepthMapShaderRes->Stages, DepthMapShaderRes->Handles);
+
+                // 2. Set Dynamic States (对应原来的 PSO)
+                // Viewport & Scissor
+                DepthMapCommandBuffer->setViewportWithCount(DepthMapViewport);
+                DepthMapCommandBuffer->setScissorWithCount(DepthMapScissor);
+
+                // Vertex Input (新!)
+                DepthMapCommandBuffer->setVertexInputEXT(DepthMapShaderRes->VertexInputBindings, DepthMapShaderRes->VertexInputAttributes);
+
+                // Input Assembly
+                DepthMapCommandBuffer->setPrimitiveTopology(vk::PrimitiveTopology::eTriangleList);
+                DepthMapCommandBuffer->setPrimitiveRestartEnable(vk::False);
+
+                // Rasterization
+                DepthMapCommandBuffer->setRasterizerDiscardEnable(vk::False);
+                DepthMapCommandBuffer->setCullMode(vk::CullModeFlagBits::eBack);
+                DepthMapCommandBuffer->setFrontFace(vk::FrontFace::eCounterClockwise);
+                DepthMapCommandBuffer->setPolygonModeEXT(vk::PolygonMode::eFill);
+                DepthMapCommandBuffer->setLineWidth(1.0f);
+                DepthMapCommandBuffer->setDepthBiasEnable(vk::False);
+
+                // Depth Stencil
+                DepthMapCommandBuffer->setDepthTestEnable(vk::True);
+                DepthMapCommandBuffer->setDepthWriteEnable(vk::True);
+                DepthMapCommandBuffer->setDepthCompareOp(vk::CompareOp::eLess); // 注意：DepthMap 通常用 Less
+                DepthMapCommandBuffer->setDepthBoundsTestEnable(vk::False);
+                DepthMapCommandBuffer->setStencilTestEnable(vk::False);
+
+                // Multisample (Shadow Map 通常不用 MSAA)
+                DepthMapCommandBuffer->setRasterizationSamplesEXT(vk::SampleCountFlagBits::e1);
+                DepthMapCommandBuffer->setSampleMaskEXT(vk::SampleCountFlagBits::e1, { 0xFFFFFFFF });
+                DepthMapCommandBuffer->setAlphaToCoverageEnableEXT(vk::False);
+
+                // Color Blend (无颜色附件，也要设置 Enable 为 False 以防万一？其实不需要，因为没附件)
+                // DepthMapCommandBuffer->setColorBlendEnableEXT(0, {}); // 空数组
+
+                // 3. Resources & Draw
                 vk::DeviceSize MatricesAddress = ShaderBufferManager->GetDataBufferDeviceAddress(i, "Matrices");
                 DepthMapCommandBuffer->pushConstants<vk::DeviceAddress>(DepthMapPipelineLayout, vk::ShaderStageFlagBits::eVertex, 0, MatricesAddress);
+
                 DepthMapCommandBuffer->bindVertexBuffers(0, PlaneVertexBuffers, PlaneOffsets);
                 DepthMapCommandBuffer->draw(6, 1, 0, 0);
+
                 DepthMapCommandBuffer->bindVertexBuffers(0, CubeVertexBuffers, CubeOffsets);
                 DepthMapCommandBuffer->draw(36, 3, 0, 0);
+
                 DepthMapCommandBuffer.End();
+
+                // ------------------------------------------------------------
 
                 auto& SceneGBufferCommandBuffer = SceneGBufferCommandBuffers[i];
 
                 vk::CommandBufferInheritanceInfo GBufferSceneInheritanceInfo = vk::CommandBufferInheritanceInfo()
                     .setPNext(&GBufferSceneInheritanceRenderingInfo);
 
+                const auto& PbrSceneGBufferPipelineLayout = *PbrSceneGbufferShaderRes->PipelineLayout;
+
                 SceneGBufferCommandBuffer.Begin(GBufferSceneInheritanceInfo, vk::CommandBufferUsageFlagBits::eRenderPassContinue | vk::CommandBufferUsageFlagBits::eSimultaneousUse);
-                SceneGBufferCommandBuffer->setViewport(0, CommonViewport);
-                SceneGBufferCommandBuffer->setScissor(0, CommonScissor);
-                SceneGBufferCommandBuffer->bindPipeline(vk::PipelineBindPoint::eGraphics, PbrSceneGBufferPipeline);
+                SetDefaultGraphicsState(*SceneGBufferCommandBuffer);
+                // 1. Bind Shaders
+                SceneGBufferCommandBuffer->bindShadersEXT(PbrSceneGbufferShaderRes->Stages, PbrSceneGbufferShaderRes->Handles);
+
+                // 2. Set Dynamic States
+                SceneGBufferCommandBuffer->setViewportWithCount(CommonViewport);
+                SceneGBufferCommandBuffer->setScissorWithCount(CommonScissor);
+
+                // Vertex Input
+                SceneGBufferCommandBuffer->setVertexInputEXT(PbrSceneGbufferShaderRes->VertexInputBindings, PbrSceneGbufferShaderRes->VertexInputAttributes);
+
+                // Input Assembly
+                SceneGBufferCommandBuffer->setPrimitiveTopology(vk::PrimitiveTopology::eTriangleList);
+                SceneGBufferCommandBuffer->setPrimitiveRestartEnable(vk::False);
+
+                // Rasterization
+                SceneGBufferCommandBuffer->setRasterizerDiscardEnable(vk::False);
+                SceneGBufferCommandBuffer->setCullMode(vk::CullModeFlagBits::eBack);
+                SceneGBufferCommandBuffer->setFrontFace(vk::FrontFace::eCounterClockwise);
+                SceneGBufferCommandBuffer->setPolygonModeEXT(vk::PolygonMode::eFill);
+                SceneGBufferCommandBuffer->setLineWidth(1.0f);
+                SceneGBufferCommandBuffer->setDepthBiasEnable(vk::False);
+
+                // Depth Stencil
+                SceneGBufferCommandBuffer->setDepthTestEnable(vk::True);
+                SceneGBufferCommandBuffer->setDepthWriteEnable(vk::True);
+                SceneGBufferCommandBuffer->setDepthCompareOp(vk::CompareOp::eLess);
+                SceneGBufferCommandBuffer->setDepthBoundsTestEnable(vk::False);
+                SceneGBufferCommandBuffer->setStencilTestEnable(vk::False);
+
+                // Multisample
+                SceneGBufferCommandBuffer->setRasterizationSamplesEXT(vk::SampleCountFlagBits::e1);
+                SceneGBufferCommandBuffer->setSampleMaskEXT(vk::SampleCountFlagBits::e1, { 0xFFFFFFFF });
+                SceneGBufferCommandBuffer->setAlphaToCoverageEnableEXT(vk::False);
+
+                // Color Blend (4 Attachments)
+                // 初始化 4 个默认的混合方程 (No Blend)
+                vk::ColorBlendEquationEXT DefaultEquation; // 默认即为 Add, One, Zero...
+                std::vector<vk::ColorBlendEquationEXT> Equations(4, DefaultEquation);
+                SceneGBufferCommandBuffer->setColorBlendEquationEXT(0, Equations);
+
+                // 初始化 4 个 WriteMask (RGBA)
+                vk::ColorComponentFlags MaskRGBA = vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG | vk::ColorComponentFlagBits::eB | vk::ColorComponentFlagBits::eA;
+                std::vector<vk::ColorComponentFlags> Masks(4, MaskRGBA);
+                SceneGBufferCommandBuffer->setColorWriteMaskEXT(0, Masks);
+
+                // 初始化 4 个 Enable (False)
+                std::vector<vk::Bool32> Enables(4, vk::False);
+                SceneGBufferCommandBuffer->setColorBlendEnableEXT(0, Enables);
+
+                // Logic Op
+                SceneGBufferCommandBuffer->setLogicOpEnableEXT(vk::False);
+
+                // 3. Resources & Draw
                 SceneGBufferCommandBuffer->bindDescriptorBuffersEXT(DescriptorBufferBindingInfos);
                 auto Offsets = ShaderBufferManager->GetDescriptorBindingOffsets("SceneGBufferDescriptorBuffer", 0, 1, 2);
                 SceneGBufferCommandBuffer->setDescriptorBufferOffsetsEXT(vk::PipelineBindPoint::eGraphics, PbrSceneGBufferPipelineLayout, 0, { 1, 0, 0 }, Offsets);
+
                 SceneGBufferCommandBuffer->bindVertexBuffers(0, PlaneVertexBuffers, PlaneOffsets);
                 SceneGBufferCommandBuffer->draw(6, 1, 0, 0);
+
                 SceneGBufferCommandBuffer->bindVertexBuffers(0, CubeVertexBuffers, CubeOffsets);
                 SceneGBufferCommandBuffer->draw(36, 3, 0, 0);
+
                 SceneGBufferCommandBuffer.End();
+
+                // ------------------------------------------------------------
 
                 auto& SceneMergeCommandBuffer = SceneMergeCommandBuffers[i];
 
@@ -345,53 +555,175 @@ namespace Npgs
                 std::uint32_t WorkgroupSizeX = (SupersamplingExtent.width  + 15) / 16;
                 std::uint32_t WorkgroupSizeY = (SupersamplingExtent.height + 15) / 16;
 
+                const auto& PbrSceneMergePipelineLayout = *PbrSceneMergeShaderRes->PipelineLayout;
+
                 SceneMergeCommandBuffer.Begin(GBufferMergeInheritanceInfo, vk::CommandBufferUsageFlagBits::eSimultaneousUse);
-                SceneMergeCommandBuffer->bindPipeline(vk::PipelineBindPoint::eCompute, PbrSceneMergePipeline);
+                // SetDefaultGraphicsState(*SceneMergeCommandBuffer);
+                // 1. Bind Shaders
+                SceneMergeCommandBuffer->bindShadersEXT(PbrSceneMergeShaderRes->Stages, PbrSceneMergeShaderRes->Handles);
+
+                // 2. Resources & Dispatch
                 vk::DeviceAddress LightArgsAddress = ShaderBufferManager->GetDataBufferDeviceAddress(i, "LightArgs");
                 SceneMergeCommandBuffer->pushConstants<vk::DeviceAddress>(PbrSceneMergePipelineLayout, vk::ShaderStageFlagBits::eCompute, 0, LightArgsAddress);
+
                 SceneMergeCommandBuffer->bindDescriptorBuffersEXT(DescriptorBufferBindingInfos);
                 Offsets = ShaderBufferManager->GetDescriptorBindingOffsets("SceneMergeDescriptorBuffer", 1, 2);
                 SceneMergeCommandBuffer->setDescriptorBufferOffsetsEXT(vk::PipelineBindPoint::eCompute, PbrSceneMergePipelineLayout, 1, { 0, 0 }, Offsets);
+
                 SceneMergeCommandBuffer->dispatch(WorkgroupSizeX, WorkgroupSizeY, 1);
+
                 SceneMergeCommandBuffer.End();
+
+                // ------------------------------------------------------------
 
                 auto& FrontgroundCommandBuffer = FrontgroundCommandBuffers[i];
 
                 vk::CommandBufferInheritanceInfo FrontgroundInheritanceInfo = vk::CommandBufferInheritanceInfo()
                     .setPNext(&FrontgroundInheritanceRenderingInfo);
 
+                const auto& LampPipelineLayout   = *LampShaderRes->PipelineLayout;
+                const auto& SkyboxPipelineLayout = *SkyboxShaderRes->PipelineLayout;
+
                 FrontgroundCommandBuffer.Begin(FrontgroundInheritanceInfo, vk::CommandBufferUsageFlagBits::eRenderPassContinue | vk::CommandBufferUsageFlagBits::eSimultaneousUse);
-                FrontgroundCommandBuffer->setScissor(0, CommonScissor);
-                FrontgroundCommandBuffer->setViewport(0, CommonViewport);
-                FrontgroundCommandBuffer->bindPipeline(vk::PipelineBindPoint::eGraphics, LampPipeline);
-                FrontgroundCommandBuffer->pushConstants<vk::DeviceAddress>(LampPipelineLayout, vk::ShaderStageFlagBits::eVertex, 0, MatricesAddress);
-                FrontgroundCommandBuffer->pushConstants<vk::DeviceAddress>(LampPipelineLayout, vk::ShaderStageFlagBits::eFragment, LampShader->GetPushConstantOffset("LightArgsAddress"), LightArgsAddress);
-                FrontgroundCommandBuffer->bindVertexBuffers(0, CubeVertexBuffers, LampOffsets);
-                FrontgroundCommandBuffer->draw(36, 1, 0, 0);
-                FrontgroundCommandBuffer->bindPipeline(vk::PipelineBindPoint::eGraphics, SkyboxPipeline);
-                FrontgroundCommandBuffer->pushConstants<vk::DeviceAddress>(SkyboxPipelineLayout, vk::ShaderStageFlagBits::eVertex, 0, MatricesAddress);
-                FrontgroundCommandBuffer->bindDescriptorBuffersEXT(DescriptorBufferBindingInfos);
-                vk::DeviceSize OffsetSet0 = ShaderBufferManager->GetDescriptorBindingOffset("SkyboxDescriptorBuffer", 0);
-                FrontgroundCommandBuffer->setDescriptorBufferOffsetsEXT(vk::PipelineBindPoint::eGraphics, SkyboxPipelineLayout, 0, { 0 }, OffsetSet0);
-                FrontgroundCommandBuffer->bindVertexBuffers(0, *SkyboxVertexBuffer_->GetBuffer(), Offset);
-                FrontgroundCommandBuffer->draw(36, 1, 0, 0);
+                SetDefaultGraphicsState(*FrontgroundCommandBuffer);
+                // --- Global Dynamic States (Shared) ---
+                FrontgroundCommandBuffer->setViewportWithCount(CommonViewport);
+                FrontgroundCommandBuffer->setScissorWithCount(CommonScissor);
+                FrontgroundCommandBuffer->setPrimitiveTopology(vk::PrimitiveTopology::eTriangleList);
+                FrontgroundCommandBuffer->setPrimitiveRestartEnable(vk::False);
+                FrontgroundCommandBuffer->setRasterizationSamplesEXT(vk::SampleCountFlagBits::e1);
+                FrontgroundCommandBuffer->setSampleMaskEXT(vk::SampleCountFlagBits::e1, { 0xFFFFFFFF });
+                FrontgroundCommandBuffer->setAlphaToCoverageEnableEXT(vk::False);
+
+                // Color Blend (1 Attachment)
+                std::vector<vk::ColorBlendEquationEXT> OneEq(1, DefaultEquation);
+                FrontgroundCommandBuffer->setColorBlendEquationEXT(0, OneEq);
+                std::vector<vk::ColorComponentFlags> OneMask(1, MaskRGBA);
+                FrontgroundCommandBuffer->setColorWriteMaskEXT(0, OneMask);
+                std::vector<vk::Bool32> OneEnable(1, vk::False);
+                FrontgroundCommandBuffer->setColorBlendEnableEXT(0, OneEnable);
+                FrontgroundCommandBuffer->setLogicOpEnableEXT(vk::False);
+
+                // --- Draw 1: Lamp ---
+                {
+                    // 1. Bind Shaders
+                    FrontgroundCommandBuffer->bindShadersEXT(LampShaderRes->Stages, LampShaderRes->Handles);
+
+                    // 2. Specific States (Lamp)
+                    FrontgroundCommandBuffer->setVertexInputEXT(LampShaderRes->VertexInputBindings, LampShaderRes->VertexInputAttributes);
+
+                    FrontgroundCommandBuffer->setRasterizerDiscardEnable(vk::False);
+                    FrontgroundCommandBuffer->setCullMode(vk::CullModeFlagBits::eBack);
+                    FrontgroundCommandBuffer->setFrontFace(vk::FrontFace::eCounterClockwise);
+                    FrontgroundCommandBuffer->setPolygonModeEXT(vk::PolygonMode::eFill);
+                    FrontgroundCommandBuffer->setLineWidth(1.0f);
+
+                    FrontgroundCommandBuffer->setDepthTestEnable(vk::True);
+                    FrontgroundCommandBuffer->setDepthWriteEnable(vk::True);
+                    FrontgroundCommandBuffer->setDepthCompareOp(vk::CompareOp::eLess);
+                    FrontgroundCommandBuffer->setDepthBoundsTestEnable(vk::False);
+                    FrontgroundCommandBuffer->setStencilTestEnable(vk::False);
+
+                    // 3. Resources
+                    FrontgroundCommandBuffer->pushConstants<vk::DeviceAddress>(LampPipelineLayout, vk::ShaderStageFlagBits::eVertex | vk::ShaderStageFlagBits::eFragment, 0, MatricesAddress);
+                    FrontgroundCommandBuffer->pushConstants<vk::DeviceAddress>(LampPipelineLayout, vk::ShaderStageFlagBits::eVertex | vk::ShaderStageFlagBits::eFragment, LampShaderRes->GetPushConstantOffset("LightArgsAddress"), LightArgsAddress);
+
+                    FrontgroundCommandBuffer->bindVertexBuffers(0, CubeVertexBuffers, LampOffsets);
+                    FrontgroundCommandBuffer->draw(36, 1, 0, 0);
+                }
+
+                // --- Draw 2: Skybox ---
+                {
+                    // 1. Bind Shaders
+                    FrontgroundCommandBuffer->bindShadersEXT(SkyboxShaderRes->Stages, SkyboxShaderRes->Handles);
+
+                    // 2. Specific States (Skybox)
+                    // Vertex Input 变了
+                    FrontgroundCommandBuffer->setVertexInputEXT(SkyboxShaderRes->VertexInputBindings, SkyboxShaderRes->VertexInputAttributes);
+
+                    // Rasterization (Cull Mode 可能不同)
+                    // 如果 Skybox 配置里 Rasterization 是默认的，那么 CullMode 也是 Back
+                    // 如果你之前没有 Reset Rasterization，它会继承 Lamp 的设置 (Back)
+                    // 你的 Skybox 配置: SkyboxPipelineCreateInfoPack.RasterizationStateCreateInfo = vk::PipelineRasterizationStateCreateInfo(); (默认 Cull=None?? 需确认默认值)
+                    // vk::PipelineRasterizationStateCreateInfo 默认构造函数的 cullMode 是 eNone (0)。
+                    FrontgroundCommandBuffer->setCullMode(vk::CullModeFlagBits::eNone); // 假设 Skybox 不剔除
+
+                    // Depth Stencil (Op 变了)
+                    // Skybox 配置: DepthCompareOp = LessOrEqual
+                    FrontgroundCommandBuffer->setDepthCompareOp(vk::CompareOp::eLessOrEqual);
+
+                    // 3. Resources
+                    FrontgroundCommandBuffer->pushConstants<vk::DeviceAddress>(SkyboxPipelineLayout, vk::ShaderStageFlagBits::eVertex, 0, MatricesAddress);
+
+                    FrontgroundCommandBuffer->bindDescriptorBuffersEXT(DescriptorBufferBindingInfos);
+                    vk::DeviceSize OffsetSet0 = ShaderBufferManager->GetDescriptorBindingOffset("SkyboxDescriptorBuffer", 0);
+                    FrontgroundCommandBuffer->setDescriptorBufferOffsetsEXT(vk::PipelineBindPoint::eGraphics, SkyboxPipelineLayout, 0, { 0 }, OffsetSet0);
+
+                    FrontgroundCommandBuffer->bindVertexBuffers(0, *SkyboxVertexBuffer_->GetBuffer(), Offset);
+                    FrontgroundCommandBuffer->draw(36, 1, 0, 0);
+                }
+
                 FrontgroundCommandBuffer.End();
+
+                // ------------------------------------------------------------
 
                 auto& PostProcessCommandBuffer = PostProcessCommandBuffers[i];
 
                 vk::CommandBufferInheritanceInfo PostInheritanceInfo = vk::CommandBufferInheritanceInfo()
                     .setPNext(&PostInheritanceRenderingInfo);
 
+                const auto& PostPipelineLayout = *PostShaderRes->PipelineLayout;
+
                 PostProcessCommandBuffer.Begin(PostInheritanceInfo, vk::CommandBufferUsageFlagBits::eRenderPassContinue | vk::CommandBufferUsageFlagBits::eSimultaneousUse);
-                PostProcessCommandBuffer->setViewport(0, CommonViewport);
-                PostProcessCommandBuffer->setScissor(0, CommonScissor);
-                PostProcessCommandBuffer->bindPipeline(vk::PipelineBindPoint::eGraphics, PostPipeline);
+                SetDefaultGraphicsState(*PostProcessCommandBuffer);
+                // 1. Bind Shaders
+                PostProcessCommandBuffer->bindShadersEXT(PostShaderRes->Stages, PostShaderRes->Handles);
+
+                // 2. Set Dynamic States
+                PostProcessCommandBuffer->setViewportWithCount(CommonViewport);
+                PostProcessCommandBuffer->setScissorWithCount(CommonScissor);
+
+                // Vertex Input
+                PostProcessCommandBuffer->setVertexInputEXT(PostShaderRes->VertexInputBindings, PostShaderRes->VertexInputAttributes);
+
+                // Input Assembly
+                PostProcessCommandBuffer->setPrimitiveTopology(vk::PrimitiveTopology::eTriangleList);
+                PostProcessCommandBuffer->setPrimitiveRestartEnable(vk::False);
+
+                // Rasterization (全默认 -> Cull None)
+                PostProcessCommandBuffer->setRasterizerDiscardEnable(vk::False);
+                PostProcessCommandBuffer->setCullMode(vk::CullModeFlagBits::eNone);
+                PostProcessCommandBuffer->setFrontFace(vk::FrontFace::eCounterClockwise);
+                PostProcessCommandBuffer->setPolygonModeEXT(vk::PolygonMode::eFill);
+                PostProcessCommandBuffer->setLineWidth(1.0f);
+                PostProcessCommandBuffer->setDepthBiasEnable(vk::False);
+
+                // Depth Stencil (全默认 -> Disable)
+                PostProcessCommandBuffer->setDepthTestEnable(vk::False);
+                PostProcessCommandBuffer->setDepthWriteEnable(vk::False);
+                PostProcessCommandBuffer->setDepthBoundsTestEnable(vk::False);
+                PostProcessCommandBuffer->setStencilTestEnable(vk::False);
+
+                // Multisample (默认 -> 1)
+                PostProcessCommandBuffer->setRasterizationSamplesEXT(vk::SampleCountFlagBits::e1);
+                PostProcessCommandBuffer->setSampleMaskEXT(vk::SampleCountFlagBits::e1, { 0xFFFFFFFF });
+                PostProcessCommandBuffer->setAlphaToCoverageEnableEXT(vk::False);
+
+                // Color Blend (1 Attachment)
+                PostProcessCommandBuffer->setColorBlendEquationEXT(0, OneEq);
+                PostProcessCommandBuffer->setColorWriteMaskEXT(0, OneMask);
+                PostProcessCommandBuffer->setColorBlendEnableEXT(0, OneEnable); // 默认也是关
+
+                // 3. Resources & Draw
                 PostProcessCommandBuffer->bindDescriptorBuffersEXT(DescriptorBufferBindingInfos);
-                PostProcessCommandBuffer->pushConstants<vk::Bool32>(PostPipelineLayout, vk::ShaderStageFlagBits::eFragment, PostShader->GetPushConstantOffset("bEnableHdr"), static_cast<vk::Bool32>(bEnableHdr_));
-                OffsetSet0 = ShaderBufferManager->GetDescriptorBindingOffset("PostDescriptorBuffer", 0);
+                PostProcessCommandBuffer->pushConstants<vk::Bool32>(PostPipelineLayout, vk::ShaderStageFlagBits::eFragment, PostShaderRes->GetPushConstantOffset("bEnableHdr"), static_cast<vk::Bool32>(bEnableHdr_));
+
+                vk::DeviceSize OffsetSet0 = ShaderBufferManager->GetDescriptorBindingOffset("PostDescriptorBuffer", 0);
                 PostProcessCommandBuffer->setDescriptorBufferOffsetsEXT(vk::PipelineBindPoint::eGraphics, PostPipelineLayout, 0, { 0 }, OffsetSet0);
+
                 PostProcessCommandBuffer->bindVertexBuffers(0, *QuadVertexBuffer_->GetBuffer(), Offset);
                 PostProcessCommandBuffer->draw(6, 1, 0, 0);
+
                 PostProcessCommandBuffer.End();
             }
         };
@@ -988,7 +1320,9 @@ namespace Npgs
 
     void FApplication::LoadAssets()
     {
-        FResourceInfo PbrSceneGBufferResourceInfo
+        auto* AssetManager = EngineCoreServices->GetAssetManager();
+
+        FResourceInfo PbrSceneVertShaderResourceInfo
         {
             {
                 { 0, sizeof(FVertex), false },
@@ -1003,34 +1337,45 @@ namespace Npgs
                 { 1, 5, offsetof(FInstanceData, Model) }
             },
             {},
-            { { vk::ShaderStageFlagBits::eVertex, { "MatricesAddress" } } }
+            { "MatricesAddress" }
         };
 
-        FResourceInfo PbrSceneResourceInfo
+        FResourceInfo LampShaderResourceInfo
         {
-            {
-                { 0, sizeof(FVertex), false },
-                { 1, sizeof(FInstanceData), true }
-            },
-            {
-                { 0, 0, offsetof(FVertex, Position) },
-                { 0, 1, offsetof(FVertex, Normal) },
-                { 0, 2, offsetof(FVertex, TexCoord) },
-                { 0, 3, offsetof(FVertex, Tangent) },
-                { 0, 4, offsetof(FVertex, Bitangent) },
-                { 1, 5, offsetof(FInstanceData, Model) }
-            },
-            {},
-            {
-                { vk::ShaderStageFlagBits::eVertex, { "MatricesAddress" } },
-                { vk::ShaderStageFlagBits::eFragment, { "LightArgsAddress" } }
-            }
+            {}, {}, {}, { "LightArgsAddress" }
         };
+
+        AssetManager->AddAsset<FShader>("PbrSceneVertShader", "PbrScene.vert.spv", PbrSceneVertShaderResourceInfo);
+        AssetManager->AddAsset<FShader>("PbrSceneGbufferShader", "PbrSceneGBuffer.frag.spv", FResourceInfo{});
+        AssetManager->AddAsset<FShader>("LampShader", "PbrScene_Lamp.frag.spv", LampShaderResourceInfo);
+
+        //FResourceInfo PbrSceneResourceInfo
+        //{
+        //    {
+        //        { 0, sizeof(FVertex), false },
+        //        { 1, sizeof(FInstanceData), true }
+        //    },
+        //    {
+        //        { 0, 0, offsetof(FVertex, Position) },
+        //        { 0, 1, offsetof(FVertex, Normal) },
+        //        { 0, 2, offsetof(FVertex, TexCoord) },
+        //        { 0, 3, offsetof(FVertex, Tangent) },
+        //        { 0, 4, offsetof(FVertex, Bitangent) },
+        //        { 1, 5, offsetof(FInstanceData, Model) }
+        //    },
+        //    {},
+        //    {
+        //        { vk::ShaderStageFlagBits::eVertex, { "MatricesAddress" } },
+        //        { vk::ShaderStageFlagBits::eFragment, { "LightArgsAddress" } }
+        //    }
+        //};
 
         FResourceInfo PbrSceneMergeResourceInfo
         {
-            {}, {}, {}, { { vk::ShaderStageFlagBits::eCompute, { "LightArgsAddress" } } }
+            {}, {}, {}, { "LightArgsAddress" }
         };
+
+        AssetManager->AddAsset<FShader>("PbrSceneMergeShader", "PbrSceneMerge.comp.spv", PbrSceneMergeResourceInfo);
 
         FResourceInfo DepthMapResourceInfo
         {
@@ -1043,57 +1388,68 @@ namespace Npgs
                 { 1, 1, offsetof(FInstanceData, Model) }
             },
             {},
-            { { vk::ShaderStageFlagBits::eVertex, { "MatricesAddress" } } }
+            { "MatricesAddress" }
         };
 
-        FResourceInfo TerrainResourceInfo
-        {
-            { { 0, sizeof(FPatchVertex), false } },
-            {
-                { 0, 0, offsetof(FPatchVertex, Position) },
-                { 0, 1, offsetof(FPatchVertex, TexCoord) }
-            },
-            { { 0, 0, false } },
-            { { vk::ShaderStageFlagBits::eTessellationControl, { "MinDistance", "MaxDistance", "MinTessLevel", "MaxTessLevel" } } }
-        };
+        AssetManager->AddAsset<FShader>("DepthMapShader", "DepthMap.vert.spv", DepthMapResourceInfo);
+
+        //FResourceInfo TerrainResourceInfo
+        //{
+        //    { { 0, sizeof(FPatchVertex), false } },
+        //    {
+        //        { 0, 0, offsetof(FPatchVertex, Position) },
+        //        { 0, 1, offsetof(FPatchVertex, TexCoord) }
+        //    },
+        //    { { 0, 0, false } },
+        //    { { vk::ShaderStageFlagBits::eTessellationControl, { "MinDistance", "MaxDistance", "MinTessLevel", "MaxTessLevel" } } }
+        //};
 
         FResourceInfo SkyboxResourceInfo
         {
             { { 0, sizeof(FSkyboxVertex), false } },
             { { 0, 0, offsetof(FSkyboxVertex, Position) } },
             {},
-            { { vk::ShaderStageFlagBits::eVertex, { "MatricesAddress" } } }
+            { "MatricesAddress" }
         };
 
-        FResourceInfo PostResourceInfo
+        AssetManager->AddAsset<FShader>("SkyboxVertShader", "Skybox.vert.spv", SkyboxResourceInfo);
+        AssetManager->AddAsset<FShader>("SkyboxFragShader", "Skybox.frag.spv", FResourceInfo{});
+
+        FResourceInfo PostVertShaderResourceInfo
         {
             { { 0, sizeof(FQuadVertex), false } },
             {
                 { 0, 0, offsetof(FQuadVertex, Position) },
                 { 0, 1, offsetof(FQuadVertex, TexCoord) }
             },
-            {},
-            { { vk::ShaderStageFlagBits::eFragment, { "bEnableHdr" } } }
+            {}, {}
         };
 
-        std::vector<std::string> PbrSceneGBufferShaderFiles({ "PbrScene.vert.spv", "PbrSceneGBuffer.frag.spv" });
-        std::vector<std::string> PbrSceneMergeShaderFiles({ "PbrSceneMerge.comp.spv" });
-        std::vector<std::string> PbrSceneShaderFiles({ "PbrScene.vert.spv", "PbrScene.frag.spv" });
-        std::vector<std::string> LampShaderFiles({ "PbrScene.vert.spv", "PbrScene_Lamp.frag.spv" });
-        std::vector<std::string> DepthMapShaderFiles({ "DepthMap.vert.spv" });
-        // std::vector<std::string> TerrainShaderFiles({ "Terrain.vert.spv", "Terrain.tesc.spv", "Terrain.tese.spv", "Terrain.frag.spv" });
-        std::vector<std::string> SkyboxShaderFiles({ "Skybox.vert.spv", "Skybox.frag.spv" });
-        std::vector<std::string> PostShaderFiles({ "PostProcess.vert.spv", "PostProcess.frag.spv" });
+        FResourceInfo PostFragShaderResourceInfo
+        {
+            {}, {}, {}, { "bEnableHdr" }
+        };
 
-        auto* AssetManager = EngineCoreServices->GetAssetManager();
-        AssetManager->AddAsset<FShader>("PbrSceneGBufferShader", PbrSceneGBufferShaderFiles, PbrSceneGBufferResourceInfo);
-        AssetManager->AddAsset<FShader>("PbrSceneMergeShader", PbrSceneMergeShaderFiles, PbrSceneMergeResourceInfo);
-        AssetManager->AddAsset<FShader>("PbrSceneShader", PbrSceneShaderFiles, PbrSceneResourceInfo);
-        AssetManager->AddAsset<FShader>("LampShader", LampShaderFiles, PbrSceneResourceInfo);
-        AssetManager->AddAsset<FShader>("DepthMapShader", DepthMapShaderFiles, DepthMapResourceInfo);
-        // AssetManager->AddAsset<FShader>("TerrainShader", TerrainShaderFiles, TerrainResourceInfo);
-        AssetManager->AddAsset<FShader>("SkyboxShader", SkyboxShaderFiles, SkyboxResourceInfo);
-        AssetManager->AddAsset<FShader>("PostShader", PostShaderFiles, PostResourceInfo);
+        AssetManager->AddAsset<FShader>("PostVertShader", "PostProcess.vert.spv", PostVertShaderResourceInfo);
+        AssetManager->AddAsset<FShader>("PostFragShader", "PostProcess.frag.spv", PostFragShaderResourceInfo);
+
+        //std::vector<std::string> PbrSceneGBufferShaderFiles({ "PbrScene.vert.spv", "PbrSceneGBuffer.frag.spv" });
+        //std::vector<std::string> PbrSceneMergeShaderFiles({ "PbrSceneMerge.comp.spv" });
+        //std::vector<std::string> PbrSceneShaderFiles({ "PbrScene.vert.spv", "PbrScene.frag.spv" });
+        //std::vector<std::string> LampShaderFiles({ "PbrScene.vert.spv", "PbrScene_Lamp.frag.spv" });
+        //std::vector<std::string> DepthMapShaderFiles({ "DepthMap.vert.spv" });
+        //// std::vector<std::string> TerrainShaderFiles({ "Terrain.vert.spv", "Terrain.tesc.spv", "Terrain.tese.spv", "Terrain.frag.spv" });
+        //std::vector<std::string> SkyboxShaderFiles({ "Skybox.vert.spv", "Skybox.frag.spv" });
+        //std::vector<std::string> PostShaderFiles({ "PostProcess.vert.spv", "PostProcess.frag.spv" });
+
+        //AssetManager->AddAsset<FShader>("PbrSceneGBufferShader", PbrSceneGBufferShaderFiles, PbrSceneGBufferResourceInfo);
+        //AssetManager->AddAsset<FShader>("PbrSceneMergeShader", PbrSceneMergeShaderFiles, PbrSceneMergeResourceInfo);
+        //AssetManager->AddAsset<FShader>("PbrSceneShader", PbrSceneShaderFiles, PbrSceneResourceInfo);
+        //AssetManager->AddAsset<FShader>("LampShader", LampShaderFiles, PbrSceneResourceInfo);
+        //AssetManager->AddAsset<FShader>("DepthMapShader", DepthMapShaderFiles, DepthMapResourceInfo);
+        //// AssetManager->AddAsset<FShader>("TerrainShader", TerrainShaderFiles, TerrainResourceInfo);
+        //AssetManager->AddAsset<FShader>("SkyboxShader", SkyboxShaderFiles, SkyboxResourceInfo);
+        //AssetManager->AddAsset<FShader>("PostShader", PostShaderFiles, PostResourceInfo);
 
         std::vector<std::string> TextureNames
         {
@@ -1230,14 +1586,14 @@ namespace Npgs
     {
         auto* AssetManager = EngineCoreServices->GetAssetManager();
 
-        auto PbrSceneGBufferShader = AssetManager->AcquireAsset<FShader>("PbrSceneGBufferShader");
-        auto PbrSceneMergeShader   = AssetManager->AcquireAsset<FShader>("PbrSceneMergeShader");
-        auto PbrSceneShader        = AssetManager->AcquireAsset<FShader>("PbrSceneShader");
-        auto LampShader            = AssetManager->AcquireAsset<FShader>("LampShader");
-        auto DepthMapShader        = AssetManager->AcquireAsset<FShader>("DepthMapShader");
-        // auto TerrainShader         = AssetManager->AcquireAsset<FShader>("TerrainShader");
-        auto SkyboxShader          = AssetManager->AcquireAsset<FShader>("SkyboxShader");
-        auto PostShader            = AssetManager->AcquireAsset<FShader>("PostShader");
+        //auto PbrSceneGBufferShader = AssetManager->AcquireAsset<FShader>("PbrSceneGBufferShader");
+        //auto PbrSceneMergeShader   = AssetManager->AcquireAsset<FShader>("PbrSceneMergeShader");
+        //auto PbrSceneShader        = AssetManager->AcquireAsset<FShader>("PbrSceneShader");
+        //auto LampShader            = AssetManager->AcquireAsset<FShader>("LampShader");
+        //auto DepthMapShader        = AssetManager->AcquireAsset<FShader>("DepthMapShader");
+        //// auto TerrainShader         = AssetManager->AcquireAsset<FShader>("TerrainShader");
+        //auto SkyboxShader          = AssetManager->AcquireAsset<FShader>("SkyboxShader");
+        //auto PostShader            = AssetManager->AcquireAsset<FShader>("PostShader");
 
         auto PbrDisplacement = AssetManager->AcquireAsset<FTexture2D>("PbrDisplacement");
         auto PbrDiffuse      = AssetManager->AcquireAsset<FTexture2D>("PbrDiffuse");
@@ -1247,12 +1603,75 @@ namespace Npgs
         auto Skybox          = AssetManager->AcquireAsset<FTextureCube>("Skybox");
 
         auto* ShaderBufferManager = EngineResourceServices->GetShaderBufferManager();
+        auto* ShaderManager = EngineResourceServices->GetShaderManager();
+
+        FShaderAcquireInfo::FShaderInfo PbrSceneVertShaderInfo
+        {
+            .Name = "PbrSceneVertShader",
+            .NextStage = vk::ShaderStageFlagBits::eFragment
+        };
+
+        FShaderAcquireInfo::FShaderInfo PbrSceneGbufferShaderInfo
+        {
+            .Name = "PbrSceneGbufferShader"
+        };
+
+        FShaderAcquireInfo::FShaderInfo LampShaderInfo
+        {
+            .Name = "LampShader"
+        };
+
+        FShaderAcquireInfo PbrSceneGbufferShaderAcquireInfo;
+        PbrSceneGbufferShaderAcquireInfo.ShaderInfos.emplace(vk::ShaderStageFlagBits::eVertex, PbrSceneVertShaderInfo);
+        PbrSceneGbufferShaderAcquireInfo.ShaderInfos.emplace(vk::ShaderStageFlagBits::eFragment, PbrSceneGbufferShaderInfo);
+        auto* PbrSceneGbufferShaderRes = ShaderManager->AcquireShaderResource(PbrSceneGbufferShaderAcquireInfo);
+
+        FShaderAcquireInfo::FShaderInfo SkyboxVertShaderInfo
+        {
+            .Name = "SkyboxVertShader",
+            .NextStage = vk::ShaderStageFlagBits::eFragment
+        };
+
+        FShaderAcquireInfo::FShaderInfo SkyboxFragShaderInfo
+        {
+            .Name = "SkyboxFragShader"
+        };
+
+        FShaderAcquireInfo SkyboxShaderAcquireInfo;
+        SkyboxShaderAcquireInfo.ShaderInfos.emplace(vk::ShaderStageFlagBits::eVertex, SkyboxVertShaderInfo);
+        SkyboxShaderAcquireInfo.ShaderInfos.emplace(vk::ShaderStageFlagBits::eFragment, SkyboxFragShaderInfo);
+        auto* SkyboxShaderRes = ShaderManager->AcquireShaderResource(SkyboxShaderAcquireInfo);
+
+        FShaderAcquireInfo::FShaderInfo PbrSceneMergeShaderInfo
+        {
+            .Name = "PbrSceneMergeShader"
+        };
+
+        FShaderAcquireInfo PbrSceneMergeShaderAcquireInfo;
+        PbrSceneMergeShaderAcquireInfo.ShaderInfos.emplace(vk::ShaderStageFlagBits::eCompute, PbrSceneMergeShaderInfo);
+        auto* PbrSceneMergeShaderRes = ShaderManager->AcquireShaderResource(PbrSceneMergeShaderAcquireInfo);
+
+        FShaderAcquireInfo::FShaderInfo PostVertShaderInfo
+        {
+            .Name = "PostVertShader",
+            .NextStage = vk::ShaderStageFlagBits::eFragment
+        };
+
+        FShaderAcquireInfo::FShaderInfo PostFragShaderInfo
+        {
+            .Name = "PostFragShader"
+        };
+
+        FShaderAcquireInfo PostShaderAcquireInfo;
+        PostShaderAcquireInfo.ShaderInfos.emplace(vk::ShaderStageFlagBits::eVertex, PostVertShaderInfo);
+        PostShaderAcquireInfo.ShaderInfos.emplace(vk::ShaderStageFlagBits::eFragment, PostFragShaderInfo);
+        auto* PostShaderRes = ShaderManager->AcquireShaderResource(PostShaderAcquireInfo);
 
         auto CreateAttachmentDescriptors = [=]() mutable -> void
         {
             FDescriptorBufferCreateInfo SceneGBufferDescriptorBufferCreateInfo;
             SceneGBufferDescriptorBufferCreateInfo.Name     = "SceneGBufferDescriptorBuffer";
-            SceneGBufferDescriptorBufferCreateInfo.SetInfos = PbrSceneGBufferShader->GetDescriptorSetInfos();
+            SceneGBufferDescriptorBufferCreateInfo.SetInfos = PbrSceneGbufferShaderRes->SetInfos;
 
             vk::SamplerCreateInfo SamplerCreateInfo = FTexture::CreateDefaultSamplerCreateInfo(VulkanContext_);
             static FVulkanSampler Sampler(VulkanContext_->GetDevice(), "CommonSampler", SamplerCreateInfo);
@@ -1272,7 +1691,7 @@ namespace Npgs
 
             FDescriptorBufferCreateInfo SkyboxDescriptorBufferCreateInfo;
             SkyboxDescriptorBufferCreateInfo.Name     = "SkyboxDescriptorBuffer";
-            SkyboxDescriptorBufferCreateInfo.SetInfos = SkyboxShader->GetDescriptorSetInfos();
+            SkyboxDescriptorBufferCreateInfo.SetInfos = SkyboxShaderRes->SetInfos;
 
             SamplerCreateInfo
                 .setMipmapMode(vk::SamplerMipmapMode::eNearest)
@@ -1286,11 +1705,11 @@ namespace Npgs
 
             FDescriptorBufferCreateInfo SceneMergeDescriptorBufferCreateInfo;
             SceneMergeDescriptorBufferCreateInfo.Name     = "SceneMergeDescriptorBuffer";
-            SceneMergeDescriptorBufferCreateInfo.SetInfos = PbrSceneMergeShader->GetDescriptorSetInfos();
+            SceneMergeDescriptorBufferCreateInfo.SetInfos = PbrSceneMergeShaderRes->SetInfos;
 
             FDescriptorBufferCreateInfo PostDescriptorBufferCreateInfo;
             PostDescriptorBufferCreateInfo.Name     = "PostDescriptorBuffer";
-            PostDescriptorBufferCreateInfo.SetInfos = PostShader->GetDescriptorSetInfos();
+            PostDescriptorBufferCreateInfo.SetInfos = PostShaderRes->SetInfos;
 
             vk::SamplerCustomBorderColorCreateInfoEXT BorderColorCreateInfo(
                 vk::ClearColorValue(1.0f, 1.0f, 1.0f, 1.0f), vk::Format::eR32G32B32A32Sfloat);
@@ -1554,7 +1973,7 @@ namespace Npgs
 
     void FApplication::CreatePipelines()
     {
-        auto* PipelineManager = EngineResourceServices->GetPipelineManager();
+        // auto* PipelineManager = EngineResourceServices->GetPipelineManager();
 
         FGraphicsPipelineCreateInfoPack ScenePipelineCreateInfoPack;
         ScenePipelineCreateInfoPack.DynamicStates.push_back(vk::DynamicState::eViewport);
@@ -1591,8 +2010,8 @@ namespace Npgs
 
         ScenePipelineCreateInfoPack.ColorBlendAttachmentStates.push_back(ColorBlendAttachmentState);
 
-        PipelineManager->CreateGraphicsPipeline("PbrScenePipeline", "PbrSceneShader", ScenePipelineCreateInfoPack);
-        PipelineManager->CreateGraphicsPipeline("LampPipeline", "LampShader", ScenePipelineCreateInfoPack);
+        // PipelineManager->CreateGraphicsPipeline("PbrScenePipeline", "PbrSceneShader", ScenePipelineCreateInfoPack);
+        // PipelineManager->CreateGraphicsPipeline("LampPipeline", "LampShader", ScenePipelineCreateInfoPack);
 
         std::array GBufferAttachmentFormats{ AttachmentFormat, AttachmentFormat, AttachmentFormat, AttachmentFormat };
 
@@ -1609,7 +2028,7 @@ namespace Npgs
             SceneGBufferPipelineCreateInfoPack.ColorBlendAttachmentStates.push_back(ColorBlendAttachmentState);
         }
 
-        PipelineManager->CreateGraphicsPipeline("PbrSceneGBufferPipeline", "PbrSceneGBufferShader", SceneGBufferPipelineCreateInfoPack);
+        // PipelineManager->CreateGraphicsPipeline("PbrSceneGBufferPipeline", "PbrSceneGBufferShader", SceneGBufferPipelineCreateInfoPack);
 
         // FGraphicsPipelineCreateInfoPack TerrainPipelineCreateInfoPack = ScenePipelineCreateInfoPack;
         // TerrainPipelineCreateInfoPack.InputAssemblyStateCreateInfo.setTopology(vk::PrimitiveTopology::ePatchList);
@@ -1631,7 +2050,7 @@ namespace Npgs
         SkyboxPipelineCreateInfoPack.RasterizationStateCreateInfo = vk::PipelineRasterizationStateCreateInfo();
         SkyboxPipelineCreateInfoPack.DepthStencilStateCreateInfo.setDepthCompareOp(vk::CompareOp::eLessOrEqual);
 
-        PipelineManager->CreateGraphicsPipeline("SkyboxPipeline", "SkyboxShader", SkyboxPipelineCreateInfoPack);
+        // PipelineManager->CreateGraphicsPipeline("SkyboxPipeline", "SkyboxShader", SkyboxPipelineCreateInfoPack);
 
         FGraphicsPipelineCreateInfoPack PostPipelineCreateInfoPack = ScenePipelineCreateInfoPack;
 
@@ -1644,7 +2063,7 @@ namespace Npgs
         PostPipelineCreateInfoPack.RasterizationStateCreateInfo = vk::PipelineRasterizationStateCreateInfo();
         PostPipelineCreateInfoPack.MultisampleStateCreateInfo   = vk::PipelineMultisampleStateCreateInfo();
 
-        PipelineManager->CreateGraphicsPipeline("PostPipeline", "PostShader", PostPipelineCreateInfoPack);
+        // PipelineManager->CreateGraphicsPipeline("PostPipeline", "PostShader", PostPipelineCreateInfoPack);
 
         FGraphicsPipelineCreateInfoPack DepthMapPipelineCreateInfoPack = ScenePipelineCreateInfoPack;
 
@@ -1656,10 +2075,10 @@ namespace Npgs
         DepthMapPipelineCreateInfoPack.MultisampleStateCreateInfo   = vk::PipelineMultisampleStateCreateInfo();
         DepthMapPipelineCreateInfoPack.ColorBlendAttachmentStates.clear();
 
-        PipelineManager->CreateGraphicsPipeline("DepthMapPipeline", "DepthMapShader", DepthMapPipelineCreateInfoPack);
+        // PipelineManager->CreateGraphicsPipeline("DepthMapPipeline", "DepthMapShader", DepthMapPipelineCreateInfoPack);
 
         vk::ComputePipelineCreateInfo PbrMergePipelineCreateInfo(vk::PipelineCreateFlagBits::eDescriptorBufferEXT);
-        PipelineManager->CreateComputePipeline("PbrSceneMergePipeline", "PbrSceneMergeShader", &PbrMergePipelineCreateInfo);
+        // PipelineManager->CreateComputePipeline("PbrSceneMergePipeline", "PbrSceneMergeShader", &PbrMergePipelineCreateInfo);
     }
 
     void FApplication::Terminate()

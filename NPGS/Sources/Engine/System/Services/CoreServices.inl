@@ -1,3 +1,4 @@
+#include "CoreServices.hpp"
 #include "Engine/Core/Base/Base.hpp"
 
 namespace Npgs

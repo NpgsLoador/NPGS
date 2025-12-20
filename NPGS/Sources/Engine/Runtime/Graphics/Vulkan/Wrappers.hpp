@@ -3,6 +3,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <memory>
+#include <span>
 #include <string>
 #include <string_view>
 #include <type_traits>
@@ -505,6 +506,7 @@ namespace Npgs
     // -------------------------
     class FVulkanShader : public TVulkanHandle<vk::ShaderEXT>
     {
+    public:
         using Base = TVulkanHandle<vk::ShaderEXT>;
         using Base::Base;
 

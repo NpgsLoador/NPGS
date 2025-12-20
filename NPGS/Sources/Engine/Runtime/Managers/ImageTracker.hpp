@@ -5,7 +5,9 @@
 #include <utility>
 #include <variant>
 
+// #include <ankerl/unordered_dense.h>
 #include <vulkan/vulkan.hpp>
+
 #include "Engine/Runtime/Graphics/Vulkan/Context.hpp"
 #include "Engine/Runtime/Graphics/Vulkan/Wrappers.hpp"
 
@@ -17,8 +19,7 @@ namespace Npgs
         vk::AccessFlags2        AccessMask{ vk::AccessFlagBits2::eNone };
         vk::ImageLayout         ImageLayout{ vk::ImageLayout::eUndefined };
 
-        bool operator==(const FImageState& Other) const;
-        bool operator!=(const FImageState& Other) const;
+        bool operator==(const FImageState&) const = default;
     };
 
     class FImageTracker

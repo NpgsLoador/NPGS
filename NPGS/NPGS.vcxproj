@@ -175,6 +175,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Sources\Engine\Runtime\Graphics\Renderer\MaterialTemplate.cpp" />
+    <ClCompile Include="Sources\Engine\Runtime\Managers\ShaderManager.cpp" />
     <ClCompile Include="Sources\ExternalImpl\spirv_reflect_impl.c">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
@@ -191,6 +192,7 @@
     <ClCompile Include="Sources\Engine\Runtime\Managers\RenderTargetManager.cpp" />
     <ClCompile Include="Sources\Program\Rendering\Techniques\GbufferSceneTechnique.cpp" />
     <ClInclude Include="Sources\Engine\Runtime\Graphics\Renderer\MaterialTemplate.hpp" />
+    <ClInclude Include="Sources\Engine\Runtime\Managers\ShaderManager.hpp" />
     <ClInclude Include="Sources\Program\Rendering\Materials\StandardPbrMaterialNameLookup.hpp" />
     <ClInclude Include="Sources\Program\Rendering\RenderPasses\DepthMap.hpp" />
     <ClInclude Include="Sources\Engine\Runtime\AssetLoaders\FileLoader.hpp" />
@@ -227,7 +229,7 @@
     <ClCompile Include="Sources\Engine\Core\Types\Entries\Astro\CelestialObject.cpp" />
     <ClCompile Include="Sources\Engine\Core\Types\Entries\Astro\Planet.cpp" />
     <ClCompile Include="Sources\Engine\Core\Types\Entries\Astro\Star.cpp" />
-    <ClCompile Include="Sources\Engine\Core\Types\Entries\Astro\StellarSystem.cpp" />
+    <ClCompile Include="Sources\Engine\Core\Types\Entries\Astro\OrbitalSystem.cpp" />
     <ClCompile Include="Sources\Engine\Core\Types\Entries\NpgsObject.cpp" />
     <ClCompile Include="Sources\Engine\Core\Types\Properties\Intelli\Artifact.cpp" />
     <ClCompile Include="Sources\Engine\Core\Types\Properties\Intelli\Civilization.cpp" />
@@ -296,7 +298,7 @@
     <ClInclude Include="Sources\Engine\Core\Types\Entries\Astro\CelestialObject.hpp" />
     <ClInclude Include="Sources\Engine\Core\Types\Entries\Astro\Planet.hpp" />
     <ClInclude Include="Sources\Engine\Core\Types\Entries\Astro\Star.hpp" />
-    <ClInclude Include="Sources\Engine\Core\Types\Entries\Astro\StellarSystem.hpp" />
+    <ClInclude Include="Sources\Engine\Core\Types\Entries\Astro\OrbitalSystem.hpp" />
     <ClInclude Include="Sources\Engine\Core\Types\Entries\NpgsObject.hpp" />
     <ClInclude Include="Sources\Engine\Core\Types\Properties\Intelli\Artifact.hpp" />
     <ClInclude Include="Sources\Engine\Core\Types\Properties\Intelli\Civilization.hpp" />
@@ -324,6 +326,7 @@
     <None Include="Sources\Engine\Runtime\AssetLoaders\Texture.inl" />
     <None Include="Sources\Engine\Runtime\Graphics\Resources\Attachment.inl" />
     <None Include="Sources\Engine\Runtime\Graphics\Resources\DeviceLocalBuffer.inl" />
+    <None Include="Sources\Engine\Runtime\Managers\ShaderManager.inl" />
     <None Include="Sources\Engine\Runtime\Pools\CommandPoolPool.inl" />
     <None Include="Sources\Engine\Runtime\Graphics\Resources\StagingBuffer.inl" />
     <None Include="Sources\Engine\Runtime\Graphics\Vulkan\Context.inl" />
@@ -342,7 +345,7 @@
     <None Include="Sources\Engine\Core\Types\Entries\Astro\CelestialObject.inl" />
     <None Include="Sources\Engine\Core\Types\Entries\Astro\Planet.inl" />
     <None Include="Sources\Engine\Core\Types\Entries\Astro\Star.inl" />
-    <None Include="Sources\Engine\Core\Types\Entries\Astro\StellarSystem.inl" />
+    <None Include="Sources\Engine\Core\Types\Entries\Astro\OrbitalSystem.inl" />
     <None Include="Sources\Engine\Core\Types\Properties\Intelli\Civilization.inl" />
     <None Include="Sources\Engine\Core\Types\Properties\StellarClass.inl" />
     <None Include="Sources\Engine\Shaders\BlackHole.comp.glsl" />

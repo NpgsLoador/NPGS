@@ -6,10 +6,10 @@
 #include <string>
 #include <string_view>
 #include <type_traits>
-#include <unordered_map>
 #include <utility>
 #include <vector>
 
+#include <ankerl/unordered_dense.h>
 #include <vma/vk_mem_alloc.h>
 #include <vulkan/vulkan.hpp>
 
@@ -46,14 +46,14 @@ namespace Npgs
 
     struct FDescriptorBufferCreateInfo
     {
-        std::string                                           Name;
-        std::vector<std::string>                              UniformBufferNames;
-        std::vector<std::string>                              StorageBufferNames;
-        std::vector<FDescriptorSampler>                       SamplerInfos;
-        std::vector<FDescriptorImageInfo>                     SampledImageInfos;
-        std::vector<FDescriptorImageInfo>                     StorageImageInfos;
-        std::vector<FDescriptorImageInfo>                     CombinedImageSamplerInfos;
-        std::unordered_map<std::uint32_t, FDescriptorSetInfo> SetInfos;
+        std::string                                                     Name;
+        std::vector<std::string>                                        UniformBufferNames;
+        std::vector<std::string>                                        StorageBufferNames;
+        std::vector<FDescriptorSampler>                                 SamplerInfos;
+        std::vector<FDescriptorImageInfo>                               SampledImageInfos;
+        std::vector<FDescriptorImageInfo>                               StorageImageInfos;
+        std::vector<FDescriptorImageInfo>                               CombinedImageSamplerInfos;
+        ankerl::unordered_dense::map<std::uint32_t, FDescriptorSetInfo> SetInfos;
     };
 
     class FShaderBufferManager
@@ -125,7 +125,7 @@ namespace Npgs
 
         struct FDataBufferInfo
         {
-            Utils::FStringHeteroHashTable<std::string, FDataBufferFieldInfo> Fields;
+            Utils::TStringHeteroHashTable<std::string, FDataBufferFieldInfo> Fields;
             FDataBufferCreateInfo CreateInfo;
             vk::DeviceSize        Offset{};
             vk::DeviceSize        Size{};
@@ -146,8 +146,8 @@ namespace Npgs
                 vk::DeviceSize Size{};
             };
 
-            std::string                                       Name;
-            std::unordered_map<std::uint32_t, FSetAllocation> SetAllocations;
+            std::string                                                 Name;
+            ankerl::unordered_dense::map<std::uint32_t, FSetAllocation> SetAllocations;
         };
 
         struct FSetBindingHash
@@ -186,9 +186,9 @@ namespace Npgs
 
         vk::PhysicalDeviceDescriptorBufferPropertiesEXT DescriptorBufferProperties_;
         // [DataBufferName, DataBuffer]
-        Utils::FStringHeteroHashTable<std::string, FDataBufferInfo> DataBuffers_;
+        Utils::TStringHeteroHashTable<std::string, FDataBufferInfo> DataBuffers_;
         // [DescriptorBufferName, DescriptorBuffer]
-        Utils::FStringHeteroHashTable<std::string, FDescriptorBufferInfo> DescriptorBuffers_;
+        Utils::TStringHeteroHashTable<std::string, FDescriptorBufferInfo> DescriptorBuffers_;
         
         std::vector<FDeviceLocalBuffer> ResourceDescriptorHeaps_;
         std::vector<FDeviceLocalBuffer> SamplerDescriptorHeaps_;

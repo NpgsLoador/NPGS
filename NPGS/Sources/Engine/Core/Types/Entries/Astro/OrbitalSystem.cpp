@@ -1,15 +1,19 @@
 #include "stdafx.h"
-#include "StellarSystem.hpp"
+#include "OrbitalSystem.hpp"
 
 namespace Npgs::Astro
 {
     FBaryCenter::FBaryCenter(glm::vec3 Position, glm::vec2 Normal, std::size_t DistanceRank, const std::string& Name)
-        : Name(Name), Position(Position), Normal(Normal), DistanceRank(DistanceRank)
+        : Name(Name)
+        , Position(Position)
+        , Normal(Normal)
+        , DistanceRank(DistanceRank)
     {
     }
 
     FOrbit::FOrbitalObject::FOrbitalObject()
-        : Object_{}, Type_(EObjectType::kBaryCenter)
+        : Object_{}
+        , Type_(EObjectType::kBaryCenter)
     {
     }
 
@@ -37,12 +41,16 @@ namespace Npgs::Astro
     }
 
     FOrbit::FOrbitalDetails::FOrbitalDetails()
-        : Object_{}, HostOrbit_(nullptr), InitialTrueAnomaly_(0.0f)
+        : Object_{}
+        , HostOrbit_(nullptr)
+        , InitialTrueAnomaly_(0.0f)
     {
     }
 
     FOrbit::FOrbitalDetails::FOrbitalDetails(INpgsObject* Object, EObjectType Type, FOrbit* HostOrbit, float InitialTrueAnomaly)
-        : Object_(FOrbitalObject(Object, Type)), HostOrbit_(HostOrbit), InitialTrueAnomaly_(InitialTrueAnomaly)
+        : Object_(FOrbitalObject(Object, Type))
+        , HostOrbit_(HostOrbit)
+        , InitialTrueAnomaly_(InitialTrueAnomaly)
     {
     }
 
@@ -98,12 +106,12 @@ namespace Npgs::Astro
         return *this;
     }
 
-    FStellarSystem::FStellarSystem(const FBaryCenter& SystemBary)
+    FOrbitalSystem::FOrbitalSystem(const FBaryCenter& SystemBary)
         : SystemBary_(SystemBary)
     {
     }
 
-    FStellarSystem::FStellarSystem(const FStellarSystem& Other)
+    FOrbitalSystem::FOrbitalSystem(const FOrbitalSystem& Other)
         : SystemBary_(Other.SystemBary_)
     {
         for (const auto& Star : Other.Stars_)
@@ -124,7 +132,7 @@ namespace Npgs::Astro
         }
     }
 
-    FStellarSystem& FStellarSystem::operator=(const FStellarSystem& Other)
+    FOrbitalSystem& FOrbitalSystem::operator=(const FOrbitalSystem& Other)
     {
         if (this != &Other)
         {

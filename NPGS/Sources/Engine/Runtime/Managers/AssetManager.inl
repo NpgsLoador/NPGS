@@ -1,5 +1,8 @@
+#include "AssetManager.hpp"
 #include <utility>
+
 #include "Engine/Core/Base/Base.hpp"
+#include "Engine/Core/Utils/Utils.hpp"
 
 namespace Npgs
 {
@@ -29,6 +32,7 @@ namespace Npgs
         , Asset_(Other.Asset_)
         , ManagerLiveness_(Other.ManagerLiveness_)
     {
+        Asset_->RefCount->fetch_add(1, std::memory_order::relaxed);
     }
 
     template <CAssetCompatible AssetType>
@@ -104,9 +108,27 @@ namespace Npgs
     }
 
     template <CAssetCompatible AssetType>
+    NPGS_INLINE bool TAssetHandle<AssetType>::operator==(const TAssetHandle& Other) const
+    {
+        return Manager_ == Other.Manager_ && Asset_ == Other.Asset_;
+    }
+
+    template <CAssetCompatible AssetType>
     NPGS_INLINE TAssetHandle<AssetType>::operator bool() const
     {
         return Manager_ != nullptr && Asset_ != nullptr;
+    }
+
+    template <CAssetCompatible AssetType>
+    NPGS_INLINE void TAssetHandle<AssetType>::Pin()
+    {
+        Asset_->RefCount->fetch_add(1, std::memory_order::relaxed);
+    }
+
+    template <CAssetCompatible AssetType>
+    NPGS_INLINE void TAssetHandle<AssetType>::Unpin()
+    {
+        Asset_->RefCount->fetch_sub(1, std::memory_order::relaxed);
     }
 
     template <CAssetCompatible AssetType>
@@ -119,6 +141,15 @@ namespace Npgs
     NPGS_INLINE const AssetType* TAssetHandle<AssetType>::Get() const
     {
         return static_cast<AssetType*>(Asset_->Payload.get());
+    }
+
+    template <CAssetCompatible AssetType>
+    inline std::size_t FAssetHandleHash::operator()(const TAssetHandle<AssetType>& Handle) const noexcept
+    {
+        std::size_t Hash = 0;
+        Utils::HashCombine(Handle.Manager_, Hash);
+        Utils::HashCombine(Handle.Asset_,   Hash);
+        return Hash;
     }
 
     template <CAssetCompatible AssetType>

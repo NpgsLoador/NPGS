@@ -6,16 +6,6 @@
 
 namespace Npgs
 {
-    bool FImageState::operator==(const FImageState& Other) const
-    {
-        return StageMask == Other.StageMask && AccessMask == Other.AccessMask && ImageLayout == Other.ImageLayout;
-    }
-
-    bool FImageState::operator!=(const FImageState& Other) const
-    {
-        return !(*this == Other);
-    }
-
     std::size_t FImageTracker::FImageHash::operator()(const FImageKey& Key) const
     {
         if (std::holds_alternative<vk::Image>(Key))

@@ -1,3 +1,4 @@
+#include "Star.hpp"
 #include "Engine/Core/Base/Base.hpp"
 
 namespace Npgs::Astro

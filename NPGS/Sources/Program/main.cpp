@@ -96,7 +96,7 @@ int main1() {
     s1.SetSingleton(false);
     s2.SetSingleton(false);
 
-    FStellarSystem ss;
+    FOrbitalSystem ss;
     ss.StarsData().push_back(std::make_unique<Astro::AStar>(s1));
     //ss.StarsData().push_back(std::make_unique<Astro::AStar>(s2));
 

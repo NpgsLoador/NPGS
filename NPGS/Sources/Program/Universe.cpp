@@ -59,7 +59,7 @@ namespace Npgs
 
     void FUniverse::ReplaceStar(std::size_t DistanceRank, const Astro::AStar& StarData)
     {
-        for (auto& System : StellarSystems_)
+        for (auto& System : OrbitalSystems_)
         {
             if (DistanceRank == System.GetBaryDistanceRank())
             {
@@ -320,7 +320,7 @@ namespace Npgs
         std::println("{}", FormatTitle());
         std::println("");
 
-        for (auto& System : StellarSystems_)
+        for (auto& System : OrbitalSystems_)
         {
             for (auto& Star : System.StarsData())
             {
@@ -697,7 +697,7 @@ namespace Npgs
         GenerateSlots(0.1f, StarCount_, 0.004f);
 
         NpgsCoreInfo("Linking positions in octree to stellar systems...");
-        StellarSystems_.reserve(StarCount_);
+        OrbitalSystems_.reserve(StarCount_);
         std::ranges::shuffle(Stars, RandomEngine_);
         std::vector<glm::vec3> Slots;
         OctreeLinkToStellarSystems(Stars, Slots);
@@ -714,7 +714,7 @@ namespace Npgs
         NpgsCoreInfo("Assigning name...");
         std::string Name;
         std::ostringstream Stream;
-        for (auto& System : StellarSystems_)
+        for (auto& System : OrbitalSystems_)
         {
             glm::vec3 Position = System.GetBaryPosition();
             auto it = std::ranges::lower_bound(Slots, Position, [](glm::vec3 Point1, glm::vec3 Point2) -> bool
@@ -766,7 +766,7 @@ namespace Npgs
         });
 
         // TODO: Fix when home star not at home grid
-        auto* HomeSystem = HomeNode->GetLink([](Astro::FStellarSystem* System) -> bool
+        auto* HomeSystem = HomeNode->GetLink([](Astro::FOrbitalSystem* System) -> bool
         {
             return System->GetBaryPosition() == glm::vec3(0.0f);
         });
@@ -849,7 +849,7 @@ namespace Npgs
         float RootRadius = LeafSize * static_cast<float>(std::pow(2, Exponent));
 
         NpgsCoreInfo("Initializing octree...");
-        Octree_ = std::make_unique<TOctree<Astro::FStellarSystem>>(glm::vec3(0.0), RootRadius);
+        Octree_ = std::make_unique<TOctree<Astro::FOrbitalSystem>>(glm::vec3(0.0), RootRadius);
         NpgsCoreInfo("Building empty octree...");
         Octree_->BuildEmptyTree(LeafRadius); // 快速构建一个空树，每个叶子节点作为一个格子，用于生成恒星
 
@@ -955,14 +955,14 @@ namespace Npgs
                 for (const auto& Point : Node.GetPoints())
                 {
                     Astro::FBaryCenter NewBary(Point, glm::vec2(0.0f), 0, "");
-                    Astro::FStellarSystem NewSystem(NewBary);
+                    Astro::FOrbitalSystem NewSystem(NewBary);
                     NewSystem.StarsData().push_back(std::make_unique<Astro::AStar>(Stars.back()));
                     NewSystem.SetBaryNormal(NewSystem.StarsData().front()->GetNormal());
                     Stars.pop_back();
 
-                    StellarSystems_.push_back(std::move(NewSystem));
+                    OrbitalSystems_.push_back(std::move(NewSystem));
 
-                    Node.AddLink(&StellarSystems_[Index]);
+                    Node.AddLink(&OrbitalSystems_[Index]);
                     Slots.push_back(Point);
                     ++Index;
                 }
@@ -994,8 +994,8 @@ namespace Npgs
             Generators.emplace_back(GenerationInfo);
         }
 
-        std::vector<Astro::FStellarSystem*> BinarySystems;
-        for (auto& System : StellarSystems_)
+        std::vector<Astro::FOrbitalSystem*> BinarySystems;
+        for (auto& System : OrbitalSystems_)
         {
             const auto& Star = System.StarsData().front();
             if (!Star->IsSingleStar())

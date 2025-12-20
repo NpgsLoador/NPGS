@@ -24,7 +24,7 @@ namespace Npgs
         kTexture         // 纹理
     };
 
-    std::string GetAssetFullPath(EAssetType Type, const std::string& Filename);
+    std::string GetAssetFullPath(EAssetType Type, std::string_view Filename);
 
     class FTypeErasedDeleter
     {
@@ -77,15 +77,26 @@ namespace Npgs
         const AssetType* operator->() const;
         AssetType& operator*();
         const AssetType& operator*() const;
+        bool operator==(const TAssetHandle& Other) const;
         explicit operator bool() const;
 
+        void Pin();
+        void Unpin();
         AssetType* Get();
         const AssetType* Get() const;
 
     private:
+        friend struct FAssetHandleHash;
+
         FAssetManager*      Manager_{ nullptr };
         FAssetEntry*        Asset_{ nullptr };
         std::weak_ptr<bool> ManagerLiveness_;
+    };
+
+    struct FAssetHandleHash
+    {
+        template <CAssetCompatible AssetType>
+        std::size_t operator()(const TAssetHandle<AssetType>& Handle) const noexcept;
     };
 
     class FAssetManager
@@ -117,7 +128,7 @@ namespace Npgs
         template <CAssetCompatible AssetType>
         friend class TAssetHandle;
 
-        using FAssetMap = Utils::FStringHeteroHashTable<std::string, std::unique_ptr<FAssetEntry>>;
+        using FAssetMap = Utils::TStringHeteroHashTable<std::string, std::unique_ptr<FAssetEntry>>;
 
     private:
         void ReleaseAsset(FAssetEntry* Asset);

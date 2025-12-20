@@ -33,7 +33,7 @@
     <ClCompile Include="Sources\Engine\Core\Types\Entries\Astro\Star.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="Sources\Engine\Core\Types\Entries\Astro\StellarSystem.cpp">
+    <ClCompile Include="Sources\Engine\Core\Types\Entries\Astro\OrbitalSystem.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="Sources\Engine\Core\Types\Entries\NpgsObject.cpp">
@@ -189,6 +189,9 @@
     <ClCompile Include="Sources\Engine\Runtime\Graphics\Renderer\MaterialTemplate.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="Sources\Engine\Runtime\Managers\ShaderManager.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Sources\stdafx.h">
@@ -221,7 +224,7 @@
     <ClInclude Include="Sources\Engine\Core\Types\Entries\Astro\Star.hpp">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="Sources\Engine\Core\Types\Entries\Astro\StellarSystem.hpp">
+    <ClInclude Include="Sources\Engine\Core\Types\Entries\Astro\OrbitalSystem.hpp">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="Sources\Engine\Core\Types\Entries\NpgsObject.hpp">
@@ -419,6 +422,9 @@
     <ClInclude Include="Sources\Program\Rendering\Techniques\GbufferSceneTechniqueNameLookup.hpp">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="Sources\Engine\Runtime\Managers\ShaderManager.hpp">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="Sources\Engine\Core\Logger.inl">
@@ -436,7 +442,7 @@
     <None Include="Sources\Engine\Core\Types\Entries\Astro\Star.inl">
       <Filter>头文件</Filter>
     </None>
-    <None Include="Sources\Engine\Core\Types\Entries\Astro\StellarSystem.inl">
+    <None Include="Sources\Engine\Core\Types\Entries\Astro\OrbitalSystem.inl">
       <Filter>头文件</Filter>
     </None>
     <None Include="Sources\Engine\Core\Types\Properties\Intelli\Civilization.inl">
@@ -534,6 +540,9 @@
       <Filter>头文件</Filter>
     </None>
     <None Include="Sources\Engine\Runtime\AssetLoaders\FileLoader.inl">
+      <Filter>头文件</Filter>
+    </None>
+    <None Include="Sources\Engine\Runtime\Managers\ShaderManager.inl">
       <Filter>头文件</Filter>
     </None>
   </ItemGroup>

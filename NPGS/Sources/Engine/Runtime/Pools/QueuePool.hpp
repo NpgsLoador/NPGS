@@ -7,8 +7,8 @@
 #include <memory>
 #include <mutex>
 #include <queue>
-#include <unordered_map>
 
+#include <ankerl/unordered_dense.h>
 #include <concurrentqueue/moodycamel/concurrentqueue.h>
 #include <vulkan/vulkan.hpp>
 
@@ -78,9 +78,9 @@ namespace Npgs
         void ReleaseQueue(FQueueInfo&& QueueInfo);
 
     private:
-        std::unordered_map<vk::QueueFlags, std::uint32_t, FQueueHash> QueueFamilyIndices_;
-        std::unordered_map<std::uint32_t, FQueueFamilyPool>           QueueFamilyPools_;
-        vk::Device                                                    Device_;
+        ankerl::unordered_dense::map<vk::QueueFlags, std::uint32_t, FQueueHash>        QueueFamilyIndices_;
+        ankerl::unordered_dense::map<std::uint32_t, std::unique_ptr<FQueueFamilyPool>> QueueFamilyPools_;
+        vk::Device                                                                     Device_;
     };
 } // namespace Npgs
 

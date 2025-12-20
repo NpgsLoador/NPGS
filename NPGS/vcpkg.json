@@ -16,7 +16,8 @@
     "nlohmann-json",
     "openexr",
     "spdlog",
-    "stb"
+    "stb",
+    "unordered-dense"
   ],
-  "builtin-baseline": "edffab1bcd2cb5b8c17d6ba34d5651ea0bf82979"
+  "builtin-baseline": "2b6a882f61eaa764ec3cf816e2265fe804a44cd0"
 }

@@ -9,7 +9,7 @@
 
 #include "Engine/Core/Math/Random.hpp"
 #include "Engine/Core/Types/Entries/Astro/Planet.hpp"
-#include "Engine/Core/Types/Entries/Astro/StellarSystem.hpp"
+#include "Engine/Core/Types/Entries/Astro/OrbitalSystem.hpp"
 #include "Engine/System/Generators/CivilizationGenerator.hpp"
 
 namespace Npgs
@@ -39,7 +39,7 @@ namespace Npgs
         FOrbitalGenerator& operator=(const FOrbitalGenerator& Other);
         FOrbitalGenerator& operator=(FOrbitalGenerator&& Other) noexcept;
 
-        void GenerateOrbitals(Astro::FStellarSystem& System);
+        void GenerateOrbitals(Astro::FOrbitalSystem& System);
 
     private:
         struct FPlanetaryDisk
@@ -51,8 +51,8 @@ namespace Npgs
         };
 
     private:
-        void GenerateBinaryOrbit(Astro::FStellarSystem& System);
-        void GeneratePlanets(std::size_t StarIndex, Astro::FOrbit::FOrbitalDetails& ParentStar, Astro::FStellarSystem& System);
+        void GenerateBinaryOrbit(Astro::FOrbitalSystem& System);
+        void GeneratePlanets(std::size_t StarIndex, Astro::FOrbit::FOrbitalDetails& ParentStar, Astro::FOrbitalSystem& System);
         std::expected<FPlanetaryDisk, int> GeneratePlanetaryDisk(const Astro::AStar* Star);
         std::size_t GeneratePlanetCount(const Astro::AStar* Star);
         std::vector<float> GenerateCoreMassesSol(const FPlanetaryDisk& PlanetaryDisk, std::size_t PlanetCount);
@@ -66,7 +66,7 @@ namespace Npgs
             std::size_t PlanetCount, std::vector<float>& CoreMassesSol,
             std::vector<std::unique_ptr<Astro::APlanet>>& Planets);
 
-        void EraseUnstablePlanets(Astro::FStellarSystem& System, std::size_t StarIndex, float BinarySemiMajorAxis,
+        void EraseUnstablePlanets(Astro::FOrbitalSystem& System, std::size_t StarIndex, float BinarySemiMajorAxis,
                                   std::size_t PlanetCount, std::vector<float>& CoreMassesSol, 
                                   std::vector<std::unique_ptr<Astro::FOrbit>>& Orbits,
                                   std::vector<std::unique_ptr<Astro::APlanet>>& Planets);
@@ -76,8 +76,8 @@ namespace Npgs
                                  std::vector<std::unique_ptr<Astro::FOrbit>>& Orbits,
                                  std::vector<std::unique_ptr<Astro::APlanet>>& Planets);
 
-        std::pair<float, float> CalculateHabitableZone(Astro::FStellarSystem& System, std::size_t StarIndex, float BinarySemiMajorAxis);
-        float CalculateFrostLine(Astro::FStellarSystem& System, std::size_t StarIndex, float StarInitialMassSol, float BinarySemiMajorAxis);
+        std::pair<float, float> CalculateHabitableZone(Astro::FOrbitalSystem& System, std::size_t StarIndex, float BinarySemiMajorAxis);
+        float CalculateFrostLine(Astro::FOrbitalSystem& System, std::size_t StarIndex, float StarInitialMassSol, float BinarySemiMajorAxis);
         
         void MigratePlanets(const Astro::AStar* Star, const FPlanetaryDisk& PlanetaryDisk,
                             std::size_t PlanetCount, float MigratedOriginSemiMajorAxisAu,

@@ -49,10 +49,10 @@ namespace Npgs
         FVulkanContext*                                                  VulkanContext_;
         FAssetManager*                                                   AssetManager_;
         
-        Utils::FStringHeteroHashTable<std::string, FGraphicsPipelineCreateInfoPack> GraphicsPipelineCreateInfoPacks_;
-        Utils::FStringHeteroHashTable<std::string, vk::ComputePipelineCreateInfo>   ComputePipelineCreateInfos_;
-        Utils::FStringHeteroHashTable<std::string, FVulkanPipelineLayout>           PipelineLayouts_;
-        Utils::FStringHeteroHashTable<std::string, FVulkanPipeline>                 Pipelines_;
+        Utils::TStringHeteroHashTable<std::string, FGraphicsPipelineCreateInfoPack> GraphicsPipelineCreateInfoPacks_;
+        Utils::TStringHeteroHashTable<std::string, vk::ComputePipelineCreateInfo>   ComputePipelineCreateInfos_;
+        Utils::TStringHeteroHashTable<std::string, FVulkanPipelineLayout>           PipelineLayouts_;
+        Utils::TStringHeteroHashTable<std::string, FVulkanPipeline>                 Pipelines_;
     };
 } // namespace Npgs
 

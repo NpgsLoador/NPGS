@@ -3,9 +3,10 @@
 #include <cstdint>
 #include <limits>
 #include <string>
-#include <unordered_map>
 #include <utility>
 #include <vector>
+
+#include <ankerl/unordered_dense.h>
 
 #include "Engine/Core/Types/Entries/Astro/CelestialObject.hpp"
 #include "Engine/Core/Types/Properties/StellarClass.hpp"
@@ -136,24 +137,26 @@ namespace Npgs::Astro
         EEvolutionPhase GetEvolutionPhase() const;
         const Astro::FStellarClass& GetStellarClass() const;
 
-        static const std::vector<std::pair<int, int>>                              kSpectralSubclassMap_O_;
-        static const std::vector<std::pair<int, int>>                              kSpectralSubclassMap_B_;
-        static const std::vector<std::pair<int, int>>                              kSpectralSubclassMap_A_;
-        static const std::vector<std::pair<int, int>>                              kSpectralSubclassMap_F_;
-        static const std::vector<std::pair<int, int>>                              kSpectralSubclassMap_G_;
-        static const std::vector<std::pair<int, int>>                              kSpectralSubclassMap_K_;
-        static const std::vector<std::pair<int, int>>                              kSpectralSubclassMap_M_;
-        static const std::vector<std::pair<int, int>>                              kSpectralSubclassMap_L_;
-        static const std::vector<std::pair<int, int>>                              kSpectralSubclassMap_T_;
-        static const std::vector<std::pair<int, int>>                              kSpectralSubclassMap_Y_;
-        static const std::vector<std::pair<int, int>>                              kSpectralSubclassMap_WN_;
-        static const std::vector<std::pair<int, int>>                              kSpectralSubclassMap_WC_;
-        static const std::vector<std::pair<int, int>>                              kSpectralSubclassMap_WO_;
-        static const std::vector<std::pair<int, int>>                              kSpectralSubclassMap_WNxh_;
+        static const std::vector<std::pair<int, int>> kSpectralSubclassMap_O_;
+        static const std::vector<std::pair<int, int>> kSpectralSubclassMap_B_;
+        static const std::vector<std::pair<int, int>> kSpectralSubclassMap_A_;
+        static const std::vector<std::pair<int, int>> kSpectralSubclassMap_F_;
+        static const std::vector<std::pair<int, int>> kSpectralSubclassMap_G_;
+        static const std::vector<std::pair<int, int>> kSpectralSubclassMap_K_;
+        static const std::vector<std::pair<int, int>> kSpectralSubclassMap_M_;
+        static const std::vector<std::pair<int, int>> kSpectralSubclassMap_L_;
+        static const std::vector<std::pair<int, int>> kSpectralSubclassMap_T_;
+        static const std::vector<std::pair<int, int>> kSpectralSubclassMap_Y_;
+        static const std::vector<std::pair<int, int>> kSpectralSubclassMap_WN_;
+        static const std::vector<std::pair<int, int>> kSpectralSubclassMap_WC_;
+        static const std::vector<std::pair<int, int>> kSpectralSubclassMap_WO_;
+        static const std::vector<std::pair<int, int>> kSpectralSubclassMap_WNxh_;
+
         static const std::vector<std::pair<int, std::vector<std::pair<int, int>>>> kInitialCommonMap_;
         static const std::vector<std::pair<int, std::vector<std::pair<int, int>>>> kInitialWolfRayetMap_;
-        static const std::unordered_map<EEvolutionPhase, Astro::ELuminosityClass>  kLuminosityMap_;
-        static const std::unordered_map<float, float>                              kFeHSurfaceH1Map_;
+
+        static const ankerl::unordered_dense::map<EEvolutionPhase, Astro::ELuminosityClass> kLuminosityMap_;
+        static const ankerl::unordered_dense::map<float, float>                             kFeHSurfaceH1Map_;
 
     private:
         FExtendedProperties ExtraProperties_{};

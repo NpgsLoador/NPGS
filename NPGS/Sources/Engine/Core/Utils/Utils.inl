@@ -1,6 +1,9 @@
+#include "Utils.hpp"
+
 #include <cmath>
 #include <cstring>
 #include <limits>
+#include <utility>
 
 #include "Engine/Core/Base/Base.hpp"
 
@@ -8,51 +11,45 @@ namespace Npgs
 {
 #ifdef NPGS_ENABLE_ENUM_BIT_OPERATOR
     template <typename EnumType>
-    constexpr EnumType operator&(EnumType Lhs, EnumType Rhs)
+    NPGS_INLINE constexpr EnumType operator&(EnumType Lhs, EnumType Rhs)
     {
-        return static_cast<EnumType>(static_cast<std::underlying_type_t<EnumType>>(Lhs) &
-                                     static_cast<std::underlying_type_t<EnumType>>(Rhs));
+        return static_cast<EnumType>(std::to_underlying(Lhs) & std::to_underlying(Rhs));
     }
 
     template <typename EnumType>
-    constexpr EnumType operator|(EnumType Lhs, EnumType Rhs)
+    NPGS_INLINE constexpr EnumType operator|(EnumType Lhs, EnumType Rhs)
     {
-        return static_cast<EnumType>(static_cast<std::underlying_type_t<EnumType>>(Lhs) |
-                                     static_cast<std::underlying_type_t<EnumType>>(Rhs));
+        return static_cast<EnumType>(std::to_underlying(Lhs) | std::to_underlying(Rhs));
     }
 
     template <typename EnumType>
-    constexpr EnumType operator^(EnumType Lhs, EnumType Rhs)
+    NPGS_INLINE constexpr EnumType operator^(EnumType Lhs, EnumType Rhs)
     {
-        return static_cast<EnumType>(static_cast<std::underlying_type_t<EnumType>>(Lhs) ^
-                                     static_cast<std::underlying_type_t<EnumType>>(Rhs));
+        return static_cast<EnumType>(std::to_underlying(Lhs) ^ std::to_underlying(Rhs));
     }
 
     template <typename EnumType>
-    constexpr EnumType operator~(EnumType Value)
+    NPGS_INLINE constexpr EnumType operator~(EnumType Value)
     {
-        return static_cast<EnumType>(~static_cast<std::underlying_type_t<EnumType>>(Value));
+        return static_cast<EnumType>(~std::to_underlying(Value));
     }
 
     template <typename EnumType>
-    constexpr EnumType operator&=(EnumType Lhs, EnumType Rhs)
+    NPGS_INLINE constexpr EnumType operator&=(EnumType Lhs, EnumType Rhs)
     {
-        return static_cast<EnumType>(static_cast<std::underlying_type_t<EnumType>>(Lhs) &=
-                                     static_cast<std::underlying_type_t<EnumType>>(Rhs));
+        return static_cast<EnumType>(std::to_underlying(Lhs) &= std::to_underlying(Rhs));
     }
 
     template <typename EnumType>
-    constexpr EnumType operator|=(EnumType Lhs, EnumType Rhs)
+    NPGS_INLINE constexpr EnumType operator|=(EnumType Lhs, EnumType Rhs)
     {
-        return static_cast<EnumType>(static_cast<std::underlying_type_t<EnumType>>(Lhs) |=
-                                     static_cast<std::underlying_type_t<EnumType>>(Rhs));
+        return static_cast<EnumType>(std::to_underlying(Lhs) |= std::to_underlying(Rhs));
     }
 
     template <typename EnumType>
-    constexpr EnumType operator^=(EnumType Lhs, EnumType Rhs)
+    NPGS_INLINE constexpr EnumType operator^=(EnumType Lhs, EnumType Rhs)
     {
-        return static_cast<EnumType>(static_cast<std::underlying_type_t<EnumType>>(Lhs) ^=
-                                     static_cast<std::underlying_type_t<EnumType>>(Rhs));
+        return static_cast<EnumType>(std::to_underlying(Lhs) ^= std::to_underlying(Rhs));
     }
 #endif // NPGS_ENABLE_ENUM_BIT_OPERATOR
 } // namespace Npgs

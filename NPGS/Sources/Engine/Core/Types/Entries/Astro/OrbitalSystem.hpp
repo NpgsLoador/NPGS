@@ -61,13 +61,13 @@ namespace Npgs::Astro
 
             template <typename ObjectType>
             requires std::is_class_v<ObjectType>
-            FOrbitalObject& SetObject(ObjectType* Object);
-
-            EObjectType GetObjectType() const;
+            ObjectType* GetObject() const;
 
             template <typename ObjectType>
             requires std::is_class_v<ObjectType>
-            ObjectType* GetObject() const;
+            FOrbitalObject& SetObject(ObjectType* Object);
+
+            EObjectType GetObjectType() const;
 
         private:
             FObjectPointer Object_; // 指向天体数组中该天体的指针
@@ -80,13 +80,12 @@ namespace Npgs::Astro
             FOrbitalDetails();
             FOrbitalDetails(INpgsObject* Object, EObjectType Type, FOrbit* HostOrbit, float InitialTrueAnomaly = 0.0f);
 
-            FOrbitalDetails& SetHostOrbit(FOrbit* HostOrbit);
-            FOrbitalDetails& SetOrbitalObject(INpgsObject* Object, EObjectType Type);
-            FOrbitalDetails& SetInitialTrueAnomaly(float InitialTrueAnomaly);
-
             FOrbit* GetHostOrbit();
+            FOrbitalDetails& SetHostOrbit(FOrbit* HostOrbit);
             FOrbitalObject& GetOrbitalObject();
+            FOrbitalDetails& SetOrbitalObject(INpgsObject* Object, EObjectType Type);
             float GetInitialTrueAnomaly() const;
+            FOrbitalDetails& SetInitialTrueAnomaly(float InitialTrueAnomaly);
 
             std::vector<FOrbit*>& DirectOrbitsData();
 
@@ -98,25 +97,24 @@ namespace Npgs::Astro
         };
 
     public:
-        FOrbit& SetSemiMajorAxis(float SemiMajorAxis);
-        FOrbit& SetEccentricity(float Eccentricity);
-        FOrbit& SetInclination(float Inclination);
-        FOrbit& SetLongitudeOfAscendingNode(float LongitudeOfAscendingNode);
-        FOrbit& SetArgumentOfPeriapsis(float ArgumentOfPeriapsis);
-        FOrbit& SetTrueAnomaly(float TrueAnomaly);
-        FOrbit& SetParent(INpgsObject* Object, EObjectType Type);
-        FOrbit& SetNormal(glm::vec2 Normal);
-        FOrbit& SetPeriod(float Period);
-
         float GetSemiMajorAxis() const;
+        FOrbit& SetSemiMajorAxis(float SemiMajorAxis);
         float GetEccentricity() const;
+        FOrbit& SetEccentricity(float Eccentricity);
         float GetInclination() const;
+        FOrbit& SetInclination(float Inclination);
         float GetLongitudeOfAscendingNode() const;
+        FOrbit& SetLongitudeOfAscendingNode(float LongitudeOfAscendingNode);
         float GetArgumentOfPeriapsis() const;
+        FOrbit& SetArgumentOfPeriapsis(float ArgumentOfPeriapsis);
         float GetTrueAnomaly() const;
+        FOrbit& SetTrueAnomaly(float TrueAnomaly);
         const FOrbitalObject& GetParent() const;
+        FOrbit& SetParent(INpgsObject* Object, EObjectType Type);
         glm::vec2 GetNormal() const;
+        FOrbit& SetNormal(glm::vec2 Normal);
         float GetPeriod() const;
+        FOrbit& SetPeriod(float Period);
 
         std::vector<FOrbitalDetails>& ObjectsData();
 
@@ -128,25 +126,25 @@ namespace Npgs::Astro
         float                        Period_{}; // 轨道周期，单位 s
     };
 
-    class FStellarSystem : public INpgsObject
+    class FOrbitalSystem : public INpgsObject
     {
     public:
         using Base = INpgsObject;
         using Base::Base;
 
-        FStellarSystem()                          = default;
-        FStellarSystem(const FBaryCenter& SystemBary);
-        FStellarSystem(const FStellarSystem& Other);
-        FStellarSystem(FStellarSystem&&) noexcept = default;
-        ~FStellarSystem()                         = default;
+        FOrbitalSystem()                          = default;
+        FOrbitalSystem(const FBaryCenter& SystemBary);
+        FOrbitalSystem(const FOrbitalSystem& Other);
+        FOrbitalSystem(FOrbitalSystem&&) noexcept = default;
+        ~FOrbitalSystem()                         = default;
 
-        FStellarSystem& operator=(const FStellarSystem& Other);
-        FStellarSystem& operator=(FStellarSystem&&) noexcept = default;
+        FOrbitalSystem& operator=(const FOrbitalSystem& Other);
+        FOrbitalSystem& operator=(FOrbitalSystem&&) noexcept = default;
 
-        FStellarSystem& SetBaryPosition(glm::vec3 Poisition);
-        FStellarSystem& SetBaryNormal(glm::vec2 Normal);
-        FStellarSystem& SetBaryDistanceRank(std::size_t DistanceRank);
-        FStellarSystem& SetBaryName(std::string Name);
+        FOrbitalSystem& SetBaryPosition(glm::vec3 Poisition);
+        FOrbitalSystem& SetBaryNormal(glm::vec2 Normal);
+        FOrbitalSystem& SetBaryDistanceRank(std::size_t DistanceRank);
+        FOrbitalSystem& SetBaryName(std::string Name);
 
         glm::vec3 GetBaryPosition() const;
         glm::vec2 GetBaryNormal() const;
@@ -168,4 +166,4 @@ namespace Npgs::Astro
     };
 } // namespace Npgs::Astro
 
-#include "StellarSystem.inl"
+#include "OrbitalSystem.inl"

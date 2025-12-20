@@ -195,7 +195,7 @@ namespace Npgs
         return *this;
     }
 
-    void FOrbitalGenerator::GenerateOrbitals(Astro::FStellarSystem& System)
+    void FOrbitalGenerator::GenerateOrbitals(Astro::FOrbitalSystem& System)
     {
         if (System.StarsData().size() == 2)
         {
@@ -299,7 +299,7 @@ namespace Npgs
         }
     }
 
-    void FOrbitalGenerator::GenerateBinaryOrbit(Astro::FStellarSystem& System)
+    void FOrbitalGenerator::GenerateBinaryOrbit(Astro::FOrbitalSystem& System)
     {
         auto* SystemBaryCenter = System.GetBaryCenter();
 
@@ -468,7 +468,7 @@ namespace Npgs
 #endif // DEBUG_OUTPUT
     }
 
-    void FOrbitalGenerator::GeneratePlanets(std::size_t StarIndex, Astro::FOrbit::FOrbitalDetails& ParentStar, Astro::FStellarSystem& System)
+    void FOrbitalGenerator::GeneratePlanets(std::size_t StarIndex, Astro::FOrbit::FOrbitalDetails& ParentStar, Astro::FOrbitalSystem& System)
     {
         // 变量名未标注单位均为国际单位制
         Astro::AStar* Star = System.StarsData()[StarIndex].get();
@@ -1133,7 +1133,7 @@ namespace Npgs
         return DiskAge;
     }
 
-    void FOrbitalGenerator::EraseUnstablePlanets(Astro::FStellarSystem& System, std::size_t StarIndex, float BinarySemiMajorAxis,
+    void FOrbitalGenerator::EraseUnstablePlanets(Astro::FOrbitalSystem& System, std::size_t StarIndex, float BinarySemiMajorAxis,
                                                  std::size_t PlanetCount, std::vector<float>& CoreMassesSol,
                                                  std::vector<std::unique_ptr<Astro::FOrbit>>& Orbits,
                                                  std::vector<std::unique_ptr<Astro::APlanet>>& Planets)
@@ -1178,7 +1178,7 @@ namespace Npgs
     }
 
     std::pair<float, float>
-    FOrbitalGenerator::CalculateHabitableZone(Astro::FStellarSystem& System, std::size_t StarIndex, float BinarySemiMajorAxis)
+    FOrbitalGenerator::CalculateHabitableZone(Astro::FOrbitalSystem& System, std::size_t StarIndex, float BinarySemiMajorAxis)
     {
         // 宜居带半径，单位 AU
         std::pair<float, float> HabitableZoneAu;
@@ -1210,7 +1210,7 @@ namespace Npgs
         return HabitableZoneAu;
     }
 
-    float FOrbitalGenerator::CalculateFrostLine(Astro::FStellarSystem& System, std::size_t StarIndex, float StarInitialMassSol, float BinarySemiMajorAxis)
+    float FOrbitalGenerator::CalculateFrostLine(Astro::FOrbitalSystem& System, std::size_t StarIndex, float StarInitialMassSol, float BinarySemiMajorAxis)
     {
         float FrostLineAu        = 0.0f;
         float FrostLineAuSquared = 0.0f;

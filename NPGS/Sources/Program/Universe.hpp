@@ -9,7 +9,7 @@
 
 #include "Engine/Core/Math/Random.hpp"
 #include "Engine/Core/Types/Entries/Astro/Star.hpp"
-#include "Engine/Core/Types/Entries/Astro/StellarSystem.hpp"
+#include "Engine/Core/Types/Entries/Astro/OrbitalSystem.hpp"
 #include "Engine/Runtime/Pools/ThreadPool.hpp"
 #include "Engine/System/Generators/StellarGenerator.hpp"
 #include "Engine/System/Spatial/Octree.hpp"
@@ -42,14 +42,14 @@ namespace Npgs
         void GenerateBinaryStars(int MaxThread);
 
     private:
-        using FNodeType = TOctree<Astro::FStellarSystem>::FNodeType;
+        using FNodeType = TOctree<Astro::FOrbitalSystem>::FNodeType;
 
     private:
         std::mt19937                                    RandomEngine_;
-        std::vector<Astro::FStellarSystem>              StellarSystems_;
+        std::vector<Astro::FOrbitalSystem>              OrbitalSystems_;
         Math::TUniformIntDistribution<std::uint32_t>    SeedGenerator_;
         Math::TUniformRealDistribution<>                CommonGenerator_;
-        std::unique_ptr<TOctree<Astro::FStellarSystem>> Octree_;
+        std::unique_ptr<TOctree<Astro::FOrbitalSystem>> Octree_;
         FThreadPool*                                    ThreadPool_;
 
         std::size_t StarCount_;

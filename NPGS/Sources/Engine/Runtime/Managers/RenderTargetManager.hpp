@@ -66,7 +66,7 @@ namespace Npgs
         const FManagedTarget& GetManagedTarget(std::string_view Name) const;
 
     private:
-        using FManagedTargetMap = Utils::FStringHeteroHashTable<std::string, FManagedTarget>;
+        using FManagedTargetMap = Utils::TStringHeteroHashTable<std::string, FManagedTarget>;
 
     private:
         FVulkanContext*   VulkanContext_;
