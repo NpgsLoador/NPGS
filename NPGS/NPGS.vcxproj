@@ -211,7 +211,6 @@
     <ClCompile Include="Sources\Engine\Runtime\Graphics\Vulkan\Context.cpp" />
     <ClCompile Include="Sources\Engine\Runtime\Graphics\Vulkan\Core.cpp" />
     <ClCompile Include="Sources\Engine\Runtime\Managers\ImageTracker.cpp" />
-    <ClCompile Include="Sources\Engine\Runtime\Managers\PipelineManager.cpp" />
     <ClCompile Include="Sources\Engine\Runtime\Managers\ShaderBufferManager.cpp" />
     <ClCompile Include="Sources\Engine\Runtime\Graphics\Vulkan\Wrappers.cpp" />
     <ClCompile Include="Sources\Engine\Runtime\Pools\QueuePool.cpp" />
@@ -280,7 +279,6 @@
     <ClInclude Include="Sources\Engine\Runtime\Graphics\Vulkan\Context.hpp" />
     <ClInclude Include="Sources\Engine\Runtime\Graphics\Vulkan\Core.hpp" />
     <ClInclude Include="Sources\Engine\Runtime\Managers\ImageTracker.hpp" />
-    <ClInclude Include="Sources\Engine\Runtime\Managers\PipelineManager.hpp" />
     <ClInclude Include="Sources\Engine\Runtime\Managers\ShaderBufferManager.hpp" />
     <ClInclude Include="Sources\Engine\Runtime\Graphics\Vulkan\Wrappers.hpp" />
     <ClInclude Include="Sources\Engine\Runtime\Pools\QueuePool.hpp" />
@@ -332,7 +330,6 @@
     <None Include="Sources\Engine\Runtime\Graphics\Vulkan\Context.inl" />
     <None Include="Sources\Engine\Runtime\Graphics\Vulkan\Core.inl" />
     <None Include="Sources\Engine\Runtime\Managers\ImageTracker.inl" />
-    <None Include="Sources\Engine\Runtime\Managers\PipelineManager.inl" />
     <None Include="Sources\Engine\Runtime\Managers\ShaderBufferManager.inl" />
     <None Include="Sources\Engine\Runtime\Graphics\Vulkan\Wrappers.inl" />
     <None Include="Sources\Engine\Runtime\Pools\QueuePool.inl" />

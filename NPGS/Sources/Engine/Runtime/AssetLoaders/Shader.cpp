@@ -41,22 +41,14 @@ namespace Npgs
     FShader::FShader(FVulkanContext* VulkanContext, std::string_view Filename, const FResourceInfo& ResourceInfo)
         : VulkanContext_(VulkanContext)
     {
-        vk::DescriptorSetLayoutCreateInfo EmptyLayoutCreateInfo(vk::DescriptorSetLayoutCreateFlagBits::eDescriptorBufferEXT);
-        EmptyDescriptorSetLayout_ = FVulkanDescriptorSetLayout(VulkanContext_->GetDevice(), "EmptyDescriptorSetLayout", EmptyLayoutCreateInfo);
-
         InitializeShaders(Filename, ResourceInfo);
-        CreateDescriptorSetLayouts();
-        GenerateDescriptorInfos();
     }
 
     FShader::FShader(FShader&& Other) noexcept
         : VulkanContext_(std::exchange(Other.VulkanContext_, nullptr))
         , ReflectionInfo_(std::exchange(Other.ReflectionInfo_, {}))
         , ShaderCode_(std::move(Other.ShaderCode_))
-        , ShaderModules_(std::move(Other.ShaderModules_))
         , PushConstantOffsetsMap_(std::move(Other.PushConstantOffsetsMap_))
-        , DescriptorSetInfos_(std::move(Other.DescriptorSetInfos_))
-        , DescriptorSetLayoutsMap_(std::move(Other.DescriptorSetLayoutsMap_))
     {
     }
 
@@ -64,59 +56,13 @@ namespace Npgs
     {
         if (this != &Other)
         {
-            VulkanContext_           = std::exchange(Other.VulkanContext_, nullptr);
-            ReflectionInfo_          = std::exchange(Other.ReflectionInfo_, {});
-            ShaderCode_              = std::move(Other.ShaderCode_);
-            ShaderModules_           = std::move(Other.ShaderModules_);
-            PushConstantOffsetsMap_  = std::move(Other.PushConstantOffsetsMap_);
-            DescriptorSetInfos_      = std::move(Other.DescriptorSetInfos_);
-            DescriptorSetLayoutsMap_ = std::move(Other.DescriptorSetLayoutsMap_);
+            VulkanContext_          = std::exchange(Other.VulkanContext_, nullptr);
+            ReflectionInfo_         = std::exchange(Other.ReflectionInfo_, {});
+            ShaderCode_             = std::move(Other.ShaderCode_);
+            PushConstantOffsetsMap_ = std::move(Other.PushConstantOffsetsMap_);
         }
 
         return *this;
-    }
-
-    std::vector<vk::PipelineShaderStageCreateInfo> FShader::CreateShaderStageCreateInfo() const
-    {
-        std::vector<vk::PipelineShaderStageCreateInfo> ShaderStageCreateInfos;
-        for (const auto& [Stage, ShaderModule] : ShaderModules_)
-        {
-            vk::PipelineShaderStageCreateInfo ShaderStageCreateInfo({}, Stage, *ShaderModule, "main");
-            ShaderStageCreateInfos.push_back(std::move(ShaderStageCreateInfo));
-        }
-
-        return ShaderStageCreateInfos;
-    }
-
-    std::vector<vk::DescriptorSetLayout> FShader::GetDescriptorSetLayouts() const
-    {
-        if (DescriptorSetLayoutsMap_.empty())
-        {
-            return {};
-        }
-
-        const std::uint32_t MaxSet = DescriptorSetLayoutsMap_.rbegin()->first;
-        std::vector<vk::DescriptorSetLayout> NativeTypeLayouts(MaxSet + 1);
-
-        std::uint32_t LastFilledIndex = 0;
-
-        for (const auto& [Set, Layout] : DescriptorSetLayoutsMap_)
-        {
-            for (std::uint32_t i = LastFilledIndex; i != Set; ++i)
-            {
-                NativeTypeLayouts[i] = *EmptyDescriptorSetLayout_;
-            }
-
-            NativeTypeLayouts[Set] = *Layout;
-            LastFilledIndex        = Set + 1;
-        }
-
-        for (std::uint32_t i = LastFilledIndex; i <= MaxSet; ++i)
-        {
-            NativeTypeLayouts[i] = *EmptyDescriptorSetLayout_;
-        }
-
-        return NativeTypeLayouts;
     }
 
     void FShader::InitializeShaders(std::string_view Filename, const FResourceInfo& ResourceInfo)
@@ -126,10 +72,6 @@ namespace Npgs
         {
             return;
         }
-
-        vk::ShaderModuleCreateInfo ShaderModuleCreateInfo({}, ShaderCode_);
-        FVulkanShaderModule ShaderModule(VulkanContext_->GetDevice(), Filename, ShaderModuleCreateInfo);
-        ShaderModules_.emplace_back(ReflectionInfo_.Stage, std::move(ShaderModule));
 
         ReflectShader(ResourceInfo);
     }
@@ -163,343 +105,225 @@ namespace Npgs
             return;
         }
 
-        std::uint32_t Count = 0;
-
-        // Push Constants
-        ShaderModule.EnumeratePushConstantBlocks(&Count, nullptr);
-        if (Count > 0)
-        {
-            std::vector<SpvReflectBlockVariable*> PushConstants(Count);
-            ShaderModule.EnumeratePushConstantBlocks(&Count, PushConstants.data());
-
-            for (const auto* Block : PushConstants)
-            {
-                for (std::uint32_t i = 0; i != Block->member_count; ++i)
-                {
-                    const auto& Member = Block->members[i];
-                    std::string_view MemberName = ResourceInfo.PushConstantNames[i];
-
-                    if (!MemberName.empty())
-                    {
-                        PushConstantOffsetsMap_[std::string(MemberName)] = Member.offset;
-                        NpgsCoreTrace("  Member \"{}\" at offset={}", MemberName, Member.offset);
-                    }
-                }
-
-                NpgsCoreTrace("Push Constant \"{}\" size={} bytes, offset={}",
-                              Block->name ? Block->name : "unnamed", Block->size, Block->offset);
-
-                vk::PushConstantRange PushConstantRange(ReflectionInfo_.Stage, Block->offset, Block->size);
-                AddPushConstantRange(PushConstantRange);
-            }
-        }
-
-        // Specialization Constants
-        Count = 0;
-        ShaderModule.EnumerateSpecializationConstants(&Count, nullptr);
-        if (Count > 0)
-        {
-            std::vector<SpvReflectSpecializationConstant*> SpecializationConstants(Count);
-            ShaderModule.EnumerateSpecializationConstants(&Count, SpecializationConstants.data());
-
-            for (const auto* Constant : SpecializationConstants)
-            {
-                std::uint32_t Id = Constant->constant_id;
-                const auto& Name = ResourceInfo.SpecializationConstantInfos.at(Id);
-                ReflectionInfo_.SpecializationConstants.emplace(Name, Id);
-
-                NpgsCoreTrace("Specialization Constants \"{}\" id={})", Name, Id);
-            }
-        }
-
-        // Descriptor Sets
-        Count = 0;
-        ShaderModule.EnumerateDescriptorSets(&Count, nullptr);
-        if (Count > 0)
-        {
-            std::vector<SpvReflectDescriptorSet*> DescriptorSets(Count);
-            ShaderModule.EnumerateDescriptorSets(&Count, DescriptorSets.data());
-
-            for (const auto* Set : DescriptorSets)
-            {
-                for (std::uint32_t i = 0; i != Set->binding_count; ++i)
-                {
-                    const auto* Binding = Set->bindings[i];
-                    vk::DescriptorType Type = static_cast<vk::DescriptorType>(Binding->descriptor_type);
-                    std::uint32_t ArraySize = Binding->count;
-
-                    NpgsCoreTrace("Descriptor \"{}\" at set={}, binding={}, type={}, array_size={}",
-                                  Binding->name ? Binding->name : "unnamed", Set->set,
-                                  Binding->binding, std::to_underlying(Type), ArraySize);
-
-                    vk::DescriptorSetLayoutBinding LayoutBinding = vk::DescriptorSetLayoutBinding()
-                        .setBinding(Binding->binding)
-                        .setDescriptorType(Type)
-                        .setDescriptorCount(ArraySize)
-                        .setStageFlags(ReflectionInfo_.Stage);
-
-                    AddDescriptorSetBindings(Set->set, LayoutBinding);
-                }
-            }
-        }
-
-        // Vertex Inputs
+        ReflectPushConstants(ResourceInfo, ShaderModule);
+        ReflectSpecializationConstants(ResourceInfo, ShaderModule);
+        ReflectDescriptorSets(ResourceInfo, ShaderModule);
         if (ReflectionInfo_.Stage == vk::ShaderStageFlagBits::eVertex)
         {
-            Count = 0;
-            ShaderModule.EnumerateInputVariables(&Count, nullptr);
-            if (Count > 0)
-            {
-                std::vector<SpvReflectInterfaceVariable*> InputVariables(Count);
-                ShaderModule.EnumerateInputVariables(&Count, InputVariables.data());
-
-                std::ranges::sort(InputVariables, [](const auto* Lhs, const auto* Rhs) -> bool
-                {
-                    return Lhs->location < Rhs->location;
-                });
-
-                ankerl::unordered_dense::map<std::uint32_t, FVertexBufferInfo> BufferMap;
-                for (const auto& Buffer : ResourceInfo.VertexBufferInfos)
-                {
-                    BufferMap[Buffer.Binding] = Buffer;
-                }
-
-                // [Location, [Binding, Offset]]
-                ankerl::unordered_dense::map<std::uint32_t, std::pair<std::uint32_t, std::uint32_t>> LocationMap;
-                for (const auto& Vertex : ResourceInfo.VertexAttributeInfos)
-                {
-                    LocationMap[Vertex.Location] = std::make_pair(Vertex.Binding, Vertex.Offset);
-                }
-
-                std::uint32_t CurrentBinding = 0;
-                std::uint32_t CurrentOffset  = 0;
-                std::set<vk::VertexInputBindingDescription2EXT> UniqueBindings;
-
-                for (const auto* Input : InputVariables)
-                {
-                    if (Input->decoration_flags & SPV_REFLECT_DECORATION_BUILT_IN)
-                    {
-                        continue;
-                    }
-
-                    const auto* TypeDescription = Input->type_description;
-
-                    std::uint32_t Binding  = 0;
-                    std::uint32_t Offset   = 0;
-                    std::uint32_t Location = Input->location;
-                    auto LocationIt = LocationMap.find(Location);
-                    if (LocationIt != LocationMap.end())
-                    {
-                        Binding = LocationIt->second.first;
-                        Offset  = LocationIt->second.second;
-                    }
-                    else
-                    {
-                        Binding = CurrentBinding;
-                        Offset  = CurrentOffset;
-                    }
-
-                    std::uint32_t MatrixColumns = Input->numeric.matrix.column_count;
-                    std::uint32_t MatrixRows    = Input->numeric.matrix.row_count;
-                    std::uint32_t VectorSize    = Input->numeric.vector.component_count;
-                    VectorSize = VectorSize == 0 ? 1 : VectorSize;
-
-                    std::uint32_t Width        = Input->numeric.scalar.width;
-                    std::uint32_t ScalarSize   = Width / 8;
-                    std::uint32_t VariableSize = 0;
-                    if (MatrixColumns > 1)
-                    {
-                        VariableSize = ScalarSize * MatrixRows * MatrixColumns;
-                    }
-                    else
-                    {
-                        VariableSize = ScalarSize * VectorSize;
-                    }
-
-                    std::uint32_t Stride = 0;
-                    bool bIsPerInstance  = false;
-                    auto BufferIt = BufferMap.find(Binding);
-                    if (BufferIt != BufferMap.end())
-                    {
-                        Stride         = BufferIt->second.Stride;
-                        bIsPerInstance = BufferIt->second.bIsPerInstance;
-                    }
-                    else
-                    {
-                        Stride = VariableSize;
-                    }
-
-                    UniqueBindings.emplace(Binding, Stride, bIsPerInstance ? vk::VertexInputRate::eInstance : vk::VertexInputRate::eVertex, 1);
-                
-                    if (MatrixColumns > 1)
-                    {
-                        vk::Format ColumnFormat = static_cast<vk::Format>(Input->format);
-                        for (std::uint32_t i = 0; i != MatrixColumns; ++i)
-                        {
-                            ReflectionInfo_.VertexInputAttributes.emplace_back(
-                                Location + i, Binding, ColumnFormat, Offset + (ScalarSize * MatrixRows * i));
-                        }
-
-                        NpgsCoreTrace("Vertex Attribute \"{}\" at location={}, binding={}, offset={}, stride={}, rate={} (matrix)",
-                                      Input->name ? Input->name : "unnamed", Location, Binding, Offset, Stride,
-                                      bIsPerInstance ? "per instance" : "per vertex");
-                    }
-                    else
-                    {
-                        vk::Format Format = static_cast<vk::Format>(Input->format);
-                        ReflectionInfo_.VertexInputAttributes.emplace_back(Location, Binding, Format, Offset);
-
-                        NpgsCoreTrace("Vertex Attribute \"{}\" at location={}, binding={}, offset={}, stride={}, rate={}",
-                                      Input->name ? Input->name : "unnamed", Location, Binding, Offset, Stride,
-                                      bIsPerInstance ? "per instance" : "per vertex");
-                    }
-
-                    if (LocationIt == LocationMap.end())
-                    {
-                        CurrentOffset += VariableSize;
-                    }
-                }
-
-                ReflectionInfo_.VertexInputBindings =
-                    std::vector<vk::VertexInputBindingDescription2EXT>(UniqueBindings.begin(), UniqueBindings.end());
-            }
+            ReflectVertexInput(ResourceInfo, ShaderModule);
         }
 
         NpgsCoreTrace("Shader reflection completed.");
     }
 
-    void FShader::AddPushConstantRange(vk::PushConstantRange NewRange)
+    void FShader::ReflectPushConstants(const FResourceInfo& ResourceInfo, const spv_reflect::ShaderModule& ShaderModule)
     {
-        if (NewRange.size == 0)
+        std::uint32_t Count = 0;
+        ShaderModule.EnumeratePushConstantBlocks(&Count, nullptr);
+        if (Count == 0)
         {
             return;
         }
 
-        for (auto it = ReflectionInfo_.PushConstants.begin(); it != ReflectionInfo_.PushConstants.end();)
+        std::vector<SpvReflectBlockVariable*> PushConstants(Count);
+        ShaderModule.EnumeratePushConstantBlocks(&Count, PushConstants.data());
+
+        for (const auto* Block : PushConstants)
         {
-            const auto& ExistingRange = *it;
-            bool bOverlaps = NewRange.offset < (ExistingRange.offset + ExistingRange.size) &&
-                             ExistingRange.offset < (NewRange.offset + NewRange.size);
-
-            if (bOverlaps)
+            for (std::uint32_t i = 0; i != Block->member_count; ++i)
             {
-                std::uint32_t MinOffset = std::min(NewRange.offset, ExistingRange.offset);
-                std::uint32_t MaxEnd    = std::max(NewRange.offset + NewRange.size, ExistingRange.offset + ExistingRange.size);
+                const auto& Member = Block->members[i];
+                std::string_view MemberName = ResourceInfo.PushConstantNames[i];
 
-                NewRange.offset      = MinOffset;
-                NewRange.size        = MaxEnd - MinOffset;
-                NewRange.stageFlags |= ExistingRange.stageFlags;
+                if (!MemberName.empty())
+                {
+                    PushConstantOffsetsMap_[std::string(MemberName)] = Member.offset;
+                    NpgsCoreTrace("  Member \"{}\" at offset={}", MemberName, Member.offset);
+                }
+            }
 
-                it = ReflectionInfo_.PushConstants.erase(it);
+            NpgsCoreTrace("Push Constant \"{}\" size={} bytes, offset={}",
+                          Block->name ? Block->name : "unnamed", Block->size, Block->offset);
+
+            vk::PushConstantRange PushConstantRange(ReflectionInfo_.Stage, Block->offset, Block->size);
+            ReflectionInfo_.PushConstants.push_back(PushConstantRange);
+        }
+
+    }
+
+    void FShader::ReflectSpecializationConstants(const FResourceInfo& ResourceInfo, const spv_reflect::ShaderModule& ShaderModule)
+    {
+        std::uint32_t Count = 0;
+        ShaderModule.EnumerateSpecializationConstants(&Count, nullptr);
+        if (Count == 0)
+        {
+            return;
+        }
+
+        std::vector<SpvReflectSpecializationConstant*> SpecializationConstants(Count);
+        ShaderModule.EnumerateSpecializationConstants(&Count, SpecializationConstants.data());
+
+        for (const auto* Constant : SpecializationConstants)
+        {
+            std::uint32_t Id = Constant->constant_id;
+            const auto& Name = ResourceInfo.SpecializationConstantInfos.at(Id);
+            ReflectionInfo_.SpecializationConstants.emplace(Name, Id);
+
+            NpgsCoreTrace("Specialization Constants \"{}\" id={})", Name, Id);
+        }
+    }
+
+    void FShader::ReflectDescriptorSets(const FResourceInfo& ResourceInfo, const spv_reflect::ShaderModule& ShaderModule)
+    {
+        std::uint32_t Count = 0;
+        ShaderModule.EnumerateDescriptorSets(&Count, nullptr);
+        if (Count == 0)
+        {
+            return;
+        }
+
+        std::vector<SpvReflectDescriptorSet*> DescriptorSets(Count);
+        ShaderModule.EnumerateDescriptorSets(&Count, DescriptorSets.data());
+
+        for (const auto* Set : DescriptorSets)
+        {
+            for (std::uint32_t i = 0; i != Set->binding_count; ++i)
+            {
+                const auto*     Binding = Set->bindings[i];
+                vk::DescriptorType Type = static_cast<vk::DescriptorType>(Binding->descriptor_type);
+                std::uint32_t ArraySize = Binding->count;
+
+                NpgsCoreTrace("Descriptor \"{}\" at set={}, binding={}, type={}, array_size={}",
+                              Binding->name ? Binding->name : "unnamed", Set->set,
+                              Binding->binding, std::to_underlying(Type), ArraySize);
+
+                vk::DescriptorSetLayoutBinding LayoutBinding = vk::DescriptorSetLayoutBinding()
+                    .setBinding(Binding->binding)
+                    .setDescriptorType(Type)
+                    .setDescriptorCount(ArraySize)
+                    .setStageFlags(ReflectionInfo_.Stage);
+
+                ReflectionInfo_.SetLayoutBindings[Set->set].push_back(LayoutBinding);
+            }
+        }
+    }
+
+    void FShader::ReflectVertexInput(const FResourceInfo& ResourceInfo, const spv_reflect::ShaderModule& ShaderModule)
+    {
+        std::uint32_t Count = 0;
+        ShaderModule.EnumerateInputVariables(&Count, nullptr);
+        if (Count == 0)
+        {
+            return;
+        }
+
+        std::vector<SpvReflectInterfaceVariable*> InputVariables(Count);
+        ShaderModule.EnumerateInputVariables(&Count, InputVariables.data());
+
+        std::ranges::sort(InputVariables, [](const auto* Lhs, const auto* Rhs) -> bool
+        {
+            return Lhs->location < Rhs->location;
+        });
+
+        ankerl::unordered_dense::map<std::uint32_t, FVertexBufferInfo> BufferMap;
+        for (const auto& Buffer : ResourceInfo.VertexBufferInfos)
+        {
+            BufferMap[Buffer.Binding] = Buffer;
+        }
+
+        // [Location, [Binding, Offset]]
+        ankerl::unordered_dense::map<std::uint32_t, std::pair<std::uint32_t, std::uint32_t>> LocationMap;
+        for (const auto& Vertex : ResourceInfo.VertexAttributeInfos)
+        {
+            LocationMap[Vertex.Location] = std::make_pair(Vertex.Binding, Vertex.Offset);
+        }
+
+        std::uint32_t CurrentBinding = 0;
+        std::uint32_t CurrentOffset  = 0;
+        std::set<vk::VertexInputBindingDescription2EXT> UniqueBindings;
+
+        for (const auto* Input : InputVariables)
+        {
+            if (Input->decoration_flags & SPV_REFLECT_DECORATION_BUILT_IN)
+            {
+                continue;
+            }
+
+            std::uint32_t Binding  = 0;
+            std::uint32_t Offset   = 0;
+            std::uint32_t Location = Input->location;
+
+            auto LocationIt = LocationMap.find(Location);
+            if (LocationIt != LocationMap.end())
+            {
+                Binding = LocationIt->second.first;
+                Offset  = LocationIt->second.second;
             }
             else
             {
-                ++it;
-            }
-        }
-
-        ReflectionInfo_.PushConstants.push_back(NewRange);
-        std::ranges::sort(ReflectionInfo_.PushConstants, [](const auto& Lhs, const auto& Rhs) -> bool
-        {
-            return Lhs.offset < Rhs.offset;
-        });
-    }
-
-    void FShader::AddDescriptorSetBindings(std::uint32_t Set, const vk::DescriptorSetLayoutBinding& LayoutBinding)
-    {
-        auto it = ReflectionInfo_.SetLayoutBindings.find(Set);
-        if (it == ReflectionInfo_.SetLayoutBindings.end())
-        {
-            ReflectionInfo_.SetLayoutBindings[Set].push_back(LayoutBinding);
-            return;
-        }
-
-        bool  bMergedStage          = false;
-        auto& ExistedLayoutBindings = it->second;
-        for (auto& ExistedLayoutBinding : ExistedLayoutBindings)
-        {
-            if (ExistedLayoutBinding.binding         == LayoutBinding.binding &&
-                ExistedLayoutBinding.descriptorType  == LayoutBinding.descriptorType &&
-                ExistedLayoutBinding.descriptorCount == LayoutBinding.descriptorCount)
-            {
-                ExistedLayoutBinding.stageFlags |= LayoutBinding.stageFlags;
-                bMergedStage = true;
-                break;
-            }
-        }
-
-        if (!bMergedStage)
-        {
-            ExistedLayoutBindings.push_back(LayoutBinding);
-        }
-    }
-
-    void FShader::CreateDescriptorSetLayouts()
-    {
-        if (ReflectionInfo_.SetLayoutBindings.empty())
-        {
-            return;
-        }
-
-        std::vector<vk::ShaderStageFlags> Stages;
-        for (auto& [Set, Bindings] : ReflectionInfo_.SetLayoutBindings)
-        {
-            Stages.clear();
-            for (const auto& Binding : Bindings)
-            {
-                Stages.push_back(Binding.stageFlags);
+                Binding = CurrentBinding;
+                Offset  = CurrentOffset;
             }
 
-            vk::ShaderStageFlags CombinedStages = std::accumulate(Stages.begin(), Stages.end(), vk::ShaderStageFlags(),
-            [](vk::ShaderStageFlags Lhs, vk::ShaderStageFlags Rhs) -> vk::ShaderStageFlags
-            {
-                return Lhs | Rhs;
-            });
+            std::uint32_t MatrixColumns = Input->numeric.matrix.column_count;
+            std::uint32_t MatrixRows    = Input->numeric.matrix.row_count;
+            std::uint32_t VectorSize    = Input->numeric.vector.component_count;
+            VectorSize = VectorSize == 0 ? 1 : VectorSize;
 
-            for (auto& Binding : Bindings)
+            std::uint32_t Width        = Input->numeric.scalar.width;
+            std::uint32_t ScalarSize   = Width / 8;
+            std::uint32_t VariableSize = 0;
+            VariableSize = MatrixColumns > 1 ? (ScalarSize * MatrixRows * MatrixColumns) : (ScalarSize * VectorSize);
+
+            std::uint32_t Stride  = 0;
+            bool bIsPerInstance   = false;
+            std::uint32_t Divisor = 0;
+
+            auto BufferIt = BufferMap.find(Binding);
+            if (BufferIt != BufferMap.end())
             {
-                Binding.stageFlags |= CombinedStages;
+                Stride         = BufferIt->second.Stride;
+                bIsPerInstance = BufferIt->second.bIsPerInstance;
+                Divisor        = BufferIt->second.Divisor;
+            }
+            else
+            {
+                Stride = VariableSize;
             }
 
-            std::string LayoutName = "DescriptorSetLayout_Set" + std::to_string(Set);
-            vk::DescriptorSetLayoutCreateInfo LayoutCreateInfo(vk::DescriptorSetLayoutCreateFlagBits::eDescriptorBufferEXT, Bindings);
-            FVulkanDescriptorSetLayout Layout(VulkanContext_->GetDevice(), LayoutName, LayoutCreateInfo);
-            DescriptorSetLayoutsMap_.emplace(Set, std::move(Layout));
+            auto InputRate = bIsPerInstance ? vk::VertexInputRate::eInstance : vk::VertexInputRate::eVertex;
+            UniqueBindings.emplace(Binding, Stride, InputRate, Divisor);
 
-            NpgsCoreTrace("Created descriptor set layout for set {} with {} bindings", Set, Bindings.size());
-        }
-    }
-
-    void FShader::GenerateDescriptorInfos()
-    {
-        if (DescriptorSetLayoutsMap_.empty())
-        {
-            return;
-        }
-
-        vk::Device Device = VulkanContext_->GetDevice();
-
-        for (const auto& [Set, Layout] : DescriptorSetLayoutsMap_)
-        {
-            vk::DeviceSize LayoutSize = Device.getDescriptorSetLayoutSizeEXT(*Layout);
-            FDescriptorSetInfo SetInfo{ .Set = Set, .Size = LayoutSize };
-
-            const auto& Bindings = ReflectionInfo_.SetLayoutBindings[Set];
-            for (const auto& Binding : Bindings)
+            if (MatrixColumns > 1)
             {
-                FDescriptorBindingInfo BindingInfo
+                vk::Format ColumnFormat = static_cast<vk::Format>(Input->format);
+                for (std::uint32_t i = 0; i != MatrixColumns; ++i)
                 {
-                    .Binding = Binding.binding,
-                    .Type    = Binding.descriptorType,
-                    .Count   = Binding.descriptorCount,
-                    .Stage   = Binding.stageFlags,
-                    .Offset  = Device.getDescriptorSetLayoutBindingOffsetEXT(*Layout, Binding.binding)
-                };
+                    ReflectionInfo_.VertexInputAttributes.emplace_back(
+                        Location + i, Binding, ColumnFormat, Offset + (ScalarSize * MatrixRows * i));
+                }
 
-                SetInfo.Bindings[Binding.binding] = std::move(BindingInfo);
+                NpgsCoreTrace("Vertex Attribute \"{}\" at location={}, binding={}, offset={}, stride={}, rate={} (matrix)",
+                              Input->name ? Input->name : "unnamed", Location, Binding, Offset, Stride,
+                              bIsPerInstance ? "per instance" : "per vertex");
+            }
+            else
+            {
+                vk::Format Format = static_cast<vk::Format>(Input->format);
+                ReflectionInfo_.VertexInputAttributes.emplace_back(Location, Binding, Format, Offset);
+
+                NpgsCoreTrace("Vertex Attribute \"{}\" at location={}, binding={}, offset={}, stride={}, rate={}",
+                              Input->name ? Input->name : "unnamed", Location, Binding, Offset, Stride,
+                              bIsPerInstance ? "per instance" : "per vertex");
             }
 
-            DescriptorSetInfos_[Set] = std::move(SetInfo);
+            if (LocationIt == LocationMap.end())
+            {
+                CurrentOffset += VariableSize;
+            }
         }
+
+        ReflectionInfo_.VertexInputBindings =
+            std::vector<vk::VertexInputBindingDescription2EXT>(UniqueBindings.begin(), UniqueBindings.end());
     }
 } // namespace Npgs

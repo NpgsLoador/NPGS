@@ -39,21 +39,23 @@ namespace Npgs
 
     struct FDescriptorImageInfo
     {
-        std::uint32_t           Set{};
-        std::uint32_t           Binding{};
+        std::uint32_t Set{};
+        std::uint32_t Binding{};
         vk::DescriptorImageInfo Info;
     };
 
     struct FDescriptorBufferCreateInfo
     {
-        std::string                                                     Name;
-        std::vector<std::string>                                        UniformBufferNames;
-        std::vector<std::string>                                        StorageBufferNames;
-        std::vector<FDescriptorSampler>                                 SamplerInfos;
-        std::vector<FDescriptorImageInfo>                               SampledImageInfos;
-        std::vector<FDescriptorImageInfo>                               StorageImageInfos;
-        std::vector<FDescriptorImageInfo>                               CombinedImageSamplerInfos;
-        ankerl::unordered_dense::map<std::uint32_t, FDescriptorSetInfo> SetInfos;
+        using FDescriptorSetInfoMap = ankerl::unordered_dense::map<std::uint32_t, FDescriptorSetInfo>;
+
+        std::string                       Name;
+        std::vector<std::string>          UniformBufferNames;
+        std::vector<std::string>          StorageBufferNames;
+        std::vector<FDescriptorSampler>   SamplerInfos;
+        std::vector<FDescriptorImageInfo> SampledImageInfos;
+        std::vector<FDescriptorImageInfo> StorageImageInfos;
+        std::vector<FDescriptorImageInfo> CombinedImageSamplerInfos;
+        FDescriptorSetInfoMap             SetInfos;
     };
 
     class FShaderBufferManager
@@ -69,8 +71,8 @@ namespace Npgs
 
         private:
             const FDeviceLocalBuffer* Buffer_;
-            vk::DeviceSize            Offset_;
-            vk::DeviceSize            Size_;
+            vk::DeviceSize Offset_;
+            vk::DeviceSize Size_;
         };
 
     public:
@@ -146,8 +148,10 @@ namespace Npgs
                 vk::DeviceSize Size{};
             };
 
-            std::string                                                 Name;
-            ankerl::unordered_dense::map<std::uint32_t, FSetAllocation> SetAllocations;
+            using FSetAllocationMap = ankerl::unordered_dense::map<std::uint32_t, FSetAllocation>;
+
+            std::string       Name;
+            FSetAllocationMap SetAllocations;
         };
 
         struct FSetBindingHash

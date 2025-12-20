@@ -44,47 +44,47 @@ namespace Npgs
 
     void FGbufferSceneTechnique::SetupPipeline()
     {
-        FGraphicsPipelineCreateInfoPack PipelineCreateInfoPack;
+    //    FGraphicsPipelineCreateInfoPack PipelineCreateInfoPack;
 
-        PipelineCreateInfoPack.DynamicStates.push_back(vk::DynamicState::eScissor);
-        PipelineCreateInfoPack.DynamicStates.push_back(vk::DynamicState::eViewport);
+    //    PipelineCreateInfoPack.DynamicStates.push_back(vk::DynamicState::eScissor);
+    //    PipelineCreateInfoPack.DynamicStates.push_back(vk::DynamicState::eViewport);
 
-        vk::PipelineColorBlendAttachmentState ColorBlendAttachmentState = vk::PipelineColorBlendAttachmentState()
-            .setColorWriteMask(vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG |
-                               vk::ColorComponentFlagBits::eB | vk::ColorComponentFlagBits::eA);
-        PipelineCreateInfoPack.ColorBlendAttachmentStates.assign(4, ColorBlendAttachmentState);
+    //    vk::PipelineColorBlendAttachmentState ColorBlendAttachmentState = vk::PipelineColorBlendAttachmentState()
+    //        .setColorWriteMask(vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG |
+    //                           vk::ColorComponentFlagBits::eB | vk::ColorComponentFlagBits::eA);
+    //    PipelineCreateInfoPack.ColorBlendAttachmentStates.assign(4, ColorBlendAttachmentState);
 
-        GbufferAttachmentFormats_ =
-        {
-            vk::Format::eR16G16B16A16Sfloat,
-            vk::Format::eR16G16B16A16Sfloat,
-            vk::Format::eR16G16B16A16Sfloat,
-            vk::Format::eR16G16B16A16Sfloat
-        };
+    //    GbufferAttachmentFormats_ =
+    //    {
+    //        vk::Format::eR16G16B16A16Sfloat,
+    //        vk::Format::eR16G16B16A16Sfloat,
+    //        vk::Format::eR16G16B16A16Sfloat,
+    //        vk::Format::eR16G16B16A16Sfloat
+    //    };
 
-        DepthAttachmentFormat_ = vk::Format::eD32Sfloat;
+    //    DepthAttachmentFormat_ = vk::Format::eD32Sfloat;
 
-        vk::PipelineRenderingCreateInfo RenderingCreateInfo(0, GbufferAttachmentFormats_, DepthAttachmentFormat_);
+    //    vk::PipelineRenderingCreateInfo RenderingCreateInfo(0, GbufferAttachmentFormats_, DepthAttachmentFormat_);
 
-        PipelineCreateInfoPack.GraphicsPipelineCreateInfo.setFlags(vk::PipelineCreateFlagBits::eDescriptorBufferEXT);
-        PipelineCreateInfoPack.GraphicsPipelineCreateInfo.setPNext(&RenderingCreateInfo);
-        PipelineCreateInfoPack.InputAssemblyStateCreateInfo.setTopology(vk::PrimitiveTopology::eTriangleList);
-        PipelineCreateInfoPack.RasterizationStateCreateInfo
-            .setCullMode(vk::CullModeFlagBits::eBack)
-            .setFrontFace(vk::FrontFace::eCounterClockwise);
+    //    PipelineCreateInfoPack.GraphicsPipelineCreateInfo.setFlags(vk::PipelineCreateFlagBits::eDescriptorBufferEXT);
+    //    PipelineCreateInfoPack.GraphicsPipelineCreateInfo.setPNext(&RenderingCreateInfo);
+    //    PipelineCreateInfoPack.InputAssemblyStateCreateInfo.setTopology(vk::PrimitiveTopology::eTriangleList);
+    //    PipelineCreateInfoPack.RasterizationStateCreateInfo
+    //        .setCullMode(vk::CullModeFlagBits::eBack)
+    //        .setFrontFace(vk::FrontFace::eCounterClockwise);
 
-        auto* PipelineManager = EngineResourceServices->GetPipelineManager();
-        PipelineManager->CreateGraphicsPipeline(
-            Techniques::GbufferScene::kPipelineName, Techniques::GbufferScene::kShaderName, PipelineCreateInfoPack);
+    //    auto* PipelineManager = EngineResourceServices->GetPipelineManager();
+    //    PipelineManager->CreateGraphicsPipeline(
+    //        Techniques::GbufferScene::kPipelineName, Techniques::GbufferScene::kShaderName, PipelineCreateInfoPack);
 
-        auto GetPipeline = [&]() -> void
-        {
-            Pipeline_ = PipelineManager->GetPipeline(Techniques::GbufferScene::kPipelineName);
-        };
+    //    auto GetPipeline = [&]() -> void
+    //    {
+    //        Pipeline_ = PipelineManager->GetPipeline(Techniques::GbufferScene::kPipelineName);
+    //    };
 
-        GetPipeline();
-        VulkanContext_->RegisterRuntimeOnlyCallbacks(FVulkanContext::ECallbackType::kCreateSwapchain, "GetPipeline", GetPipeline);
+    //    GetPipeline();
+    //    VulkanContext_->RegisterRuntimeOnlyCallbacks(FVulkanContext::ECallbackType::kCreateSwapchain, "GetPipeline", GetPipeline);
 
-        PipelineLayout_ = PipelineManager->GetPipelineLayout(Techniques::GbufferScene::kPipelineName);
+    //    PipelineLayout_ = PipelineManager->GetPipelineLayout(Techniques::GbufferScene::kPipelineName);
     }
 }

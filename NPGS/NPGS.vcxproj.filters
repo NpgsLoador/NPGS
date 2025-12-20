@@ -81,9 +81,6 @@
     <ClCompile Include="Sources\Engine\Runtime\Managers\ShaderBufferManager.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="Sources\Engine\Runtime\Managers\PipelineManager.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
     <ClCompile Include="Sources\ExternalImpl\stbImpl.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
@@ -296,9 +293,6 @@
     <ClInclude Include="Sources\Engine\Runtime\Managers\ShaderBufferManager.hpp">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="Sources\Engine\Runtime\Managers\PipelineManager.hpp">
-      <Filter>头文件</Filter>
-    </ClInclude>
     <ClInclude Include="Sources\Engine\Runtime\Graphics\Buffers\BufferStructs.hpp">
       <Filter>头文件</Filter>
     </ClInclude>
@@ -479,9 +473,6 @@
       <Filter>头文件</Filter>
     </None>
     <None Include="Sources\Engine\Runtime\Managers\ShaderBufferManager.inl">
-      <Filter>头文件</Filter>
-    </None>
-    <None Include="Sources\Engine\Runtime\Managers\PipelineManager.inl">
       <Filter>头文件</Filter>
     </None>
     <None Include="Sources\Program\Application.cpp.bak" />

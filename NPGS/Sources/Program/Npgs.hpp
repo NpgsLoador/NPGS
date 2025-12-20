@@ -19,7 +19,6 @@
 #include "Engine/Runtime/Graphics/Vulkan/Core.hpp"
 #include "Engine/Runtime/Graphics/Vulkan/Wrappers.hpp"
 #include "Engine/Runtime/Managers/AssetManager.hpp"
-#include "Engine/Runtime/Managers/PipelineManager.hpp"
 #include "Engine/Runtime/Managers/ShaderBufferManager.hpp"
 #include "Engine/Runtime/Pools/CommandPoolPool.hpp"
 #include "Engine/Runtime/Pools/ResourcePool.hpp"

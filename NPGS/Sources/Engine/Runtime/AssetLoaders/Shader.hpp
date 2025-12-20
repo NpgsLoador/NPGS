@@ -16,6 +16,12 @@
 #include "Engine/Runtime/Graphics/Vulkan/Context.hpp"
 #include "Engine/Runtime/Graphics/Vulkan/Wrappers.hpp"
 
+// Forward declaration
+namespace spv_reflect
+{
+    class ShaderModule;
+}
+
 namespace Npgs
 {
     struct FVertexBufferInfo
@@ -23,6 +29,7 @@ namespace Npgs
         std::uint32_t Binding{};
         std::uint32_t Stride{};
         bool bIsPerInstance{ false };
+        std::uint32_t Divisor{ 1 };
     };
 
     struct FVertexAttributeInfo
@@ -41,11 +48,13 @@ namespace Npgs
 
     struct FResourceInfo
     {
-        std::vector<FVertexBufferInfo>                           VertexBufferInfos;
-        std::vector<FVertexAttributeInfo>                        VertexAttributeInfos;
-        std::vector<FShaderBufferInfo>                           ShaderBufferInfos;
-        std::vector<std::string>                                 PushConstantNames;
-        ankerl::unordered_dense::map<std::uint32_t, std::string> SpecializationConstantInfos;
+        using FSpecializationConstantInfoMap = ankerl::unordered_dense::map<std::uint32_t, std::string>;
+
+        std::vector<FVertexBufferInfo>    VertexBufferInfos;
+        std::vector<FVertexAttributeInfo> VertexAttributeInfos;
+        std::vector<FShaderBufferInfo>    ShaderBufferInfos;
+        std::vector<std::string>          PushConstantNames;
+        FSpecializationConstantInfoMap    SpecializationConstantInfos;
     };
 
     struct FDescriptorBindingInfo
@@ -59,13 +68,20 @@ namespace Npgs
 
     struct FDescriptorSetInfo
     {
+        using FSetBindingMap = ankerl::unordered_dense::map<std::uint32_t, FDescriptorBindingInfo>;
+
         std::uint32_t  Set{};
         vk::DeviceSize Size{};
-        ankerl::unordered_dense::map<std::uint32_t, FDescriptorBindingInfo> Bindings;
+        FSetBindingMap Bindings;
     };
 
     class FShader
     {
+    public:
+        using FSetLayoutBindingMap         = ankerl::unordered_dense::map<std::uint32_t, std::vector<vk::DescriptorSetLayoutBinding>>;
+        using FPushConstantOffsetsMap      = Utils::TStringHeteroHashTable<std::string, std::uint32_t>;
+        using FSpecializationConstantIdMap = FPushConstantOffsetsMap;
+
     public:
         FShader(FVulkanContext* VulkanContext, std::string_view Filename, const FResourceInfo& ResourceInfo);
         FShader(const FShader&) = delete;
@@ -75,54 +91,44 @@ namespace Npgs
         FShader& operator=(const FShader&) = delete;
         FShader& operator=(FShader&& Other) noexcept;
 
-        std::vector<vk::PipelineShaderStageCreateInfo> CreateShaderStageCreateInfo() const;
-        std::vector<vk::DescriptorSetLayout> GetDescriptorSetLayouts() const;
         const std::vector<vk::PushConstantRange>& GetPushConstantRanges() const;
-        std::uint32_t GetPushConstantOffset(std::string_view Name) const;
-        const Utils::TStringHeteroHashTable<std::string, std::uint32_t>& GetSpecializationConstantsInfo() const;
         std::uint32_t GetSpecializationConstantId(std::string_view Name) const;
         std::string_view GetFilename() const;
         vk::ShaderStageFlagBits GetShaderStage() const;
         const std::vector<std::uint32_t>& GetShaderCode() const;
-        const Utils::TStringHeteroHashTable<std::string, std::uint32_t>& GetPushConstantOffsetsMap() const;
-        const ankerl::unordered_dense::map<std::uint32_t, std::vector<vk::DescriptorSetLayoutBinding>>& GetSetLayoutBindings() const;
+        const FPushConstantOffsetsMap& GetPushConstantOffsetsMap() const;
+        const FSetLayoutBindingMap& GetSetLayoutBindings() const;
         const std::vector<vk::VertexInputBindingDescription2EXT>& GetVertexInputBindings() const;
         const std::vector<vk::VertexInputAttributeDescription2EXT>& GetVertexInputAttributes() const;
-        const FDescriptorSetInfo& GetDescriptorSetInfo(std::uint32_t Set) const;
-        const ankerl::unordered_dense::map<std::uint32_t, FDescriptorSetInfo>& GetDescriptorSetInfos() const;
 
     private:
         struct FShaderReflectionInfo
         {
-            using FSetLayoutBindingMap = ankerl::unordered_dense::map<std::uint32_t, std::vector<vk::DescriptorSetLayoutBinding>>;
-            
-            FSetLayoutBindingMap                                      SetLayoutBindings;
-            std::vector<vk::VertexInputBindingDescription2EXT>        VertexInputBindings;
-            std::vector<vk::VertexInputAttributeDescription2EXT>      VertexInputAttributes;
-            std::vector<vk::PushConstantRange>                        PushConstants;
-            Utils::TStringHeteroHashTable<std::string, std::uint32_t> SpecializationConstants;
-            vk::ShaderStageFlagBits                                   Stage{};
+            FSetLayoutBindingMap                                 SetLayoutBindings;
+            std::vector<vk::VertexInputBindingDescription2EXT>   VertexInputBindings;
+            std::vector<vk::VertexInputAttributeDescription2EXT> VertexInputAttributes;
+            std::vector<vk::PushConstantRange>                   PushConstants;
+            FSpecializationConstantIdMap                         SpecializationConstants;
+            vk::ShaderStageFlagBits                              Stage{};
         };
 
     private:
         void InitializeShaders(std::string_view Filename, const FResourceInfo& ResourceInfo);
         void LoadShader(std::string Filename);
         void ReflectShader(const FResourceInfo& ResourceInfo);
-        void AddPushConstantRange(vk::PushConstantRange NewRange);
-        void AddDescriptorSetBindings(std::uint32_t Set, const vk::DescriptorSetLayoutBinding& LayoutBinding);
-        void CreateDescriptorSetLayouts();
-        void GenerateDescriptorInfos();
+        void ReflectPushConstants(const FResourceInfo& ResourceInfo, const spv_reflect::ShaderModule& ShaderModule);
+        void ReflectSpecializationConstants(const FResourceInfo& ResourceInfo, const spv_reflect::ShaderModule& ShaderModule);
+        void ReflectDescriptorSets(const FResourceInfo& ResourceInfo, const spv_reflect::ShaderModule& ShaderModule);
+        void ReflectVertexInput(const FResourceInfo& ResourceInfo, const spv_reflect::ShaderModule& ShaderModule);
 
     private:
-        FVulkanContext*                                                      VulkanContext_;
-        FVulkanDescriptorSetLayout                                           EmptyDescriptorSetLayout_;
-        FShaderReflectionInfo                                                ReflectionInfo_;
-        std::string                                                          Filename_;
-        std::vector<std::uint32_t>                                           ShaderCode_;
-        std::vector<std::pair<vk::ShaderStageFlagBits, FVulkanShaderModule>> ShaderModules_;
-        Utils::TStringHeteroHashTable<std::string, std::uint32_t>            PushConstantOffsetsMap_;  // [Name, Offset]
-        ankerl::unordered_dense::map<std::uint32_t, FDescriptorSetInfo>      DescriptorSetInfos_;      // [Set,  Info]
-        std::map<std::uint32_t, FVulkanDescriptorSetLayout>                  DescriptorSetLayoutsMap_; // [Set,  Layout]
+        using FPushConstantOffsetsMap = Utils::TStringHeteroHashTable<std::string, std::uint32_t>; // [Name, Offset]
+
+        FVulkanContext*            VulkanContext_;
+        FShaderReflectionInfo      ReflectionInfo_;
+        std::string                Filename_;
+        std::vector<std::uint32_t> ShaderCode_;
+        FPushConstantOffsetsMap    PushConstantOffsetsMap_;
     };
 
 } // namespace Npgs

@@ -8,7 +8,6 @@
 #include "Engine/Runtime/Graphics/Vulkan/Context.hpp"
 #include "Engine/Runtime/Managers/ImageTracker.hpp"
 #include "Engine/Runtime/Managers/RenderTargetManager.hpp"
-#include "Engine/Runtime/Managers/PipelineManager.hpp"
 #include "Engine/Runtime/Managers/ShaderBufferManager.hpp"
 #include "Engine/Runtime/Managers/ShaderManager.hpp"
 #include "Engine/Runtime/Pools/StagingBufferPool.hpp"
@@ -28,7 +27,6 @@ namespace Npgs
         FResourceServices& operator=(FResourceServices&&)      = delete;
 
         FImageTracker*        GetImageTracker() const;
-        FPipelineManager*     GetPipelineManager() const;
         FRenderTargetManager* GetRenderTargetManager() const;
         FShaderBufferManager* GetShaderBufferManager() const;
         FShaderManager*       GetShaderManager() const;
@@ -36,7 +34,6 @@ namespace Npgs
     private:
         const FCoreServices*                  CoreServices_;
         std::unique_ptr<FImageTracker>        ImageTracker_;
-        std::unique_ptr<FPipelineManager>     PipelineManager_;
         std::unique_ptr<FRenderTargetManager> RenderTargetManager_;
         std::unique_ptr<FShaderBufferManager> ShaderBufferManager_;
         std::unique_ptr<FShaderManager>       ShaderManager_;

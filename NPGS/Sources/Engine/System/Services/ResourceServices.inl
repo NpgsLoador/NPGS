@@ -8,11 +8,6 @@ namespace Npgs
         return ImageTracker_.get();
     }
 
-    NPGS_INLINE FPipelineManager* FResourceServices::GetPipelineManager() const
-    {
-        return PipelineManager_.get();
-    }
-
     NPGS_INLINE FRenderTargetManager* FResourceServices::GetRenderTargetManager() const
     {
         return RenderTargetManager_.get();

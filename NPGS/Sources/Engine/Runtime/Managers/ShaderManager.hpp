@@ -44,7 +44,7 @@ namespace Npgs
     public:
         struct FShaderInfo
         {
-            std::string Name;
+            std::string             Name;
             vk::ShaderStageFlagBits NextStage{};
 
             bool operator==(const FShaderInfo&) const = default;
@@ -55,7 +55,7 @@ namespace Npgs
         bool operator==(const FShaderAcquireInfo& Other) const;
 
         template <typename Ty>
-        requires std::is_standard_layout_v<Ty>&& std::is_trivial_v<Ty>
+        requires std::is_standard_layout_v<Ty> && std::is_trivial_v<Ty>
         void AddSpecializationConstant(vk::ShaderStageFlagBits Stage, std::string_view Name, const Ty& Value);
 
     private:
@@ -75,12 +75,14 @@ namespace Npgs
     struct FShaderResource
     {
     public:
-        std::vector<vk::ShaderStageFlagBits>                            Stages;
-        std::vector<vk::ShaderEXT>                                      Handles;
-        std::vector<vk::VertexInputBindingDescription2EXT>              VertexInputBindings;
-        std::vector<vk::VertexInputAttributeDescription2EXT>            VertexInputAttributes;
-        FVulkanPipelineLayout                                           PipelineLayout;
-        ankerl::unordered_dense::map<std::uint32_t, FDescriptorSetInfo> SetInfos;
+        using FDescriptorSetInfoMap = ankerl::unordered_dense::map<std::uint32_t, FDescriptorSetInfo>;
+
+        std::vector<vk::ShaderStageFlagBits>                 Stages;
+        std::vector<vk::ShaderEXT>                           Handles;
+        std::vector<vk::VertexInputBindingDescription2EXT>   VertexInputBindings;
+        std::vector<vk::VertexInputAttributeDescription2EXT> VertexInputAttributes;
+        FVulkanPipelineLayout                                PipelineLayout;
+        FDescriptorSetInfoMap                                SetInfos;
 
     public:
         FShaderResource()                           = default;
@@ -98,6 +100,7 @@ namespace Npgs
 
         void ApplyHandles();
 
+    private:
         std::vector<FVulkanShader>                                StoragedHandles_;
         Utils::TStringHeteroHashTable<std::string, std::uint32_t> PushConstantOffsetsMap_;
     };

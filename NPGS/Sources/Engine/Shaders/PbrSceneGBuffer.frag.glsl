@@ -8,10 +8,10 @@ layout(location = 3) out float Shadow;
 
 layout(location = 0) in _FragInput
 {
-	mat3x3 TbnMatrix;
-	vec2   TexCoord;
-	vec3   FragPos;
-	vec4   LightSpaceFragPos;
+	mat3 TbnMatrix;
+	vec2 TexCoord;
+	vec3 FragPos;
+	vec4 LightSpaceFragPos;
 } FragInput;
 
 layout(set = 0, binding = 0) uniform sampler   iSampler;

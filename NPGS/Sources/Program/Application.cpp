@@ -30,12 +30,9 @@
 #include "Engine/Runtime/AssetLoaders/Shader.hpp"
 #include "Engine/Runtime/AssetLoaders/Texture.hpp"
 #include "Engine/Runtime/Managers/AssetManager.hpp"
-#include "Engine/Runtime/Managers/PipelineManager.hpp"
 #include "Engine/Runtime/Managers/ShaderBufferManager.hpp"
 #include "Engine/Runtime/Managers/ShaderManager.hpp"
 #include "Engine/System/Services/EngineServices.hpp"
-
-#include "Engine/Runtime/Managers/ShaderManager.hpp"
 
 namespace Npgs
 {
@@ -299,6 +296,7 @@ namespace Npgs
 
         glm::vec3    LightPos(-2.0f, 4.0f, -1.0f);
         glm::mat4x4  LightProjection  = glm::infinitePerspective(glm::radians(60.0f), 1.0f, 1.0f);
+        LightProjection[1][1]        *= -1;
         glm::mat4x4  LightView        = glm::lookAt(LightPos, glm::vec3(0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
         glm::mat4x4  LightSpaceMatrix = LightProjection * LightView;
         vk::Extent2D DepthMapExtent(8192, 8192);

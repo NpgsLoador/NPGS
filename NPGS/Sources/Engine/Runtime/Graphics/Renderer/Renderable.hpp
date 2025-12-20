@@ -2,7 +2,7 @@
 
 #include "Engine/Runtime/Graphics/Vulkan/Wrappers.hpp"
 #include "Engine/Runtime/Managers/AssetManager.hpp"
-#include "Engine/Runtime/Managers/PipelineManager.hpp"
+// #include "Engine/Runtime/Managers/PipelineManager.hpp"
 #include "Engine/Runtime/Managers/ShaderBufferManager.hpp"
 
 namespace Npgs
