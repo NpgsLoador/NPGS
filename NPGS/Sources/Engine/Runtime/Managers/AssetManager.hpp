@@ -5,6 +5,8 @@
 #include <atomic>
 #include <concepts>
 #include <memory>
+#include <mutex>
+#include <shared_mutex>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -46,6 +48,7 @@ namespace Npgs
     {
         std::unique_ptr<void, FTypeErasedDeleter> Payload;
         std::unique_ptr<std::atomic<std::size_t>> RefCount;
+        std::unique_ptr<std::atomic<bool>>        bIsEvictable;
 
         FAssetEntry();
         FAssetEntry(const FAssetEntry&)     = delete;
@@ -121,7 +124,8 @@ namespace Npgs
 
         void PinAsset(std::string_view Name);
         void UnpinAsset(std::string_view Name);
-        void RemoveAssetImmediately(std::string_view Name);
+        void RequestRemoveAsset(std::string_view Name);
+        void RemoveAssetUnchecked(std::string_view Name);
         void CollectGarbage();
 
     private:
@@ -136,6 +140,8 @@ namespace Npgs
     private:
         FVulkanContext*       VulkanContext_;
         FAssetMap             Assets_;
+        std::shared_mutex     SharedMutex_;
+        std::mutex            Mutex_;
         std::shared_ptr<bool> LivenessToken_;
     };
 } // namespace Npgs

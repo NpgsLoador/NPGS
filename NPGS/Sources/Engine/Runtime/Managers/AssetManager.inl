@@ -2,6 +2,7 @@
 #include <utility>
 
 #include "Engine/Core/Base/Base.hpp"
+#include "Engine/Core/Logger.hpp"
 #include "Engine/Core/Utils/Utils.hpp"
 
 namespace Npgs
@@ -155,9 +156,12 @@ namespace Npgs
     template <CAssetCompatible AssetType>
     void FAssetManager::AddAsset(std::string_view Name, AssetType&& Asset)
     {
-        if (Assets_.contains(Name))
         {
-            return;
+            std::shared_lock Lock(SharedMutex_);
+            if (Assets_.contains(Name))
+            {
+                return;
+            }
         }
 
         auto Entry = std::make_unique<FAssetEntry>();
@@ -170,15 +174,21 @@ namespace Npgs
         Entry->RefCount = std::make_unique<std::atomic<std::size_t>>();
         Entry->RefCount->store(0, std::memory_order::relaxed);
 
-        Assets_.emplace(Name, std::move(Entry));
+        {
+            std::unique_lock Lock(Mutex_);
+            Assets_.emplace(Name, std::move(Entry));
+        }
     }
 
     template <CAssetCompatible AssetType, typename... Types>
     void FAssetManager::AddAsset(std::string_view Name, Types&&... Args)
     {
-        if (Assets_.contains(Name))
         {
-            return;
+            std::shared_lock Lock(SharedMutex_);
+            if (Assets_.contains(Name))
+            {
+                return;
+            }
         }
 
         auto Entry = std::make_unique<FAssetEntry>();
@@ -191,26 +201,41 @@ namespace Npgs
         Entry->RefCount = std::make_unique<std::atomic<std::size_t>>();
         Entry->RefCount->store(0, std::memory_order::relaxed);
 
-        Assets_.emplace(Name, std::move(Entry));
+        {
+            std::unique_lock Lock(Mutex_);
+            Assets_.emplace(Name, std::move(Entry));
+        }
     }
 
     template <CAssetCompatible AssetType>
     TAssetHandle<AssetType> FAssetManager::AcquireAsset(std::string_view Name)
     {
-        auto it = Assets_.find(Name);
-        if (it == Assets_.end())
+        FAssetEntry* AssetEntry = nullptr;
         {
-            return TAssetHandle<AssetType>();
-        }
+            std::shared_lock Lock(SharedMutex_);
 
-        auto* AssetEntry = it->second.get();
-        AssetEntry->RefCount->fetch_add(1, std::memory_order::relaxed);
+            auto it = Assets_.find(Name);
+            if (it == Assets_.end())
+            {
+                return TAssetHandle<AssetType>();
+            }
+
+            if (it->second->bIsEvictable->load(std::memory_order::relaxed))
+            {
+                NpgsCoreWarn("Failed to acquire asset: {}: asset has requested to remove.", Name);
+                return TAssetHandle<AssetType>();
+            }
+
+            AssetEntry = it->second.get();
+            AssetEntry->RefCount->fetch_add(1, std::memory_order::relaxed);
+        }
 
         return TAssetHandle<AssetType>(this, AssetEntry);
     }
 
-    NPGS_INLINE void FAssetManager::RemoveAssetImmediately(std::string_view Name)
+    NPGS_INLINE void FAssetManager::RemoveAssetUnchecked(std::string_view Name)
     {
+        std::unique_lock Lock(Mutex_);
         Assets_.erase(Name);
     }
 

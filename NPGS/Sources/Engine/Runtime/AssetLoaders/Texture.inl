@@ -3,6 +3,11 @@
 
 namespace Npgs
 {
+    NPGS_INLINE void FTexture::FUploadResult::Wait() const
+    {
+        UploadFence_.Wait();
+    }
+
     NPGS_INLINE vk::DescriptorImageInfo FTexture::CreateDescriptorImageInfo(const FVulkanSampler& Sampler) const
     {
         return { *Sampler, **ImageView_, vk::ImageLayout::eShaderReadOnlyOptimal };

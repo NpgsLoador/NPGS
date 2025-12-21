@@ -62,12 +62,12 @@ namespace Npgs
 
         for (std::size_t i = 0; i != TextureNames.size(); ++i)
         {
-            Futures.push_back(ThreadPool_->Submit([&, i]() -> void
-            {
-                AssetManager->AddAsset<FTexture2D>(TextureNames[i], Allocator, TextureAllocationCreateInfo,
-                                                   TextureFiles[i], InitialTextureFormats[i], FinalTextureFormats[i],
-                                                   vk::ImageCreateFlagBits::eMutableFormat, true);
-            }));
+            //Futures.push_back(ThreadPool_->Submit([&, i]() -> void
+            //{
+            //    AssetManager->AddAsset<FTexture2D>(TextureNames[i], Allocator, TextureAllocationCreateInfo,
+            //                                       TextureFiles[i], InitialTextureFormats[i], FinalTextureFormats[i],
+            //                                       vk::ImageCreateFlagBits::eMutableFormat, true);
+            //}));
         }
 
         for (auto& Future : Futures)

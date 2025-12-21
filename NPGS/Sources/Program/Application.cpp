@@ -1516,8 +1516,8 @@ namespace Npgs
         };
 
         AssetManager->AddAsset<FTextureCube>(
-            "Skybox", Allocator, TextureAllocationCreateInfo, "Skybox",
-            vk::Format::eR8G8B8A8Srgb, vk::Format::eR8G8B8A8Srgb, vk::ImageCreateFlags(), true);
+            "Skybox", Allocator, TextureAllocationCreateInfo, "Skybox", vk::ImageCreateFlags(),
+            vk::Format::eR8G8B8A8Srgb, vk::Format::eR8G8B8A8Srgb, true, nullptr);
 
         //AssetManager->AddAsset<FTexture2D>(
         //    "PureSky", TextureAllocationCreateInfo, "HDRI/autumn_field_puresky_16k.hdr",
@@ -1528,20 +1528,27 @@ namespace Npgs
         //     vk::Format::eR8G8B8A8Unorm, vk::Format::eR8G8B8A8Unorm, vk::ImageCreateFlags(), false);
 
         std::vector<std::future<void>> Futures;
+        std::vector<FTexture::FUploadResult> UploadResults(TextureNames.size());
 
         for (std::size_t i = 0; i != TextureNames.size(); ++i)
         {
             Futures.push_back(ThreadPool_->Submit([&, i]() -> void
             {
                 AssetManager->AddAsset<FTexture2D>(
-                    TextureNames[i], Allocator, TextureAllocationCreateInfo, TextureFiles[i],
-                    InitialTextureFormats[i], FinalTextureFormats[i], vk::ImageCreateFlagBits::eMutableFormat, true);
+                    TextureNames[i], Allocator, TextureAllocationCreateInfo,
+                    TextureFiles[i], vk::ImageCreateFlagBits::eMutableFormat,
+                    InitialTextureFormats[i], FinalTextureFormats[i], true, UploadResults.data() + i);
             }));
         }
 
         for (auto& Future : Futures)
         {
             Future.get();
+        }
+
+        for (auto& UploadResult : UploadResults)
+        {
+            UploadResult.Wait();
         }
     }
 

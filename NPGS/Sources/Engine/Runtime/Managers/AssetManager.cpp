@@ -43,6 +43,7 @@ namespace Npgs
     FAssetEntry::FAssetEntry()
         : Payload(nullptr, FTypeErasedDeleter())
         , RefCount(nullptr)
+        , bIsEvictable(std::make_unique<std::atomic<bool>>(false))
     {
     }
 
@@ -74,8 +75,20 @@ namespace Npgs
         it->second->RefCount->fetch_sub(1, std::memory_order::relaxed);
     }
 
+    void FAssetManager::RequestRemoveAsset(std::string_view Name)
+    {
+        std::shared_lock Lock(SharedMutex_);
+        auto it = Assets_.find(Name);
+        if (it != Assets_.end())
+        {
+            it->second->bIsEvictable->store(true, std::memory_order::relaxed);
+        }
+    }
+
     void FAssetManager::CollectGarbage()
     {
+        std::unique_lock Lock(Mutex_);
+
         for (auto it = Assets_.begin(); it != Assets_.end();)
         {
             if (it->second->RefCount->load(std::memory_order::relaxed) == 0)

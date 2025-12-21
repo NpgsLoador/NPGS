@@ -213,8 +213,7 @@ namespace Npgs
         return ShaderResourceCache_.at(AcquireInfo).get();
     }
 
-    FShaderManager::FSetLayoutBindingMap
-    FShaderManager::MergeSetLayoutBindings(const FShaderManager::FShaderStagePairArray& Shaders) const
+    FShaderManager::FSetLayoutBindingMap FShaderManager::MergeSetLayoutBindings(const FShaderStagePairArray& Shaders) const
     {
         std::map<std::uint32_t, std::map<std::uint32_t, vk::DescriptorSetLayoutBinding>> MergedData;
         for (const auto& [Shader, _] : Shaders)
@@ -283,8 +282,7 @@ namespace Npgs
         return Result;
     }
 
-    FShaderManager::FSetLayoutArray
-    FShaderManager::SetupDescriptorSetLayouts(const FShaderManager::FSetLayoutBindingMap& MergedSetLayoutBindings) const
+    FShaderManager::FSetLayoutArray FShaderManager::SetupDescriptorSetLayouts(const FSetLayoutBindingMap& MergedSetLayoutBindings) const
     {
         if (MergedSetLayoutBindings.empty())
         {
@@ -318,8 +316,7 @@ namespace Npgs
         return SetLayouts;
     }
 
-    std::vector<vk::PushConstantRange>
-    FShaderManager::MergePushConstantRanges(const FShaderManager::FShaderStagePairArray& Shaders) const
+    std::vector<vk::PushConstantRange> FShaderManager::MergePushConstantRanges(const FShaderStagePairArray& Shaders) const
     {
         std::vector<vk::PushConstantRange> RawRanges;
         for (const auto& [Shader, _] : Shaders)
@@ -378,8 +375,7 @@ namespace Npgs
         return MergedRanges;
     }
 
-    FShaderManager::FPushConstantOffsetsMap
-    FShaderManager::GeneratePushConstantOffsetsMap(const FShaderManager::FShaderStagePairArray& Shaders)
+    FShaderManager::FPushConstantOffsetsMap FShaderManager::GeneratePushConstantOffsetsMap(const FShaderStagePairArray& Shaders)
     {
         FPushConstantOffsetsMap OffsetsMap;
         for (const auto& Shader : Shaders)

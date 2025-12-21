@@ -31,6 +31,31 @@ namespace Npgs
     class FTexture
     {
     public:
+        class FUploadResult
+        {
+        public:
+            FUploadResult()                         = default;
+            FUploadResult(const FUploadResult&)     = delete;
+            FUploadResult(FUploadResult&&) noexcept = default;
+            ~FUploadResult()                        = default;
+
+            FUploadResult& operator=(const FUploadResult&)     = delete;
+            FUploadResult& operator=(FUploadResult&&) noexcept = default;
+
+            void Wait() const;
+
+        private:
+            friend class FTexture;
+
+            FUploadResult(FVulkanFence&& UploadFence, FCommandPoolPool::FPoolGuard&& CommandPool, FStagingBufferPool::FBufferGuard&& StagingBuffer);
+
+        private:
+            FVulkanFence                     UploadFence_;
+            FCommandPoolPool::FPoolGuard     CommandPool_;
+            FStagingBufferPool::FBufferGuard StagingBuffer_;
+        };
+
+    public:
         vk::DescriptorImageInfo CreateDescriptorImageInfo(const FVulkanSampler& Sampler) const;
         vk::DescriptorImageInfo CreateDescriptorImageInfo(const vk::Sampler& Sampler) const;
 
@@ -50,9 +75,10 @@ namespace Npgs
         FTexture& operator=(const FTexture&) = delete;
         FTexture& operator=(FTexture&& Other) noexcept;
 
-        void CreateTexture(const FImageData& ImageData, vk::ImageCreateFlags Flags, vk::ImageType ImageType,
-                           vk::ImageViewType ImageViewType, vk::Format InitialFormat, vk::Format FinalFormat,
-                           std::uint32_t ArrayLayers, bool bGenerateMipmaps);
+        FUploadResult CreateTexture(const FImageData& ImageData, vk::ImageCreateFlags Flags,
+                                    vk::ImageType ImageType, vk::ImageViewType ImageViewType,
+                                    vk::Format InitialFormat, vk::Format FinalFormat,
+                                    std::uint32_t ArrayLayers, bool bGenerateMipmaps);
 
     protected:
         std::string TextureName_;
@@ -64,14 +90,14 @@ namespace Npgs
         void CreateImageView(vk::ImageViewCreateFlags Flags, vk::ImageViewType ImageViewType, vk::Format Format,
                              std::uint32_t MipLevels, std::uint32_t ArrayLayers);
 
-        void CopyBlitGenerateTexture(const FVulkanCommandPool& CommandPool, vk::Buffer SrcBuffer, vk::Extent3D Extent,
-                                     std::uint32_t MipLevels, std::uint32_t ArrayLayers, vk::Filter Filter,
-                                     vk::Image DstImageSrcBlit, vk::Image DstImageDstBlit, const FVulkanFence* Fence);
+        FVulkanFence CopyBlitGenerateTexture(const FVulkanCommandPool& CommandPool, vk::Buffer SrcBuffer,
+                                             vk::Extent3D Extent, std::uint32_t MipLevels, std::uint32_t ArrayLayers,
+                                             vk::Filter Filter, vk::Image DstImageSrcBlit, vk::Image DstImageDstBlit);
 
-        void CopyBlitApplyTexture(const FVulkanCommandPool& CommandPool, vk::Buffer SrcBuffer, vk::Extent3D Extent,
-                                  std::uint32_t MipLevels, const std::vector<std::size_t>& LevelOffsets,
-                                  std::uint32_t ArrayLayers, vk::Filter Filter,
-                                  vk::Image DstImageSrcBlit, vk::Image DstImageDstBlit, const FVulkanFence* Fence);
+        FVulkanFence CopyBlitApplyTexture(const FVulkanCommandPool& CommandPool, vk::Buffer SrcBuffer, vk::Extent3D Extent,
+                                          std::uint32_t MipLevels, const std::vector<std::size_t>& LevelOffsets,
+                                          std::uint32_t ArrayLayers, vk::Filter Filter,
+                                          vk::Image DstImageSrcBlit, vk::Image DstImageDstBlit);
 
         void CopyBufferToImage(const FVulkanCommandBuffer& CommandBuffer, vk::Buffer SrcBuffer, vk::Image DstImage,
                                const FImageMemoryMaskPack& PostTransferState, const vk::ArrayProxy<const vk::BufferImageCopy2>& Regions);
@@ -100,8 +126,9 @@ namespace Npgs
 
         FTexture2D(FVulkanContext* VulkanContext, VmaAllocator Allocator,
                    const VmaAllocationCreateInfo& AllocationCreateInfo,
-                   std::string_view Filename, vk::Format InitialFormat, vk::Format FinalFormat,
-                   vk::ImageCreateFlags Flags = {}, bool bGenerateMipmaps = true);
+                   std::string_view Filename, vk::ImageCreateFlags Flags,
+                   vk::Format InitialFormat, vk::Format FinalFormat,
+                   bool bGenerateMipmaps, FUploadResult* UploadResult);
 
         FTexture2D(const FTexture2D&) = delete;
         FTexture2D(FTexture2D&& Other) noexcept;
@@ -115,11 +142,11 @@ namespace Npgs
         vk::Extent2D  GetImageExtent() const;
 
     private:
-        void CreateTexture(std::string_view Filename, vk::Format  InitialFormat,
-                           vk::Format FinalFormat, vk::ImageCreateFlags Flags, bool bGenreteMipmaps);
+        FUploadResult CreateTexture(std::string_view Filename, vk::ImageCreateFlags Flags,
+                                    vk::Format  InitialFormat, vk::Format FinalFormat, bool bGenreteMipmaps);
 
-        void CreateTexture(const FImageData& ImageData, vk::Format InitialFormat,
-                           vk::Format FinalFormat, vk::ImageCreateFlags Flags, bool bGenerateMipmaps);
+        FUploadResult CreateTexture(const FImageData& ImageData, vk::ImageCreateFlags Flags,
+                                    vk::Format InitialFormat, vk::Format FinalFormat, bool bGenerateMipmaps);
 
     private:
         vk::Extent2D ImageExtent_;
@@ -133,8 +160,9 @@ namespace Npgs
 
         FTextureCube(FVulkanContext* VulkanContext, VmaAllocator Allocator,
                      const VmaAllocationCreateInfo& AllocationCreateInfo,
-                     std::string_view Filename, vk::Format InitialFormat, vk::Format FinalFormat,
-                     vk::ImageCreateFlags Flags = {}, bool bGenerateMipmaps = true);
+                     std::string_view Filename, vk::ImageCreateFlags Flags,
+                     vk::Format InitialFormat, vk::Format FinalFormat,
+                     bool bGenerateMipmaps, FUploadResult* UploadResult);
 
         FTextureCube(const FTextureCube&) = delete;
         FTextureCube(FTextureCube&& Other) noexcept;
@@ -148,14 +176,14 @@ namespace Npgs
         vk::Extent2D  GetImageExtent() const;
 
     private:
-        void CreateCubemap(std::string_view Filename, vk::Format InitialFormat, vk::Format FinalFormat,
-                           vk::ImageCreateFlags Flags, bool bGenerateMipmaps);
+        FUploadResult CreateCubemap(std::string_view Filename, vk::ImageCreateFlags Flags,
+                                    vk::Format InitialFormat, vk::Format FinalFormat, bool bGenerateMipmaps);
 
-        void CreateCubemap(const std::array<std::string, 6>& Filenames, vk::Format InitialFormat, vk::Format FinalFormat,
-                           vk::ImageCreateFlags Flags, bool bGenerateMipmaps);
+        FUploadResult CreateCubemap(const std::array<std::string, 6>& Filenames, vk::ImageCreateFlags Flags,
+                                    vk::Format InitialFormat, vk::Format FinalFormat, bool bGenerateMipmaps);
 
-        void CreateCubemap(const FImageData& ImageData, vk::Format InitialFormat, vk::Format FinalFormat,
-                           vk::ImageCreateFlags Flags, bool bGenerateMipmaps);
+        FUploadResult CreateCubemap(const FImageData& ImageData, vk::ImageCreateFlags Flags,
+                                    vk::Format InitialFormat, vk::Format FinalFormat, bool bGenerateMipmaps);
 
     private:
         vk::Extent2D ImageExtent_;
