@@ -8,7 +8,7 @@
 namespace Npgs
 {
     template <typename Ty>
-    std::vector<Ty> Npgs::FFileLoader::StripData()
+    std::vector<Ty> FFileLoader::StripData()
     {
         auto DataSpan = GetDataAs<Ty>();
         std::vector<Ty> Data(DataSpan.begin(), DataSpan.end());

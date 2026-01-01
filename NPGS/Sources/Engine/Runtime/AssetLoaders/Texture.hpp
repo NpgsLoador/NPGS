@@ -47,7 +47,9 @@ namespace Npgs
         private:
             friend class FTexture;
 
-            FUploadResult(FVulkanFence&& UploadFence, FCommandPoolPool::FPoolGuard&& CommandPool, FStagingBufferPool::FBufferGuard&& StagingBuffer);
+            FUploadResult(FVulkanFence&& UploadFence,
+                          FCommandPoolPool::FPoolGuard&& CommandPool,
+                          FStagingBufferPool::FBufferGuard&& StagingBuffer);
 
         private:
             FVulkanFence                     UploadFence_;
@@ -94,8 +96,9 @@ namespace Npgs
                                              vk::Extent3D Extent, std::uint32_t MipLevels, std::uint32_t ArrayLayers,
                                              vk::Filter Filter, vk::Image DstImageSrcBlit, vk::Image DstImageDstBlit);
 
-        FVulkanFence CopyBlitApplyTexture(const FVulkanCommandPool& CommandPool, vk::Buffer SrcBuffer, vk::Extent3D Extent,
-                                          std::uint32_t MipLevels, const std::vector<std::size_t>& LevelOffsets,
+        FVulkanFence CopyBlitApplyTexture(const FVulkanCommandPool& CommandPool, vk::Buffer SrcBuffer,
+                                          vk::Extent3D Extent, std::uint32_t MipLevels,
+                                          const std::vector<std::size_t>& LevelOffsets,
                                           std::uint32_t ArrayLayers, vk::Filter Filter,
                                           vk::Image DstImageSrcBlit, vk::Image DstImageDstBlit);
 

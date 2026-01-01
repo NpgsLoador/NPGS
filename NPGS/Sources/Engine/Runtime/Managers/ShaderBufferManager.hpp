@@ -17,7 +17,6 @@
 #include "Engine/Runtime/AssetLoaders/Shader.hpp"
 #include "Engine/Runtime/Graphics/Resources/DeviceLocalBuffer.hpp"
 #include "Engine/Runtime/Graphics/Vulkan/Context.hpp"
-#include "Engine/Runtime/Graphics/Vulkan/Wrappers.hpp"
 
 namespace Npgs
 {

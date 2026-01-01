@@ -800,8 +800,9 @@ namespace Npgs
         return Fence;
     }
 
-    FVulkanFence FTexture::CopyBlitApplyTexture(const FVulkanCommandPool& CommandPool, vk::Buffer SrcBuffer, vk::Extent3D Extent,
-                                                std::uint32_t MipLevels, const std::vector<std::size_t>& LevelOffsets,
+    FVulkanFence FTexture::CopyBlitApplyTexture(const FVulkanCommandPool& CommandPool, vk::Buffer SrcBuffer,
+                                                vk::Extent3D Extent, std::uint32_t MipLevels,
+                                                const std::vector<std::size_t>& LevelOffsets,
                                                 std::uint32_t ArrayLayers, vk::Filter Filter,
                                                 vk::Image DstImageSrcBlit, vk::Image DstImageDstBlit)
     {

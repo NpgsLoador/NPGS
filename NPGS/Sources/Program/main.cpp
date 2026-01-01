@@ -5,6 +5,8 @@
 using namespace Npgs;
 using namespace Npgs::Utils;
 
+void Declare();
+
 int main()
 {
     FLogger::Initialize();
@@ -17,6 +19,12 @@ int main()
     
     return 0;
 }
+
+void Declare()
+{
+    return;
+}
+
 #pragma warning(disable : 4251)
 
 #define NPGS_ENABLE_CONSOLE_LOGGER
