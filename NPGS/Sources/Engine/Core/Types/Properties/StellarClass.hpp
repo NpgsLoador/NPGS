@@ -130,7 +130,7 @@ namespace Npgs::Astro
     class FStellarClass
     {
     public:
-        FStellarClass();
+        FStellarClass() = default;
         FStellarClass(EStellarType StellarType, const FSpectralType& SpectralType);
 
         FSpectralType Data() const;
@@ -183,7 +183,7 @@ namespace Npgs::Astro
 
     private:
         std::uint64_t SpectralType_{};
-        EStellarType  StellarType_;
+        EStellarType  StellarType_{ EStellarType::kNormalStar };
     };
 } // namespace Npgs::Astro
 

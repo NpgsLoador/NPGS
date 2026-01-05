@@ -13,11 +13,6 @@ namespace Npgs::Astro
 {
     // FStellarClass implementations
     // -----------------------------
-    FStellarClass::FStellarClass()
-        : StellarType_(EStellarType::kNormalStar)
-    {
-    }
-
     FStellarClass::FStellarClass(EStellarType StellarType, const FSpectralType& SpectralType)
         : StellarType_(StellarType)
     {

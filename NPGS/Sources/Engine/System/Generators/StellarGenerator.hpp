@@ -3,7 +3,6 @@
 #include <cstddef>
 #include <cstdint>
 #include <array>
-#include <expected>
 #include <functional>
 #include <limits>
 #include <memory>
@@ -158,21 +157,15 @@ namespace Npgs
         float GenerateAge(float MaxPdf);
         float GenerateMass(float MaxPdf, auto& LogMassPdf);
         
-        std::expected<FDataArray, Astro::AStar>
-        GetFullMistData(const FStellarBasicProperties& Properties, bool bIsWhiteDwarf, bool bIsSingleWhiteDwarf);
-        
-        std::expected<FDataArray, Astro::AStar>
-        InterpolateMistData(const std::pair<std::string, std::string>& Files, double TargetAge, double TargetMassSol, double MassCoefficient);
-        
+        FDataArray GetFullMistData(const FStellarBasicProperties& Properties, bool bIsWhiteDwarf, bool bIsSingleWhiteDwarf);
+        FDataArray InterpolateMistData(const std::pair<std::string, std::string>& Files, double TargetAge, double TargetMassSol, double MassCoefficient);
         std::vector<FDataArray> FindPhaseChanges(const FMistData* DataSheet);
-
-        std::expected<double, Astro::AStar>
-        CalculateEvolutionProgress(std::pair<std::vector<FDataArray>, std::vector<FDataArray>>& PhaseChanges, double TargetAge, double MassCoefficient);
+        double CalculateEvolutionProgress(std::pair<std::vector<FDataArray>, std::vector<FDataArray>>& PhaseChanges, double TargetAge, double MassCoefficient);
 
         std::pair<double, std::pair<double, double>>
         FindSurroundingTimePoints(const std::vector<FDataArray>& PhaseChanges, double TargetAge);
 
-        std::expected<std::pair<double, std::size_t>, Astro::AStar>
+        std::pair<double, std::size_t>
         FindSurroundingTimePoints(const std::pair<std::vector<FDataArray>, std::vector<FDataArray>>& PhaseChanges, double TargetAge, double MassCoefficient);
 
         void AlignArrays(std::pair<std::vector<FDataArray>, std::vector<FDataArray>>& Arrays);
