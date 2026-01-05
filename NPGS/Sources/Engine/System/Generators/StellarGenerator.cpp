@@ -1086,7 +1086,7 @@ namespace Npgs
             if (PhaseChanges.first.size() == PhaseChanges.second.size() &&
                 (*std::prev(PhaseChanges.first.end(), 2))[kPhaseIndex_] == (*std::prev(PhaseChanges.second.end(), 2))[kPhaseIndex_])
             {
-                const auto& TimePointResults = FindSurroundingTimePoints(PhaseChanges, TargetAge, MassCoefficient);
+                auto TimePointResults = FindSurroundingTimePoints(PhaseChanges, TargetAge, MassCoefficient);
 
                 Phase = TimePointResults.first;
                 std::size_t Index = TimePointResults.second;
