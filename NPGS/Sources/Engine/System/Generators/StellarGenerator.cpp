@@ -1440,18 +1440,16 @@ namespace Npgs
         float SurfaceZ       = StarData.GetSurfaceZ();
         float MinSurfaceH1   = Astro::AStar::kFeHSurfaceH1Map_.at(FeH) - 0.01f;
 
-        auto CalculateWNxhMassThreshold = [](float FeH) -> float
+        auto CalculateMassThreshold = [](float FeH, float BaseMass, float Exponent, float MinMassSol) -> float
         {
-            float BaseMass = 60.0f;
-            float Exponent = -0.31f;
-
             float FeHRatio  = std::pow(10.0f, FeH);
             float Threshold = BaseMass * std::pow(FeHRatio, Exponent);
 
-            return std::clamp(Threshold, 45.0f, 300.0f);
+            return std::clamp(Threshold, MinMassSol, 300.0f);
         };
 
-		float WNxhMassThreshold = CalculateWNxhMassThreshold(FeH);
+        float WNxhLowerMassThreshold = CalculateMassThreshold(FeH, 60.0f,  -0.31f, 45.0f);
+        float WCUpperMassThreshold   = CalculateMassThreshold(FeH, 140.0f, -0.56f, 75.0f);
 
         auto CalculateSpectralSubclass = [&](this auto&& Self, Astro::AStar::EEvolutionPhase BasePhase) -> void
         {
@@ -1463,7 +1461,7 @@ namespace Npgs
                 {
                     // 如果表面氢质量分数低于 0.4 且还是主序星阶段，或初始质量超过 WNxh 门槛，转为 WR 星
                     // 该情况只有 O 型星会出现
-                    if (SurfaceH1 < 0.4f || InitialMassSol > WNxhMassThreshold)
+                    if (SurfaceH1 < 0.4f || InitialMassSol > WNxhLowerMassThreshold)
                     {
                         EvolutionPhase = Astro::AStar::EEvolutionPhase::kWolfRayet;
                         StarData.SetEvolutionPhase(EvolutionPhase);
@@ -1498,7 +1496,7 @@ namespace Npgs
                 }
                 else if (SurfaceZ <= 0.6f)
                 {
-                    if (InitialMassSol <= 140)
+                    if (InitialMassSol <= WCUpperMassThreshold)
                     {
                         SpectralSubclassMap  = Astro::AStar::kSpectralSubclassMap_WC_;
                         SpectralClass        = std::to_underlying(Astro::ESpectralClass::kSpectral_WC);
@@ -1583,7 +1581,7 @@ namespace Npgs
                 else
                 {
                     // 前主序恒星温度达不到 O2 上限
-                    if (InitialMassSol <= WNxhMassThreshold)
+                    if (InitialMassSol <= WNxhLowerMassThreshold)
                     {
                         if (SurfaceH1 > MinSurfaceH1)
                         {
