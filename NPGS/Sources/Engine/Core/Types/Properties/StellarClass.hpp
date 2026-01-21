@@ -125,6 +125,10 @@ namespace Npgs::Astro
         FSpecialMarkDigital SpecialMark;
         float               Subclass{};
         float               AmSubclass{};
+
+        void MarkSpecial(ESpecialMark Mark);
+        void UnmarkSpecial(ESpecialMark Mark);
+        bool SpecialMarked(ESpecialMark Mark) const;
     };
 
     class FStellarClass

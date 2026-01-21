@@ -1450,6 +1450,7 @@ namespace Npgs
 
         float WNxhLowerMassThreshold = CalculateMassThreshold(FeH, 60.0f,  -0.31f, 45.0f);
         float WCUpperMassThreshold   = CalculateMassThreshold(FeH, 140.0f, -0.56f, 75.0f);
+        float OfLowerMassThreshold   = CalculateMassThreshold(FeH, 44.0f,  -0.45f, 45.0f);
 
         auto CalculateSpectralSubclass = [&](this auto&& Self, Astro::AStar::EEvolutionPhase BasePhase) -> void
         {
@@ -1483,34 +1484,34 @@ namespace Npgs
             }
             else
             {
-                if (SurfaceZ <= 0.05)
+                if (SurfaceZ <= 0.05f)
                 {
-                    SpectralSubclassMap      = Astro::AStar::kSpectralSubclassMap_WNxh_;
-                    SpectralClass            = std::to_underlying(Astro::ESpectralClass::kSpectral_WN);
-                    SpectralType.SpecialMark = std::to_underlying(Astro::ESpecialMark::kCode_h);
+                    SpectralSubclassMap     = Astro::AStar::kSpectralSubclassMap_WNxh_;
+                    SpectralClass           = std::to_underlying(Astro::ESpectralClass::kSpectral_WN);
+                    SpectralType.MarkSpecial(Astro::ESpecialMark::kCode_h);
                 }
                 else if (SurfaceZ <= 0.1f)
                 {
-                    SpectralSubclassMap      = Astro::AStar::kSpectralSubclassMap_WN_;
-                    SpectralClass            = std::to_underlying(Astro::ESpectralClass::kSpectral_WN);
+                    SpectralSubclassMap     = Astro::AStar::kSpectralSubclassMap_WN_;
+                    SpectralClass           = std::to_underlying(Astro::ESpectralClass::kSpectral_WN);
                 }
                 else if (SurfaceZ <= 0.6f)
                 {
                     if (InitialMassSol <= WCUpperMassThreshold)
                     {
-                        SpectralSubclassMap  = Astro::AStar::kSpectralSubclassMap_WC_;
-                        SpectralClass        = std::to_underlying(Astro::ESpectralClass::kSpectral_WC);
+                        SpectralSubclassMap = Astro::AStar::kSpectralSubclassMap_WC_;
+                        SpectralClass       = std::to_underlying(Astro::ESpectralClass::kSpectral_WC);
                     }
                     else
                     {
-                        SpectralSubclassMap  = Astro::AStar::kSpectralSubclassMap_WN_;
-                        SpectralClass        = std::to_underlying(Astro::ESpectralClass::kSpectral_WN);
+                        SpectralSubclassMap = Astro::AStar::kSpectralSubclassMap_WN_;
+                        SpectralClass       = std::to_underlying(Astro::ESpectralClass::kSpectral_WN);
                     }
                 }
                 else
                 {
-                    SpectralSubclassMap      = Astro::AStar::kSpectralSubclassMap_WO_;
-                    SpectralClass            = std::to_underlying(Astro::ESpectralClass::kSpectral_WO);
+                    SpectralSubclassMap     = Astro::AStar::kSpectralSubclassMap_WO_;
+                    SpectralClass           = std::to_underlying(Astro::ESpectralClass::kSpectral_WO);
                 }
             }
 
@@ -1589,7 +1590,7 @@ namespace Npgs
                             SpectralType.Subclass        = 2.0f;
                             SpectralType.LuminosityClass = Astro::ELuminosityClass::kLuminosity_V;
                         }
-                        else if (SurfaceH1 > 0.5f)
+                        else if (SurfaceH1 > 0.4f)
                         {
                             SpectralType.HSpectralClass  = Astro::ESpectralClass::kSpectral_O;
                             SpectralType.Subclass        = 2.0f;
@@ -2246,7 +2247,7 @@ namespace Npgs
                     if (ProbabilityGenerator(RandomEngine_))
                     {
                         MagneticGenerator = &MagneticGenerators_[3];
-                        SpectralType.SpecialMark |= std::to_underlying(Astro::ESpecialMark::kCode_p);
+                        SpectralType.MarkSpecial(Astro::ESpecialMark::kCode_p);
                         StarData.SetStellarClass(Astro::FStellarClass(Astro::EStellarType::kNormalStar, SpectralType));
                     }
                     else
@@ -2312,7 +2313,7 @@ namespace Npgs
         case Astro::EStellarType::kNormalStar:
         {
             float Base = 1.0f + CommonGenerator_(RandomEngine_);
-            if (StarData.GetStellarClass().Data().SpecialMark & std::to_underlying(Astro::ESpecialMark::kCode_p))
+            if (StarData.GetStellarClass().Data().SpecialMarked(Astro::ESpecialMark::kCode_p))
             {
                 Base *= 10;
             }
