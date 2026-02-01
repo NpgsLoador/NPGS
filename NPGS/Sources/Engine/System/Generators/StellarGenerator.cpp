@@ -109,7 +109,7 @@ namespace Npgs
             Math::TUniformRealDistribution<>(std::log10(500.0f),  std::log10(3000.0f)),  // 500-3000G, 极低质量 M 型星
             Math::TUniformRealDistribution<>(std::log10(10.0f),   std::log10(1000.0f)),  // 10-1000G, 晚期 K/M 型星
             Math::TUniformRealDistribution<>(std::log10(1.0f),    std::log10(10.0f)),    // 1-10G, 太阳类恒星
-            Math::TUniformRealDistribution<>(std::log10(1000.0f), std::log10(10000.0f)), // 1000-10000G, 磁场特殊星（Ap/Bp/Op）
+            Math::TUniformRealDistribution<>(std::log10(300.0f),  std::log10(10000.0f)), // 300-10000G, 磁场特殊星（Ap/Bp/Op）
             Math::TUniformRealDistribution<>(std::log10(0.1f),    std::log10(1.0f)),     // 0.1-1G, 普通大质量恒星（A/B/O）
             Math::TUniformRealDistribution<>(std::log10(1e4f),    std::log10(3e4f)),     // 10kG-30kG, 超级 Op（原神怎么你了）
             Math::TUniformRealDistribution<>(std::log10(1e3f),    std::log10(1e5f)),     // 白矮星，不包括磁白矮星
