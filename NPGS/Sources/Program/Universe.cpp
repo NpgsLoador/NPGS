@@ -119,7 +119,7 @@ namespace Npgs
 
         auto FormatTitle = []() -> std::string
         {
-            return std::format("{:>6} {:>6} {:>8} {:>8} {:7} {:>5} {:>13} {:>8} {:>8} {:>11} {:>8} {:>9} {:>5} {:>15} {:>9} {:>8}",
+            return std::format("{:>6} {:>6} {:>8} {:>8} {:10} {:>5} {:>13} {:>8} {:>8} {:>11} {:>8} {:>9} {:>5} {:>15} {:>9} {:>8}",
                                "InMass", "Mass", "Radius", "Age", "Class", "FeH", "Lum", "Teff", "CoreTemp", "CoreDensity", "Mdot", "WindSpeed", "Phase", "Magnetic", "Lifetime", "Oblateness");
         };
 
@@ -131,7 +131,7 @@ namespace Npgs
             }
 
             return std::format(
-                "{:6.2f} {:6.2f} {:8.2f} {:8.2E} {:7} {:5.2f} {:13.4f} {:8.1f} {:8.2E} {:11.2E} {:8.2E} {:9} {:5} {:15.5f} {:9.2E} {:8.2f}",
+                "{:6.2f} {:6.2f} {:8.2f} {:8.2E} {:10} {:5.2f} {:13.4f} {:8.1f} {:8.2E} {:11.2E} {:8.2E} {:9} {:5} {:15.5f} {:9.2E} {:8.2f}",
                 Star->GetInitialMass() / kSolarMass,
                 Star->GetMass() / kSolarMass,
                 Star->GetRadius() / kSolarRadius,

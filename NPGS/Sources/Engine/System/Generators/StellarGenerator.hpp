@@ -154,8 +154,6 @@ namespace Npgs
         static constexpr int kExtremeOpStarIndex_     = 5;
         static constexpr int kWhiteDwarfIndex_        = 6;
         static constexpr int kNeutronStarIndex_       = 7;
-        static constexpr int kMagneticWdIndex_        = 8;
-        static constexpr int kMagnetarIndex_          = 9;
 
         static constexpr int kXpStarIndex_            = 0;
         static constexpr int kOpStarIndex_            = 1;
@@ -213,7 +211,7 @@ namespace Npgs
         float GenerateAge(float MaxPdf);
         float GenerateMass(float MaxPdf, auto& LogMassPdf);
         Astro::AStar GenerateStarInternal(const FStellarBasicProperties& Properties, Astro::AStar* ZamsStarData);
-        void ApplyFromZams(Astro::AStar& StarData, const Astro::AStar& ZamsStarData);
+        void ApplyFromZamsStar(Astro::AStar& StarData, const Astro::AStar& ZamsStarData);
         FDataArray GetFullMistData(const FStellarBasicProperties& Properties, bool bIsWhiteDwarf, bool bIsSingleWhiteDwarf) const;
         FDataFileTables GetDataTables(float MassSol, float FeH, bool bIsWhiteDwarf, bool bIsSingleWhiteDwarf) const;
         float GetClosestFeH(float FeH) const;
@@ -276,7 +274,7 @@ namespace Npgs
 
     private:
         std::mt19937                                          RandomEngine_;
-        std::array<Math::TUniformRealDistribution<>,      10> MagneticGenerators_;
+        std::array<Math::TUniformRealDistribution<>,       8> MagneticGenerators_;
         std::array<std::unique_ptr<Math::TDistribution<>>, 4> FeHGenerators_;
         std::array<std::unique_ptr<Math::TDistribution<>>, 5> SpinGenerators_;
         std::array<Math::TBernoulliDistribution<>,         2> XpStarProbabilityGenerators_;

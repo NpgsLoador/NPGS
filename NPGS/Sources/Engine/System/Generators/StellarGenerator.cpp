@@ -113,9 +113,7 @@ namespace Npgs
             Math::TUniformRealDistribution<>(std::log10(0.1f),    std::log10(1.0f)),     // 0.1-1G, 普通大质量恒星（A/B/O）
             Math::TUniformRealDistribution<>(std::log10(1e4f),    std::log10(3e4f)),     // 10kG-30kG, 超级 Op（原神怎么你了）
             Math::TUniformRealDistribution<>(std::log10(1e3f),    std::log10(1e5f)),     // 白矮星，不包括磁白矮星
-            Math::TUniformRealDistribution<>(1e9f, 1e12f),                               // 中子星，不包括磁星。并且是线性分布
-            Math::TUniformRealDistribution<>(std::log10(1e6f),    std::log10(1e9f)),     // 磁白矮星，1e6-1e9G
-            Math::TUniformRealDistribution<>(std::log10(1e13f),   std::log10(1e15f))     // 磁星，1e9-1e11T
+            Math::TUniformRealDistribution<>(1e9f, 1e12f)                                // 中子星，不包括磁星。并且是线性分布
         },
 
         FeHGenerators_
@@ -739,15 +737,20 @@ namespace Npgs
         auto Star = MakeNormalStar(StarData, Properties);
         CalculateSpectralType(Star);
         CalculateMinCoilMass(Star);
-        ApplyFromZams(Star, *ZamsStar);
+        ApplyFromZamsStar(Star, *ZamsStar);
 
         return Star;
     }
 
-    void FStellarGenerator::ApplyFromZams(Astro::AStar& StarData, const Astro::AStar& ZamsStarData)
+    void FStellarGenerator::ApplyFromZamsStar(Astro::AStar& StarData, const Astro::AStar& ZamsStarData)
     {
         StarData.SetMagneticField(ZamsStarData.GetMagneticField());
         CalculateCurrentSpinAndOblateness(StarData, ZamsStarData);
+
+        if (ZamsStarData.GetStellarClass().Data().SpecialMarked(Astro::ESpecialMark::kCode_p))
+        {
+            StarData.ModifyStellarClass(Astro::ESpecialMark::kCode_p, true);
+        }
     }
 
     FStellarGenerator::FDataArray
@@ -1504,7 +1507,6 @@ namespace Npgs
         Astro::FSpectralType SpectralType;
         SpectralType.bIsAmStar = false;
 
-        std::vector<std::pair<int, int>> SpectralSubclassMap;
         float InitialMassSol = StarData.GetInitialMass() / kSolarMass;
         float Subclass       = 0.0f;
         float SurfaceH1      = StarData.GetSurfaceH1();
@@ -1519,12 +1521,13 @@ namespace Npgs
             return std::clamp(Threshold, MinMassSol, 300.0f);
         };
 
-        float WNxhLowerMassThreshold = CalculateMassThreshold(FeH, 60.0f,  -0.31f, 45.0f);
+        float WNxhLowerMassThreshold = CalculateMassThreshold(FeH, 120.0f,  -0.31f, 80.0f);
 
         // 使用温度匹配亚型，因为计算谱线需要外挂数据库且非常麻烦
         auto CalculateSpectralSubclass = [&](this auto&& Self, Astro::AStar::EEvolutionPhase BasePhase) -> void
         {
             std::uint32_t SpectralClass = BasePhase == Astro::AStar::EEvolutionPhase::kWolfRayet ? 11 : 0;
+            const std::vector<std::pair<int, float>>* SpectralSubclassMap = nullptr;
 
             if (BasePhase != Astro::AStar::EEvolutionPhase::kWolfRayet)
             {
@@ -1546,7 +1549,7 @@ namespace Npgs
                     ++SpectralClass;
                     if (it->first >= Teff && (it + 1)->first < Teff)
                     {
-                        SpectralSubclassMap = it->second;
+                        SpectralSubclassMap = &it->second;
                         break;
                     }
                 }
@@ -1562,44 +1565,45 @@ namespace Npgs
             {
                 if (SurfaceZ <= 0.05f && SurfaceH1 >= 0.05f)
                 {
-                    SpectralSubclassMap = Astro::AStar::kSpectralSubclassMap_WNxh_;
+                    SpectralSubclassMap = &Astro::AStar::kSpectralSubclassMap_WNxh_;
                     SpectralClass = std::to_underlying(Astro::ESpectralClass::kSpectral_WN);
                     SpectralType.MarkSpecial(Astro::ESpecialMark::kCode_h);
                 }
                 else if (SurfaceZ <= 0.1f)
                 {
-                    SpectralSubclassMap = Astro::AStar::kSpectralSubclassMap_WN_;
+                    SpectralSubclassMap = &Astro::AStar::kSpectralSubclassMap_WN_;
                     SpectralClass = std::to_underlying(Astro::ESpectralClass::kSpectral_WN);
                 }
                 else if (SurfaceZ <= 0.6f)
                 {
-                    SpectralSubclassMap = Astro::AStar::kSpectralSubclassMap_WC_;
+                    SpectralSubclassMap = &Astro::AStar::kSpectralSubclassMap_WC_;
                     SpectralClass = std::to_underlying(Astro::ESpectralClass::kSpectral_WC);
                 }
                 else
                 {
-                    SpectralSubclassMap = Astro::AStar::kSpectralSubclassMap_WO_;
+                    SpectralSubclassMap = &Astro::AStar::kSpectralSubclassMap_WO_;
                     SpectralClass = std::to_underlying(Astro::ESpectralClass::kSpectral_WO);
                 }
             }
 
             SpectralType.HSpectralClass = static_cast<Astro::ESpectralClass>(SpectralClass);
 
-            if (SpectralSubclassMap.empty())
+            if (SpectralSubclassMap == nullptr)
             {
                 NpgsCoreError("Failed to find match subclass map of Age={}, FeH={}, Mass={}, Teff={}",
                               StarData.GetAge(), StarData.GetFeH(), StarData.GetMass() / kSolarMass, StarData.GetTeff());
+                throw std::logic_error("Spectral subclass map is null.");
             }
 
-            Subclass = static_cast<float>(SpectralSubclassMap.front().second);
+            Subclass = SpectralSubclassMap->front().second;
             float MinGap = std::numeric_limits<float>::max();
-            for (const auto& [StandardTeff, StandardSubclass] : SpectralSubclassMap)
+            for (const auto& [StandardTeff, StandardSubclass] : *SpectralSubclassMap)
             {
                 float Gap = std::abs(Teff - StandardTeff);
                 if (Gap < MinGap)
                 {
                     MinGap   = Gap;
-                    Subclass = static_cast<float>(StandardSubclass);
+                    Subclass = StandardSubclass;
                 }
             }
 
@@ -1751,20 +1755,13 @@ namespace Npgs
 
         auto BaseClass = CalculateLuminosityClassFromSurfaceGravity(Teff, LogG);
 
-        if (Teff >= 43900 && BaseClass == Astro::ELuminosityClass::kLuminosity_IV)
+        if (Teff >= 43900 && BaseClass == Astro::ELuminosityClass::kLuminosity_IV) // 温度高于 O4 不定义 IV
         {
-            BaseClass = Astro::ELuminosityClass::kLuminosity_III;
+            BaseClass = LogG <= 3.9f ? Astro::ELuminosityClass::kLuminosity_III : Astro::ELuminosityClass::kLuminosity_V;
         }
-        else if (Teff >= 40450)
+        else if (Teff >= 40000 && BaseClass <= Astro::ELuminosityClass::kLuminosity_II) // 温度高于 O6 不定义 Ia/Iab/Ib/II
         {
-            if (BaseClass < Astro::ELuminosityClass::kLuminosity_I) // merge Ia/Iab/Ib
-            {
-                BaseClass = Astro::ELuminosityClass::kLuminosity_I;
-            }
-            else if (BaseClass == Astro::ELuminosityClass::kLuminosity_II)
-            {
-                BaseClass = Astro::ELuminosityClass::kLuminosity_I;
-            }
+            BaseClass = LogG <= 3.8f ? Astro::ELuminosityClass::kLuminosity_I : Astro::ELuminosityClass::kLuminosity_III;
         }
 
         if (BaseClass == Astro::ELuminosityClass::kLuminosity_Ia)
@@ -2138,6 +2135,8 @@ namespace Npgs
                             .Subclass        = 0.0f,
                             .AmSubclass      = 0.0f
                         };
+
+                        DeathStarMassSol = HeliumCoreMassSol;
                     }
                 }
                 else

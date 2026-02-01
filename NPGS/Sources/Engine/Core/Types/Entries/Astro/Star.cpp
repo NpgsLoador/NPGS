@@ -9,182 +9,211 @@ namespace Npgs::Astro
     {
     }
 
-    const std::vector<std::pair<int, int>> AStar::kSpectralSubclassMap_O_
+    const std::vector<std::pair<int, float>> AStar::kSpectralSubclassMap_O_
     {
-        { 54000, 2 },
-        { 44900, 3 },
-        { 42900, 4 },
-        { 41400, 5 },
-        { 39500, 6 },
-        { 38500, 7 },
-        { 35100, 8 },
-        { 33300, 9 }
+        { 54000, 2.0f },
+        { 44900, 3.0f },
+        { 42900, 4.0f },
+        { 41400, 5.0f },
+        { 40500, 5.5f },
+        { 39500, 6.0f },
+        { 38300, 6.5f },
+        { 38500, 7.0f },
+        { 36100, 7.5f },
+        { 35100, 8.0f },
+        { 34300, 8.5f },
+        { 33300, 9.0f },
+        { 32600, 9.2f },
+        { 31900, 9.5f },
+        { 31650, 9.7f }
     };
 
-    const std::vector<std::pair<int, int>> AStar::kSpectralSubclassMap_B_
+    const std::vector<std::pair<int, float>> AStar::kSpectralSubclassMap_B_
     {
-        { 31400, 0 },
-        { 26000, 1 },
-        { 20600, 2 },
-        { 17200, 3 },
-        { 16400, 4 },
-        { 15700, 5 },
-        { 14500, 6 },
-        { 14000, 7 },
-        { 12300, 8 },
-        { 10700, 9 }
+        { 31400, 0.0f },
+        { 29000, 0.5f },
+        { 26000, 1.0f },
+        { 24500, 1.5f },
+        { 20600, 2.0f },
+        { 18500, 2.5f },
+        { 17000, 3.0f },
+        { 16400, 4.0f },
+        { 15700, 5.0f },
+        { 14500, 6.0f },
+        { 14000, 7.0f },
+        { 12300, 8.0f },
+        { 10700, 9.0f },
+        { 10400, 9.5f }
     };
 
-    const std::vector<std::pair<int, int>> AStar::kSpectralSubclassMap_A_
+    const std::vector<std::pair<int, float>> AStar::kSpectralSubclassMap_A_
     {
-        { 9700,  0 },
-        { 9300,  1 },
-        { 8800,  2 },
-        { 8600,  3 },
-        { 8250,  4 },
-        { 8100,  5 },
-        { 7910,  6 },
-        { 7760,  7 },
-        { 7590,  8 },
-        { 7400,  9 }
+        { 9700,  0.0f },
+        { 9300,  1.0f },
+        { 8800,  2.0f },
+        { 8600,  3.0f },
+        { 8250,  4.0f },
+        { 8100,  5.0f },
+        { 7910,  6.0f },
+        { 7760,  7.0f },
+        { 7590,  8.0f },
+        { 7400,  9.0f }
     };
 
-    const std::vector<std::pair<int, int>> AStar::kSpectralSubclassMap_F_
+    const std::vector<std::pair<int, float>> AStar::kSpectralSubclassMap_F_
     {
-        { 7220,  0 },
-        { 7020,  1 },
-        { 6820,  2 },
-        { 6750,  3 },
-        { 6670,  4 },
-        { 6550,  5 },
-        { 6350,  6 },
-        { 6280,  7 },
-        { 6180,  8 },
-        { 6050,  9 }
+        { 7220,  0.0f },
+        { 7020,  1.0f },
+        { 6820,  2.0f },
+        { 6750,  3.0f },
+        { 6670,  4.0f },
+        { 6550,  5.0f },
+        { 6350,  6.0f },
+        { 6280,  7.0f },
+        { 6180,  8.0f },
+        { 6050,  9.0f },
+        { 5990,  9.5f },
     };
 
-    const std::vector<std::pair<int, int>> AStar::kSpectralSubclassMap_G_
+    const std::vector<std::pair<int, float>> AStar::kSpectralSubclassMap_G_
     {
-        { 5930,  0 },
-        { 5860,  1 },
-        { 5770,  2 },
-        { 5720,  3 },
-        { 5680,  4 },
-        { 5660,  5 },
-        { 5600,  6 },
-        { 5550,  7 },
-        { 5480,  8 },
-        { 5380,  9 }
+        { 5930,  0.0f },
+        { 5860,  1.0f },
+        { 5770,  2.0f },
+        { 5720,  3.0f },
+        { 5680,  4.0f },
+        { 5660,  5.0f },
+        { 5600,  6.0f },
+        { 5550,  7.0f },
+        { 5480,  8.0f },
+        { 5380,  9.0f }
     };
 
-    const std::vector<std::pair<int, int>> AStar::kSpectralSubclassMap_K_
+    const std::vector<std::pair<int, float>> AStar::kSpectralSubclassMap_K_
     {
-        { 5270,  0 },
-        { 5170,  1 },
-        { 5100,  2 },
-        { 4830,  3 },
-        { 4600,  4 },
-        { 4440,  5 },
-        { 4300,  6 },
-        { 4100,  7 },
-        { 3990,  8 },
-        { 3930,  9 }
+        { 5270,  0.0f },
+        { 5170,  1.0f },
+        { 5100,  2.0f },
+        { 4830,  3.0f },
+        { 4600,  4.0f },
+        { 4440,  5.0f },
+        { 4300,  6.0f },
+        { 4100,  7.0f },
+        { 3990,  8.0f },
+        { 3930,  9.0f }
     };
 
-    const std::vector<std::pair<int, int>> AStar::kSpectralSubclassMap_M_
+    const std::vector<std::pair<int, float>> AStar::kSpectralSubclassMap_M_
     {
-        { 3850,  0 },
-        { 3660,  1 },
-        { 3560,  2 },
-        { 3430,  3 },
-        { 3210,  4 },
-        { 3060,  5 },
-        { 2810,  6 },
-        { 2680,  7 },
-        { 2570,  8 },
-        { 2380,  9 }
+        { 3850,  0.0f },
+        { 3770,  0.5f },
+        { 3660,  1.0f },
+        { 3620,  1.5f },
+        { 3560,  2.0f },
+        { 3470,  2.5f },
+        { 3430,  3.0f },
+        { 3270,  3.5f },
+        { 3210,  4.0f },
+        { 3110,  4.5f },
+        { 3060,  5.0f },
+        { 2930,  5.5f },
+        { 2810,  6.0f },
+        { 2740,  6.5f },
+        { 2680,  7.0f },
+        { 2630,  7.5f },
+        { 2570,  8.0f },
+        { 2420,  8.5f },
+        { 2380,  9.0f },
+        { 2350,  9.5f }
     };
 
-    const std::vector<std::pair<int, int>> AStar::kSpectralSubclassMap_L_
+    const std::vector<std::pair<int, float>> AStar::kSpectralSubclassMap_L_
     {
-        { 2270,  0 },
-        { 2160,  1 },
-        { 2060,  2 },
-        { 1920,  3 },
-        { 1870,  4 },
-        { 1710,  5 },
-        { 1550,  6 },
-        { 1530,  7 },
-        { 1420,  8 },
-        { 1370,  9 }
+        { 2270,  0.0f },
+        { 2160,  1.0f },
+        { 2060,  2.0f },
+        { 1920,  3.0f },
+        { 1870,  4.0f },
+        { 1710,  5.0f },
+        { 1550,  6.0f },
+        { 1530,  7.0f },
+        { 1420,  8.0f },
+        { 1370,  9.0f }
     };
 
-    const std::vector<std::pair<int, int>> AStar::kSpectralSubclassMap_T_
+    const std::vector<std::pair<int, float>> AStar::kSpectralSubclassMap_T_
     {
-        { 1255,  0 },
-        { 1240,  1 },
-        { 1220,  2 },
-        { 1200,  3 },
-        { 1180,  4 },
-        { 1160,  5 },
-        { 950,   6 },
-        { 825,   7 },
-        { 680,   8 },
-        { 560,   9 }
+        { 1255,  0.0f },
+        { 1240,  1.0f },
+        { 1220,  2.0f },
+        { 1200,  3.0f },
+        { 1180,  4.0f },
+        { 1170,  4.5f },
+        { 1160,  5.0f },
+        { 1040,  5.5f },
+        { 950,   6.0f },
+        { 825,   7.0f },
+        { 750,   7.5f },
+        { 680,   8.0f },
+        { 600,   8.5f },
+        { 560,   9.0f },
+        { 510,   9.5f },
     };
 
-    const std::vector<std::pair<int, int>> AStar::kSpectralSubclassMap_Y_
+    const std::vector<std::pair<int, float>> AStar::kSpectralSubclassMap_Y_
     {
-        { 450,   0 },
-        { 360,   1 },
-        { 320,   2 },
-        { 250,   4 }
+        { 450,   0.0f },
+        { 400,   0.5f },
+        { 360,   1.0f },
+        { 325,   1.5f },
+        { 320,   2.0f },
+        { 250,   4.0f }
     };
 
-    const std::vector<std::pair<int, int>> AStar::kSpectralSubclassMap_WN_
+    const std::vector<std::pair<int, float>> AStar::kSpectralSubclassMap_WN_
     {
-        { 141000, 2 },
-        { 85000,  3 },
-        { 70000,  4 },
-        { 60000,  5 },
-        { 56000,  6 },
-        { 50000,  7 },
-        { 45000,  8 },
-        { 40000,  9 },
-        { 25000,  10 },
-        { 20000,  11 }
+        { 141000, 2.0f },
+        { 85000,  3.0f },
+        { 70000,  4.0f },
+        { 60000,  5.0f },
+        { 56000,  6.0f },
+        { 50000,  7.0f },
+        { 45000,  8.0f },
+        { 40000,  9.0f },
+        { 25000,  10.0f },
+        { 20000,  11.0f }
     };
 
-    const std::vector<std::pair<int, int>> AStar::kSpectralSubclassMap_WC_
+    const std::vector<std::pair<int, float>> AStar::kSpectralSubclassMap_WC_
     {
-        { 117000, 4 },
-        { 83000,  5 },
-        { 78000,  6 },
-        { 71000,  7 },
-        { 60000,  8 },
-        { 44000,  9 },
-        { 40000,  10 },
-        { 30000,  11 }
+        { 117000, 4.0f },
+        { 83000,  5.0f },
+        { 78000,  6.0f },
+        { 71000,  7.0f },
+        { 60000,  8.0f },
+        { 44000,  9.0f },
+        { 40000,  10.0f },
+        { 30000,  11.0f }
     };
 
-    const std::vector<std::pair<int, int>> AStar::kSpectralSubclassMap_WO_
+    const std::vector<std::pair<int, float>> AStar::kSpectralSubclassMap_WO_
     {
-        { 220000, 1 },
-        { 200000, 2 },
-        { 180000, 3 },
-        { 150000, 4 }
+        { 220000, 1.0f },
+        { 200000, 2.0f },
+        { 180000, 3.0f },
+        { 150000, 4.0f }
     };
 
-    const std::vector<std::pair<int, int>> AStar::kSpectralSubclassMap_WNxh_
+    const std::vector<std::pair<int, float>> AStar::kSpectralSubclassMap_WNxh_
     {
-        { 50000, 5 },
-        { 45000, 6 },
-        { 43000, 7 },
-        { 40000, 8 },
-        { 35000, 9 }
+        { 50000, 5.0f },
+        { 45000, 6.0f },
+        { 43000, 7.0f },
+        { 40000, 8.0f },
+        { 35000, 9.0f }
     };
 
-    const std::vector<std::pair<int, const std::vector<std::pair<int, int>>&>> AStar::kInitialCommonMap_
+    const std::vector<std::pair<int, const std::vector<std::pair<int, float>>&>> AStar::kInitialCommonMap_
     {
         { 54000,                                                                                             AStar::kSpectralSubclassMap_O_},
         { (AStar::kSpectralSubclassMap_O_.back().first + AStar::kSpectralSubclassMap_B_.front().first) / 2,  AStar::kSpectralSubclassMap_B_},
