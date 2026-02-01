@@ -51,6 +51,36 @@ namespace Npgs
     {
         return static_cast<EnumType>(std::to_underlying(Lhs) ^= std::to_underlying(Rhs));
     }
+
+    template <typename EnumType>
+    NPGS_INLINE constexpr bool operator<(EnumType Lhs, EnumType Rhs)
+    {
+        return std::to_underlying(Lhs) < std::to_underlying(Rhs);
+    }
+
+    template <typename EnumType>
+    NPGS_INLINE constexpr bool operator<=(EnumType Lhs, EnumType Rhs)
+    {
+        return std::to_underlying(Lhs) <= std::to_underlying(Rhs);
+    }
+
+    template <typename EnumType>
+    NPGS_INLINE constexpr bool operator>(EnumType Lhs, EnumType Rhs)
+    {
+        return std::to_underlying(Lhs) > std::to_underlying(Rhs);
+    }
+
+    template <typename EnumType>
+    NPGS_INLINE constexpr bool operator>=(EnumType Lhs, EnumType Rhs)
+    {
+        return std::to_underlying(Lhs) >= std::to_underlying(Rhs);
+    }
+
+    template <typename EnumType>
+    NPGS_INLINE constexpr auto operator<=>(EnumType Lhs, EnumType Rhs)
+    {
+        return std::to_underlying(Lhs) <=> std::to_underlying(Rhs);
+    }
 #endif // NPGS_ENABLE_ENUM_BIT_OPERATOR
 } // namespace Npgs
 
@@ -69,13 +99,5 @@ namespace Npgs::Utils
     NPGS_INLINE bool Equal(double Lhs, double Rhs)
     {
         return std::abs(Lhs - Rhs) <= std::numeric_limits<double>::epsilon();
-    }
-
-    NPGS_INLINE constexpr bool IsSpecialLayout(vk::ImageLayout Layout)
-    {
-        return Layout == vk::ImageLayout::eUndefined      ||
-               Layout == vk::ImageLayout::ePreinitialized ||
-               Layout == vk::ImageLayout::ePresentSrcKHR  ||
-               Layout == vk::ImageLayout::eSharedPresentKHR;
     }
 } // namespace Npgs::Utils

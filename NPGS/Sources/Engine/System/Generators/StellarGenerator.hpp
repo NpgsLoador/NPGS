@@ -89,7 +89,6 @@ namespace Npgs
     public:
         using FMistData   = TCommaSeparatedValues<double, 12>;
         using FWdMistData = TCommaSeparatedValues<double, 5>;
-        using FHrDiagram  = TCommaSeparatedValues<double, 7>;
         using FDataArray  = std::vector<double>;
 
     public:
@@ -127,69 +126,163 @@ namespace Npgs
         FStellarGenerator& SetStellarTypeGenerationOption(EStellarTypeGenerationOption Option);
 
     public:
-        static constexpr int kStarAgeIndex_        = 0;
-        static constexpr int kStarMassIndex_       = 1;
-        static constexpr int kStarMdotIndex_       = 2;
-        static constexpr int kLogTeffIndex_        = 3;
-        static constexpr int kLogRIndex_           = 4;
-        static constexpr int kLogSurfZIndex_       = 5;
-        static constexpr int kSurfaceH1Index_      = 6;
-        static constexpr int kSurfaceHe3Index_     = 7;
-        static constexpr int kLogCenterTIndex_     = 8;
-        static constexpr int kLogCenterRhoIndex_   = 9;
-        static constexpr int kPhaseIndex_          = 10;
-        static constexpr int kXIndex_              = 11;
-        static constexpr int kLifetimeIndex_       = 12;
+        static constexpr int kStarAgeIndex_           = 0;
+        static constexpr int kStarMassIndex_          = 1;
+        static constexpr int kStarMdotIndex_          = 2;
+        static constexpr int kLogTeffIndex_           = 3;
+        static constexpr int kLogRIndex_              = 4;
+        static constexpr int kLogSurfZIndex_          = 5;
+        static constexpr int kSurfaceH1Index_         = 6;
+        static constexpr int kSurfaceHe3Index_        = 7;
+        static constexpr int kLogCenterTIndex_        = 8;
+        static constexpr int kLogCenterRhoIndex_      = 9;
+        static constexpr int kPhaseIndex_             = 10;
+        static constexpr int kXIndex_                 = 11;
+        static constexpr int kLifetimeIndex_          = 12;
 
-        static constexpr int kWdStarAgeIndex_      = 0;
-        static constexpr int kWdLogRIndex_         = 1;
-        static constexpr int kWdLogTeffIndex_      = 2;
-        static constexpr int kWdLogCenterTIndex_   = 3;
-        static constexpr int kWdLogCenterRhoIndex_ = 4;
+        static constexpr int kWdStarAgeIndex_         = 0;
+        static constexpr int kWdLogRIndex_            = 1;
+        static constexpr int kWdLogTeffIndex_         = 2;
+        static constexpr int kWdLogCenterTIndex_      = 3;
+        static constexpr int kWdLogCenterRhoIndex_    = 4;
+
+        static constexpr int kLowMassMStarIndex_      = 0;
+        static constexpr int kLateKMStarIndex_        = 1;
+        static constexpr int kSolarLikeStarIndex_     = 2;
+        static constexpr int kCommonXpStarIndex_      = 3;
+        static constexpr int kNormalMassiveStarIndex_ = 4;
+        static constexpr int kExtremeOpStarIndex_     = 5;
+        static constexpr int kWhiteDwarfIndex_        = 6;
+        static constexpr int kNeutronStarIndex_       = 7;
+        static constexpr int kMagneticWdIndex_        = 8;
+        static constexpr int kMagnetarIndex_          = 9;
+
+        static constexpr int kXpStarIndex_            = 0;
+        static constexpr int kOpStarIndex_            = 1;
+
+        static constexpr int kFastMassiveStarIndex_   = 0;
+        static constexpr int kSlowMassiveStarIndex_   = 1;
+        static constexpr int kWhiteDwarfSpinIndex_    = 2;
+        static constexpr int kNeutronStarSpinIndex_   = 3;
+        static constexpr int kBlackHoleSpinIndex_     = 4;
+
+    private:
+        struct FDataFileTables
+        {
+            std::string LowerMassFilename;
+            std::string UpperMassFilename;
+            float LowerMass{};
+            float UpperMass{};
+        };
+
+        struct FSurroundingTimePoints
+        {
+            double Phase{};
+            double LowerTimePoint{};
+            double UpperTimePoint{};
+        };
+
+        struct FExactChangedTimePoints
+        {
+            double      Phase{};
+            std::size_t TableIndex{};
+        };
+
+        struct FPhysicalLuminosityLimit
+        {
+            float EddingtonLimit{};
+            float HdLimit{};
+        };
+
+        struct FRemainsBasicProperties
+        {
+            Astro::AStar::EEvolutionPhase EvolutionPhase{};
+            Astro::AStar::EStarFrom       DeathStarFrom{};
+            Astro::EStellarType           DeathStarType{};
+            Astro::FSpectralType          DeathStarClass;
+            float                         DeathStarMassSol{};
+        };
 
     private:
         template <typename CsvType>
         requires std::is_class_v<CsvType>
-        TAssetHandle<CsvType> LoadCsvAsset(const std::string& Filename, std::span<const std::string> Headers);
+        TAssetHandle<CsvType> LoadCsvAsset(const std::string& Filename, std::span<const std::string> Headers) const;
 
-        void InitializeMistData();
+        void InitializeMistData() const;
         void InitializePdfs();
         float GenerateAge(float MaxPdf);
         float GenerateMass(float MaxPdf, auto& LogMassPdf);
-        
-        FDataArray GetFullMistData(const FStellarBasicProperties& Properties, bool bIsWhiteDwarf, bool bIsSingleWhiteDwarf);
-        FDataArray InterpolateMistData(const std::pair<std::string, std::string>& Files, double TargetAge, double TargetMassSol, double MassCoefficient);
-        std::vector<FDataArray> FindPhaseChanges(const FMistData* DataSheet);
-        double CalculateEvolutionProgress(std::pair<std::vector<FDataArray>, std::vector<FDataArray>>& PhaseChanges, double TargetAge, double MassCoefficient);
+        Astro::AStar GenerateStarInternal(const FStellarBasicProperties& Properties, Astro::AStar* ZamsStarData);
+        void ApplyFromZams(Astro::AStar& StarData, const Astro::AStar& ZamsStarData);
+        FDataArray GetFullMistData(const FStellarBasicProperties& Properties, bool bIsWhiteDwarf, bool bIsSingleWhiteDwarf) const;
+        FDataFileTables GetDataTables(float MassSol, float FeH, bool bIsWhiteDwarf, bool bIsSingleWhiteDwarf) const;
+        float GetClosestFeH(float FeH) const;
 
-        std::pair<double, std::pair<double, double>>
-        FindSurroundingTimePoints(const std::vector<FDataArray>& PhaseChanges, double TargetAge);
+        FDataArray InterpolateMistData(const std::pair<std::string, std::string>& Files,
+                                       double TargetAge, double TargetMassSol, double MassCoefficient) const;
 
-        std::pair<double, std::size_t>
-        FindSurroundingTimePoints(const std::pair<std::vector<FDataArray>, std::vector<FDataArray>>& PhaseChanges, double TargetAge, double MassCoefficient);
+        std::vector<FDataArray> FindPhaseChanges(const FMistData* DataSheet) const;
 
-        void AlignArrays(std::pair<std::vector<FDataArray>, std::vector<FDataArray>>& Arrays);
-        FDataArray InterpolateHrDiagram(FHrDiagram* Data, double BvColorIndex);
-        FDataArray InterpolateStarData(FMistData* Data, double EvolutionProgress);
-        FDataArray InterpolateStarData(FWdMistData* Data, double TargetAge);
-        FDataArray InterpolateStarData(auto* Data, double Target, const std::string& Header, int Index, bool bIsWhiteDwarf);
-        FDataArray InterpolateArray(const std::pair<FDataArray, FDataArray>& DataArrays, double Coefficient);
-        FDataArray InterpolateFinalData(const std::pair<FDataArray, FDataArray>& DataArrays, double Coefficient, bool bIsWhiteDwarf);
+        double CalculateEvolutionProgress(std::pair<std::vector<FDataArray>, std::vector<FDataArray>>& PhaseChanges,
+                                          double TargetAge, double MassCoefficient) const;
 
-        void CalculateSpectralType(float FeH, Astro::AStar& StarData);
-        Astro::ELuminosityClass CalculateLuminosityClass(const Astro::AStar& StarData);
-        void ProcessDeathStar(EStellarTypeGenerationOption DeathStarTypeOption, Astro::AStar& DeathStar);
-        void GenerateMagnetic(Astro::AStar& StarData);
-        void GenerateSpin(Astro::AStar& StarData);
-        void ExpandMistData(double TargetMassSol, FDataArray& StarData);
+        FSurroundingTimePoints FindSurroundingTimePoints(const std::vector<FDataArray>& PhaseChanges, double TargetAge) const;
+
+        FExactChangedTimePoints FindSurroundingTimePoints(const std::pair<std::vector<FDataArray>, std::vector<FDataArray>>& PhaseChanges,
+                                                          double TargetAge, double MassCoefficient) const;
+
+        void AlignArrays(std::pair<std::vector<FDataArray>, std::vector<FDataArray>>& Arrays) const;
+        FDataArray InterpolateStarData(FMistData* Data, double EvolutionProgress) const;
+        FDataArray InterpolateStarData(FWdMistData* Data, double TargetAge) const;
+        FDataArray InterpolateStarData(auto* Data, double Target, const std::string& Header, int Index, bool bIsWhiteDwarf) const;
+        FDataArray InterpolateArray(const std::pair<FDataArray, FDataArray>& DataArrays, double Coefficient) const;
+        FDataArray InterpolateFinalData(const std::pair<FDataArray, FDataArray>& DataArrays, double Coefficient, bool bIsWhiteDwarf) const;
+        Astro::AStar MakeNormalStar(const FDataArray& StarData, const FStellarBasicProperties& Properties);
+
+        Astro::AStar GenerateDeathStar(EStellarTypeGenerationOption DeathStarTypeOption,
+                                       const FStellarBasicProperties& Properties, Astro::AStar& ZamsStarData);
+
+        FDataArray FindZamsData(const FMistData* DataSheet) const;
+        FDataArray CalculateZamsStarData(float InitialMassSol, float FeH) const;
+        void CalculateSpectralType(Astro::AStar& StarData) const;
+        Astro::ELuminosityClass CalculateLuminosityClass(const Astro::AStar& StarData) const;
+        Astro::ELuminosityClass CalculateLuminosityClassFromSurfaceGravity(float Teff, float LogG) const;
+        Astro::ELuminosityClass CalculateHypergiant(const Astro::AStar& StarData) const;
+        FPhysicalLuminosityLimit CalculatePhysicalLuminosityLimit(const Astro::AStar& StarData) const;
+
+        FRemainsBasicProperties DetermineRemainsProperties(const Astro::AStar& DyingStarData, float InitialMassSol,
+                                                           float FeH, float CoreSpecificAngularMomentum);
+
+        FRemainsBasicProperties GenerateMergeStar(const FStellarBasicProperties& Properties);
+        Astro::AStar CalculateAndMakeDeathStar(const Astro::AStar& DyingStarData, const FRemainsBasicProperties& Properties, float DeathStarAge);
+
+        float CalculateRemainsMassSol(float InitialMassSol) const;
+        bool CheckEnvelopeStripSuccessful(float FeH);
+        void CalculateExtremeProperties(Astro::AStar& DeathStarData, const Astro::AStar& ZamsStarData, float CoreSpecificAngularMomentum);
+        float CalculateDynamoField(float Spin);
+        void CalculateNeutronStarDecayedProperties(Astro::AStar& DeathStarData, float InitialMagneticField, float InitialSpin) const;
+        float CalculateCoreSpecificAngularMomentum(const Astro::AStar& DyingStarData) const;
+        float CalculateHeliumCoreMassSol(const Astro::AStar& DyingStarData) const;
+        void GenerateZamsStarMagnetic(Astro::AStar& StarData);
+        void GenerateCompatStarMagnetic(Astro::AStar& StarData);
+        void GenerateZamsStarInitialSpin(Astro::AStar& StarData);
+        float CalculateEffectiveMass(const Astro::AStar& StarData) const;
+        void CalculateCurrentSpinAndOblateness(Astro::AStar& StarData, const Astro::AStar& ZamsStarData);
+        void CalculateNormalStarDecayedSpin(Astro::AStar& StarData, float ZamsRadiusSol, float InitialSpin, bool bIsFastSpin);
+        void CalculateNormalStarOblateness(Astro::AStar& StarData, float EffectiveMass, float Spin);
+        void GenerateCompatStarSpin(Astro::AStar& StarData);
+        void ExpandMistData(double TargetMassSol, FDataArray& StarData) const;
+        void CalculateMinCoilMass(Astro::AStar& StarData) const;
 
     private:
         std::mt19937                                          RandomEngine_;
-        std::array<Math::TUniformRealDistribution<>,       8> MagneticGenerators_;
+        std::array<Math::TUniformRealDistribution<>,      10> MagneticGenerators_;
         std::array<std::unique_ptr<Math::TDistribution<>>, 4> FeHGenerators_;
-        std::array<Math::TUniformRealDistribution<>,       2> SpinGenerators_;
+        std::array<std::unique_ptr<Math::TDistribution<>>, 5> SpinGenerators_;
+        std::array<Math::TBernoulliDistribution<>,         2> XpStarProbabilityGenerators_;
         Math::TUniformRealDistribution<>                      AgeGenerator_;
         Math::TUniformRealDistribution<>                      CommonGenerator_;
+        Math::TBernoulliDistribution<>                        FastMassiveStarProbabilityGenerator_;
         std::unique_ptr<Math::TDistribution<>>                LogMassGenerator_;
 
         std::array<std::function<float(float)>, 2>    MassPdfs_;
@@ -215,12 +308,14 @@ namespace Npgs
 
         static const std::array<std::string, 12> kMistHeaders_;
         static const std::array<std::string, 5>  kWdMistHeaders_;
-        static const std::array<std::string, 7>  kHrDiagramHeaders_;
 
         static inline ankerl::unordered_dense::map<std::string, std::vector<float>>           MassFilesCache_;
         static inline ankerl::unordered_dense::map<const FMistData*, std::vector<FDataArray>> PhaseChangesCache_;
-        static inline std::shared_mutex                                                       CacheMutex_;
-        static inline bool                                                                    bMistDataInitiated_{ false };
+        static inline ankerl::unordered_dense::map<const FMistData*, FDataArray>              ZamsDataCache_;
+        static inline std::shared_mutex FileCacheMutex_;
+        static inline std::shared_mutex PhaseChangeCacheMutex_;
+        static inline std::shared_mutex ZamsDataMutex_;
+        static inline bool              bMistDataInitiated_{ false };
     };
 } // namespace Npgs
 

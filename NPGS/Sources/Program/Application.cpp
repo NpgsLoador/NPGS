@@ -6,6 +6,7 @@
 #include <cstdint>
 #include <cstdlib>
 #include <array>
+#include <format>
 #include <future>
 
 #include <dxgi1_6.h>
@@ -272,8 +273,8 @@ namespace Npgs
         std::uint32_t SwapchainImageCount = VulkanContext_->GetSwapchainImageCount();
         for (std::uint32_t i = 0; i != SwapchainImageCount; ++i)
         {
-            std::string SemaphoreImageAvailableName = "ImageAvailableSemaphore_Image" + std::to_string(i);
-            std::string SemaphoreRenderFinishedName = "RenderFinishedSemaphore_Image" + std::to_string(i);
+            std::string SemaphoreImageAvailableName = std::format("ImageAvailableSemaphore_Image{}", i);
+            std::string SemaphoreRenderFinishedName = std::format("RenderFinishedSemaphore_Image{}", i);
             Semaphores_ImageAvailable.emplace_back(VulkanContext_->GetDevice(), SemaphoreImageAvailableName, vk::SemaphoreCreateFlags());
             Semaphores_RenderFinished.emplace_back(VulkanContext_->GetDevice(), SemaphoreRenderFinishedName, vk::SemaphoreCreateFlags());
         }

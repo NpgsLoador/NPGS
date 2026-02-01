@@ -20,11 +20,6 @@ int main1()
     return 0;
 }
 
-void Declare()
-{
-    return;
-}
-
 #pragma warning(disable : 4251)
 
 #define NPGS_ENABLE_CONSOLE_LOGGER
@@ -38,113 +33,75 @@ int main() {
     FLogger::Initialize();
     FEngineServices::GetInstance()->InitializeCoreServices();
 
-    std::println("Enter the system count:");
-    std::size_t StarCount = 0;
-    std::cin >> StarCount;
+    int Option = 0;
+    std::cin >> Option;
+    switch (Option)
+    {
+    case 1:
+    {
+        std::println("Enter the system count:");
+        std::size_t StarCount = 0;
+        std::cin >> StarCount;
 
-    std::println("Enter the seed:");
-    unsigned Seed = 0;
-    std::cin >> Seed;
+        std::println("Enter the seed:");
+        unsigned Seed = 0;
+        std::cin >> Seed;
 
-    try {
-        FUniverse Space(Seed, StarCount);
-        Space.FillUniverse();
-        Space.CountStars();
+        try
+        {
+            FUniverse Space(Seed, StarCount, StarCount / 2, StarCount / 2);
+            Space.FillUniverse();
+            Space.CountStars();
+        }
+        catch (const std::exception& e)
+        {
+            std::cout << e.what() << std::endl;
+        }
+
+        break;
     }
-    catch (std::exception& e) {
-        std::cout << e.what() << std::endl;
+    case 2:
+    {
+        FStellarGenerationInfo TestGeneratorInfo;
+        TestGeneratorInfo.SeedSequence = new std::seed_seq({ 42 });
+
+        FStellarGenerator TestGenerator(TestGeneratorInfo);
+        FStellarBasicProperties Properties;
+        Properties.Age = 1e7f;
+        Properties.FeH = 0.0f;
+        Properties.InitialMassSol = 20.0f;
+
+        auto Star = TestGenerator.GenerateStar(Properties);
+
+        std::println("{:>6} {:>6} {:>8} {:>8} {:7} {:>5} {:>13} {:>8} {:>8} {:>11} {:>8} {:>9} {:>5} {:>15} {:>9} {:>8}",
+                     "InMass", "Mass", "Radius", "Age", "Class", "FeH", "Lum", "Teff", "CoreTemp", "CoreDensity", "Mdot", "WindSpeed", "Phase", "Magnetic", "Lifetime", "Oblateness");
+        std::println(
+            "{:6.2f} {:6.2f} {:8.2f} {:8.2E} {:7} {:5.2f} {:13.4f} {:8.1f} {:8.2E} {:11.2E} {:8.2E} {:9} {:5} {:15.5f} {:9.2E} {:8.2f}",
+            Star.GetInitialMass() / kSolarMass,
+            Star.GetMass() / kSolarMass,
+            Star.GetRadius() / kSolarRadius,
+            Star.GetAge(),
+            Star.GetStellarClass().ToString(),
+            Star.GetFeH(),
+            Star.GetLuminosity() / kSolarLuminosity,
+            // kSolarAbsoluteMagnitude - 2.5 * std::log10(Star.GetLuminosity() / kSolarLuminosity),
+            Star.GetTeff(),
+            Star.GetCoreTemp(),
+            Star.GetCoreDensity(),
+            Star.GetStellarWindMassLossRate() * kYearToSecond / kSolarMass,
+            static_cast<int>(std::round(Star.GetStellarWindSpeed())),
+            static_cast<int>(Star.GetEvolutionPhase()),
+            // Star.GetSurfaceZ(),
+            // Star.GetSurfaceEnergeticNuclide(),
+            // Star.GetSurfaceVolatiles(),
+            Star.GetMagneticField(),
+            Star.GetLifetime(),
+            Star.GetOblateness()
+        );
+
+        break;
     }
-
-    // ------------------------------------
-
-    //using enum StellarGenerator::GenerateOption;
-    //StellarGenerator sg({ 42 });
-    //StellarGenerator::BasicProperties bp;
-    //bp.Age = 9.89589e+09;
-    //bp.FeH = -1.26;
-    //bp.InitialMassSol = 39.98;
-    //bp.TypeOption = kGiant;
-    //auto s = sg.GenerateStar(bp);
-
-    //std::cout << s.GetAge() << " " << s.GetFeH() << " " << s.GetMass() << " " << s.GetStellarClass().ToString() << std::endl;
-
-
-    //StellarGenerator sg({ Seed }, kNormal, 1.38e10f, 0.075f);
-    //std::vector<StellarGenerator::BasicProperties> bp;
-    //for (; --StarCount; bp.push_back(sg.GenerateBasicProperties()));
-
-    //std::ofstream SingleStar("SingleStar.csv");
-    //std::ofstream BinaryFirstStar("BinaryFirstStar.csv");
-    //std::ofstream BinarySecondStar("BinarySecondStar.csv");
-
-    //for (auto& e : bp) {
-    //    if (e.bIsSingleStar) {
-    //        SingleStar << e.InitialMassSol << ",";
-    //    } else if (e.Option == kBinaryFirstStar) {
-    //        BinaryFirstStar << e.InitialMassSol << ",";
-    //    } else if (e.Option == kBinarySecondStar) {
-    //        BinarySecondStar << e.InitialMassSol << ",";
-    //    }
-    //}
-
-    // ---------------------------------------
-
-    std::random_device rd;
-    unsigned seed = rd();//1892189794;//702828540//1601382610;
-    std::println("Seed: {}", seed);
-    FStellarGenerationInfo Info;
-    std::seed_seq SeedSeq = { seed };
-    Info.SeedSequence = &SeedSeq;
-    FStellarGenerator sg(Info);
-    FStellarBasicProperties b1{ EStellarTypeGenerationOption::kRandom, EMultiplicityGenerationOption::kBinaryFirstStar, 5e9f, 0.0f, 1.0f };
-    FStellarBasicProperties b2{ EStellarTypeGenerationOption::kRandom, EMultiplicityGenerationOption::kBinaryFirstStar, 5e9f, 0.0f, 0.3f };
-    auto s1 = sg.GenerateStar(b1);
-    auto s2 = sg.GenerateStar(b2);
-
-    s1.SetSingleton(false);
-    s2.SetSingleton(false);
-
-    FOrbitalSystem ss;
-    ss.StarsData().push_back(std::make_unique<Astro::AStar>(s1));
-    //ss.StarsData().push_back(std::make_unique<Astro::AStar>(s2));
-
-    //try {
-    //    while (true) {
-    //        //p->Commit([&og, &ss] { og.GenerateOrbitals(ss); });
-    //        seed = rd();
-    //        OrbitalGenerator og({ seed });
-    //        og.GenerateOrbitals(ss);
-    //    }
-    //} catch (std::exception& e) {
-    //    NpgsCoreError(std::string(e.what()) + " seed: " + std::to_string(seed));
-    //}
-
-    FOrbitalGenerationInfo OInfo;
-    OInfo.SeedSequence = &SeedSeq;
-    FOrbitalGenerator og(OInfo);
-
-    //auto* p = ThreadPool::GetInstance();
-
-    og.GenerateOrbitals(ss);
-
-    // -------------------------------------------
-
-    //std::vector<StellarSystem> sss(200000);
-
-    //auto start = std::chrono::high_resolution_clock::now();
-    //for (int i = 0; i != 2000; ++i) {
-    //    try {
-    //        sss[i].StarData().emplace_back(std::make_unique<Astro::Star>(s1));
-    //        og.GenerateOrbitals(sss[i]);
-    //    } catch (std::exception& e) {
-    //        NpgsCoreError(e.what());
-    //    }
-    //}
-    //auto end = std::chrono::high_resolution_clock::now();
-    //std::chrono::duration<double> elapsed = end - start;
-    //std::println("Elapsed time: {}s", elapsed.count());
-
-    //std::system("pause");
+    }
 
     return 0;
 }

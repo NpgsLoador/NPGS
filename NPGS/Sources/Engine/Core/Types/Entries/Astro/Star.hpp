@@ -16,11 +16,11 @@ namespace Npgs::Astro
     class AStar : public FCelestialBody
     {
     public:
-        enum class EEvolutionPhase : int
+        enum class EEvolutionPhase : std::int8_t
         {
             kPrevMainSequence          = -1,
             kMainSequence              =  0,
-            kRedGiant                  =  2,
+            kShellHeBurn               =  2,
             kCoreHeBurn                =  3,
             kEarlyAgb                  =  4,
             kThermalPulseAgb           =  5,
@@ -30,10 +30,11 @@ namespace Npgs::Astro
             kCarbonOxygenWhiteDwarf    =  12,
             kOxygenNeonMagnWhiteDwarf  =  13,
             kNeutronStar               =  14,
-            kStellarBlackHole          =  15,
-            kMiddleBlackHole           =  114514,
-            kSuperMassiveBlackHole     =  1919810,
-            kNull                      =  std::numeric_limits<int>::max()
+            kMagnetar                  =  15,
+            kStellarBlackHole          =  16,
+            kMiddleBlackHole           =  17,
+            kSuperMassiveBlackHole     =  18,
+            kNull                      =  std::numeric_limits<std::int8_t>::max()
         };
 
         enum class EStarFrom : std::uint8_t
@@ -45,8 +46,10 @@ namespace Npgs::Astro
             kElectronCaptureSupernova  = 4,
             kIronCoreCollapseSupernova = 5,
             kRelativisticJetHypernova  = 6,
-            kPairInstabilitySupernova  = 7,
-            kPhotondisintegration      = 8,
+            kPairInstabilityHypernova  = 7,
+            kPhotodisintegration       = 8,
+            kFaintedSupernova          = 9,
+            kFailedSupernova           = 10
         };
 
         struct FExtendedProperties
@@ -69,6 +72,7 @@ namespace Npgs::Astro
             float  StellarWindSpeed{};        // 恒星风速度，单位 m/s
             float  StellarWindMassLossRate{}; // 恒星风质量损失率，单位 kg/s
             float  MinCoilMass{};             // 最小举星器赤道偏转线圈质量，单位 kg
+            float  CriticalSpin{};            // 临界自转周期，单位 s
 
             EEvolutionPhase Phase{ EEvolutionPhase::kPrevMainSequence }; // 演化阶段
             EStarFrom       From{ EStarFrom::kNormalFrom };              // 恒星形成方式
@@ -106,11 +110,19 @@ namespace Npgs::Astro
         AStar& SetStellarWindSpeed(float StellarWindSpeed);
         AStar& SetStellarWindMassLossRate(float StellarWindMassLossRate);
         AStar& SetMinCoilMass(float MinCoilMass);
+        AStar& SetCriticalSpin(float CriticalSpin);
         AStar& SetSingleton(bool bIsSingleStar);
         AStar& SetHasPlanets(bool bHasPlanets);
         AStar& SetStarFrom(EStarFrom From);
         AStar& SetEvolutionPhase(EEvolutionPhase Phase);
         AStar& SetStellarClass(Astro::FStellarClass Class);
+        
+        AStar& ModifyStellarClass(Astro::FSpectralType SpectralType);
+        AStar& ModifyStellarClass(ESpectralClass SpectralClass, bool bIsMSpectral = false);
+        AStar& ModifyStellarClass(float Subclass, bool bIsMSpectral = false);
+        AStar& ModifyStellarClass(ELuminosityClass LuminosityClass);
+        AStar& ModifyStellarClass(ESpecialMark SpecialMark, bool bMark);
+        AStar& ModifyStellarType(Astro::EStellarType StellarType);
 
         // Getters
         // Getters for ExtendedProperties
@@ -131,6 +143,7 @@ namespace Npgs::Astro
         float  GetStellarWindSpeed() const;
         float  GetStellarWindMassLossRate() const;
         float  GetMinCoilMass() const;
+        float  GetCriticalSpin() const;
         bool   IsSingleStar() const;
         bool   HasPlanets() const;
         EStarFrom       GetStarFrom() const;
@@ -151,12 +164,8 @@ namespace Npgs::Astro
         static const std::vector<std::pair<int, int>> kSpectralSubclassMap_WC_;
         static const std::vector<std::pair<int, int>> kSpectralSubclassMap_WO_;
         static const std::vector<std::pair<int, int>> kSpectralSubclassMap_WNxh_;
-
-        static const std::vector<std::pair<int, std::vector<std::pair<int, int>>>> kInitialCommonMap_;
-        static const std::vector<std::pair<int, std::vector<std::pair<int, int>>>> kInitialWolfRayetMap_;
-
-        static const ankerl::unordered_dense::map<EEvolutionPhase, Astro::ELuminosityClass> kLuminosityMap_;
-        static const ankerl::unordered_dense::map<float, float>                             kFeHSurfaceH1Map_;
+        static const std::vector<std::pair<int, const std::vector<std::pair<int, int>>&>> kInitialCommonMap_;
+        static const ankerl::unordered_dense::map<float, float> kFeHSurfaceH1Map_;
 
     private:
         FExtendedProperties ExtraProperties_{};

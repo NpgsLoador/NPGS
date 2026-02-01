@@ -32,8 +32,8 @@
         // 1. Incompatibility with vcpkg AutoLink: The LLVM linker (lld) does not support vcpkg's AutoLinking mechanism.
         //    If you proceed, you must manually link ALL library dependencies.
         // 
-        // 2. IntelliSense Issues : To avoid severe IntelliSense degradation with clang-cl,
-        //    you must explicitly #include the corresponding.hpp file within each.inl file for template implementations.
+        // 2. IntelliSense Issues: clang-cl still has issues when work with IntelliSense. This may lead to
+        //    reduced code completion accuracy, false error highlighting, and other IDE-related problems.
         // 
         // If you understand these challenges and wish to proceed at your own risk,
         // you must first resolve the above issues and then define TRY_LLVM_CLANG_CL.
@@ -41,7 +41,7 @@
         // If you successfully build using LLVM, please consider contributing a Pull Request or Discussion on GitHub. :)
 #   endif // _MSVC_LANG
 #else
-#   warning NPGS only support 64-bit Windows
+#   error NPGS only support 64-bit Windows
 #endif // _WIN64
 
 // Bit operator function

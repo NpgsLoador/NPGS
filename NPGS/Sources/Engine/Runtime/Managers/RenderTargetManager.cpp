@@ -7,7 +7,7 @@
 #include <vector>
 
 #include <vma/vk_mem_alloc.h>
-#include "Engine/Core/Utils/Utils.hpp"
+#include "Engine/Core/Utils/VulkanUtils.hpp"
 
 namespace Npgs
 {

@@ -8,8 +8,8 @@
 
 #include <Volk/volk.h>
 
-#include "Engine/Core/Utils/VulkanCheck.hpp"
 #include "Engine/Core/Utils/Utils.hpp"
+#include "Engine/Core/Utils/VulkanUtils.hpp"
 
 VULKAN_HPP_DEFAULT_DISPATCH_LOADER_DYNAMIC_STORAGE
 

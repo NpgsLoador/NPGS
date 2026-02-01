@@ -110,6 +110,12 @@ namespace Npgs::Astro
         return *this;
     }
 
+    NPGS_INLINE AStar& AStar::SetCriticalSpin(float CriticalSpin)
+    {
+        ExtraProperties_.CriticalSpin = CriticalSpin;
+        return *this;
+    }
+
     NPGS_INLINE AStar& AStar::SetSingleton(bool bIsSingleStar)
     {
         ExtraProperties_.bIsSingleStar = bIsSingleStar;
@@ -137,6 +143,48 @@ namespace Npgs::Astro
     NPGS_INLINE AStar& AStar::SetStellarClass(Astro::FStellarClass Class)
     {
         ExtraProperties_.Class = std::move(Class);
+        return *this;
+    }
+
+    NPGS_INLINE AStar& AStar::ModifyStellarClass(Astro::FSpectralType SpectralType)
+    {
+        auto StellarType = ExtraProperties_.Class.GetStellarType();
+        ExtraProperties_.Class = Astro::FStellarClass(StellarType, SpectralType);
+        return *this;
+    }
+
+    NPGS_INLINE AStar& AStar::ModifyStellarClass(ESpectralClass SpectralClass, bool bIsMSpectral)
+    {
+        auto SpectralType = ExtraProperties_.Class.Data();
+        bIsMSpectral ? SpectralType.MSpectralClass = SpectralClass : SpectralType.HSpectralClass = SpectralClass;
+        return ModifyStellarClass(SpectralType);
+    }
+
+    NPGS_INLINE AStar& AStar::ModifyStellarClass(float Subclass, bool bIsMSpectral)
+    {
+        auto SpectralType = ExtraProperties_.Class.Data();
+        bIsMSpectral ? SpectralType.AmSubclass = Subclass : SpectralType.Subclass = Subclass;
+        return ModifyStellarClass(SpectralType);
+    }
+
+    NPGS_INLINE AStar& AStar::ModifyStellarClass(ELuminosityClass LuminosityClass)
+    {
+        auto SpectralType = ExtraProperties_.Class.Data();
+        SpectralType.LuminosityClass = LuminosityClass;
+        return ModifyStellarClass(SpectralType);
+    }
+
+    NPGS_INLINE AStar& AStar::ModifyStellarClass(ESpecialMark SpecialMark, bool bMark)
+    {
+        auto SpectralType = ExtraProperties_.Class.Data();
+        bMark ? SpectralType.MarkSpecial(SpecialMark) : SpectralType.UnmarkSpecial(SpecialMark);
+        return ModifyStellarClass(SpectralType);
+    }
+
+    NPGS_INLINE AStar& AStar::ModifyStellarType(Astro::EStellarType StellarType)
+    {
+        auto SpectralType = ExtraProperties_.Class.Data();
+        ExtraProperties_.Class = Astro::FStellarClass(StellarType, SpectralType);
         return *this;
     }
 
@@ -218,6 +266,11 @@ namespace Npgs::Astro
     NPGS_INLINE float AStar::GetMinCoilMass() const
     {
         return ExtraProperties_.MinCoilMass;
+    }
+
+    NPGS_INLINE float AStar::GetCriticalSpin() const
+    {
+        return ExtraProperties_.CriticalSpin;
     }
 
     NPGS_INLINE bool AStar::IsSingleStar() const

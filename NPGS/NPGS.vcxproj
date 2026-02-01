@@ -44,7 +44,6 @@
     <PlatformToolset>v145</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
     <UseDebugLibraries>true</UseDebugLibraries>
-    <EnableASAN>true</EnableASAN>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
@@ -162,7 +161,6 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <Profile>true</Profile>
       <AdditionalDependencies>dxgi.lib;WindowsApp.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <LinkTimeCodeGeneration>UseLinkTimeCodeGeneration</LinkTimeCodeGeneration>
     </Link>
     <PreBuildEvent>
       <Command>
@@ -191,6 +189,7 @@
     <ClCompile Include="Sources\Program\Rendering\Meshes\PbrCube.cpp" />
     <ClCompile Include="Sources\Engine\Runtime\Managers\RenderTargetManager.cpp" />
     <ClCompile Include="Sources\Program\Rendering\Techniques\GbufferSceneTechnique.cpp" />
+    <ClInclude Include="Sources\Engine\Core\Utils\VulkanUtils.inl" />
     <ClInclude Include="Sources\Engine\Runtime\Graphics\Renderer\MaterialTemplate.hpp" />
     <ClInclude Include="Sources\Engine\Runtime\Managers\ShaderManager.hpp" />
     <ClInclude Include="Sources\Program\Rendering\Materials\StandardPbrMaterialNameLookup.hpp" />
@@ -306,7 +305,7 @@
     <ClInclude Include="Sources\Engine\Core\Logger.hpp" />
     <ClInclude Include="Sources\Engine\Core\Math\Random.hpp" />
     <ClInclude Include="Sources\Engine\Core\Utils\Utils.hpp" />
-    <ClInclude Include="Sources\Engine\Core\Utils\VulkanCheck.hpp" />
+    <ClInclude Include="Sources\Engine\Core\Utils\VulkanUtils.hpp" />
     <ClInclude Include="Sources\Program\Application.hpp" />
     <ClInclude Include="Sources\Program\Npgs.hpp" />
     <ClInclude Include="Sources\Engine\Runtime\Graphics\Buffers\BufferStructs.hpp" />

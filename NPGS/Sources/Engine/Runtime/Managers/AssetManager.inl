@@ -176,7 +176,10 @@ namespace Npgs
 
         {
             std::unique_lock Lock(Mutex_);
-            Assets_.emplace(Name, std::move(Entry));
+            if (!Assets_.contains(Name))
+            {
+                Assets_.emplace(Name, std::move(Entry));
+            }
         }
     }
 
@@ -203,7 +206,10 @@ namespace Npgs
 
         {
             std::unique_lock Lock(Mutex_);
-            Assets_.emplace(Name, std::move(Entry));
+            if (!Assets_.contains(Name))
+            {
+                Assets_.emplace(Name, std::move(Entry));
+            }
         }
     }
 

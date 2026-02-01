@@ -225,7 +225,6 @@ namespace Npgs
                 }
 
                 break;
-
             case FFormatInfo::ERawDataType::kOther:
             default:
                 NpgsCoreError("Unsupported EXR format in image: \"{}\".", Filename);

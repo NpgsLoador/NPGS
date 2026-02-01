@@ -81,14 +81,15 @@ namespace Npgs::Astro
         kCode_f               = Bit(1), // N III 和 He II 发射线
         kCode_h               = Bit(2), // WR 星，带有氢发射线
         kCode_m               = Bit(3), // 增强的金属特征
-        kCode_p               = Bit(4)  // 未指定的特殊性，特殊星
+        kCode_p               = Bit(4), // 未指定的特殊性，特殊星
+        kCode_e               = Bit(5), // 存在发射线
+        kCode_z               = Bit(6)  // 表示在 468.6 nm 处异常强的电离氦线
         // Unused
         // ------
         // kCode_Colon,                    // 不确定的光谱值
         // kCode_Ellipsis,                 // 未描述的光谱特殊性
         // kCode_ExclamationMark,          // 特殊特殊性
         // kCode_comp,                     // 复合光谱
-        // kCode_e,                        // 存在发射线
         // kCode_eForbidden,               // 存在禁制发射线
         // kCode_er,                       // “反向”发射线中心弱于边缘
         // kCode_eq,                       // 带有 P Cygni 轮廓的发射线
@@ -113,7 +114,6 @@ namespace Npgs::Astro
         // kCode_var,                      // 变量光谱特征
         // kCode_wl,                       // 弱线
         // kCode_ElementSymbol,            // 指定元素的异常强光谱线
-        // kCode_z,                        // 表示在 468.6 nm 处异常强的电离氦线
     };
 
     struct FSpectralType
@@ -122,7 +122,7 @@ namespace Npgs::Astro
         ESpectralClass      MSpectralClass{ ESpectralClass::kSpectral_Unknown };
         ELuminosityClass    LuminosityClass{ ELuminosityClass::kLuminosity_Unknown };
         bool                bIsAmStar{ false };
-        FSpecialMarkDigital SpecialMark;
+        FSpecialMarkDigital SpecialMark{};
         float               Subclass{};
         float               AmSubclass{};
 

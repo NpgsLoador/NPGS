@@ -323,7 +323,7 @@
     <ClInclude Include="Sources\Engine\System\Services\CoreServices.hpp">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="Sources\Engine\Core\Utils\VulkanCheck.hpp">
+    <ClInclude Include="Sources\Engine\Core\Utils\VulkanUtils.hpp">
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="Sources\Engine\System\Services\EngineServices.hpp">
@@ -417,6 +417,9 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="Sources\Engine\Runtime\Managers\ShaderManager.hpp">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="Sources\Engine\Core\Utils\VulkanUtils.inl">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>

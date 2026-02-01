@@ -18,12 +18,12 @@ namespace Npgs::Astro
         { 39500, 6 },
         { 38500, 7 },
         { 35100, 8 },
-        { 34500, 9 }
+        { 33300, 9 }
     };
 
     const std::vector<std::pair<int, int>> AStar::kSpectralSubclassMap_B_
     {
-        { 33400, 0 },
+        { 31400, 0 },
         { 26000, 1 },
         { 20600, 2 },
         { 17200, 3 },
@@ -32,40 +32,40 @@ namespace Npgs::Astro
         { 14500, 6 },
         { 14000, 7 },
         { 12300, 8 },
-        { 10910, 9 }
+        { 10700, 9 }
     };
 
     const std::vector<std::pair<int, int>> AStar::kSpectralSubclassMap_A_
     {
-        { 9900,  0 },
-        { 9700,  1 },
-        { 9450,  2 },
-        { 8590,  3 },
-        { 8300,  4 },
+        { 9700,  0 },
+        { 9300,  1 },
+        { 8800,  2 },
+        { 8600,  3 },
+        { 8250,  4 },
         { 8100,  5 },
         { 7910,  6 },
-        { 7840,  7 },
-        { 7700,  8 },
-        { 7590,  9 }
+        { 7760,  7 },
+        { 7590,  8 },
+        { 7400,  9 }
     };
 
     const std::vector<std::pair<int, int>> AStar::kSpectralSubclassMap_F_
     {
-        { 7200,  0 },
+        { 7220,  0 },
         { 7020,  1 },
-        { 6900,  2 },
+        { 6820,  2 },
         { 6750,  3 },
         { 6670,  4 },
         { 6550,  5 },
-        { 6520,  6 },
-        { 6300,  7 },
-        { 6260,  8 },
-        { 6220,  9 }
+        { 6350,  6 },
+        { 6280,  7 },
+        { 6180,  8 },
+        { 6050,  9 }
     };
 
     const std::vector<std::pair<int, int>> AStar::kSpectralSubclassMap_G_
     {
-        { 6100,  0 },
+        { 5930,  0 },
         { 5860,  1 },
         { 5770,  2 },
         { 5720,  3 },
@@ -79,7 +79,7 @@ namespace Npgs::Astro
 
     const std::vector<std::pair<int, int>> AStar::kSpectralSubclassMap_K_
     {
-        { 5260,  0 },
+        { 5270,  0 },
         { 5170,  1 },
         { 5100,  2 },
         { 4830,  3 },
@@ -169,6 +169,7 @@ namespace Npgs::Astro
 
     const std::vector<std::pair<int, int>> AStar::kSpectralSubclassMap_WO_
     {
+        { 220000, 1 },
         { 200000, 2 },
         { 180000, 3 },
         { 150000, 4 }
@@ -183,37 +184,19 @@ namespace Npgs::Astro
         { 35000, 9 }
     };
 
-    const std::vector<std::pair<int, std::vector<std::pair<int, int>>>> AStar::kInitialCommonMap_
+    const std::vector<std::pair<int, const std::vector<std::pair<int, int>>&>> AStar::kInitialCommonMap_
     {
-        { 54000,  AStar::kSpectralSubclassMap_O_ },
-        { 33400,  AStar::kSpectralSubclassMap_B_ },
-        { 9900,   AStar::kSpectralSubclassMap_A_ },
-        { 7200,   AStar::kSpectralSubclassMap_F_ },
-        { 6100,   AStar::kSpectralSubclassMap_G_ },
-        { 5260,   AStar::kSpectralSubclassMap_K_ },
-        { 3850,   AStar::kSpectralSubclassMap_M_ },
-        { 2270,   AStar::kSpectralSubclassMap_L_ },
-        { 1255,   AStar::kSpectralSubclassMap_T_ },
-        { 450,    AStar::kSpectralSubclassMap_Y_ },
+        { 54000,                                                                                             AStar::kSpectralSubclassMap_O_},
+        { (AStar::kSpectralSubclassMap_O_.back().first + AStar::kSpectralSubclassMap_B_.front().first) / 2,  AStar::kSpectralSubclassMap_B_},
+        { (AStar::kSpectralSubclassMap_B_.back().first + AStar::kSpectralSubclassMap_A_.front().first) / 2,  AStar::kSpectralSubclassMap_A_ },
+        { (AStar::kSpectralSubclassMap_A_.back().first + AStar::kSpectralSubclassMap_F_.front().first) / 2,  AStar::kSpectralSubclassMap_F_ },
+        { (AStar::kSpectralSubclassMap_F_.back().first + AStar::kSpectralSubclassMap_G_.front().first) / 2,  AStar::kSpectralSubclassMap_G_ },
+        { (AStar::kSpectralSubclassMap_G_.back().first + AStar::kSpectralSubclassMap_K_.front().first) / 2,  AStar::kSpectralSubclassMap_K_ },
+        { (AStar::kSpectralSubclassMap_K_.back().first + AStar::kSpectralSubclassMap_M_.front().first) / 2,  AStar::kSpectralSubclassMap_M_ },
+        { (AStar::kSpectralSubclassMap_M_.back().first + AStar::kSpectralSubclassMap_L_.front().first) / 2,  AStar::kSpectralSubclassMap_L_ },
+        { (AStar::kSpectralSubclassMap_L_.back().first + AStar::kSpectralSubclassMap_T_.front().first) / 2,  AStar::kSpectralSubclassMap_T_ },
+        { (AStar::kSpectralSubclassMap_T_.back().first + AStar::kSpectralSubclassMap_Y_.front().first) / 2,  AStar::kSpectralSubclassMap_Y_ },
         { 0, {} }
-    };
-
-    const std::vector<std::pair<int, std::vector<std::pair<int, int>>>> AStar::kInitialWolfRayetMap_
-    {
-        { 220000, AStar::kSpectralSubclassMap_WO_ },
-        { 141000, AStar::kSpectralSubclassMap_WN_ },
-        { 117000, AStar::kSpectralSubclassMap_WC_ },
-        { 0, {} }
-    };
-
-    const ankerl::unordered_dense::map<AStar::EEvolutionPhase, Astro::ELuminosityClass> AStar::kLuminosityMap_
-    {
-        { AStar::EEvolutionPhase::kMainSequence,     Astro::ELuminosityClass::kLuminosity_V   },
-        { AStar::EEvolutionPhase::kRedGiant,         Astro::ELuminosityClass::kLuminosity_III },
-        { AStar::EEvolutionPhase::kCoreHeBurn,       Astro::ELuminosityClass::kLuminosity_IV  },
-        { AStar::EEvolutionPhase::kEarlyAgb,         Astro::ELuminosityClass::kLuminosity_II  },
-        { AStar::EEvolutionPhase::kThermalPulseAgb,  Astro::ELuminosityClass::kLuminosity_I   },
-        { AStar::EEvolutionPhase::kPostAgb,          Astro::ELuminosityClass::kLuminosity_I   }
     };
 
     const ankerl::unordered_dense::map<float, float> AStar::kFeHSurfaceH1Map_

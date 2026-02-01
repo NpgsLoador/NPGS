@@ -676,18 +676,31 @@ namespace Npgs::Astro
 
     std::string FStellarClass::SpecialMarkToString(ESpecialMark SpecialMark)
     {
-        switch (SpecialMark)
+        std::string Result;
+
+        if (std::to_underlying(SpecialMark) == 0)
         {
-        case ESpecialMark::kCode_Null:
-            return "";
-        case ESpecialMark::kCode_f:
-            return "f";
-        case ESpecialMark::kCode_h:
-            return "h";
-        case ESpecialMark::kCode_p:
-            return "p";
-        default:
-            return "";
+            return Result;
         }
+
+        auto HasMark = [SpecialMark](ESpecialMark MarkCode) -> bool
+        {
+            return std::to_underlying(SpecialMark) & std::to_underlying(MarkCode);
+        };
+
+        if (HasMark(ESpecialMark::kCode_f))
+            Result += "f";
+        if (HasMark(ESpecialMark::kCode_h))
+            Result += "h";
+        if (HasMark(ESpecialMark::kCode_m))
+            Result += "m";
+        if (HasMark(ESpecialMark::kCode_p))
+            Result += "p";
+        if (HasMark(ESpecialMark::kCode_e))
+            Result += "e";
+        if (HasMark(ESpecialMark::kCode_z))
+            Result += "z";
+
+        return Result;
     }
 } // namespace Npgs::Astro

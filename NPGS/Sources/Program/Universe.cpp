@@ -75,6 +75,14 @@ namespace Npgs
         }
     }
 
+    // 通用统计结构体，替代原本分散的定义
+    template <typename Ty>
+    struct StatEntry
+    {
+        Ty Value{};
+        const Astro::AStar* Star = nullptr;
+    };
+
     void FUniverse::CountStars()
     {
         constexpr int kTypeOIndex = 0;
@@ -85,7 +93,7 @@ namespace Npgs
         constexpr int kTypeKIndex = 5;
         constexpr int kTypeMIndex = 6;
 
-        std::array<std::size_t, 7> MainSequence{};
+        std::array<std::size_t, 7> MainSequences{};
         std::array<std::size_t, 7> Subgiants{};
         std::array<std::size_t, 7> Giants{};
         std::array<std::size_t, 7> BrightGiants{};
@@ -100,41 +108,14 @@ namespace Npgs
         std::size_t TotalBinarys = 0;
         std::size_t TotalSingles = 0;
 
-        struct MostLuminous
-        {
-            double LuminositySol{};
-            const Astro::AStar* Star = nullptr;
-        };
-
-        struct MostMassive
-        {
-            double MassSol{};
-            const Astro::AStar* Star = nullptr;
-        };
-
-        struct Largest
-        {
-            float RadiusSol{};
-            const Astro::AStar* Star = nullptr;
-        };
-
-        struct Hottest
-        {
-            float Teff{};
-            const Astro::AStar* Star = nullptr;
-        };
-
-        struct Oldest
-        {
-            double Age{};
-            const Astro::AStar* Star = nullptr;
-        };
-
-        struct MostOblateness
-        {
-            float Oblateness{};
-            const Astro::AStar* Star = nullptr;
-        };
+        using MostLuminous   = StatEntry<double>;
+        using MostMassive    = StatEntry<double>;
+        using Largest        = StatEntry<float>;
+        using Hottest        = StatEntry<float>;
+        using Oldest         = StatEntry<double>;
+        using MostOblateness = StatEntry<float>;
+        using MostMagnetic   = StatEntry<float>;
+        using MostMdot       = StatEntry<double>;
 
         auto FormatTitle = []() -> std::string
         {
@@ -165,10 +146,10 @@ namespace Npgs
                 Star->GetStellarWindMassLossRate() * kYearToSecond / kSolarMass,
                 static_cast<int>(std::round(Star->GetStellarWindSpeed())),
                 static_cast<int>(Star->GetEvolutionPhase()),
-                Star->GetSurfaceZ(),
+                // Star->GetSurfaceZ(),
                 // Star->GetSurfaceEnergeticNuclide(),
                 // Star->GetSurfaceVolatiles(),
-                // Star->GetMagneticField(),
+                Star->GetMagneticField(),
                 Star->GetLifetime(),
                 Star->GetOblateness()
             );
@@ -202,119 +183,111 @@ namespace Npgs
             }
         };
 
-        auto CountMostLuminous = [](const std::unique_ptr<Astro::AStar>& Star, MostLuminous& MostLuminousStar)
+        auto CountMostLuminous = [](const std::unique_ptr<Astro::AStar>& Star, MostLuminous& StartStat)
         {
-            double LuminositySol = 0.0;
-            LuminositySol = Star->GetLuminosity() / kSolarLuminosity;
-            if (MostLuminousStar.LuminositySol < LuminositySol)
+            double Value = Star->GetLuminosity() / kSolarLuminosity;
+            if (StartStat.Value < Value)
             {
-                MostLuminousStar.LuminositySol = LuminositySol;
-                MostLuminousStar.Star = Star.get();
+                StartStat.Value = Value;
+                StartStat.Star = Star.get();
             }
         };
 
-        auto CountMostMassive = [](const std::unique_ptr<Astro::AStar>& Star, MostMassive& MostMassiveStar)
+        auto CountMostMassive = [](const std::unique_ptr<Astro::AStar>& Star, MostMassive& StartStat)
         {
-            double MassSol = 0.0;
-            MassSol = Star->GetMass() / kSolarMass;
-            if (MostMassiveStar.MassSol < MassSol)
+            double Value = Star->GetMass() / kSolarMass;
+            if (StartStat.Value < Value)
             {
-                MostMassiveStar.MassSol = MassSol;
-                MostMassiveStar.Star = Star.get();
+                StartStat.Value = Value;
+                StartStat.Star = Star.get();
             }
         };
 
-        auto CountLargest = [](const std::unique_ptr<Astro::AStar>& Star, Largest& LargestStar)
+        auto CountLargest = [](const std::unique_ptr<Astro::AStar>& Star, Largest& StartStat)
         {
-            float RadiusSol = 0.0f;
-            RadiusSol = Star->GetRadius() / kSolarRadius;
-            if (LargestStar.RadiusSol < RadiusSol)
+            float Value = Star->GetRadius() / kSolarRadius;
+            if (StartStat.Value < Value)
             {
-                LargestStar.RadiusSol = RadiusSol;
-                LargestStar.Star = Star.get();
+                StartStat.Value = Value;
+                StartStat.Star = Star.get();
             }
         };
 
-        auto CountHottest = [](const std::unique_ptr<Astro::AStar>& Star, Hottest& HottestStar)
+        auto CountHottest = [](const std::unique_ptr<Astro::AStar>& Star, Hottest& StartStat)
         {
-            float Teff = 0.0f;
-            Teff = Star->GetTeff();
-            if (HottestStar.Teff < Teff)
+            float Value = Star->GetTeff();
+            if (StartStat.Value < Value)
             {
-                HottestStar.Teff = Teff;
-                HottestStar.Star = Star.get();
+                StartStat.Value = Value;
+                StartStat.Star = Star.get();
             }
         };
 
-        auto CountOldest = [](const std::unique_ptr<Astro::AStar>& Star, Oldest& OldestStar)
+        auto CountOldest = [](const std::unique_ptr<Astro::AStar>& Star, Oldest& StartStat)
         {
-            double Age = 0.0;
-            Age = Star->GetAge();
-            if (OldestStar.Age < Age)
+            double Value = Star->GetAge();
+            if (StartStat.Value < Value)
             {
-                OldestStar.Age = Age;
-                OldestStar.Star = Star.get();
+                StartStat.Value = Value;
+                StartStat.Star = Star.get();
             }
         };
 
-        auto CountMostOblateness = [](const std::unique_ptr<Astro::AStar>& Star, MostOblateness& MostOblatenessStar)
+        auto CountMostOblateness = [](const std::unique_ptr<Astro::AStar>& Star, MostOblateness& StartStat)
         {
-            float Oblateness = 0.0f;
-            Oblateness = Star->GetOblateness();
-            if (MostOblatenessStar.Oblateness < Oblateness)
+            float Value = Star->GetOblateness();
+            if (StartStat.Value < Value)
             {
-                MostOblatenessStar.Oblateness = Oblateness;
-                MostOblatenessStar.Star = Star.get();
+                StartStat.Value = Value;
+                StartStat.Star = Star.get();
             }
         };
 
-        MostLuminous MostLuminousMainSequence;
-        MostLuminous MostLuminousSubgiant;
-        MostLuminous MostLuminousGiant;
-        MostLuminous MostLuminousBrightGiant;
-        MostLuminous MostLuminousSupergiant;
-        MostLuminous MostLuminousHypergiant;
-        MostLuminous MostLuminousWolfRayet;
+        auto CountMostMagnetic = [](const std::unique_ptr<Astro::AStar>& Star, MostMagnetic& StartStat)
+        {
+            float Value = Star->GetMagneticField() * 10000;
+            if (StartStat.Value < Value)
+            {
+                StartStat.Value = Value;
+                StartStat.Star = Star.get();
+            }
+        };
 
-        MostMassive MostMassiveMainSequence;
-        MostMassive MostMassiveSubgiant;
-        MostMassive MostMassiveGiant;
-        MostMassive MostMassiveBrightGiant;
-        MostMassive MostMassiveSupergiant;
-        MostMassive MostMassiveHypergiant;
-        MostMassive MostMassiveWolfRayet;
+        auto CountMostMdot = [](const std::unique_ptr<Astro::AStar>& Star, MostMdot& StartStat)
+        {
+            double Value = Star->GetStellarWindMassLossRate() * kYearToSecond / kSolarMass;
+            if (StartStat.Value < Value)
+            {
+                StartStat.Value = Value;
+                StartStat.Star = Star.get();
+            }
+        };
 
-        Largest LargestMainSequence;
-        Largest LargestSubgiant;
-        Largest LargestGiant;
-        Largest LargestBrightGiant;
-        Largest LargestSupergiant;
-        Largest LargestHypergiant;
-        Largest LargestWolfRayet;
+        // 声明统计变量
+#define DECLARE_STATS(Type, Prefix)     \
+            Type Prefix##MainSequence;  \
+            Type Prefix##Subgiant;      \
+            Type Prefix##Giant;         \
+            Type Prefix##BrightGiant;   \
+            Type Prefix##Supergiant;    \
+            Type Prefix##Hypergiant;    \
+            Type Prefix##WolfRayet;     \
+            Type Prefix##OMainSequence; \
+            Type Prefix##OGiant;        \
+            Type Prefix##OfGiant;       \
+            Type Prefix##OSupergiant;   \
+            Type Prefix##OfSupergiant;
 
-        Hottest HottestMainSequence;
-        Hottest HottestSubgiant;
-        Hottest HottestGiant;
-        Hottest HottestBrightGiant;
-        Hottest HottestSupergiant;
-        Hottest HottestHypergiant;
-        Hottest HottestWolfRayet;
+        DECLARE_STATS(MostLuminous, MostLuminous)
+        DECLARE_STATS(MostMassive, MostMassive)
+        DECLARE_STATS(Largest, Largest)
+        DECLARE_STATS(Hottest, Hottest)
+        DECLARE_STATS(Oldest, Oldest)
+        DECLARE_STATS(MostOblateness, MostOblateness)
+        DECLARE_STATS(MostMagnetic, MostMagnetic)
+        DECLARE_STATS(MostMdot, MostMdot)
 
-        Oldest OldestMainSequence;
-        Oldest OldestSubgiant;
-        Oldest OldestGiant;
-        Oldest OldestBrightGiant;
-        Oldest OldestSupergiant;
-        Oldest OldestHypergiant;
-        Oldest OldestWolfRayet;
-
-        MostOblateness MostOblatenessMainSequence;
-        MostOblateness MostOblatenessSubgiant;
-        MostOblateness MostOblatenessGiant;
-        MostOblateness MostOblatenessBrightGiant;
-        MostOblateness MostOblatenessSupergiant;
-        MostOblateness MostOblatenessHypergiant;
-        MostOblateness MostOblatenessWolfRayet;
+#undef DECLARE_STATS
 
         std::println("Star statistics results:");
         std::println("{}", FormatTitle());
@@ -359,6 +332,49 @@ namespace Npgs
 
                 Astro::FSpectralType SpectralType = Class.Data();
 
+                // 定义统计更新宏，简化调用
+#define UPDATE_ALL_STATS(Suffix)                                       \
+                    CountMostLuminous(Star, MostLuminous##Suffix);     \
+                    CountMostMassive(Star, MostMassive##Suffix);       \
+                    CountLargest(Star, Largest##Suffix);               \
+                    CountHottest(Star, Hottest##Suffix);               \
+                    CountOldest(Star, Oldest##Suffix);                 \
+                    CountMostOblateness(Star, MostOblateness##Suffix); \
+                    CountMostMagnetic(Star, MostMagnetic##Suffix);     \
+                    CountMostMdot(Star, MostMdot##Suffix);
+
+                // O Type Stars Special Handling (Note: These are only reached if not caught by above checks)
+                if (SpectralType.HSpectralClass == Astro::ESpectralClass::kSpectral_O)
+                {
+                    bool bIsF = SpectralType.SpecialMarked(Astro::ESpecialMark::kCode_f);
+
+                    if (SpectralType.LuminosityClass == Astro::ELuminosityClass::kLuminosity_V && !bIsF)
+                    {
+                        CountClass(SpectralType, MainSequences);
+                        UPDATE_ALL_STATS(OMainSequence)
+                    }
+                    else if (SpectralType.LuminosityClass == Astro::ELuminosityClass::kLuminosity_III && !bIsF)
+                    {
+                        CountClass(SpectralType, Giants);
+                        UPDATE_ALL_STATS(OGiant)
+                    }
+                    else if (SpectralType.LuminosityClass == Astro::ELuminosityClass::kLuminosity_I && !bIsF)
+                    {
+                        CountClass(SpectralType, Supergiants);
+                        UPDATE_ALL_STATS(OSupergiant)
+                    }
+                    else if (SpectralType.LuminosityClass == Astro::ELuminosityClass::kLuminosity_III && bIsF)
+                    {
+                        CountClass(SpectralType, Giants);
+                        UPDATE_ALL_STATS(OfGiant)
+                    }
+                    else if (SpectralType.LuminosityClass == Astro::ELuminosityClass::kLuminosity_I && bIsF)
+                    {
+                        CountClass(SpectralType, Hypergiants); // Assuming mapping based on original logic logic
+                        UPDATE_ALL_STATS(OfSupergiant)
+                    }
+                }
+
                 if (SpectralType.LuminosityClass == Astro::ELuminosityClass::kLuminosity_Unknown)
                 {
                     if (SpectralType.HSpectralClass == Astro::ESpectralClass::kSpectral_WC ||
@@ -366,12 +382,7 @@ namespace Npgs
                         SpectralType.HSpectralClass == Astro::ESpectralClass::kSpectral_WO)
                     {
                         ++WolfRayet;
-                        CountMostLuminous(Star, MostLuminousWolfRayet);
-                        CountMostMassive(Star, MostMassiveWolfRayet);
-                        CountLargest(Star, LargestWolfRayet);
-                        CountHottest(Star, HottestWolfRayet);
-                        CountOldest(Star, OldestWolfRayet);
-                        CountMostOblateness(Star, MostOblatenessWolfRayet);
+                        UPDATE_ALL_STATS(WolfRayet)
                         continue;
                     }
                 }
@@ -380,12 +391,7 @@ namespace Npgs
                     SpectralType.LuminosityClass == Astro::ELuminosityClass::kLuminosity_IaPlus)
                 {
                     CountClass(SpectralType, Hypergiants);
-                    CountMostLuminous(Star, MostLuminousHypergiant);
-                    CountMostMassive(Star, MostMassiveHypergiant);
-                    CountLargest(Star, LargestHypergiant);
-                    CountHottest(Star, HottestHypergiant);
-                    CountOldest(Star, OldestHypergiant);
-                    CountMostOblateness(Star, MostOblatenessHypergiant);
+                    UPDATE_ALL_STATS(Hypergiant)
                     continue;
                 }
 
@@ -394,157 +400,89 @@ namespace Npgs
                     SpectralType.LuminosityClass == Astro::ELuminosityClass::kLuminosity_Ib)
                 {
                     CountClass(SpectralType, Supergiants);
-                    CountMostLuminous(Star, MostLuminousSupergiant);
-                    CountMostMassive(Star, MostMassiveSupergiant);
-                    CountLargest(Star, LargestSupergiant);
-                    CountHottest(Star, HottestSupergiant);
-                    CountOldest(Star, OldestSupergiant);
-                    CountMostOblateness(Star, MostOblatenessSupergiant);
+                    UPDATE_ALL_STATS(Supergiant)
                     continue;
                 }
 
                 if (SpectralType.LuminosityClass == Astro::ELuminosityClass::kLuminosity_II)
                 {
                     CountClass(SpectralType, BrightGiants);
-                    CountMostLuminous(Star, MostLuminousBrightGiant);
-                    CountMostMassive(Star, MostMassiveBrightGiant);
-                    CountLargest(Star, LargestBrightGiant);
-                    CountHottest(Star, HottestBrightGiant);
-                    CountOldest(Star, OldestBrightGiant);
-                    CountMostOblateness(Star, MostOblatenessBrightGiant);
+                    UPDATE_ALL_STATS(BrightGiant)
                     continue;
                 }
 
                 if (SpectralType.LuminosityClass == Astro::ELuminosityClass::kLuminosity_III)
                 {
                     CountClass(SpectralType, Giants);
-                    CountMostLuminous(Star, MostLuminousGiant);
-                    CountMostMassive(Star, MostMassiveGiant);
-                    CountLargest(Star, LargestGiant);
-                    CountHottest(Star, HottestGiant);
-                    CountOldest(Star, OldestGiant);
-                    CountMostOblateness(Star, MostOblatenessGiant);
+                    UPDATE_ALL_STATS(Giant)
                     continue;
                 }
 
                 if (SpectralType.LuminosityClass == Astro::ELuminosityClass::kLuminosity_IV)
                 {
                     CountClass(SpectralType, Subgiants);
-                    CountMostLuminous(Star, MostLuminousSubgiant);
-                    CountMostMassive(Star, MostMassiveSubgiant);
-                    CountLargest(Star, LargestSubgiant);
-                    CountHottest(Star, HottestSubgiant);
-                    CountOldest(Star, OldestSubgiant);
-                    CountMostOblateness(Star, MostOblatenessSubgiant);
+                    UPDATE_ALL_STATS(Subgiant)
                     continue;
                 }
+
+                bool Fuck;
 
                 if (SpectralType.LuminosityClass == Astro::ELuminosityClass::kLuminosity_V)
                 {
-                    CountClass(SpectralType, MainSequence);
-                    CountMostLuminous(Star, MostLuminousMainSequence);
-                    CountMostMassive(Star, MostMassiveMainSequence);
-                    CountLargest(Star, LargestMainSequence);
-                    CountHottest(Star, HottestMainSequence);
-                    CountOldest(Star, OldestMainSequence);
-                    CountMostOblateness(Star, MostOblatenessMainSequence);
+                    if (SpectralType.HSpectralClass == Astro::ESpectralClass::kSpectral_O)
+                        Fuck = true;
+                    CountClass(SpectralType, MainSequences);
+                    UPDATE_ALL_STATS(MainSequence)
                     continue;
                 }
+
+#undef UPDATE_ALL_STATS
             }
         }
 
-        std::println("Most luminous main sequence star: luminosity: {}", MostLuminousMainSequence.LuminositySol);
-        std::println("{}", FormatInfo(MostLuminousMainSequence.Star));
-        std::println("Most luminous Wolf-Rayet star: luminosity: {}", MostLuminousWolfRayet.LuminositySol);
-        std::println("{}", FormatInfo(MostLuminousWolfRayet.Star));
-        std::println("Most luminous subgiant star: luminosity: {}", MostLuminousSubgiant.LuminositySol);
-        std::println("{}", FormatInfo(MostLuminousSubgiant.Star));
-        std::println("Most luminous giant star: luminosity: {}", MostLuminousGiant.LuminositySol);
-        std::println("{}", FormatInfo(MostLuminousGiant.Star));
-        std::println("Most luminous bright giant star: luminosity: {}", MostLuminousBrightGiant.LuminositySol);
-        std::println("{}", FormatInfo(MostLuminousBrightGiant.Star));
-        std::println("Most luminous supergiant star: luminosity: {}", MostLuminousSupergiant.LuminositySol);
-        std::println("{}", FormatInfo(MostLuminousSupergiant.Star));
-        std::println("Most luminous hypergiant star: luminosity: {}", MostLuminousHypergiant.LuminositySol);
-        std::println("{}", FormatInfo(MostLuminousHypergiant.Star));
-        std::println("");
-        std::println("Most massive main sequence star: mass: {}", MostMassiveMainSequence.MassSol);
-        std::println("{}", FormatInfo(MostMassiveMainSequence.Star));
-        std::println("Most massive Wolf-Rayet star: mass: {}", MostMassiveWolfRayet.MassSol);
-        std::println("{}", FormatInfo(MostMassiveWolfRayet.Star));
-        std::println("Most massive subgiant star: mass: {}", MostMassiveSubgiant.MassSol);
-        std::println("{}", FormatInfo(MostMassiveSubgiant.Star));
-        std::println("Most massive giant star: mass: {}", MostMassiveGiant.MassSol);
-        std::println("{}", FormatInfo(MostMassiveGiant.Star));
-        std::println("Most massive bright giant star: mass: {}", MostMassiveBrightGiant.MassSol);
-        std::println("{}", FormatInfo(MostMassiveBrightGiant.Star));
-        std::println("Most massive supergiant star: mass: {}", MostMassiveSupergiant.MassSol);
-        std::println("{}", FormatInfo(MostMassiveSupergiant.Star));
-        std::println("Most massive hypergiant star: mass: {}", MostMassiveHypergiant.MassSol);
-        std::println("{}", FormatInfo(MostMassiveHypergiant.Star));
-        std::println("");
-        std::println("Largest main sequence star: radius: {}", LargestMainSequence.RadiusSol);
-        std::println("{}", FormatInfo(LargestMainSequence.Star));
-        std::println("Largest Wolf-Rayet star: radius: {}", LargestWolfRayet.RadiusSol);
-        std::println("{}", FormatInfo(LargestWolfRayet.Star));
-        std::println("Largest subgiant star: radius: {}", LargestSubgiant.RadiusSol);
-        std::println("{}", FormatInfo(LargestSubgiant.Star));
-        std::println("Largest giant star: radius: {}", LargestGiant.RadiusSol);
-        std::println("{}", FormatInfo(LargestGiant.Star));
-        std::println("Largest bright giant star: radius: {}", LargestBrightGiant.RadiusSol);
-        std::println("{}", FormatInfo(LargestBrightGiant.Star));
-        std::println("Largest supergiant star: radius: {}", LargestSupergiant.RadiusSol);
-        std::println("{}", FormatInfo(LargestSupergiant.Star));
-        std::println("Largest hypergiant star: radius: {}", LargestHypergiant.RadiusSol);
-        std::println("{}", FormatInfo(LargestHypergiant.Star));
-        std::println("");
-        std::println("Hottest main sequence star: Teff: {}", HottestMainSequence.Teff);
-        std::println("{}", FormatInfo(HottestMainSequence.Star));
-        std::println("Hottest Wolf-Rayet star: Teff: {}", HottestWolfRayet.Teff);
-        std::println("{}", FormatInfo(HottestWolfRayet.Star));
-        std::println("Hottest subgiant star: Teff: {}", HottestSubgiant.Teff);
-        std::println("{}", FormatInfo(HottestSubgiant.Star));
-        std::println("Hottest giant star: Teff: {}", HottestGiant.Teff);
-        std::println("{}", FormatInfo(HottestGiant.Star));
-        std::println("Hottest bright giant star: Teff: {}", HottestBrightGiant.Teff);
-        std::println("{}", FormatInfo(HottestBrightGiant.Star));
-        std::println("Hottest supergiant star: Teff: {}", HottestSupergiant.Teff);
-        std::println("{}", FormatInfo(HottestSupergiant.Star));
-        std::println("Hottest hypergiant star: Teff: {}", HottestHypergiant.Teff);
-        std::println("{}", FormatInfo(HottestHypergiant.Star));
-        std::println("");
-        std::println("Oldest main sequence star: Age: {}", OldestMainSequence.Age);
-        std::println("{}", FormatInfo(OldestMainSequence.Star));
-        std::println("Oldest Wolf-Rayet star: Age: {}", OldestWolfRayet.Age);
-        std::println("{}", FormatInfo(OldestWolfRayet.Star));
-        std::println("Oldest subgiant star: Age: {}", OldestSubgiant.Age);
-        std::println("{}", FormatInfo(OldestSubgiant.Star));
-        std::println("Oldest giant star: Age: {}", OldestGiant.Age);
-        std::println("{}", FormatInfo(OldestGiant.Star));
-        std::println("Oldest bright giant star: Age: {}", OldestBrightGiant.Age);
-        std::println("{}", FormatInfo(OldestBrightGiant.Star));
-        std::println("Oldest supergiant star: Age: {}", OldestSupergiant.Age);
-        std::println("{}", FormatInfo(OldestSupergiant.Star));
-        std::println("Oldest hypergiant star: Age: {}", OldestHypergiant.Age);
-        std::println("{}", FormatInfo(OldestHypergiant.Star));
-        std::println("");
-        std::println("Most oblateness main sequence star: Oblateness: {}", MostOblatenessMainSequence.Oblateness);
-        std::println("{}", FormatInfo(MostOblatenessMainSequence.Star));
-        std::println("Most oblateness Wolf-Rayet star: Oblateness: {}", MostOblatenessWolfRayet.Oblateness);
-        std::println("{}", FormatInfo(MostOblatenessWolfRayet.Star));
-        std::println("Most oblateness subgiant star: Oblateness: {}", MostOblatenessSubgiant.Oblateness);
-        std::println("{}", FormatInfo(MostOblatenessSubgiant.Star));
-        std::println("Most oblateness giant star: Oblateness: {}", MostOblatenessGiant.Oblateness);
-        std::println("{}", FormatInfo(MostOblatenessGiant.Star));
-        std::println("Most oblateness bright giant star: Oblateness: {}", MostOblatenessBrightGiant.Oblateness);
-        std::println("{}", FormatInfo(MostOblatenessBrightGiant.Star));
-        std::println("Most oblateness supergiant star: Oblateness: {}", MostOblatenessSupergiant.Oblateness);
-        std::println("{}", FormatInfo(MostOblatenessSupergiant.Star));
-        std::println("Most oblateness hypergiant star: Oblateness: {}", MostOblatenessHypergiant.Oblateness);
-        std::println("{}", FormatInfo(MostOblatenessHypergiant.Star));
+        // 打印结果辅助函数
+        auto PrintStatsInfo = [&](std::string_view Title, std::string_view ValueName, const auto& Items)
+        {
+            for (const auto& [Category, Item] : Items)
+            {
+                std::println("{} {} star: {}: {}", Title, Category, ValueName, Item->Value);
+                std::println("{}", FormatInfo(Item->Star));
+            }
+            std::println("");
+        };
+
+        // 宏定义：构建统计项列表
+#define MAKE_STAT_LIST(Prefix)                                 \
+            std::vector<std::pair<std::string_view, const decltype(Prefix##MainSequence)*>> \
+            {                                                  \
+                { "main sequence",   &Prefix##MainSequence },  \
+                { "Wolf-Rayet",      &Prefix##WolfRayet },     \
+                { "subgiant",        &Prefix##Subgiant },      \
+                { "giant",           &Prefix##Giant },         \
+                { "bright giant",    &Prefix##BrightGiant },   \
+                { "supergiant",      &Prefix##Supergiant },    \
+                { "hypergiant",      &Prefix##Hypergiant },    \
+                { "O main sequence", &Prefix##OMainSequence }, \
+                { "O giant",         &Prefix##OGiant },        \
+                { "Of giant",        &Prefix##OfGiant },       \
+                { "O supergiant",    &Prefix##OSupergiant },   \
+                { "Of supergiant",   &Prefix##OfSupergiant }   \
+            }
+
+        // 使用辅助函数替换海量 println
+        PrintStatsInfo("Most luminous", "luminosity", MAKE_STAT_LIST(MostLuminous));
+        PrintStatsInfo("Most massive", "mass", MAKE_STAT_LIST(MostMassive));
+        PrintStatsInfo("Largest", "radius", MAKE_STAT_LIST(Largest));
+        PrintStatsInfo("Hottest", "Teff", MAKE_STAT_LIST(Hottest));
+        PrintStatsInfo("Oldest", "Age", MAKE_STAT_LIST(Oldest));
+        PrintStatsInfo("Most oblateness", "Oblateness", MAKE_STAT_LIST(MostOblateness));
+        PrintStatsInfo("Most magnetic", "MagneticField", MAKE_STAT_LIST(MostMagnetic));
+        PrintStatsInfo("Most Mdot", "Mdot", MAKE_STAT_LIST(MostMdot));
+
+#undef MAKE_STAT_LIST
 
         std::size_t TotalMainSequence = 0;
-        for (std::size_t Count : MainSequence)
+        for (std::size_t Count : MainSequences)
         {
             TotalMainSequence += Count;
         }
@@ -552,17 +490,17 @@ namespace Npgs
         std::println("");
         std::println("Total main sequence: {}", TotalMainSequence);
         std::println("Total main sequence rate: {}", TotalMainSequence / static_cast<double>(TotalStars));
-        std::println("Total O type star rate: {}", static_cast<double>(MainSequence[kTypeOIndex]) / static_cast<double>(TotalMainSequence));
-        std::println("Total B type star rate: {}", static_cast<double>(MainSequence[kTypeBIndex]) / static_cast<double>(TotalMainSequence));
-        std::println("Total A type star rate: {}", static_cast<double>(MainSequence[kTypeAIndex]) / static_cast<double>(TotalMainSequence));
-        std::println("Total F type star rate: {}", static_cast<double>(MainSequence[kTypeFIndex]) / static_cast<double>(TotalMainSequence));
-        std::println("Total G type star rate: {}", static_cast<double>(MainSequence[kTypeGIndex]) / static_cast<double>(TotalMainSequence));
-        std::println("Total K type star rate: {}", static_cast<double>(MainSequence[kTypeKIndex]) / static_cast<double>(TotalMainSequence));
-        std::println("Total M type star rate: {}", static_cast<double>(MainSequence[kTypeMIndex]) / static_cast<double>(TotalMainSequence));
-        std::println("Total Wolf-Rayet / O main star rate: {}", static_cast<double>(WolfRayet) / static_cast<double>(MainSequence[kTypeOIndex]));
+        std::println("Total O type star rate: {}", static_cast<double>(MainSequences[kTypeOIndex]) / static_cast<double>(TotalMainSequence));
+        std::println("Total B type star rate: {}", static_cast<double>(MainSequences[kTypeBIndex]) / static_cast<double>(TotalMainSequence));
+        std::println("Total A type star rate: {}", static_cast<double>(MainSequences[kTypeAIndex]) / static_cast<double>(TotalMainSequence));
+        std::println("Total F type star rate: {}", static_cast<double>(MainSequences[kTypeFIndex]) / static_cast<double>(TotalMainSequence));
+        std::println("Total G type star rate: {}", static_cast<double>(MainSequences[kTypeGIndex]) / static_cast<double>(TotalMainSequence));
+        std::println("Total K type star rate: {}", static_cast<double>(MainSequences[kTypeKIndex]) / static_cast<double>(TotalMainSequence));
+        std::println("Total M type star rate: {}", static_cast<double>(MainSequences[kTypeMIndex]) / static_cast<double>(TotalMainSequence));
+        std::println("Total Wolf-Rayet / O main star rate: {}", static_cast<double>(WolfRayet) / static_cast<double>(MainSequences[kTypeOIndex]));
 
         std::println("O type main sequence: {}\nB type main sequence: {}\nA type main sequence: {}\nF type main sequence: {}\nG type main sequence: {}\nK type main sequence: {}\nM type main sequence: {}",
-                     MainSequence[kTypeOIndex], MainSequence[kTypeBIndex], MainSequence[kTypeAIndex], MainSequence[kTypeFIndex], MainSequence[kTypeGIndex], MainSequence[kTypeKIndex], MainSequence[kTypeMIndex]);
+                     MainSequences[kTypeOIndex], MainSequences[kTypeBIndex], MainSequences[kTypeAIndex], MainSequences[kTypeFIndex], MainSequences[kTypeGIndex], MainSequences[kTypeKIndex], MainSequences[kTypeMIndex]);
         std::println("O type subgiants: {}\nB type subgiants: {}\nA type subgiants: {}\nF type subgiants: {}\nG type subgiants: {}\nK type subgiants: {}\nM type subgiants: {}",
                      Subgiants[kTypeOIndex], Subgiants[kTypeBIndex], Subgiants[kTypeAIndex], Subgiants[kTypeFIndex], Subgiants[kTypeGIndex], Subgiants[kTypeKIndex], Subgiants[kTypeMIndex]);
         std::println("O type giants: {}\nB type giants: {}\nA type giants: {}\nF type giants: {}\nG type giants: {}\nK type giants: {}\nM type giants: {}",
