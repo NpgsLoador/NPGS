@@ -1555,7 +1555,8 @@ namespace Npgs
                 }
 
                 float MassLossRateSolPerYear = StarData.GetStellarWindMassLossRate() * kYearToSecond / kSolarMass;
-                if (SpectralClass == std::to_underlying(Astro::ESpectralClass::kSpectral_O) &&
+                if (BasePhase != Astro::AStar::EEvolutionPhase::kPrevMainSequence &&
+                    SpectralClass == std::to_underlying(Astro::ESpectralClass::kSpectral_O) &&
                     (SurfaceH1 < 0.6f || MassLossRateSolPerYear > 1e-6))
                 {
                     SpectralType.MarkSpecial(Astro::ESpecialMark::kCode_f);
@@ -1647,8 +1648,13 @@ namespace Npgs
                 }
                 else
                 {
-                    // 前主序恒星温度达不到 O2 上限
-                    if (InitialMassSol <= WNxhLowerMassThreshold)
+                    if (EvolutionPhase == Astro::AStar::EEvolutionPhase::kPrevMainSequence)
+                    {
+                        SpectralType.HSpectralClass  = Astro::ESpectralClass::kSpectral_O;
+                        SpectralType.Subclass        = 2.0f;
+                        SpectralType.LuminosityClass = Astro::ELuminosityClass::kLuminosity_Unknown;
+                    }
+                    else if (InitialMassSol <= WNxhLowerMassThreshold)
                     {
                         if (SpectralType.SpecialMarked(Astro::ESpecialMark::kCode_f))
                         {
@@ -2309,9 +2315,10 @@ namespace Npgs
                           15358.4f * std::pow(DeathStarMassSol, 3.0f) - 1892.365f * std::pow(DeathStarMassSol, 4.0f);
             }
 
-            LogR    = std::log10(Radius * 1000 / kSolarRadius);
-            LogTeff = static_cast<float>(std::log10(1.5e8 * std::pow((DeathStarAge - 1e5) + 22000, -0.5)));
-
+            LogR                    = std::log10(Radius * 1000 / kSolarRadius);
+            LogTeff                 = static_cast<float>(std::log10(1.5e8 * std::pow((DeathStarAge - 1e5) + 22000, -0.5)));
+            LogCenterT              = std::numeric_limits<float>::quiet_NaN();
+            LogCenterRho            = std::numeric_limits<float>::quiet_NaN();
             SurfaceZ                = std::numeric_limits<float>::quiet_NaN();
             SurfaceEnergeticNuclide = std::numeric_limits<float>::quiet_NaN();
             SurfaceVolatiles        = std::numeric_limits<float>::quiet_NaN();
