@@ -67,9 +67,9 @@ int main() {
 
         FStellarGenerator TestGenerator(TestGeneratorInfo);
         FStellarBasicProperties Properties;
-        Properties.Age = 3.16e6f;
-        Properties.FeH = -0.07f;
-        Properties.InitialMassSol = 299.92f;
+        Properties.Age = 3.49e6f;
+        Properties.FeH = 0.31f;
+        Properties.InitialMassSol = 61.54f;
 
         auto Star = TestGenerator.GenerateStar(Properties);
 

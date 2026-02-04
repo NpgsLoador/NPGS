@@ -647,9 +647,7 @@ namespace Npgs
         {
             auto ZamsData = CalculateZamsStarData(Properties.InitialMassSol, Properties.FeH);
             LocalZamsStar.emplace(MakeNormalStar(ZamsData, Properties));
-            CalculateSpectralType(*LocalZamsStar);
-            GenerateZamsStarMagnetic(*LocalZamsStar);
-            GenerateZamsStarInitialSpin(*LocalZamsStar);
+            CalculateDerivedData(*LocalZamsStar, nullptr);
             ZamsStar = &LocalZamsStar.value();
         }
         else
@@ -735,22 +733,9 @@ namespace Npgs
         }
 
         auto Star = MakeNormalStar(StarData, Properties);
-        CalculateSpectralType(Star);
-        CalculateMinCoilMass(Star);
-        ApplyFromZamsStar(Star, *ZamsStar);
+        CalculateDerivedData(Star, ZamsStar);
 
         return Star;
-    }
-
-    void FStellarGenerator::ApplyFromZamsStar(Astro::AStar& StarData, const Astro::AStar& ZamsStarData)
-    {
-        StarData.SetMagneticField(ZamsStarData.GetMagneticField());
-        CalculateCurrentSpinAndOblateness(StarData, ZamsStarData);
-
-        if (ZamsStarData.GetStellarClass().GetSpectralType().SpecialMarked(Astro::ESpecialMark::kCode_p))
-        {
-            StarData.ModifyStellarClass(Astro::ESpecialMark::kCode_p, true);
-        }
     }
 
     FStellarGenerator::FDataArray
@@ -1344,11 +1329,6 @@ namespace Npgs
         auto   EvolutionPhase    = static_cast<Astro::AStar::EEvolutionPhase>(StarData[kPhaseIndex_]);
 
         float LuminositySol  = std::pow(RadiusSol, 2.0f) * std::pow((Teff / kSolarTeff), 4.0f);
-        float EscapeVelocity = std::sqrt((2.0f * kGravityConstant * MassSol * kSolarMass) / (RadiusSol * kSolarRadius));
-
-        float LifeProgress         = static_cast<float>(Age / Lifetime);
-        float WindSpeedCoefficient = 3.0f - LifeProgress;
-        float StellarWindSpeed     = WindSpeedCoefficient * EscapeVelocity;
 
         float SurfaceEnergeticNuclide = (SurfaceH1 * 0.00002f + SurfaceHe3);
         float SurfaceVolatiles = 1.0f - SurfaceZ - SurfaceEnergeticNuclide;
@@ -1361,7 +1341,6 @@ namespace Npgs
         Star.SetMass(MassSol * kSolarMass);
         Star.SetLifetime(Lifetime);
         Star.SetRadius(RadiusSol * kSolarRadius);
-        Star.SetEscapeVelocity(EscapeVelocity);
         Star.SetLuminosity(LuminositySol * kSolarLuminosity);
         Star.SetTeff(Teff);
         Star.SetSurfaceH1(SurfaceH1);
@@ -1370,13 +1349,45 @@ namespace Npgs
         Star.SetSurfaceVolatiles(SurfaceVolatiles);
         Star.SetCoreTemp(CoreTemp);
         Star.SetCoreDensity(CoreDensity * 1000);
-        Star.SetStellarWindSpeed(StellarWindSpeed);
         Star.SetStellarWindMassLossRate(-(MassLossRate * kSolarMass / kYearToSecond));
         Star.SetEvolutionProgress(EvolutionProgress);
         Star.SetEvolutionPhase(EvolutionPhase);
         Star.SetNormal(glm::vec2(Theta, Phi));
 
         return Star;
+    }
+
+    void FStellarGenerator::CalculateDerivedData(Astro::AStar& StarData, const Astro::AStar* ZamsStarData)
+    {
+        CalculateSpectralType(StarData);
+
+        if (ZamsStarData == nullptr)
+        {
+            GenerateZamsStarMagnetic(StarData);
+            GenerateZamsStarInitialSpin(StarData);
+        }
+        else
+        {
+            float MagneticField  = ZamsStarData->GetMagneticField();
+            float ZamsStarRadius = ZamsStarData->GetRadius();
+            float StarRadius     = StarData.GetRadius();
+
+            float CurrentSurfaceMagneticField = MagneticField * std::pow(ZamsStarRadius / StarRadius, 2.0f);
+            auto  SpectralClass = StarData.GetStellarClass().GetSpectralType().SpectralClass;
+            if ((SpectralClass <= Astro::ESpectralClass::kSpectral_A ||
+                 SpectralClass >= Astro::ESpectralClass::kSpectral_WN &&
+                 SpectralClass <= Astro::ESpectralClass::kSpectral_WO) &&
+                CurrentSurfaceMagneticField * 10000.0f >= 300.0f)
+            {
+                StarData.ModifyStellarClass(Astro::ESpecialMark::kCode_p, true);
+            }
+
+            StarData.SetMagneticField(CurrentSurfaceMagneticField);
+            CalculateCurrentSpinAndOblateness(StarData, *ZamsStarData);
+            CalculateMinCoilMass(StarData);
+        }
+
+        CalculateEscapeVelocityAndWindSpeed(StarData);
     }
 
     Astro::AStar FStellarGenerator::GenerateDeathStar(EStellarTypeGenerationOption DeathStarTypeOption,
@@ -1919,9 +1930,9 @@ namespace Npgs
         float MassSol = static_cast<float>(StarData.GetMass() / kSolarMass);
 
         // 1. Eddington Limit
-        float EddingtonFactor   = StarData.GetEvolutionPhase() == Astro::AStar::EEvolutionPhase::kWolfRayet
-                                ? 65000.0f : 32000.0f;
-        float EddingtonLimitSol = EddingtonFactor * MassSol;
+        float SurfaceH1         = StarData.GetSurfaceH1();
+        float EddingtonConstant = 65000.0f - (65000.0f - 32000.0f) * SurfaceH1;
+        float EddingtonLimitSol = EddingtonConstant * MassSol;
 
         // 2. Humphreys-Davidson Limit
         static constexpr float kKinkLogTeff             = 3.8f;
@@ -2533,13 +2544,16 @@ namespace Npgs
         float SurfaceSpecificAngularMomentum = (2.0f * Math::kPi * std::pow(Radius, 2.0f)) / Spin;
 
         // Presupernova Evolution of Differentially Rotating Massive Stars Including Magnetic Fields
-        static constexpr float kFmax = 0.1f;
-        static constexpr float kFmin = 1e-5f;
-        static constexpr float kTmid = 7500.0f;
-        static constexpr float kKx   = 20.0f;
-        float Teff = DyingStarData.GetTeff();
+        static constexpr float kFmax  = 0.1f;
+        static constexpr float kFmin  = 1e-5f;
+        static constexpr float kTmid  = 7500.0f;
+        static constexpr float kSlope = 20.0f;
 
-        float Exponent = -kKx * (std::log10(Teff) - std::log10(kTmid));
+        float Teff    = DyingStarData.GetTeff();
+        float LogTeff = std::log10(Teff);
+        float LogTmid = std::log10(kTmid);
+
+        float Exponent = -kSlope * (LogTeff - LogTmid);
         float CouplingFactor = kFmin + (kFmax - kFmin) / (1 + std::exp(Exponent));
 
         return SurfaceSpecificAngularMomentum * CouplingFactor;
@@ -2664,7 +2678,7 @@ namespace Npgs
     void FStellarGenerator::GenerateZamsStarInitialSpin(Astro::AStar& StarData)
     {
         float Radius         = StarData.GetRadius();
-        float EffectiveMass  = CalculateEffectiveMass(StarData);
+        float EffectiveMass  = CalculateEddingtonEffective(StarData).EffectiveMass;
         float CriticalSpin   = 2.0f * Math::kPi * std::sqrt(std::pow(Radius, 3.0f) / (kGravityConstant * EffectiveMass));
         StarData.SetCriticalSpin(CriticalSpin);
 
@@ -2711,19 +2725,23 @@ namespace Npgs
         StarData.SetSpin(InitialSpin);
     }
 
-    float FStellarGenerator::CalculateEffectiveMass(const Astro::AStar& StarData) const
+    FStellarGenerator::FEddingtonEffective
+    FStellarGenerator::CalculateEddingtonEffective(const Astro::AStar& StarData) const
     {
-        auto [EddingtonLimit, _] = CalculatePhysicalLuminosityLimit(StarData);
-
-        float Luminosity = static_cast<float>(StarData.GetLuminosity());
-        float Gamma = Luminosity / EddingtonLimit;
+        float EddingtonLimit = CalculatePhysicalLuminosityLimit(StarData).EddingtonLimit;
+        float Luminosity     = static_cast<float>(StarData.GetLuminosity());
+        float Gamma          = Luminosity / EddingtonLimit;
         if (Gamma >= 1.0f)
         {
             Gamma = 0.99f;
         }
 
         float EffectiveMass = static_cast<float>(StarData.GetMass() * (1.0f - Gamma));
-        return EffectiveMass;
+
+        return {
+            .EffectiveMass = EffectiveMass,
+            .Gamma         = Gamma
+        };
     }
 
     void FStellarGenerator::CalculateCurrentSpinAndOblateness(Astro::AStar& StarData, const Astro::AStar& ZamsStarData)
@@ -2733,7 +2751,7 @@ namespace Npgs
         bool  bIsFastSpin   = ZamsStarData.GetSpin() / ZamsStarData.GetCriticalSpin() >= 0.4f;
         CalculateNormalStarDecayedSpin(StarData, ZamsRadiusSol, InitialSpin, bIsFastSpin);
 
-        float EffectiveMass = CalculateEffectiveMass(StarData);
+        float EffectiveMass = CalculateEddingtonEffective(StarData).EffectiveMass;
         CalculateNormalStarOblateness(StarData, EffectiveMass, StarData.GetSpin());
     }
 
@@ -2865,6 +2883,36 @@ namespace Npgs
         }
 
         StarData.SetSpin(Spin);
+    }
+
+    void FStellarGenerator::CalculateEscapeVelocityAndWindSpeed(Astro::AStar& StarData) const
+    {
+        // 计算 Beta
+        static constexpr float kBetaMax = 2.6f;
+        static constexpr float kBetaMin = 0.5f;
+        static constexpr float kTmid    = 17000.0f;
+        static constexpr float kSlope   = 15.0f;
+
+        float LogTeff = std::log10(StarData.GetTeff());
+        float LogTmid = std::log10(kTmid);
+
+        float Exponent = -kSlope * (LogTeff - LogTmid);
+        float Beta = kBetaMin + (kBetaMax - kBetaMin) / (1.0f + std::exp(Exponent));
+
+        // 计算考虑爱丁顿光度和自转线速度之后的等效逃逸速度
+        auto [EffectiveMass, Gamma] = CalculateEddingtonEffective(StarData);
+
+        float Radius                = StarData.GetRadius();
+        float SpinVelocity          = (2.0f * Math::kPi * Radius) / StarData.GetSpin();
+        float EscapeVelocitySquared = (2.0f * kGravityConstant * EffectiveMass / Radius) - std::pow(SpinVelocity, 2.0f);
+        float EscapeVelocity        = std::sqrt(EscapeVelocitySquared);
+        StarData.SetEscapeVelocity(EscapeVelocity);
+
+        // 光度太高的恒星由于星风过于稠密，反而会损失太多动能降低速度
+        // 缩它一手
+        float BetaScale = std::min(1.0f, 1.0f - 0.5f * (Gamma - 0.3f));
+        float WindSpeed = Beta * BetaScale * EscapeVelocity;
+        StarData.SetStellarWindSpeed(WindSpeed);
     }
 
     void FStellarGenerator::ExpandMistData(double TargetMassSol, FDataArray& StarData) const

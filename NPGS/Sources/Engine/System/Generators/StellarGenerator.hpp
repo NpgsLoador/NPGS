@@ -201,6 +201,12 @@ namespace Npgs
             float                         DeathStarMassSol{};
         };
 
+        struct FEddingtonEffective
+        {
+            float EffectiveMass;
+            float Gamma;
+        };
+
     private:
         template <typename CsvType>
         requires std::is_class_v<CsvType>
@@ -211,7 +217,6 @@ namespace Npgs
         float GenerateAge(float MaxPdf);
         float GenerateMass(float MaxPdf, auto& LogMassPdf);
         Astro::AStar GenerateStarInternal(const FStellarBasicProperties& Properties, Astro::AStar* ZamsStarData);
-        void ApplyFromZamsStar(Astro::AStar& StarData, const Astro::AStar& ZamsStarData);
         FDataArray GetFullMistData(const FStellarBasicProperties& Properties, bool bIsWhiteDwarf, bool bIsSingleWhiteDwarf) const;
         FDataFileTables GetDataTables(float MassSol, float FeH, bool bIsWhiteDwarf, bool bIsSingleWhiteDwarf) const;
         float GetClosestFeH(float FeH) const;
@@ -235,7 +240,9 @@ namespace Npgs
         FDataArray InterpolateStarData(auto* Data, double Target, const std::string& Header, int Index, bool bIsWhiteDwarf) const;
         FDataArray InterpolateArray(const std::pair<FDataArray, FDataArray>& DataArrays, double Coefficient) const;
         FDataArray InterpolateFinalData(const std::pair<FDataArray, FDataArray>& DataArrays, double Coefficient, bool bIsWhiteDwarf) const;
+        
         Astro::AStar MakeNormalStar(const FDataArray& StarData, const FStellarBasicProperties& Properties);
+        void CalculateDerivedData(Astro::AStar& StarData, const Astro::AStar* ZamsStarData);
 
         Astro::AStar GenerateDeathStar(EStellarTypeGenerationOption DeathStarTypeOption,
                                        const FStellarBasicProperties& Properties, Astro::AStar& ZamsStarData);
@@ -264,11 +271,12 @@ namespace Npgs
         void GenerateZamsStarMagnetic(Astro::AStar& StarData);
         void GenerateCompatStarMagnetic(Astro::AStar& StarData);
         void GenerateZamsStarInitialSpin(Astro::AStar& StarData);
-        float CalculateEffectiveMass(const Astro::AStar& StarData) const;
+        FEddingtonEffective CalculateEddingtonEffective(const Astro::AStar& StarData) const;
         void CalculateCurrentSpinAndOblateness(Astro::AStar& StarData, const Astro::AStar& ZamsStarData);
         void CalculateNormalStarDecayedSpin(Astro::AStar& StarData, float ZamsRadiusSol, float InitialSpin, bool bIsFastSpin);
         void CalculateNormalStarOblateness(Astro::AStar& StarData, float EffectiveMass, float Spin);
         void GenerateCompatStarSpin(Astro::AStar& StarData);
+        void CalculateEscapeVelocityAndWindSpeed(Astro::AStar& StarData) const;
         void ExpandMistData(double TargetMassSol, FDataArray& StarData) const;
         void CalculateMinCoilMass(Astro::AStar& StarData) const;
 
