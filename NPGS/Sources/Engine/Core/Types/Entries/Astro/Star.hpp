@@ -118,8 +118,8 @@ namespace Npgs::Astro
         AStar& SetStellarClass(Astro::FStellarClass Class);
         
         AStar& ModifyStellarClass(Astro::FSpectralType SpectralType);
-        AStar& ModifyStellarClass(ESpectralClass SpectralClass, bool bIsMSpectral = false);
-        AStar& ModifyStellarClass(float Subclass, bool bIsMSpectral = false);
+        AStar& ModifyStellarClass(ESpectralClass SpectralClass);
+        AStar& ModifyStellarClass(float Subclass);
         AStar& ModifyStellarClass(ELuminosityClass LuminosityClass);
         AStar& ModifyStellarClass(ESpecialMark SpecialMark, bool bMark);
         AStar& ModifyStellarType(Astro::EStellarType StellarType);

@@ -22,8 +22,7 @@
 namespace Npgs
 {
     FUniverse::FUniverse(std::uint32_t Seed, std::size_t StarCount, std::size_t ExtraGiantCount, std::size_t ExtraMassiveStarCount,
-                         std::size_t ExtraNeutronStarCount, std::size_t ExtraBlackHoleCount, std::size_t ExtraMergeStarCount,
-                         float UniverseAge)
+                         std::size_t ExtraNeutronStarCount, std::size_t ExtraBlackHoleCount, std::size_t ExtraMergeStarCount, float UniverseAge)
         : RandomEngine_(Seed)
         , SeedGenerator_(0ull, std::numeric_limits<std::uint32_t>::max())
         , CommonGenerator_(0.0f, 1.0f)
@@ -157,7 +156,7 @@ namespace Npgs
 
         auto CountClass = [](const Astro::FSpectralType& SpectralType, std::array<std::size_t, 7>& Type)
         {
-            switch (SpectralType.HSpectralClass)
+            switch (SpectralType.SpectralClass)
             {
             case Astro::ESpectralClass::kSpectral_O:
                 ++Type[kTypeOIndex];
@@ -330,7 +329,7 @@ namespace Npgs
                     continue;
                 }
 
-                Astro::FSpectralType SpectralType = Class.Data();
+                Astro::FSpectralType SpectralType = Class.GetSpectralType();
 
                 // 定义统计更新宏，简化调用
 #define UPDATE_ALL_STATS(Suffix)                                       \
@@ -344,7 +343,7 @@ namespace Npgs
                     CountMostMdot(Star, MostMdot##Suffix);
 
                 // O Type Stars Special Handling (Note: These are only reached if not caught by above checks)
-                if (SpectralType.HSpectralClass == Astro::ESpectralClass::kSpectral_O)
+                if (SpectralType.SpectralClass == Astro::ESpectralClass::kSpectral_O)
                 {
                     bool bIsF = SpectralType.SpecialMarked(Astro::ESpecialMark::kCode_f);
 
@@ -377,9 +376,9 @@ namespace Npgs
 
                 if (SpectralType.LuminosityClass == Astro::ELuminosityClass::kLuminosity_Unknown)
                 {
-                    if (SpectralType.HSpectralClass == Astro::ESpectralClass::kSpectral_WC ||
-                        SpectralType.HSpectralClass == Astro::ESpectralClass::kSpectral_WN ||
-                        SpectralType.HSpectralClass == Astro::ESpectralClass::kSpectral_WO)
+                    if (SpectralType.SpectralClass == Astro::ESpectralClass::kSpectral_WC ||
+                        SpectralType.SpectralClass == Astro::ESpectralClass::kSpectral_WN ||
+                        SpectralType.SpectralClass == Astro::ESpectralClass::kSpectral_WO)
                     {
                         ++WolfRayet;
                         UPDATE_ALL_STATS(WolfRayet)
@@ -425,12 +424,8 @@ namespace Npgs
                     continue;
                 }
 
-                bool Fuck;
-
                 if (SpectralType.LuminosityClass == Astro::ELuminosityClass::kLuminosity_V)
                 {
-                    if (SpectralType.HSpectralClass == Astro::ESpectralClass::kSpectral_O)
-                        Fuck = true;
                     CountClass(SpectralType, MainSequences);
                     UPDATE_ALL_STATS(MainSequence)
                     continue;

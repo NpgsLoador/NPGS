@@ -8,7 +8,7 @@
 
 namespace Npgs::Astro
 {
-    using FSpecialMarkDigital = std::uint32_t;
+    using FSpecialMarkDigital = std::uint16_t;
 
     enum class EStellarType : std::uint8_t
     {
@@ -75,7 +75,7 @@ namespace Npgs::Astro
         kLuminosity_VI        = 11
     };
 
-    enum class ESpecialMark : std::uint8_t
+    enum class ESpecialMark : std::uint16_t
     {
         kCode_Null            = 0,      // 无
         kCode_f               = Bit(1), // N III 和 He II 发射线
@@ -118,13 +118,10 @@ namespace Npgs::Astro
 
     struct FSpectralType
     {
-        ESpectralClass      HSpectralClass{ ESpectralClass::kSpectral_Unknown };
-        ESpectralClass      MSpectralClass{ ESpectralClass::kSpectral_Unknown };
+        ESpectralClass      SpectralClass{ ESpectralClass::kSpectral_Unknown };
         ELuminosityClass    LuminosityClass{ ELuminosityClass::kLuminosity_Unknown };
-        bool                bIsAmStar{ false };
         FSpecialMarkDigital SpecialMark{};
         float               Subclass{};
-        float               AmSubclass{};
 
         void MarkSpecial(ESpecialMark Mark);
         void UnmarkSpecial(ESpecialMark Mark);
@@ -135,12 +132,11 @@ namespace Npgs::Astro
     {
     public:
         FStellarClass() = default;
-        FStellarClass(EStellarType StellarType, const FSpectralType& SpectralType);
+        FStellarClass(EStellarType StellarType, FSpectralType SpectralType);
 
-        FSpectralType Data() const;
-        bool Load(const FSpectralType& SpectralType);
         std::string ToString() const;
         EStellarType GetStellarType() const;
+        FSpectralType GetSpectralType() const;
 
         static FStellarClass Parse(const std::string& StellarClassStr);
 
@@ -186,7 +182,7 @@ namespace Npgs::Astro
         static std::string SpecialMarkToString(ESpecialMark SpecialMark);
 
     private:
-        std::uint64_t SpectralType_{};
+        FSpectralType SpectralType_{};
         EStellarType  StellarType_{ EStellarType::kNormalStar };
     };
 } // namespace Npgs::Astro

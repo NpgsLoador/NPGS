@@ -153,37 +153,37 @@ namespace Npgs::Astro
         return *this;
     }
 
-    NPGS_INLINE AStar& AStar::ModifyStellarClass(ESpectralClass SpectralClass, bool bIsMSpectral)
+    NPGS_INLINE AStar& AStar::ModifyStellarClass(ESpectralClass SpectralClass)
     {
-        auto SpectralType = ExtraProperties_.Class.Data();
-        bIsMSpectral ? SpectralType.MSpectralClass = SpectralClass : SpectralType.HSpectralClass = SpectralClass;
+        auto SpectralType = ExtraProperties_.Class.GetSpectralType();
+        SpectralType.SpectralClass = SpectralClass;
         return ModifyStellarClass(SpectralType);
     }
 
-    NPGS_INLINE AStar& AStar::ModifyStellarClass(float Subclass, bool bIsMSpectral)
+    NPGS_INLINE AStar& AStar::ModifyStellarClass(float Subclass)
     {
-        auto SpectralType = ExtraProperties_.Class.Data();
-        bIsMSpectral ? SpectralType.AmSubclass = Subclass : SpectralType.Subclass = Subclass;
+        auto SpectralType = ExtraProperties_.Class.GetSpectralType();
+        SpectralType.Subclass = Subclass;
         return ModifyStellarClass(SpectralType);
     }
 
     NPGS_INLINE AStar& AStar::ModifyStellarClass(ELuminosityClass LuminosityClass)
     {
-        auto SpectralType = ExtraProperties_.Class.Data();
+        auto SpectralType = ExtraProperties_.Class.GetSpectralType();
         SpectralType.LuminosityClass = LuminosityClass;
         return ModifyStellarClass(SpectralType);
     }
 
     NPGS_INLINE AStar& AStar::ModifyStellarClass(ESpecialMark SpecialMark, bool bMark)
     {
-        auto SpectralType = ExtraProperties_.Class.Data();
+        auto SpectralType = ExtraProperties_.Class.GetSpectralType();
         bMark ? SpectralType.MarkSpecial(SpecialMark) : SpectralType.UnmarkSpecial(SpecialMark);
         return ModifyStellarClass(SpectralType);
     }
 
     NPGS_INLINE AStar& AStar::ModifyStellarType(Astro::EStellarType StellarType)
     {
-        auto SpectralType = ExtraProperties_.Class.Data();
+        auto SpectralType = ExtraProperties_.Class.GetSpectralType();
         ExtraProperties_.Class = Astro::FStellarClass(StellarType, SpectralType);
         return *this;
     }

@@ -747,7 +747,7 @@ namespace Npgs
         StarData.SetMagneticField(ZamsStarData.GetMagneticField());
         CalculateCurrentSpinAndOblateness(StarData, ZamsStarData);
 
-        if (ZamsStarData.GetStellarClass().Data().SpecialMarked(Astro::ESpecialMark::kCode_p))
+        if (ZamsStarData.GetStellarClass().GetSpectralType().SpecialMarked(Astro::ESpecialMark::kCode_p))
         {
             StarData.ModifyStellarClass(Astro::ESpecialMark::kCode_p, true);
         }
@@ -1505,7 +1505,6 @@ namespace Npgs
 
         Astro::EStellarType  StellarType = StarData.GetStellarClass().GetStellarType();
         Astro::FSpectralType SpectralType;
-        SpectralType.bIsAmStar = false;
 
         float InitialMassSol = StarData.GetInitialMass() / kSolarMass;
         float Subclass       = 0.0f;
@@ -1587,7 +1586,7 @@ namespace Npgs
                 }
             }
 
-            SpectralType.HSpectralClass = static_cast<Astro::ESpectralClass>(SpectralClass);
+            SpectralType.SpectralClass = static_cast<Astro::ESpectralClass>(SpectralClass);
 
             if (SpectralSubclassMap == nullptr)
             {
@@ -1625,8 +1624,8 @@ namespace Npgs
                     {
                         if (EvolutionPhase == Astro::AStar::EEvolutionPhase::kMainSequence)
                         {
-                            if ((SpectralType.HSpectralClass == Astro::ESpectralClass::kSpectral_O ||
-                                 SpectralType.HSpectralClass == Astro::ESpectralClass::kSpectral_B) &&
+                            if ((SpectralType.SpectralClass == Astro::ESpectralClass::kSpectral_O ||
+                                 SpectralType.SpectralClass == Astro::ESpectralClass::kSpectral_B) &&
                                 SurfaceH1 < MinSurfaceH1)
                             {
                                 SpectralType.LuminosityClass = CalculateLuminosityClass(StarData);
@@ -1650,7 +1649,7 @@ namespace Npgs
                 {
                     if (EvolutionPhase == Astro::AStar::EEvolutionPhase::kPrevMainSequence)
                     {
-                        SpectralType.HSpectralClass  = Astro::ESpectralClass::kSpectral_O;
+                        SpectralType.SpectralClass   = Astro::ESpectralClass::kSpectral_O;
                         SpectralType.Subclass        = 2.0f;
                         SpectralType.LuminosityClass = Astro::ELuminosityClass::kLuminosity_Unknown;
                     }
@@ -1658,19 +1657,19 @@ namespace Npgs
                     {
                         if (SpectralType.SpecialMarked(Astro::ESpecialMark::kCode_f))
                         {
-                            SpectralType.HSpectralClass  = Astro::ESpectralClass::kSpectral_O;
+                            SpectralType.SpectralClass   = Astro::ESpectralClass::kSpectral_O;
                             SpectralType.Subclass        = 2.0f;
                             SpectralType.LuminosityClass = Astro::ELuminosityClass::kLuminosity_I;
                         }
                         else if (SurfaceH1 > MinSurfaceH1)
                         {
-                            SpectralType.HSpectralClass  = Astro::ESpectralClass::kSpectral_O;
+                            SpectralType.SpectralClass   = Astro::ESpectralClass::kSpectral_O;
                             SpectralType.Subclass        = 2.0f;
                             SpectralType.LuminosityClass = Astro::ELuminosityClass::kLuminosity_V;
                         }
                         else if (SurfaceH1 > 0.4f)
                         {
-                            SpectralType.HSpectralClass  = Astro::ESpectralClass::kSpectral_O;
+                            SpectralType.SpectralClass   = Astro::ESpectralClass::kSpectral_O;
                             SpectralType.Subclass        = 2.0f;
                             SpectralType.LuminosityClass = CalculateLuminosityClass(StarData);
                         }
@@ -1691,23 +1690,23 @@ namespace Npgs
                 {
                     if (StarData.GetMass() / kSolarMass <= 0.5)
                     {
-                        SpectralType.HSpectralClass = Astro::ESpectralClass::kSpectral_DA;
+                        SpectralType.SpectralClass = Astro::ESpectralClass::kSpectral_DA;
                     }
                     else
                     {
                         if (Teff > 45000)
                         {
-                            SpectralType.HSpectralClass = Astro::ESpectralClass::kSpectral_DO;
+                            SpectralType.SpectralClass = Astro::ESpectralClass::kSpectral_DO;
                         }
                         else
                         {
-                            SpectralType.HSpectralClass = Astro::ESpectralClass::kSpectral_DB;
+                            SpectralType.SpectralClass = Astro::ESpectralClass::kSpectral_DB;
                         }
                     }
                 }
                 else
                 {
-                    SpectralType.HSpectralClass = Astro::ESpectralClass::kSpectral_DC;
+                    SpectralType.SpectralClass = Astro::ESpectralClass::kSpectral_DC;
                 }
 
                 Subclass = 50400.0f / Teff;
@@ -1720,16 +1719,16 @@ namespace Npgs
 
                 break;
             case Astro::EStellarType::kNeutronStar:
-                SpectralType.HSpectralClass = Astro::ESpectralClass::kSpectral_Q;
+                SpectralType.SpectralClass = Astro::ESpectralClass::kSpectral_Q;
                 break;
             case Astro::EStellarType::kBlackHole:
-                SpectralType.HSpectralClass = Astro::ESpectralClass::kSpectral_X;
+                SpectralType.SpectralClass = Astro::ESpectralClass::kSpectral_X;
                 break;
             case Astro::EStellarType::kDeathStarPlaceholder:
-                SpectralType.HSpectralClass = Astro::ESpectralClass::kSpectral_Unknown;
+                SpectralType.SpectralClass = Astro::ESpectralClass::kSpectral_Unknown;
                 break;
             default:
-                SpectralType.HSpectralClass = Astro::ESpectralClass::kSpectral_Unknown;
+                SpectralType.SpectralClass = Astro::ESpectralClass::kSpectral_Unknown;
                 break;
             }
         }
@@ -1772,10 +1771,11 @@ namespace Npgs
 
         if (BaseClass == Astro::ELuminosityClass::kLuminosity_Ia)
         {
-            auto EvolutionPhase = StarData.GetEvolutionPhase();
-            if (EvolutionPhase == Astro::AStar::EEvolutionPhase::kEarlyAgb ||
-                EvolutionPhase == Astro::AStar::EEvolutionPhase::kThermalPulseAgb ||
-                EvolutionPhase == Astro::AStar::EEvolutionPhase::kPostAgb)
+            auto  EvolutionPhase = StarData.GetEvolutionPhase();
+            float InitialMassSol = StarData.GetInitialMass() / kSolarMass;
+            if ((EvolutionPhase == Astro::AStar::EEvolutionPhase::kEarlyAgb ||
+                 EvolutionPhase == Astro::AStar::EEvolutionPhase::kThermalPulseAgb ||
+                 EvolutionPhase == Astro::AStar::EEvolutionPhase::kPostAgb) && InitialMassSol <= 8.0f)
             {
                 BaseClass = Astro::ELuminosityClass::kLuminosity_II;
             }
@@ -1966,13 +1966,10 @@ namespace Npgs
                 DeathStarType  = Astro::EStellarType::kWhiteDwarf;
                 DeathStarClass =
                 {
-                    .HSpectralClass  = Astro::ESpectralClass::kSpectral_Unknown,
-                    .MSpectralClass  = Astro::ESpectralClass::kSpectral_Unknown,
+                    .SpectralClass   = Astro::ESpectralClass::kSpectral_Unknown,
                     .LuminosityClass = Astro::ELuminosityClass::kLuminosity_Unknown,
-                    .bIsAmStar       = false,
                     .SpecialMark     = std::to_underlying(Astro::ESpecialMark::kCode_Null),
-                    .Subclass        = 0.0f,
-                    .AmSubclass      = 0.0f
+                    .Subclass        = 0.0f
                 };
             }
             else if (InitialMassSol >= 0.5f && InitialMassSol < 8.0f)
@@ -1982,13 +1979,10 @@ namespace Npgs
                 DeathStarType  = Astro::EStellarType::kWhiteDwarf;
                 DeathStarClass =
                 {
-                    .HSpectralClass  = Astro::ESpectralClass::kSpectral_Unknown,
-                    .MSpectralClass  = Astro::ESpectralClass::kSpectral_Unknown,
+                    .SpectralClass   = Astro::ESpectralClass::kSpectral_Unknown,
                     .LuminosityClass = Astro::ELuminosityClass::kLuminosity_Unknown,
-                    .bIsAmStar       = false,
                     .SpecialMark     = std::to_underlying(Astro::ESpecialMark::kCode_Null),
-                    .Subclass        = 0.0f,
-                    .AmSubclass      = 0.0f
+                    .Subclass        = 0.0f
                 };
             }
             else if (InitialMassSol >= 8.0f && InitialMassSol < 9.759f)
@@ -1998,13 +1992,10 @@ namespace Npgs
                 DeathStarType  = Astro::EStellarType::kWhiteDwarf;
                 DeathStarClass =
                 {
-                    .HSpectralClass  = Astro::ESpectralClass::kSpectral_Unknown,
-                    .MSpectralClass  = Astro::ESpectralClass::kSpectral_Unknown,
+                    .SpectralClass   = Astro::ESpectralClass::kSpectral_Unknown,
                     .LuminosityClass = Astro::ELuminosityClass::kLuminosity_Unknown,
-                    .bIsAmStar       = false,
                     .SpecialMark     = std::to_underlying(Astro::ESpecialMark::kCode_Null),
-                    .Subclass        = 0.0f,
-                    .AmSubclass      = 0.0f
+                    .Subclass        = 0.0f
                 };
             }
             else if (InitialMassSol >= 9.759f && InitialMassSol < 10.0f)
@@ -2014,13 +2005,10 @@ namespace Npgs
                 DeathStarType  = Astro::EStellarType::kNeutronStar;
                 DeathStarClass =
                 {
-                    .HSpectralClass  = Astro::ESpectralClass::kSpectral_Q,
-                    .MSpectralClass  = Astro::ESpectralClass::kSpectral_Unknown,
+                    .SpectralClass   = Astro::ESpectralClass::kSpectral_Q,
                     .LuminosityClass = Astro::ELuminosityClass::kLuminosity_Unknown,
-                    .bIsAmStar       = false,
                     .SpecialMark     = std::to_underlying(Astro::ESpecialMark::kCode_Null),
-                    .Subclass        = 0.0f,
-                    .AmSubclass      = 0.0f
+                    .Subclass        = 0.0f
                 };
             }
         }
@@ -2036,13 +2024,10 @@ namespace Npgs
                 DeathStarType  = Astro::EStellarType::kDeathStarPlaceholder;
                 DeathStarClass =
                 {
-                    .HSpectralClass  = Astro::ESpectralClass::kSpectral_Unknown,
-                    .MSpectralClass  = Astro::ESpectralClass::kSpectral_Unknown,
+                    .SpectralClass   = Astro::ESpectralClass::kSpectral_Unknown,
                     .LuminosityClass = Astro::ELuminosityClass::kLuminosity_Unknown,
-                    .bIsAmStar       = false,
                     .SpecialMark     = std::to_underlying(Astro::ESpecialMark::kCode_Null),
-                    .Subclass        = 0.0f,
-                    .AmSubclass      = 0.0f
+                    .Subclass        = 0.0f
                 };
 
                 DeathStarMassSol = 0.0f;
@@ -2054,13 +2039,10 @@ namespace Npgs
                 DeathStarType  = Astro::EStellarType::kBlackHole;
                 DeathStarClass =
                 {
-                    .HSpectralClass  = Astro::ESpectralClass::kSpectral_X,
-                    .MSpectralClass  = Astro::ESpectralClass::kSpectral_Unknown,
+                    .SpectralClass   = Astro::ESpectralClass::kSpectral_X,
                     .LuminosityClass = Astro::ELuminosityClass::kLuminosity_Unknown,
-                    .bIsAmStar       = false,
                     .SpecialMark     = std::to_underlying(Astro::ESpecialMark::kCode_Null),
-                    .Subclass        = 0.0f,
-                    .AmSubclass      = 0.0f
+                    .Subclass        = 0.0f
                 };
 
                 DeathStarMassSol = DyingStarMassSol;
@@ -2083,13 +2065,10 @@ namespace Npgs
                     DeathStarType  = Astro::EStellarType::kNeutronStar;
                     DeathStarClass =
                     {
-                        .HSpectralClass  = Astro::ESpectralClass::kSpectral_Q,
-                        .MSpectralClass  = Astro::ESpectralClass::kSpectral_Unknown,
+                        .SpectralClass   = Astro::ESpectralClass::kSpectral_Q,
                         .LuminosityClass = Astro::ELuminosityClass::kLuminosity_Unknown,
-                        .bIsAmStar       = false,
                         .SpecialMark     = std::to_underlying(Astro::ESpecialMark::kCode_Null),
-                        .Subclass        = 0.0f,
-                        .AmSubclass      = 0.0f
+                        .Subclass        = 0.0f
                     };
                 }
                 else if (HeliumCoreMassSol >= 5.07f && HeliumCoreMassSol < 6.011f) // 21-23.3537 Msun 臭弹谷
@@ -2099,13 +2078,10 @@ namespace Npgs
                     DeathStarType  = Astro::EStellarType::kBlackHole;
                     DeathStarClass =
                     {
-                        .HSpectralClass  = Astro::ESpectralClass::kSpectral_X,
-                        .MSpectralClass  = Astro::ESpectralClass::kSpectral_Unknown,
+                        .SpectralClass   = Astro::ESpectralClass::kSpectral_X,
                         .LuminosityClass = Astro::ELuminosityClass::kLuminosity_Unknown,
-                        .bIsAmStar       = false,
                         .SpecialMark     = std::to_underlying(Astro::ESpecialMark::kCode_Null),
-                        .Subclass        = 0.0f,
-                        .AmSubclass      = 0.0f
+                        .Subclass        = 0.0f
                     };
                 }
                 else if (HeliumCoreMassSol >= 6.011f && HeliumCoreMassSol < 11.005f) // 23.3537-33.75 Msun
@@ -2117,13 +2093,10 @@ namespace Npgs
                         DeathStarType  = Astro::EStellarType::kNeutronStar;
                         DeathStarClass =
                         {
-                            .HSpectralClass  = Astro::ESpectralClass::kSpectral_Q,
-                            .MSpectralClass  = Astro::ESpectralClass::kSpectral_Unknown,
+                            .SpectralClass   = Astro::ESpectralClass::kSpectral_Q,
                             .LuminosityClass = Astro::ELuminosityClass::kLuminosity_Unknown,
-                            .bIsAmStar       = false,
                             .SpecialMark     = std::to_underlying(Astro::ESpecialMark::kCode_Null),
-                            .Subclass        = 0.0f,
-                            .AmSubclass      = 0.0f
+                            .Subclass        = 0.0f
                         };
                     }
                     else // 哑炮
@@ -2133,13 +2106,10 @@ namespace Npgs
                         DeathStarType  = Astro::EStellarType::kBlackHole;
                         DeathStarClass =
                         {
-                            .HSpectralClass  = Astro::ESpectralClass::kSpectral_X,
-                            .MSpectralClass  = Astro::ESpectralClass::kSpectral_Unknown,
+                            .SpectralClass   = Astro::ESpectralClass::kSpectral_X,
                             .LuminosityClass = Astro::ELuminosityClass::kLuminosity_Unknown,
-                            .bIsAmStar       = false,
                             .SpecialMark     = std::to_underlying(Astro::ESpecialMark::kCode_Null),
-                            .Subclass        = 0.0f,
-                            .AmSubclass      = 0.0f
+                            .Subclass        = 0.0f
                         };
 
                         DeathStarMassSol = HeliumCoreMassSol;
@@ -2156,13 +2126,10 @@ namespace Npgs
                     DeathStarType  = Astro::EStellarType::kBlackHole;
                     DeathStarClass =
                     {
-                        .HSpectralClass  = Astro::ESpectralClass::kSpectral_X,
-                        .MSpectralClass  = Astro::ESpectralClass::kSpectral_Unknown,
+                        .SpectralClass   = Astro::ESpectralClass::kSpectral_X,
                         .LuminosityClass = Astro::ELuminosityClass::kLuminosity_Unknown,
-                        .bIsAmStar       = false,
                         .SpecialMark     = std::to_underlying(Astro::ESpecialMark::kCode_Null),
-                        .Subclass        = 0.0f,
-                        .AmSubclass      = 0.0f
+                        .Subclass        = 0.0f
                     };
                 }
             }
@@ -2200,13 +2167,10 @@ namespace Npgs
                 DeathStarType  = Astro::EStellarType::kBlackHole;
                 DeathStarClass =
                 {
-                    .HSpectralClass  = Astro::ESpectralClass::kSpectral_X,
-                    .MSpectralClass  = Astro::ESpectralClass::kSpectral_Unknown,
+                    .SpectralClass   = Astro::ESpectralClass::kSpectral_X,
                     .LuminosityClass = Astro::ELuminosityClass::kLuminosity_Unknown,
-                    .bIsAmStar       = false,
                     .SpecialMark     = std::to_underlying(Astro::ESpecialMark::kCode_Null),
-                    .Subclass        = 0.0f,
-                    .AmSubclass      = 0.0f
+                    .Subclass        = 0.0f
                 };
             }
             else
@@ -2217,13 +2181,10 @@ namespace Npgs
                 DeathStarType  = Astro::EStellarType::kNeutronStar;
                 DeathStarClass =
                 {
-                    .HSpectralClass  = Astro::ESpectralClass::kSpectral_Q,
-                    .MSpectralClass  = Astro::ESpectralClass::kSpectral_Unknown,
+                    .SpectralClass   = Astro::ESpectralClass::kSpectral_Q,
                     .LuminosityClass = Astro::ELuminosityClass::kLuminosity_Unknown,
-                    .bIsAmStar       = false,
                     .SpecialMark     = std::to_underlying(Astro::ESpecialMark::kCode_Null),
-                    .Subclass        = 0.0f,
-                    .AmSubclass      = 0.0f
+                    .Subclass        = 0.0f
                 };
             }
 
@@ -2611,7 +2572,7 @@ namespace Npgs
     void FStellarGenerator::GenerateZamsStarMagnetic(Astro::AStar& StarData)
     {
         Math::TDistribution<>* MagneticGenerator = nullptr;
-        auto  ZamsSpectralType = StarData.GetStellarClass().Data();
+        auto  ZamsSpectralType = StarData.GetStellarClass().GetSpectralType();
         float MagneticField    = 0.0f;
         float InitialMassSol   = static_cast<float>(StarData.GetInitialMass() / kSolarMass);
 
@@ -2629,8 +2590,8 @@ namespace Npgs
         }
         else if (InitialMassSol >= 1.5f && InitialMassSol < 20.0f)
         {
-            if ((ZamsSpectralType.HSpectralClass == Astro::ESpectralClass::kSpectral_A  ||
-                 ZamsSpectralType.HSpectralClass == Astro::ESpectralClass::kSpectral_B) &&
+            if ((ZamsSpectralType.SpectralClass == Astro::ESpectralClass::kSpectral_A  ||
+                 ZamsSpectralType.SpectralClass == Astro::ESpectralClass::kSpectral_B) &&
                 XpStarProbabilityGenerators_[kXpStarIndex_](RandomEngine_))
             {
                 MagneticGenerator = &MagneticGenerators_[kCommonXpStarIndex_];
@@ -2643,8 +2604,8 @@ namespace Npgs
         }
         else
         {
-            if ((ZamsSpectralType.HSpectralClass == Astro::ESpectralClass::kSpectral_O   ||
-                 ZamsSpectralType.HSpectralClass == Astro::ESpectralClass::kSpectral_WN) &&
+            if ((ZamsSpectralType.SpectralClass == Astro::ESpectralClass::kSpectral_O   ||
+                 ZamsSpectralType.SpectralClass == Astro::ESpectralClass::kSpectral_WN) &&
                 XpStarProbabilityGenerators_[kOpStarIndex_](RandomEngine_))
             {
                 Math::TBernoulliDistribution MonsterProbability(0.0015);
@@ -2756,9 +2717,9 @@ namespace Npgs
 
         float Luminosity = static_cast<float>(StarData.GetLuminosity());
         float Gamma = Luminosity / EddingtonLimit;
-        if (Gamma >= 0.95f)
+        if (Gamma >= 1.0f)
         {
-            Gamma = 0.95f;
+            Gamma = 0.99f;
         }
 
         float EffectiveMass = static_cast<float>(StarData.GetMass() * (1.0f - Gamma));
@@ -2791,7 +2752,7 @@ namespace Npgs
             AngularMomentumMultipler = std::pow(RadiusSol / ZamsRadiusSol, 2.5f);
 
             float Base = 1.0f + CommonGenerator_(RandomEngine_);
-            if (StarData.GetStellarClass().Data().SpecialMarked(Astro::ESpecialMark::kCode_p))
+            if (StarData.GetStellarClass().GetSpectralType().SpecialMarked(Astro::ESpecialMark::kCode_p))
             {
                 Base *= 10;
             }
@@ -2831,11 +2792,6 @@ namespace Npgs
                     // Langer (1998): J ~ M^y (y 约为 2.0 对于 O 星风)
                     float MassRatio = InitialMassSol / static_cast<float>(StarData.GetMass() / kSolarMass);
                     BrakingFactor   = std::pow(MassRatio, 2.0f);
-
-                    if (BrakingFactor > 20.0f)
-                    {
-                        BrakingFactor = 20.0f;
-                    }
                 }
             }
             else
@@ -2867,13 +2823,15 @@ namespace Npgs
 
         float RocheFactor = Alpha / (2.0f + Alpha);
         float Oblateness  = RocheFactor * 0.95f;
-        Oblateness = std::min(Oblateness, 0.33f);
+        Oblateness = std::min(Oblateness, 1.0f / 3.0f);
 
         StarData.SetOblateness(Oblateness);
 
-        auto SpectralType = StarData.GetStellarClass().Data();
-        if (SpectralType.HSpectralClass == Astro::ESpectralClass::kSpectral_O ||
-            SpectralType.HSpectralClass == Astro::ESpectralClass::kSpectral_B)
+        auto SpectralType = StarData.GetStellarClass().GetSpectralType();
+        if (SpectralType.SpectralClass == Astro::ESpectralClass::kSpectral_O ||
+            SpectralType.SpectralClass == Astro::ESpectralClass::kSpectral_B ||
+           (SpectralType.SpectralClass == Astro::ESpectralClass::kSpectral_WN &&
+            SpectralType.SpecialMarked(Astro::ESpecialMark::kCode_h)))
         {
             float XeProbatility = std::clamp((Alpha - 0.5f) / 0.4f, 0.0f, 1.0f);
             Math::TBernoulliDistribution XeStarProbability(XeProbatility);

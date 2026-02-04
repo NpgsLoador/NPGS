@@ -8,6 +8,11 @@ namespace Npgs::Astro
         return StellarType_;
     }
 
+    NPGS_INLINE FSpectralType Astro::FStellarClass::GetSpectralType() const
+    {
+        return SpectralType_;
+    }
+
     NPGS_INLINE void FSpectralType::MarkSpecial(ESpecialMark Mark)
     {
         SpecialMark |= std::to_underlying(Mark);

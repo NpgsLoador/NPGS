@@ -13,94 +13,23 @@ namespace Npgs::Astro
 {
     // FStellarClass implementations
     // -----------------------------
-    FStellarClass::FStellarClass(EStellarType StellarType, const FSpectralType& SpectralType)
-        : StellarType_(StellarType)
+    FStellarClass::FStellarClass(EStellarType StellarType, FSpectralType SpectralType)
+        : SpectralType_(SpectralType)
+        , StellarType_(StellarType)
     {
-        Load(SpectralType);
-    }
-
-    FSpectralType FStellarClass::Data() const
-    {
-        FSpectralType SpectralType;
-
-        SpectralType.HSpectralClass  = static_cast<ESpectralClass>(SpectralType_ >> 57 & 0x1F);
-        SpectralType.Subclass        = (SpectralType_ >> 53 & 0xF) + (SpectralType_ >> 49 & 0xF) / 10.0f;
-        SpectralType.bIsAmStar       = SpectralType_ >> 48 & 0x1;
-        SpectralType.MSpectralClass  = static_cast<ESpectralClass>(SpectralType_ >> 44 & 0xF);
-        SpectralType.AmSubclass      = (SpectralType_ >> 40 & 0xF) + (SpectralType_ >> 36 & 0xF) / 10.0f;
-        SpectralType.LuminosityClass = static_cast<ELuminosityClass>(SpectralType_ >> 32 & 0xF);
-        SpectralType.SpecialMark     = static_cast<FSpecialMarkDigital>(SpectralType_ & 0x1FFFFFFFF);
-
-        if (SpectralType.HSpectralClass == ESpectralClass::kSpectral_Unknown)
-        {
-            SpectralType =
-            {
-                .HSpectralClass  = ESpectralClass::kSpectral_Unknown,
-                .MSpectralClass  = ESpectralClass::kSpectral_Unknown,
-                .LuminosityClass = ELuminosityClass::kLuminosity_Unknown,
-                .bIsAmStar       = false,
-                .SpecialMark     = std::to_underlying(ESpecialMark::kCode_Null),
-                .Subclass        = 0.0f,
-                .AmSubclass      = 0.0f
-            };
-        }
-
-        return SpectralType;
-    }
-
-    bool FStellarClass::Load(const FSpectralType& SpectralType)
-    {
-        // 结构
-        // --------------------------------------------------------------------------------------------------
-        // std::uint64_t
-        // |----|-------|------|------|---|------|------|------|------|-------------------------------------|
-        // | 00 | 00000 | 0000 | 0000 | 0 | 0000 | 0000 | 0000 | 0000 | 00000000 00000000 00000000 00000000 |
-        // |----|-------|------|------|---|------|------|------|------|-------------------------------------|
-        // 恒星类型 光谱  亚型高位 亚型低位 Am m 光谱 m 亚型高位 m 亚型低位 光度级 特殊标识
-
-        std::uint64_t Data         = 0;
-        std::uint64_t SubclassHigh = static_cast<std::uint64_t>(SpectralType.Subclass);
-        float         Intermediate = std::round((SpectralType.Subclass - SubclassHigh) * 1000.0f) / 1000.0f;
-        std::uint64_t SubclassLow  = static_cast<std::uint64_t>(Intermediate * 10.0f);
-
-        Data |= static_cast<std::uint64_t>(StellarType_)                 << 62;
-        Data |= static_cast<std::uint64_t>(SpectralType.HSpectralClass)  << 57;
-        Data |= SubclassHigh                                             << 53;
-        Data |= SubclassLow                                              << 49;
-        Data |= static_cast<std::uint64_t>(SpectralType.bIsAmStar)       << 48;
-        Data |= static_cast<std::uint64_t>(SpectralType.MSpectralClass)  << 44;
-
-        SubclassHigh = static_cast<std::uint64_t>(SpectralType.AmSubclass);
-        Intermediate = std::round((SpectralType.AmSubclass - SubclassHigh) * 1000.0f) / 1000.0f;
-        SubclassLow  = static_cast<std::uint64_t>(Intermediate * 10.0f);
-
-        Data |= SubclassHigh                                             << 40;
-        Data |= SubclassLow                                              << 36;
-        Data |= static_cast<std::uint64_t>(SpectralType.LuminosityClass) << 32;
-        Data |= static_cast<std::uint64_t>(SpectralType.SpecialMark)     << 0;
-
-        SpectralType_ = Data;
-        return true;
     }
 
     std::string FStellarClass::ToString() const
     {
-        FSpectralType SpectralType = Data();
-
-        if (SpectralType.HSpectralClass == ESpectralClass::kSpectral_Unknown)
+        if (SpectralType_.SpectralClass == ESpectralClass::kSpectral_Unknown)
         {
             return "Unknown";
         }
 
-        std::string SpectralTypeStr = SpectralClassToString(SpectralType.HSpectralClass, SpectralType.Subclass);
+        std::string SpectralTypeStr = SpectralClassToString(SpectralType_.SpectralClass, SpectralType_.Subclass);
 
-        if (SpectralType.bIsAmStar)
-        {
-            SpectralTypeStr += "m" + SpectralClassToString(SpectralType.MSpectralClass, SpectralType.AmSubclass);
-        }
-
-        SpectralTypeStr += LuminosityClassToString(SpectralType.LuminosityClass);
-        SpectralTypeStr += SpecialMarkToString(static_cast<ESpecialMark>(SpectralType.SpecialMark));
+        SpectralTypeStr += LuminosityClassToString(SpectralType_.LuminosityClass);
+        SpectralTypeStr += SpecialMarkToString(static_cast<ESpecialMark>(SpectralType_.SpecialMark));
 
         return SpectralTypeStr;
     }
@@ -109,18 +38,15 @@ namespace Npgs::Astro
     {
         NpgsAssert(!StellarClassStr.empty(), "StellarClassStr is empty.");
 
-        EStellarType        StellarType     = EStellarType::kNormalStar;
-        ESpectralClass      HSpectralClass  = ESpectralClass::kSpectral_Unknown;
-        ESpectralClass      MSpectralClass  = ESpectralClass::kSpectral_Unknown;
+        EStellarType StellarType = EStellarType::kNormalStar;
+
+        ESpectralClass      SpectralClass   = ESpectralClass::kSpectral_Unknown;
         ELuminosityClass    LuminosityClass = ELuminosityClass::kLuminosity_Unknown;
         FSpecialMarkDigital SpecialMark     = std::to_underlying(ESpecialMark::kCode_Null);
         float               Subclass        = 0.0f;
-        float               AmSubclass      = 0.0f;
-        bool                bIsAmStar       = false;
 
-        EParseState State   = EParseState::kBegin;
-        std::size_t Index   = 0;
-        bool bParsingAmStar = false;
+        EParseState State = EParseState::kBegin;
+        std::size_t Index = 0;
 
         while (State != EParseState::kEnd)
         {
@@ -138,27 +64,19 @@ namespace Npgs::Astro
             switch (State)
             {
             case EParseState::kBegin:
-                State = ParseStellarType(Char, StellarType, HSpectralClass, Index);
+                State = ParseStellarType(Char, StellarType, SpectralClass, Index);
                 break;
             case EParseState::kSpectralClass:
-                if (!bParsingAmStar)
-                {
-                    State = ParseSpectralClass(Char, HSpectralClass, Index);
-                }
-                else
-                {
-                    State = ParseSpectralClass(Char, MSpectralClass, Index);
-                }
-
+                State = ParseSpectralClass(Char, SpectralClass, Index);
                 break;
             case EParseState::kWolfRayetStar:
-                State = ParseWolfRayetStar(Char, HSpectralClass, Index);
+                State = ParseWolfRayetStar(Char, SpectralClass, Index);
                 break;
             case EParseState::kWhiteDwarf:
-                State = ParseWhiteDwarf(Char, HSpectralClass, Index);
+                State = ParseWhiteDwarf(Char, SpectralClass, Index);
                 break;
             case EParseState::kWhiteDwarfEx:
-                State = ParseWhiteDwarfEx(Char, StellarClassStr[Index - 1], HSpectralClass, Index);
+                State = ParseWhiteDwarfEx(Char, StellarClassStr[Index - 1], SpectralClass, Index);
                 break;
             case EParseState::kSubdwarfPerfix:
                 switch (Char)
@@ -177,16 +95,8 @@ namespace Npgs::Astro
             case EParseState::kSubclass:
                 if (std::isdigit(Char))
                 {
-                    if (!bParsingAmStar)
-                    {
-                        Subclass = static_cast<float>(Char - '0');
-                    }
-                    else
-                    {
-                        AmSubclass = static_cast<float>(Char - '0');
-                    }
-
-                    State = EParseState::kSubclassDecimal;
+                    Subclass = static_cast<float>(Char - '0');
+                    State    = EParseState::kSubclassDecimal;
                     ++Index;
                 }
                 else
@@ -210,26 +120,14 @@ namespace Npgs::Astro
             case EParseState::kSubclassDecimalFinal:
                 if (std::isdigit(Char))
                 {
-                    if (!bParsingAmStar)
-                    {
-                        Subclass += 0.1f * (Char - '0');
-                    }
-                    else
-                    {
-                        AmSubclass += 0.1f * (Char - '0');
-                    }
+                    Subclass += 0.1f * (Char - '0');
                 }
 
                 State = EParseState::kSpecialMark;
                 ++Index;
                 break;
             case EParseState::kSpecialMark:
-                if ((State = ParseSpecialMark(Char, NextChar, SpecialMark, Index)) == EParseState::kSpectralClass)
-                {
-                    bParsingAmStar = true;
-                    bIsAmStar      = true;
-                }
-
+                State = ParseSpecialMark(Char, NextChar, SpecialMark, Index);
                 break;
             case EParseState::kLuminosityClass:
                 State = ParseLuminosityClass(Char, LuminosityClass, Index);
@@ -249,7 +147,15 @@ namespace Npgs::Astro
             }
         }
 
-        return { StellarType, { HSpectralClass, MSpectralClass, LuminosityClass, bIsAmStar, SpecialMark, Subclass, AmSubclass } };
+        FSpectralType SpectralType
+        {
+            .SpectralClass   = SpectralClass,
+            .LuminosityClass = LuminosityClass,
+            .SpecialMark     = SpecialMark,
+            .Subclass        = Subclass
+        };
+
+        return FStellarClass(StellarType, SpectralType);
     }
 
     // Processor functions implementations
@@ -539,22 +445,24 @@ namespace Npgs::Astro
     {
         switch (Char)
         {
-        case 'm':
-            SpecialMark |= static_cast<std::uint32_t>(ESpecialMark::kCode_m);
-            ++Index;
-            return EParseState::kSpectralClass;
         case 'f':
             SpecialMark |= static_cast<std::uint32_t>(ESpecialMark::kCode_f);
-            ++Index;
-            return (std::isalpha(NextChar) && std::islower(NextChar)) ? EParseState::kSpecialMark : EParseState::kEnd;
+            break;
         case 'h':
             SpecialMark |= static_cast<std::uint32_t>(ESpecialMark::kCode_h);
-            ++Index;
-            return (std::isalpha(NextChar) && std::islower(NextChar)) ? EParseState::kSpecialMark : EParseState::kEnd;
+            break;
+        case 'm':
+            SpecialMark |= static_cast<std::uint32_t>(ESpecialMark::kCode_m);
+            break;
         case 'p':
-            SpecialMark |= static_cast<std::uint32_t>(ESpecialMark::kCode_h);
-            ++Index;
-            return (std::isalpha(NextChar) && std::islower(NextChar)) ? EParseState::kSpecialMark : EParseState::kEnd;
+            SpecialMark |= static_cast<std::uint32_t>(ESpecialMark::kCode_p);
+            break;
+        case 'e':
+            SpecialMark |= static_cast<std::uint32_t>(ESpecialMark::kCode_e);
+            break;
+        case 'z':
+            SpecialMark |= static_cast<std::uint32_t>(ESpecialMark::kCode_z);
+            break;
         case '+':
             ++Index;
             return EParseState::kSpecialMark;
@@ -566,6 +474,9 @@ namespace Npgs::Astro
         default:
             return EParseState::kLuminosityClass;
         }
+
+        ++Index;
+        return (std::isalpha(NextChar) && std::islower(NextChar)) ? EParseState::kSpecialMark : EParseState::kEnd;
     }
 
     std::string FStellarClass::SpectralClassToString(ESpectralClass SpectralClass, float Subclass)
