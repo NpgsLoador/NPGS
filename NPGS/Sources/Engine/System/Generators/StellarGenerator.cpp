@@ -1384,10 +1384,9 @@ namespace Npgs
 
             StarData.SetMagneticField(CurrentSurfaceMagneticField);
             CalculateCurrentSpinAndOblateness(StarData, *ZamsStarData);
+            CalculateEscapeVelocityAndWindSpeed(StarData);
             CalculateMinCoilMass(StarData);
         }
-
-        CalculateEscapeVelocityAndWindSpeed(StarData);
     }
 
     Astro::AStar FStellarGenerator::GenerateDeathStar(EStellarTypeGenerationOption DeathStarTypeOption,
@@ -1666,13 +1665,7 @@ namespace Npgs
                     }
                     else if (InitialMassSol <= WNxhLowerMassThreshold)
                     {
-                        if (SpectralType.SpecialMarked(Astro::ESpecialMark::kCode_f))
-                        {
-                            SpectralType.SpectralClass   = Astro::ESpectralClass::kSpectral_O;
-                            SpectralType.Subclass        = 2.0f;
-                            SpectralType.LuminosityClass = Astro::ELuminosityClass::kLuminosity_I;
-                        }
-                        else if (SurfaceH1 > MinSurfaceH1)
+                        if (SurfaceH1 > MinSurfaceH1)
                         {
                             SpectralType.SpectralClass   = Astro::ESpectralClass::kSpectral_O;
                             SpectralType.Subclass        = 2.0f;
@@ -1683,6 +1676,12 @@ namespace Npgs
                             SpectralType.SpectralClass   = Astro::ESpectralClass::kSpectral_O;
                             SpectralType.Subclass        = 2.0f;
                             SpectralType.LuminosityClass = CalculateLuminosityClass(StarData);
+
+                            float MassLossRateSolPerYear = StarData.GetStellarWindMassLossRate() * kYearToSecond / kSolarMass;
+                            if (MassLossRateSolPerYear > 1e-6)
+                            {
+                                SpectralType.MarkSpecial(Astro::ESpecialMark::kCode_f);
+                            }
                         }
                         else
                         {
