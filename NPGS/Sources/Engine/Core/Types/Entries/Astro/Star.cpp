@@ -1,15 +1,149 @@
 #include "stdafx.h"
 #include "Star.hpp"
 
+#include <algorithm>
+#include <iterator>
+#include <stdexcept>
+
 namespace Npgs::Astro
 {
+    namespace
+    {
+        using FSubclassResult = std::pair<const AStar::FSubclassMap*, AStar::FSubclassMap::const_iterator>;
+
+        FSubclassResult GetCommonSubclassMap(Astro::ESpectralClass SpectralClass, float Subclass)
+        {
+            const AStar::FSubclassMap* SubclassMap = nullptr;
+
+            switch (SpectralClass)
+            {
+            case ESpectralClass::kSpectral_O:
+                SubclassMap = &AStar::kSpectralSubclassMap_O_;
+                break;
+            case ESpectralClass::kSpectral_B:
+                SubclassMap = &AStar::kSpectralSubclassMap_B_;
+                break;
+            case ESpectralClass::kSpectral_A:
+                SubclassMap = &AStar::kSpectralSubclassMap_A_;
+                break;
+            case ESpectralClass::kSpectral_F:
+                SubclassMap = &AStar::kSpectralSubclassMap_F_;
+                break;
+            case ESpectralClass::kSpectral_G:
+                SubclassMap = &AStar::kSpectralSubclassMap_G_;
+                break;
+            case ESpectralClass::kSpectral_K:
+                SubclassMap = &AStar::kSpectralSubclassMap_K_;
+                break;
+            case ESpectralClass::kSpectral_M:
+                SubclassMap = &AStar::kSpectralSubclassMap_M_;
+                break;
+            case ESpectralClass::kSpectral_L:
+                SubclassMap = &AStar::kSpectralSubclassMap_L_;
+                break;
+            case ESpectralClass::kSpectral_T:
+                SubclassMap = &AStar::kSpectralSubclassMap_T_;
+                break;
+            case ESpectralClass::kSpectral_Y:
+                SubclassMap = &AStar::kSpectralSubclassMap_Y_;
+                break;
+            default:
+                throw std::logic_error("Required subclass map does not exist.");
+            }
+
+            if (SubclassMap == nullptr || SubclassMap->empty())
+            {
+                throw std::logic_error("Required subclass is empty.");
+            }
+
+            auto it = std::ranges::find_if(*SubclassMap, [Subclass](float EntrySubclass) -> bool
+            {
+                return EntrySubclass == Subclass;
+            }, &std::pair<int, float>::second);
+
+            if (it == SubclassMap->end())
+            {
+                throw std::logic_error("Required subclass does not exist.");
+            }
+
+            return { SubclassMap, it };
+        }
+    }
+
     AStar::AStar(const FCelestialBody::FBasicProperties& BasicProperties, const FExtendedProperties& ExtraProperties)
         : FCelestialBody(BasicProperties)
         , ExtraProperties_(ExtraProperties)
     {
     }
 
-    const std::vector<std::pair<int, float>> AStar::kSpectralSubclassMap_O_
+    int AStar::GetCommonSubclassStandardTeff(Astro::ESpectralClass SpectralClass, float Subclass)
+    {
+        auto [_, SubclassIt] = GetCommonSubclassMap(SpectralClass, Subclass);
+        return SubclassIt->first;
+    }
+
+    int AStar::GetCommonSubclassUpperTeff(Astro::ESpectralClass SpectralClass, float Subclass)
+    {
+        auto [SubclassMap, SubclassIt] = GetCommonSubclassMap(SpectralClass, Subclass);
+
+        int CurrentTeff  = SubclassIt->first;
+        int PreviousTeff = 0;
+
+        if (SubclassIt != SubclassMap->begin())
+        {
+            PreviousTeff = std::prev(SubclassIt)->first;
+        }
+        else
+        {
+            const FSubclassMap* PreviousMap = nullptr;
+
+            switch (SpectralClass)
+            {
+            case ESpectralClass::kSpectral_B:
+                PreviousMap = &kSpectralSubclassMap_O_;
+                break;
+            case ESpectralClass::kSpectral_A:
+                PreviousMap = &kSpectralSubclassMap_B_;
+                break;
+            case ESpectralClass::kSpectral_F:
+                PreviousMap = &kSpectralSubclassMap_A_;
+                break;
+            case ESpectralClass::kSpectral_G:
+                PreviousMap = &kSpectralSubclassMap_F_;
+                break;
+            case ESpectralClass::kSpectral_K:
+                PreviousMap = &kSpectralSubclassMap_G_;
+                break;
+            case ESpectralClass::kSpectral_M:
+                PreviousMap = &kSpectralSubclassMap_K_;
+                break;
+            case ESpectralClass::kSpectral_L:
+                PreviousMap = &kSpectralSubclassMap_M_;
+                break;
+            case ESpectralClass::kSpectral_T:
+                PreviousMap = &kSpectralSubclassMap_L_;
+                break;
+            case ESpectralClass::kSpectral_Y:
+                PreviousMap = &kSpectralSubclassMap_T_;
+                break;
+            default:
+                return CurrentTeff;
+            }
+
+            if (PreviousMap != nullptr && !PreviousMap->empty())
+            {
+                PreviousTeff = PreviousMap->back().first;
+            }
+            else
+            {
+                return CurrentTeff;
+            }
+        }
+
+        return (CurrentTeff + PreviousTeff) / 2;
+    }
+
+    const AStar::FSubclassMap AStar::kSpectralSubclassMap_O_
     {
         { 54000, 2.0f },
         { 44900, 3.0f },
@@ -30,7 +164,7 @@ namespace Npgs::Astro
         { 31650, 9.7f }
     };
 
-    const std::vector<std::pair<int, float>> AStar::kSpectralSubclassMap_B_
+    const AStar::FSubclassMap AStar::kSpectralSubclassMap_B_
     {
         { 31400, 0.0f },
         { 29000, 0.5f },
@@ -48,7 +182,7 @@ namespace Npgs::Astro
         { 10400, 9.5f }
     };
 
-    const std::vector<std::pair<int, float>> AStar::kSpectralSubclassMap_A_
+    const AStar::FSubclassMap AStar::kSpectralSubclassMap_A_
     {
         { 9700,  0.0f },
         { 9300,  1.0f },
@@ -62,7 +196,7 @@ namespace Npgs::Astro
         { 7400,  9.0f }
     };
 
-    const std::vector<std::pair<int, float>> AStar::kSpectralSubclassMap_F_
+    const AStar::FSubclassMap AStar::kSpectralSubclassMap_F_
     {
         { 7220,  0.0f },
         { 7020,  1.0f },
@@ -77,7 +211,7 @@ namespace Npgs::Astro
         { 5990,  9.5f },
     };
 
-    const std::vector<std::pair<int, float>> AStar::kSpectralSubclassMap_G_
+    const AStar::FSubclassMap AStar::kSpectralSubclassMap_G_
     {
         { 5930,  0.0f },
         { 5860,  1.0f },
@@ -91,7 +225,7 @@ namespace Npgs::Astro
         { 5380,  9.0f }
     };
 
-    const std::vector<std::pair<int, float>> AStar::kSpectralSubclassMap_K_
+    const AStar::FSubclassMap AStar::kSpectralSubclassMap_K_
     {
         { 5270,  0.0f },
         { 5170,  1.0f },
@@ -105,7 +239,7 @@ namespace Npgs::Astro
         { 3930,  9.0f }
     };
 
-    const std::vector<std::pair<int, float>> AStar::kSpectralSubclassMap_M_
+    const AStar::FSubclassMap AStar::kSpectralSubclassMap_M_
     {
         { 3850,  0.0f },
         { 3770,  0.5f },
@@ -129,7 +263,7 @@ namespace Npgs::Astro
         { 2350,  9.5f }
     };
 
-    const std::vector<std::pair<int, float>> AStar::kSpectralSubclassMap_L_
+    const AStar::FSubclassMap AStar::kSpectralSubclassMap_L_
     {
         { 2270,  0.0f },
         { 2160,  1.0f },
@@ -143,7 +277,7 @@ namespace Npgs::Astro
         { 1370,  9.0f }
     };
 
-    const std::vector<std::pair<int, float>> AStar::kSpectralSubclassMap_T_
+    const AStar::FSubclassMap AStar::kSpectralSubclassMap_T_
     {
         { 1255,  0.0f },
         { 1240,  1.0f },
@@ -162,7 +296,7 @@ namespace Npgs::Astro
         { 510,   9.5f },
     };
 
-    const std::vector<std::pair<int, float>> AStar::kSpectralSubclassMap_Y_
+    const AStar::FSubclassMap AStar::kSpectralSubclassMap_Y_
     {
         { 450,   0.0f },
         { 400,   0.5f },
@@ -172,7 +306,7 @@ namespace Npgs::Astro
         { 250,   4.0f }
     };
 
-    const std::vector<std::pair<int, float>> AStar::kSpectralSubclassMap_WN_
+    const AStar::FSubclassMap AStar::kSpectralSubclassMap_WN_
     {
         { 141000, 2.0f },
         { 85000,  3.0f },
@@ -186,7 +320,7 @@ namespace Npgs::Astro
         { 20000,  11.0f }
     };
 
-    const std::vector<std::pair<int, float>> AStar::kSpectralSubclassMap_WC_
+    const AStar::FSubclassMap AStar::kSpectralSubclassMap_WC_
     {
         { 117000, 4.0f },
         { 83000,  5.0f },
@@ -198,7 +332,7 @@ namespace Npgs::Astro
         { 30000,  11.0f }
     };
 
-    const std::vector<std::pair<int, float>> AStar::kSpectralSubclassMap_WO_
+    const AStar::FSubclassMap AStar::kSpectralSubclassMap_WO_
     {
         { 220000, 1.0f },
         { 200000, 2.0f },
@@ -206,7 +340,7 @@ namespace Npgs::Astro
         { 150000, 4.0f }
     };
 
-    const std::vector<std::pair<int, float>> AStar::kSpectralSubclassMap_WNxh_
+    const AStar::FSubclassMap AStar::kSpectralSubclassMap_WNxh_
     {
         { 50000, 5.0f },
         { 45000, 6.0f },
@@ -215,7 +349,7 @@ namespace Npgs::Astro
         { 35000, 9.0f }
     };
 
-    const std::vector<std::pair<int, const std::vector<std::pair<int, float>>&>> AStar::kInitialCommonMap_
+    const std::vector<std::pair<int, const AStar::FSubclassMap&>> AStar::kInitialCommonMap_
     {
         { 54000,                                                                                             AStar::kSpectralSubclassMap_O_},
         { (AStar::kSpectralSubclassMap_O_.back().first + AStar::kSpectralSubclassMap_B_.front().first) / 2,  AStar::kSpectralSubclassMap_B_},

@@ -49,7 +49,7 @@ int main() {
 
         try
         {
-            FUniverse Space(Seed, StarCount, StarCount / 2, StarCount / 2);
+            FUniverse Space(Seed, StarCount, StarCount);
             Space.FillUniverse();
             Space.CountStars();
         }
@@ -67,9 +67,9 @@ int main() {
 
         FStellarGenerator TestGenerator(TestGeneratorInfo);
         FStellarBasicProperties Properties;
-        Properties.Age = 2.26e6f;
-        Properties.FeH = -0.49f;
-        Properties.InitialMassSol = 168.91f;
+        Properties.Age = 7.07e6f;
+        Properties.FeH = -0.41f;
+        Properties.InitialMassSol = 30.65f;
 
         auto Star = TestGenerator.GenerateStar(Properties);
 

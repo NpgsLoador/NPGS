@@ -81,6 +81,8 @@ namespace Npgs::Astro
             bool bHasPlanets{ true };
         };
 
+        using FSubclassMap = std::vector<std::pair<int, float>>;
+
     public:
         using Base = FCelestialBody;
         using Base::Base;
@@ -150,21 +152,24 @@ namespace Npgs::Astro
         EEvolutionPhase GetEvolutionPhase() const;
         const Astro::FStellarClass& GetStellarClass() const;
 
-        static const std::vector<std::pair<int, float>> kSpectralSubclassMap_O_;
-        static const std::vector<std::pair<int, float>> kSpectralSubclassMap_B_;
-        static const std::vector<std::pair<int, float>> kSpectralSubclassMap_A_;
-        static const std::vector<std::pair<int, float>> kSpectralSubclassMap_F_;
-        static const std::vector<std::pair<int, float>> kSpectralSubclassMap_G_;
-        static const std::vector<std::pair<int, float>> kSpectralSubclassMap_K_;
-        static const std::vector<std::pair<int, float>> kSpectralSubclassMap_M_;
-        static const std::vector<std::pair<int, float>> kSpectralSubclassMap_L_;
-        static const std::vector<std::pair<int, float>> kSpectralSubclassMap_T_;
-        static const std::vector<std::pair<int, float>> kSpectralSubclassMap_Y_;
-        static const std::vector<std::pair<int, float>> kSpectralSubclassMap_WN_;
-        static const std::vector<std::pair<int, float>> kSpectralSubclassMap_WC_;
-        static const std::vector<std::pair<int, float>> kSpectralSubclassMap_WO_;
-        static const std::vector<std::pair<int, float>> kSpectralSubclassMap_WNxh_;
-        static const std::vector<std::pair<int, const std::vector<std::pair<int, float>>&>> kInitialCommonMap_;
+        static int GetCommonSubclassStandardTeff(Astro::ESpectralClass SpectralClass, float Subclass);
+        static int GetCommonSubclassUpperTeff(Astro::ESpectralClass SpectralClass, float Subclass);
+
+        static const FSubclassMap kSpectralSubclassMap_O_;
+        static const FSubclassMap kSpectralSubclassMap_B_;
+        static const FSubclassMap kSpectralSubclassMap_A_;
+        static const FSubclassMap kSpectralSubclassMap_F_;
+        static const FSubclassMap kSpectralSubclassMap_G_;
+        static const FSubclassMap kSpectralSubclassMap_K_;
+        static const FSubclassMap kSpectralSubclassMap_M_;
+        static const FSubclassMap kSpectralSubclassMap_L_;
+        static const FSubclassMap kSpectralSubclassMap_T_;
+        static const FSubclassMap kSpectralSubclassMap_Y_;
+        static const FSubclassMap kSpectralSubclassMap_WN_;
+        static const FSubclassMap kSpectralSubclassMap_WC_;
+        static const FSubclassMap kSpectralSubclassMap_WO_;
+        static const FSubclassMap kSpectralSubclassMap_WNxh_;
+        static const std::vector<std::pair<int, const FSubclassMap&>> kInitialCommonMap_;
         static const ankerl::unordered_dense::map<float, float> kFeHSurfaceH1Map_;
 
     private:

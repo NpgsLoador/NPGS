@@ -1763,22 +1763,13 @@ namespace Npgs
             return kSolarSurfaceGravityLogG + LogMass + LogTeff - LogLuminosity;
         };
 
-        float MassSol       = static_cast<float>(StarData.GetMass() / kSolarMass);
+        float EffectiveMass = CalculateEddingtonEffective(StarData).EffectiveMass;
+        float MassSol       = static_cast<float>(EffectiveMass / kSolarMass);
         float LuminositySol = static_cast<float>(StarData.GetLuminosity() / kSolarLuminosity);
         float Teff          = StarData.GetTeff();
         float LogG          = CalculateSurfaceGravity(MassSol, LuminositySol, Teff);
 
         auto BaseClass = CalculateLuminosityClassFromSurfaceGravity(Teff, LogG);
-
-        if (Teff >= 43900 && BaseClass == Astro::ELuminosityClass::kLuminosity_IV) // 温度高于 O4 不定义 IV
-        {
-            BaseClass = LogG <= 3.9f ? Astro::ELuminosityClass::kLuminosity_III : Astro::ELuminosityClass::kLuminosity_V;
-        }
-        else if (Teff >= 40000 && BaseClass <= Astro::ELuminosityClass::kLuminosity_II) // 温度高于 O6 不定义 Ia/Iab/Ib/II
-        {
-            BaseClass = LogG <= 3.8f ? Astro::ELuminosityClass::kLuminosity_I : Astro::ELuminosityClass::kLuminosity_III;
-        }
-
         if (BaseClass == Astro::ELuminosityClass::kLuminosity_Ia)
         {
             auto  EvolutionPhase = StarData.GetEvolutionPhase();
@@ -1812,78 +1803,156 @@ namespace Npgs
 
         struct SpectralTypeCalibration
         {
-            int MinTeff{};
-            std::array<LuminosityStandard, 8> Standards;
+            int StandardTeff{};
+            std::array<LuminosityStandard, 7> Standards;
         };
 
-        auto MakeData = [](int Teff, float V, float IV, float III, float II, float Ib, float Iab, float Ia)
+        auto MakeData = [](int StandardTeff, float V, float IV, float III, float II, float Ib, float Iab, float Ia)
             -> SpectralTypeCalibration
         {
             return {
-                .MinTeff   = Teff,
-                .Standards =
+                .StandardTeff = StandardTeff,
+                .Standards    =
                 {{
-                    { Astro::ELuminosityClass::kLuminosity_V,      V   },
-                    { Astro::ELuminosityClass::kLuminosity_IV,     IV  },
-                    { Astro::ELuminosityClass::kLuminosity_III,    III },
-                    { Astro::ELuminosityClass::kLuminosity_II,     II  },
-                    { Astro::ELuminosityClass::kLuminosity_Ib,     Ib  },
-                    { Astro::ELuminosityClass::kLuminosity_Iab,    Iab },
-                    { Astro::ELuminosityClass::kLuminosity_Ia,     Ia  }
+                    { Astro::ELuminosityClass::kLuminosity_V,   V   },
+                    { Astro::ELuminosityClass::kLuminosity_IV,  IV  },
+                    { Astro::ELuminosityClass::kLuminosity_III, III },
+                    { Astro::ELuminosityClass::kLuminosity_II,  II  },
+                    { Astro::ELuminosityClass::kLuminosity_Ib,  Ib  },
+                    { Astro::ELuminosityClass::kLuminosity_Iab, Iab },
+                    { Astro::ELuminosityClass::kLuminosity_Ia,  Ia  }
                 }}
             };
         };
 
+        static constexpr int kMax = std::numeric_limits<int>::max();
         // A new calibration of stellar parameters of Galactic O stars
         // Fundamental stellar parameters derived from the evolutionary tracks
         static const std::vector<SpectralTypeCalibration> kCalibrationTable
         {
-            //       Teff   V      IV     III    II     Ib     Iab    Ia
-            // -------------------------------------------------------------
-            // O2-O4
-            MakeData(41400, 3.95f, 3.90f, 3.85f, 3.80f, 3.75f, 3.72f, 3.70f),
-            // O-Type Early (Table VII: O5)
-            MakeData(39500, 3.90f, 3.86f, 3.82f, 3.76f, 3.74f, 3.69f, 3.65f),
-            // O-Type Late (Table VII: O9)
-            MakeData(31400, 3.95f, 3.82f, 3.74f, 3.58f, 3.50f, 3.44f, 3.31f),
-            // B-Type Early (Table VII: B0)
-            MakeData(26000, 4.00f, 3.88f, 3.74f, 3.39f, 3.27f, 3.19f, 3.05f),
-            // B-Type Middle (Table VII: B5)
-            MakeData(14500, 4.10f, 3.98f, 3.81f, 2.90f, 2.52f, 2.40f, 2.22f),
-            // B-Type Late / A-Type Early (Table VII: B9/A0)
-            MakeData(9500,  4.07f, 3.91f, 3.75f, 2.85f, 2.23f, 2.01f, 1.81f),
-            // A-Type Middle (Table VII: A5)
-            MakeData(7910,  4.22f, 4.06f, 3.86f, 2.81f, 2.14f, 1.74f, 1.53f),
-            // F-Type Early (Table VII: F0)
-            MakeData(7020,  4.28f, 4.05f, 3.83f, 2.67f, 2.00f, 1.51f, 1.25f),
-            // F-Type Late (Table VII: F8)
-            MakeData(6050,  4.35f, 3.89f, 3.50f, 2.38f, 1.71f, 1.06f, 0.83f),
-            // G-Type Early (Table VII: G0)
-            MakeData(5860,  4.39f, 3.84f, 3.20f, 2.29f, 1.62f, 0.95f, 0.72f),
-            // G-Type Late (Table VII: G8)
-            MakeData(5380,  4.55f, 3.64f, 2.95f, 1.84f, 1.30f, 0.60f, 0.30f),
-            // K-Type Early (Table VII: K0)
-            MakeData(5170,  4.57f, 3.57f, 2.89f, 1.74f, 1.20f, 0.54f, 0.25f),
-            // K-Type Late (Table VII: K5)
-            MakeData(4300,  4.57f, 3.50f, 1.93f, 1.20f, 0.77f, 0.35f, 0.10f),
-            // M-Type (Table VII: M0 - M5)
-            MakeData(0,     4.61f, 3.00f, 1.63f, 1.01f, 0.61f, 0.30f, 0.00f)
+            // Teff  V      IV     III    II     Ib     Iab    Ia/I
+            // ----------------------------------------------------
+            // O-Type
+            MakeData(Astro::AStar::GetCommonSubclassStandardTeff(Astro::ESpectralClass::kSpectral_O, 2.0f),
+                     3.92f, kMax,  3.81f, kMax,  kMax,  kMax,  3.75f),
+            MakeData(Astro::AStar::GetCommonSubclassStandardTeff(Astro::ESpectralClass::kSpectral_O, 3.0f),
+                     3.92f, kMax,  3.77f, kMax,  kMax,  kMax,  3.70f),
+            MakeData(Astro::AStar::GetCommonSubclassStandardTeff(Astro::ESpectralClass::kSpectral_O, 4.0f),
+                     3.92f, kMax,  3.73f, kMax,  kMax,  kMax,  3.65f),
+            MakeData(Astro::AStar::GetCommonSubclassStandardTeff(Astro::ESpectralClass::kSpectral_O, 5.0f),
+                     3.92f, 3.80f, 3.69f, kMax,  kMax,  kMax,  3.57f),
+            MakeData(Astro::AStar::GetCommonSubclassStandardTeff(Astro::ESpectralClass::kSpectral_O, 5.5f),
+                     3.92f, 3.78f, 3.67f, kMax,  kMax,  kMax,  3.52f),
+            MakeData(Astro::AStar::GetCommonSubclassStandardTeff(Astro::ESpectralClass::kSpectral_O, 6.0f),
+                     3.92f, 3.76f, 3.65f, 3.59f, 3.55f, 3.51f, 3.48f),
+            MakeData(Astro::AStar::GetCommonSubclassStandardTeff(Astro::ESpectralClass::kSpectral_O, 6.5f),
+                     3.92f, 3.74f, 3.63f, 3.57f, 3.52f, 3.48f, 3.44f),
+            MakeData(Astro::AStar::GetCommonSubclassStandardTeff(Astro::ESpectralClass::kSpectral_O, 7.0f),
+                     3.92f, 3.72f, 3.61f, 3.54f, 3.49f, 3.44f, 3.40f),
+            MakeData(Astro::AStar::GetCommonSubclassStandardTeff(Astro::ESpectralClass::kSpectral_O, 7.5f),
+                     3.92f, 3.70f, 3.59f, 3.52f, 3.46f, 3.41f, 3.36f),
+            MakeData(Astro::AStar::GetCommonSubclassStandardTeff(Astro::ESpectralClass::kSpectral_O, 8.0f),
+                     3.92f, 3.68f, 3.57f, 3.49f, 3.43f, 3.37f, 3.32f),
+            MakeData(Astro::AStar::GetCommonSubclassStandardTeff(Astro::ESpectralClass::kSpectral_O, 8.5f),
+                     3.92f, 3.66f, 3.55f, 3.46f, 3.40f, 3.34f, 3.28f),
+            MakeData(Astro::AStar::GetCommonSubclassStandardTeff(Astro::ESpectralClass::kSpectral_O, 9.0f),
+                     3.92f, 3.64f, 3.53f, 3.43f, 3.36f, 3.30f, 3.23f),
+            MakeData(Astro::AStar::GetCommonSubclassStandardTeff(Astro::ESpectralClass::kSpectral_O, 9.5f),
+                     3.92f, 3.62f, 3.51f, 3.41f, 3.34f, 3.26f, 3.19f),
+            // B-Type
+            MakeData(Astro::AStar::GetCommonSubclassStandardTeff(Astro::ESpectralClass::kSpectral_B, 0.0f),
+                     4.00f, 3.88f, 3.74f, 3.39f, 3.27f, 3.19f, 3.05f),
+            MakeData(Astro::AStar::GetCommonSubclassStandardTeff(Astro::ESpectralClass::kSpectral_B, 1.0f),
+                     4.00f, 3.86f, 3.71f, 3.36f, 3.17f, 3.01f, 2.87f),
+            MakeData(Astro::AStar::GetCommonSubclassStandardTeff(Astro::ESpectralClass::kSpectral_B, 2.0f),
+                     4.06f, 3.88f, 3.68f, 3.10f, 3.00f, 2.84f, 2.68f),
+            MakeData(Astro::AStar::GetCommonSubclassStandardTeff(Astro::ESpectralClass::kSpectral_B, 3.0f),
+                     4.06f, 3.89f, 3.71f, 3.12f, 2.79f, 2.68f, 2.49f),
+            MakeData(Astro::AStar::GetCommonSubclassStandardTeff(Astro::ESpectralClass::kSpectral_B, 5.0f),
+                     4.10f, 3.98f, 3.81f, 2.90f, 2.52f, 2.40f, 2.22f),
+            MakeData(Astro::AStar::GetCommonSubclassStandardTeff(Astro::ESpectralClass::kSpectral_B, 6.0f),
+                     4.09f, 3.96f, 3.84f, 2.77f, 2.42f, 2.29f, 2.13f),
+            MakeData(Astro::AStar::GetCommonSubclassStandardTeff(Astro::ESpectralClass::kSpectral_B, 7.0f),
+                     4.07f, 3.95f, 3.82f, 2.77f, 2.33f, 2.21f, 2.02f),
+            MakeData(Astro::AStar::GetCommonSubclassStandardTeff(Astro::ESpectralClass::kSpectral_B, 8.0f),
+                     4.07f, 3.92f, 3.79f, 2.79f, 2.27f, 2.11f, 1.97f),
+            MakeData(Astro::AStar::GetCommonSubclassStandardTeff(Astro::ESpectralClass::kSpectral_B, 9.0f),
+                     4.03f, 3.94f, 3.75f, 2.81f, 2.20f, 2.04f, 1.88f),
+            // A-Type
+            MakeData(Astro::AStar::GetCommonSubclassStandardTeff(Astro::ESpectralClass::kSpectral_A, 0.0f),
+                     4.07f, 3.91f, 3.75f, 2.85f, 2.23f, 2.01f, 1.81f),
+            MakeData(Astro::AStar::GetCommonSubclassStandardTeff(Astro::ESpectralClass::kSpectral_A, 1.0f),
+                     4.10f, 3.96f, 3.78f, 2.88f, 2.22f, 1.96f, 1.76f),
+            MakeData(Astro::AStar::GetCommonSubclassStandardTeff(Astro::ESpectralClass::kSpectral_A, 2.0f),
+                     4.16f, 3.98f, 3.78f, 2.87f, 2.23f, 1.92f, 1.71f),
+            MakeData(Astro::AStar::GetCommonSubclassStandardTeff(Astro::ESpectralClass::kSpectral_A, 3.0f),
+                     4.20f, 3.03f, 3.83f, 2.85f, 2.20f, 1.86f, 1.65f),
+            MakeData(Astro::AStar::GetCommonSubclassStandardTeff(Astro::ESpectralClass::kSpectral_A, 5.0f),
+                     4.22f, 4.06f, 3.86f, 2.81f, 2.14f, 1.74f, 1.53f),
+            MakeData(Astro::AStar::GetCommonSubclassStandardTeff(Astro::ESpectralClass::kSpectral_A, 7.0f),
+                     4.26f, 4.10f, 3.86f, 2.75f, 2.08f, 1.65f, 1.38f),
+            // F-Type
+            MakeData(Astro::AStar::GetCommonSubclassStandardTeff(Astro::ESpectralClass::kSpectral_F, 0.0f),
+                     4.28f, 4.05f, 3.83f, 2.67f, 2.00f, 1.51f, 1.25f),
+            MakeData(Astro::AStar::GetCommonSubclassStandardTeff(Astro::ESpectralClass::kSpectral_F, 2.0f),
+                     4.26f, 4.01f, 3.81f, 2.63f, 1.92f, 1.39f, 1.15f),
+            MakeData(Astro::AStar::GetCommonSubclassStandardTeff(Astro::ESpectralClass::kSpectral_F, 5.0f),
+                     4.28f, 4.93f, 3.74f, 2.48f, 1.81f, 1.22f, 1.00f),
+            MakeData(Astro::AStar::GetCommonSubclassStandardTeff(Astro::ESpectralClass::kSpectral_F, 8.0f),
+                     4.35f, 3.89f, 3.45f, 2.38f, 1.71f, 1.06f, 0.83f),
+            // G-Type
+            MakeData(Astro::AStar::GetCommonSubclassStandardTeff(Astro::ESpectralClass::kSpectral_G, 0.0f),
+                     4.39f, 3.84f, 3.25f, 2.29f, 1.62f, 0.95f, 0.72f),
+            MakeData(Astro::AStar::GetCommonSubclassStandardTeff(Astro::ESpectralClass::kSpectral_G, 2.0f),
+                     4.40f, 3.77f, 3.20f, 2.20f, 1.53f, 0.86f, 0.61f),
+            MakeData(Astro::AStar::GetCommonSubclassStandardTeff(Astro::ESpectralClass::kSpectral_G, 5.0f),
+                     4.49f, 3.71f, 3.07f, 2.04f, 1.45f, 0.71f, 0.45f),
+            MakeData(Astro::AStar::GetCommonSubclassStandardTeff(Astro::ESpectralClass::kSpectral_G, 8.0f),
+                     4.55f, 3.64f, 2.95f, 1.84f, 1.30f, 0.60f, 0.30f),
+            // K-Type
+            MakeData(Astro::AStar::GetCommonSubclassStandardTeff(Astro::ESpectralClass::kSpectral_K, 0.0f),
+                     4.57f, 3.57f, 2.89f, 1.74f, 1.20f, 0.54f, 0.25f),
+            MakeData(Astro::AStar::GetCommonSubclassStandardTeff(Astro::ESpectralClass::kSpectral_K, 1.0f),
+                     4.55f, 3.55f, 2.78f, 1.66f, 1.16f, 0.54f, 0.25f),
+            MakeData(Astro::AStar::GetCommonSubclassStandardTeff(Astro::ESpectralClass::kSpectral_K, 2.0f),
+                     4.55f, 3.53f, 2.63f, 1.59f, 1.10f, 0.48f, 0.23f),
+            MakeData(Astro::AStar::GetCommonSubclassStandardTeff(Astro::ESpectralClass::kSpectral_K, 3.0f),
+                     4.56f, 3.50f, 2.36f, 1.52f, 1.00f, 0.46f, 0.19f),
+            MakeData(Astro::AStar::GetCommonSubclassStandardTeff(Astro::ESpectralClass::kSpectral_K, 5.0f),
+                     4.57f, 3.40f, 1.93f, 1.20f, 0.77f, 0.35f, 0.10f),
+            // M-Type
+            MakeData(Astro::AStar::GetCommonSubclassStandardTeff(Astro::ESpectralClass::kSpectral_L, 0.0f),
+                     4.61f, 3.00f, 1.63f, 1.01f, 0.61f, 0.30f, 0.00f),
+            MakeData(Astro::AStar::GetCommonSubclassStandardTeff(Astro::ESpectralClass::kSpectral_L, 1.0f),
+                     4.67f, 2.90f, 1.41f, 0.84f, 0.51f, 0.19f,-0.07f),
+            MakeData(Astro::AStar::GetCommonSubclassStandardTeff(Astro::ESpectralClass::kSpectral_L, 2.0f),
+                     4.69f, 2.80f, 1.31f, 0.70f, 0.39f, 0.09f,-0.13f),
+            MakeData(Astro::AStar::GetCommonSubclassStandardTeff(Astro::ESpectralClass::kSpectral_L, 3.0f),
+                     4.71f, 2.70f, 1.12f, 0.38f, 0.10f,-0.06f,-0.34f)
         };
 
-        const auto* Current = &kCalibrationTable.back();
-        for (const auto& Row : kCalibrationTable)
+        auto  TableIndex = std::numeric_limits<std::size_t>::max();
+        float MinTeffGap = std::numeric_limits<float>::max();
+        for (auto i = 0uz; i != kCalibrationTable.size(); ++i)
         {
-            if (Teff >= Row.MinTeff)
+            const auto& Row = kCalibrationTable[i];
+            float Gap = std::abs(Teff - Row.StandardTeff);
+            if (Gap < MinTeffGap)
             {
-                Current = &Row;
-                break;
+                MinTeffGap = Gap;
+                TableIndex = i;
             }
+        }
+
+        if (TableIndex == std::numeric_limits<std::size_t>::max())
+        {
+            throw std::logic_error("Failed to find matching spectral type calibration data.");
         }
 
         Astro::ELuminosityClass BestClass = Astro::ELuminosityClass::kLuminosity_Unknown;
         float MinGap = std::numeric_limits<float>::max();
-
-        for (const auto& Standard : Current->Standards)
+        const auto& Current = kCalibrationTable[TableIndex];
+        for (const auto& Standard : Current.Standards)
         {
             float Gap = std::abs(LogG - Standard.LogG);
             if (Gap < MinGap)
@@ -1891,6 +1960,11 @@ namespace Npgs
                 MinGap    = Gap;
                 BestClass = Standard.Class;
             }
+        }
+
+        if (TableIndex < 5 && BestClass == Astro::ELuminosityClass::kLuminosity_Ia)
+        {
+            BestClass = Astro::ELuminosityClass::kLuminosity_I;
         }
 
         return BestClass;
