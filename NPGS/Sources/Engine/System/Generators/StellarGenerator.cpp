@@ -1838,7 +1838,7 @@ namespace Npgs
             MakeData(Astro::AStar::GetCommonSubclassStandardTeff(Astro::ESpectralClass::kSpectral_O, 3.0f),
                      3.92f, kMax,  3.77f, kMax,  kMax,  kMax,  3.70f),
             MakeData(Astro::AStar::GetCommonSubclassStandardTeff(Astro::ESpectralClass::kSpectral_O, 4.0f),
-                     3.92f, kMax,  3.73f, kMax,  kMax,  kMax,  3.65f),
+                     3.92f, 3.82f, 3.73f, kMax,  kMax,  kMax,  3.65f),
             MakeData(Astro::AStar::GetCommonSubclassStandardTeff(Astro::ESpectralClass::kSpectral_O, 5.0f),
                      3.92f, 3.80f, 3.69f, kMax,  kMax,  kMax,  3.57f),
             MakeData(Astro::AStar::GetCommonSubclassStandardTeff(Astro::ESpectralClass::kSpectral_O, 5.5f),
@@ -1965,6 +1965,12 @@ namespace Npgs
         if (TableIndex < 5 && BestClass == Astro::ELuminosityClass::kLuminosity_Ia)
         {
             BestClass = Astro::ELuminosityClass::kLuminosity_I;
+        }
+
+        if (Teff > Astro::AStar::GetCommonSubclassUpperTeff(Astro::ESpectralClass::kSpectral_O, 4.0f) &&
+            BestClass == Astro::ELuminosityClass::kLuminosity_IV)
+        {
+            BestClass = LogG <= 3.82f ? Astro::ELuminosityClass::kLuminosity_III : Astro::ELuminosityClass::kLuminosity_V;
         }
 
         return BestClass;
